@@ -1,11 +1,25 @@
 @props(['active'])
 
 @php
-$classes = ($active ?? false)
-            ? 'inline-flex items-center px-1 pt-1 border-b-2 border-indigo-400 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out'
-            : 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out';
+$baseClasses = 'bg-blue-200 pl-5 flex items-center text-xs w-full p-1 space-x-3 hover:bg-cyan-500 rounded-lg text-black transition-colors duration-200';
+
+$stateClasses = ($active ?? false)
+    ? 'bg-cyan-600 text-white' 
+    : 'hover:bg-cyan-800 hover:text-white';
+
+$classes = $baseClasses . ' ' . $stateClasses;
 @endphp
 
 <a {{ $attributes->merge(['class' => $classes]) }}>
-    {{ $slot }}
+    @if (isset($icon))
+        <div class="flex-shrink-0">
+            {{ $icon }}
+        </div>
+    @endif
+
+    <span class="ml-4 flex-1 whitespace-nowrap 
+                transition-opacity duration-300"
+        :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
+        {{ $slot }}
+    </span>
 </a>
