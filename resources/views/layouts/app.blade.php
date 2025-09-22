@@ -28,14 +28,13 @@
             @include('layouts.navigation')
 
             <!-- Page Heading -->
-                         <div 
+                <div 
                 class="transition-all duration-300"
-                :class="{ 'lg:ml-64': desktopSidebarOpen, 'lg:ml-20': !desktopSidebarOpen }"
-            >
+                :class="{ 'lg:ml-64': desktopSidebarOpen, 'lg:ml-20': !desktopSidebarOpen }">
 
             @isset($header)
                 <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-8xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>

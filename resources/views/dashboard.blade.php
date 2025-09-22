@@ -8,14 +8,14 @@
                 <p class="text-sm mt-1 text-[#307ABD]">Bienvenido de vuelta, {{ Auth::user()->name }}</p>
             </div>
             <div class="text-right">
-                <p class="text-sm text-gray-500">{{ now()->format('d/m/Y') }}</p>
-                <p class="text-xs text-gray-400">{{ now()->format('H:i') }}</p>
+                <p class="text-sm text-gray-500">Fecha: {{ now()->format('d/m/Y') }}</p>
+                <p class="text-xs text-gray-400">Hora: {{ now()->format('H:i') }}</p>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <div class="py-2">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Métricas Principales -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

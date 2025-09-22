@@ -35,13 +35,16 @@
                 </x-slot>
                 {{ __('Inicio') }}
             </x-nav-link>
+
  
-            <x-nav-link>
+        @role('admin')
+            <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                 <x-slot name="icon">
-                    <i class="fa-solid fa-users fa-fw text-lg"></i>
+                    <i class="fa-solid fa-users-cog fa-fw text-sm"></i>
                 </x-slot>
-                    {{ __('Gestión de Usuarios') }}
+                {{ __('Gestión de Usuarios') }}
             </x-nav-link>
+        @endrole
         </div>
 
 
@@ -66,6 +69,7 @@
                         <p class="text-xs text-000000 truncate">
                             {{ Auth::user()->email }}
                         </p>
+                        
                         
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500 text-white mt-1">
                                 <i class="fa-solid fa-crown fa-xs mr-1"></i>
