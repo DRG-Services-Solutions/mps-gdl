@@ -33,14 +33,14 @@
                 <x-slot name="icon">
                     <i class="fa-solid fa-house-chimney fa-fw text-lg"></i>
                 </x-slot>
-                {{ __('Dashboard') }}
+                {{ __('Inicio') }}
             </x-nav-link>
  
             <x-nav-link>
                 <x-slot name="icon">
-                    <i class="fa-solid fa-box-open fa-fw text-lg"></i>
+                    <i class="fa-solid fa-users fa-fw text-lg"></i>
                 </x-slot>
-                    {{ __('Gestión de Productos') }}
+                    {{ __('Gestión de Usuarios') }}
             </x-nav-link>
         </div>
 
