@@ -35,50 +35,35 @@
                 </x-slot>
                 {{ __('Dashboard') }}
             </x-nav-link>
-            
-                <x-nav-link>
-                    <x-slot name="icon">
-                        <i class="fa-solid fa-user-shield fa-fw text-lg"></i>
-                    </x-slot>
-                    {{ __('Gestión de Roles') }}
-                </x-nav-link>
-
-                <x-nav-link >
-                    <x-slot name="icon">
-                        <i class="fa-solid fa-users-cog fa-fw text-lg"></i>
-                    </x-slot>
-                        {{ __('Gestión de Usuario') }}
-                </x-nav-link>
-
-            
-                <x-nav-link>
-                    <x-slot name="icon">
-                        <i class="fa-solid fa-box-open fa-fw text-lg"></i>
-                    </x-slot>
-                        {{ __('Gestión de Productos') }}
-                </x-nav-link>
+ 
+            <x-nav-link>
+                <x-slot name="icon">
+                    <i class="fa-solid fa-box-open fa-fw text-lg"></i>
+                </x-slot>
+                    {{ __('Gestión de Productos') }}
+            </x-nav-link>
         </div>
 
 
         <!-- Tarjeta de perfil mejorada -->
-        <div class="flex-shrink-0 p-2 border-t border-cyan-500/20">
+        <div class="flex-shrink-0 p-2">
             <!-- Perfil del usuario -->
-            <div class="bg-cyan-700/30 rounded-lg p-3 mb-2 backdrop-blur-sm border border-cyan-500/20">
+            <div class="bg-blue-300 rounded-lg p-3 mb-2 backdrop-blur-sm border ">
                 <div class="flex items-center space-x-3">
                     <!-- Avatar -->
                     <div class="flex-shrink-0">
-                        <img class="h-10 w-10 rounded-full object-cover ring-2 ring-cyan-400/50" 
-                             src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0891b2&color=FFFFFF&bold=true" 
+                        <img class="h-10 w-10 rounded-full object-cover ring-2 ring-blue-600" 
+                             src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=0891b2&color=000000&bold=true" 
                              alt="{{ Auth::user()->name }}">
                     </div>
                     
                     <!-- Información del usuario -->
                     <div class="flex-1 min-w-0 transition-opacity duration-300" 
                          :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
-                        <p class="text-sm font-semibold text-white truncate">
+                        <p class="text-sm font-semibold text-000000 truncate">
                             {{ Auth::user()->name }}
                         </p>
-                        <p class="text-xs text-cyan-200 truncate">
+                        <p class="text-xs text-000000 truncate">
                             {{ Auth::user()->email }}
                         </p>
                         
@@ -92,18 +77,18 @@
             </div>
             
             <!-- Botones de acción -->
-            <div class="flex items-center space-x-2" 
+            <div class="flex items-center justify-between" 
                  :class="{ 'justify-between': desktopSidebarOpen, 'justify-center': !desktopSidebarOpen }">
                 
-                <!-- Botón de perfil - Solo visible cuando está expandido -->
+                <!-- Botón de perfil  -->
                 <a href="{{ route('profile.edit') }}" 
-                   class="flex items-center justify-center px-3 py-2 text-sm font-medium text-cyan-100 bg-cyan-700/50 rounded-lg hover:bg-cyan-600 transition-all duration-200 group overflow-hidden"
+                   class="flex items-center justify-center px-3 py-2 text-sm font-medium text-000000 bg-cyan-700/50 rounded-lg hover:bg-cyan-600 transition-all duration-200 group overflow-hidden"
                    :class="{ 'flex-1': desktopSidebarOpen, 'w-10 h-10': !desktopSidebarOpen }"
                    title="Editar perfil">
                     <i class="fa-solid fa-user-gear text-base group-hover:scale-110 transition-transform duration-200 flex-shrink-0"></i>
                     <span class="ml-2 whitespace-nowrap transition-all duration-300 overflow-hidden" 
                           :class="{ 'opacity-100 w-auto': desktopSidebarOpen, 'opacity-0 w-0 ml-0': !desktopSidebarOpen }">
-                        Perfil
+                        Mi Perfil
                     </span>
                 </a>
                 
@@ -111,7 +96,7 @@
                 <form method="POST" action="{{ route('logout') }}" class="flex-shrink-0">
                     @csrf
                     <button type="submit" 
-                            class="flex items-center justify-center px-3 py-2 text-sm font-medium text-red-100 bg-red-600/70 rounded-lg hover:bg-red-600 transition-all duration-200 group overflow-hidden"
+                            class="flex items-center justify-center px-3 py-2 text-sm font-medium text-000000 bg-red-600/70 rounded-lg hover:bg-red-600 transition-all duration-200 group overflow-hidden"
                             :class="{ 'w-auto': desktopSidebarOpen, 'w-10 h-10': !desktopSidebarOpen }"
                             title="Cerrar sesión"
                             onclick="return confirm('¿Estás seguro de que deseas cerrar sesión?')">

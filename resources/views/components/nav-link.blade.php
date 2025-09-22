@@ -1,10 +1,10 @@
 @props(['active'])
 
 @php
-$baseClasses = 'bg-blue-500 flex items-center w-full p-5 space-x-3 hover:bg-cyan-600 rounded-lg text-black transition-colors duration-200';
+$baseClasses = 'bg-blue-200  flex items-center w-full p-5 space-x-3 hover:bg-cyan-500 rounded-lg text-black transition-colors duration-200';
 
 $stateClasses = ($active ?? false)
-    ? 'bg-cyan-800 text-white' 
+    ? 'bg-cyan-600 text-white' 
     : 'hover:bg-cyan-800 hover:text-white';
 
 $classes = $baseClasses . ' ' . $stateClasses;
