@@ -174,7 +174,7 @@
                         </div>
                     </div>
 
-                    <!-- Próximos Vencimientos -->
+                    <!-- Próximos Vencimientos
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Próximos Vencimientos</h3>
@@ -205,6 +205,7 @@
                             </div>
                         </div>
                     </div>
+                     -->
                 </div>
             </div>
 
