@@ -18,38 +18,35 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        //Permisos para Usuarios
-        Permission::create(['name' => 'crear usuarios']);
-        Permission::create(['name' => 'leer usuarios']);
-        Permission::create(['name' => 'actualizar usuarios']);
-        Permission::create(['name' => 'eliminar usuarios']);
+        // Permisos para Usuarios
+        Permission::firstOrCreate(['name' => 'crear usuarios']);
+        Permission::firstOrCreate(['name' => 'leer usuarios']);
+        Permission::firstOrCreate(['name' => 'actualizar usuarios']);
+        Permission::firstOrCreate(['name' => 'eliminar usuarios']);
 
-        //Permisos para Productos
-        Permission::create(['name' => 'crear productos']);
-        Permission::create(['name' => 'leer productos']);
-        Permission::create(['name' => 'actualizar productos']);
-        Permission::create(['name' => 'eliminar productos']);
+        // Permisos para Productos
+        Permission::firstOrCreate(['name' => 'crear productos']);
+        Permission::firstOrCreate(['name' => 'leer productos']);
+        Permission::firstOrCreate(['name' => 'actualizar productos']);
+        Permission::firstOrCreate(['name' => 'eliminar productos']);
 
-        $adminRole = Role::create(['name' => 'admin']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
         $adminRole->givePermissionTo(Permission::all());
 
-        $userRole = Role::create(['name' => 'usuario']);
-        $userRole->givePermissionTo([
-            'leer productos',
-        ]);
+        // Rol: Dueños y guías estratégicos de la empresa (Acceso total)
+        Role::firstOrCreate(['name' => 'Director de Operaciones']);
+        Role::firstOrCreate(['name' => 'Director de Administración']);
 
-        $adminUser = User::create([
-            'name' => 'Admin MPS',
-            'email' => 'admin@mps.com',
-            'password' => Hash::make('password') 
-        ]);
-        $adminUser->assignRole($adminRole);
+        // Rol: Gestión administrativa, financiera y documental
+        Role::firstOrCreate(['name' => 'Coordinador de Administración']);
+        Role::firstOrCreate(['name' => 'Auxiliar de Administración']);
 
-        $exampleUser = User::create([
-            'name' => 'Example User',
-            'email' => 'user@example.com',
-            'password' => Hash::make('password')
-        ]);
-        $exampleUser->assignRole($userRole);
+        // Rol: Gestión de almacén, logística e inventarios
+        Role::firstOrCreate(['name' => 'Coordinador de Operaciones']);
+        Role::firstOrCreate(['name' => 'Jefe de Operaciones']);
+        Role::firstOrCreate(['name' => 'Auxiliar de Operaciones']);
+
+        // Rol: Validación de instrumentación quirúrgica
+        Role::firstOrCreate(['name' => 'Técnicos']);
     }
 }
