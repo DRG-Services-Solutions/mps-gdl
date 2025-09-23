@@ -37,7 +37,9 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['required']
+            'roles' => ['required', 'array'],
+            'roles.+' => ['exists:roles, id'],
+
         ]);
 
         $user = User::create([
@@ -77,11 +79,12 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'roles' => ['required']
+            'roles' => ['required', 'array'],
+            'roles.*' => ['exists:roles,id']
         ]);
 
         $input = $request->except('password');
-        if (!empty($request->password)) {
+        if ($request->filled('password')) {
             $input['password'] = Hash::make($request->password);
         }
 
