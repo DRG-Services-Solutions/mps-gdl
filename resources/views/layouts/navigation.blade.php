@@ -70,11 +70,19 @@
                             {{ Auth::user()->email }}
                         </p>
                         
-                        
+                        @if (Auth::user()->hasRole('admin'))
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-500 text-white mt-1">
                                 <i class="fa-solid fa-crown fa-xs mr-1"></i>
                                 Admin
                             </span>
+                        @else
+
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500 text-white mt-1">
+                                <i class="fa-solid fa-user fa-xs mr-1"></i>
+                            
+    {{ Auth::user()->getRoleNames()->first() }}
+                            </span>
+                        @endif
                        
                     </div>
                 </div>
