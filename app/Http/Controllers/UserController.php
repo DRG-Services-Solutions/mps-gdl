@@ -36,16 +36,22 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'username' => ['required', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'roles' => ['required', 'array'],
             'roles.+' => ['exists:roles, id'],
 
         ]);
 
+        $username = strtolower($request->username);
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'username' => $username,
             'password' => Hash::make($request->password),
+            'position' => $request->position, // Aseg\u00farate de que estos campos est\u00e9n en tu formulario
+            'description' => $request->description,
         ]);
 
         $user->assignRole($request->roles);
