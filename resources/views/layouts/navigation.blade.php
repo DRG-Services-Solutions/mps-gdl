@@ -40,7 +40,7 @@
         @role('admin')
             <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                 <x-slot name="icon">
-                    <i class="fa-solid fa-users-cog fa-fw text-sm"></i>
+                    <i class="fa-solid fa-users-cog fa-fw text-lg"></i>
                 </x-slot>
                 {{ __('Gestión de Usuarios') }}
             </x-nav-link>
@@ -86,7 +86,7 @@
                 
                 <!-- Botón de perfil  -->
                 <a href="{{ route('profile.edit') }}" 
-                   class="flex items-center justify-center px-3 py-2 text-sm font-medium text-000000 bg-cyan-700/50 rounded-lg hover:bg-cyan-600 transition-all duration-200 group overflow-hidden"
+                   class="flex items-center justify-center px-5 py-2 text-sm font-medium text-000000 bg-cyan-700/50 rounded-lg hover:bg-cyan-600 transition-all duration-200 group overflow-hidden"
                    :class="{ 'flex-1': desktopSidebarOpen, 'w-10 h-10': !desktopSidebarOpen }"
                    title="Editar perfil">
                     <i class="fa-solid fa-user-gear text-base group-hover:scale-110 transition-transform duration-200 flex-shrink-0"></i>

@@ -2,10 +2,10 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="font-semibold text-xl text-[#8FC74A] leading-tight">
+                <h2 class="font-bold font-mono text-xl text-[#8FC74A] leading-tight">
                     {{ __('Material Para la Salud') }}
                 </h2>
-                <p class="text-sm mt-1 text-[#307ABD]">Bienvenido de vuelta, {{ Auth::user()->name }}</p>
+                <p class="text-sm mt-1 text-[#307ABD] font-mono font-bold">Bienvenido de vuelta, {{ Auth::user()->name }}</p>
             </div>
             <div class="text-right">
                 <p class="text-sm text-gray-500">Fecha: {{ now()->format('d/m/Y') }}</p>
@@ -174,7 +174,7 @@
                         </div>
                     </div>
 
-                    <!-- Próximos Vencimientos -->
+                    <!-- Próximos Vencimientos
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 mb-4">Próximos Vencimientos</h3>
@@ -205,6 +205,7 @@
                             </div>
                         </div>
                     </div>
+                     -->
                 </div>
             </div>
 
