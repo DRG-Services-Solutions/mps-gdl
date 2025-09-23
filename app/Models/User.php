@@ -21,6 +21,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'username',
+        'position',
+        'description',
         'password',
     ];
 
@@ -45,5 +48,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function findForAuth(string $username)
+    {
+        return $this->where('username', strtolower($username))->first();
+    }
+    
+    /**
+     * Set the user's username to lowercase automatically.
+     *
+     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+     */
+    protected function username(): Attribute
+    {
+        return Attribute::make(
+            set: fn (string $value) => Str::lower($value),
+        );
     }
 }
