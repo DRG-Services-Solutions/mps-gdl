@@ -36,14 +36,24 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'username' => ['required', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['required']
+            'position' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:255'],
+            'roles' => ['required', 'array'],
+            'roles.+' => ['exists:roles, id'],
+
         ]);
+
+        $username = strtolower($request->username);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'username' => $username,
             'password' => Hash::make($request->password),
+            'position' => $request->position, // Aseg\u00farate de que estos campos est\u00e9n en tu formulario
+            'description' => $request->description,
         ]);
 
         $user->assignRole($request->roles);
@@ -71,19 +81,25 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, User $user)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'username' => ['required', 'string', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'roles' => ['required']
+            'position' => ['required', 'string', 'max:255'],
+            'description' => ['required', 'string', 'max:255'],
+            'roles' => ['required', 'array'],
+            'roles.*' => ['exists:roles,id']
         ]);
 
         $input = $request->except('password');
-        if (!empty($request->password)) {
+        if ($request->filled('password')) {
             $input['password'] = Hash::make($request->password);
         }
+
+        $input['username'] = strtolower($request->username);
 
         $user->update($input);
         $user->syncRoles($request->roles);
