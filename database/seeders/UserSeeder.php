@@ -23,8 +23,6 @@ class UserSeeder extends Seeder
             ['email' => 'admin@mps.com',
              'name' => 'Admin MPS', 
              'password' => $defaultPassword,
-             'position' => 'Admin',
-             'description' => 'Usuario administrador por defecto'
             ]
         );
         $adminUser->assignRole('admin');
@@ -35,8 +33,6 @@ class UserSeeder extends Seeder
             ['email' => 'direccion1@mps.com',
              'name' => 'Dirección Operaciones', 
              'password' => $defaultPassword,
-             'position' => 'Dirección Operaciones',
-             'description' => 'Director de operaciones en general'
             ]
         );
         $direccion1->assignRole('Director de Operaciones');
@@ -47,8 +43,6 @@ class UserSeeder extends Seeder
             ['email' => 'direccion2@mps.com',
              'name' => 'Dirección Administrativa', 
              'password' => $defaultPassword,
-             'position' => 'Dirección Administrativa',
-             'description' => 'Director de administración en general'
             ]
         );
         $direccion2->assignRole('Director de Administración');
@@ -59,8 +53,6 @@ class UserSeeder extends Seeder
             ['email' => 'direccion3@mps.com',
              'name' => 'Dirección 3', 
              'password' => $defaultPassword,
-             'position' => 'Usuario administrador predeterminado 3',
-             'description' => 'Usuario',
             ]
         );
         $direccion3->assignRole('admin');
@@ -73,8 +65,6 @@ class UserSeeder extends Seeder
             ['email' => 'admin1@mps.com',
              'name' => 'Coordinador de Administración', 
              'password' => $defaultPassword, 
-             'position' => 'Coordinador de Administración',
-             'description' => 'Coordinador del departamento de administración',
             ]
         );
         $admin1->assignRole('Coordinador de Administración');
@@ -85,8 +75,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxadmin1@mps.com',
              'name' => 'Auxiliar Administración', 
              'password' => $defaultPassword,
-             'position' => 'Auxiliar Administración',
-             'description' => 'Auxiliar general del departamento de administración'
             ]
         );
         $auxAdmin1->assignRole('Auxiliar de Administración');
@@ -97,8 +85,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxadmin2@mps.com',
              'name' => 'Auxiliar Administración 2', 
              'password' => $defaultPassword,
-             'position' => 'Auxiliar Administración',
-             'description' => 'Auxiliar general del departamento de administración (2)'
             ]
         );
         $auxAdmin2->assignRole('Auxiliar de Administración');
@@ -111,8 +97,6 @@ class UserSeeder extends Seeder
             ['email' => 'tecnicos1@mps.com',
              'name' => 'Técnicos de Revisión', 
              'password' => $defaultPassword,
-             'position' => 'Revisión Técnica',
-             'description' => 'Técnicos instrumentistas especializados'
             ]
 
         );
@@ -126,8 +110,6 @@ class UserSeeder extends Seeder
             ['email' => 'operaciones1@mps.com',
              'name' => 'Coordinador de Operaciones', 
              'password' => $defaultPassword,
-             'position' => 'Coordinador de Operaciones',
-             'description' => 'Coordinador del departamento de almacén y logística'
             ]
 
         );
@@ -139,8 +121,6 @@ class UserSeeder extends Seeder
             ['email' => 'operaciones2@mps.com',
              'name' => 'Jefe de Operaciones', 
              'password' => $defaultPassword,
-             'position' => 'Jefe de Operaciones',
-             'description' => 'Responsable del departamento de almacén y logística'
             ]
               
         );
@@ -152,8 +132,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxoperaciones1@mps.com',
              'name' => 'Auxiliar de Operaciones 1',
              'password' => $defaultPassword,
-             'position' => 'Auxiliar de Operaciones',
-             'description' => 'Auxiliar del departamento de almacén y logística'
             ]
 
         );
@@ -164,8 +142,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxoperaciones2@mps.com',
              'name' => 'Auxiliar de Operaciones 2',
              'password' => $defaultPassword,
-             'position' => 'Auxiliar de Operaciones (2)',
-             'description' => 'Auxiliar del departamento de almacén y logística (2)'
             ]
 
         );
@@ -176,8 +152,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxoperaciones3@mps.com',
              'name' => 'Auxiliar de Operaciones 3', 
              'password' => $defaultPassword,
-             'position' => 'Auxiliar de Operaciones (3)',
-             'description' => 'Auxiliar del departamento de almacén y logística (3)'
             ]
         );
         $auxOperaciones3->assignRole('Auxiliar de Operaciones');
@@ -187,8 +161,6 @@ class UserSeeder extends Seeder
             ['email' => 'auxoperaciones4@mps.com',
              'name' => 'Auxiliar de Operaciones 4', 
              'password' => $defaultPassword,
-             'position' => 'Auxiliar de Operaciones (4)',
-             'description' => 'Auxiliar del departamento de almacén y logística (4)'
             ]
         );
         $auxOperaciones4->assignRole('Auxiliar de Operaciones');
