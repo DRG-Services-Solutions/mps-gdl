@@ -1,4 +1,5 @@
 <x-app-layout>
+
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Gestión de Usuarios') }}
@@ -12,7 +13,7 @@
                     
                     {{-- Botón para crear nuevo usuario --}}
                     <div class="flex justify-end mb-4">
-                        <a href="{{ route('users.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="{{ route('users.edit') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                             {{ __('Crear Usuario') }}
                         </a>
                     </div>
