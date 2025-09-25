@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_category_id')->constrained();
-            $table->foreignId('medical_specialty_id')->constrained();
-            $table->foreignId('specialty_subcategory_id')->nullable()->constrained();
+            //$table->foreignId('product_category_id')->constrained();
+            //$table->foreignId('medical_specialty_id')->constrained();
+            //$table->foreignId('specialty_subcategory_id')->nullable()->constrained();
 
 
             $table->string('name');
