@@ -49,9 +49,14 @@
                         <!-- Roles -->
                         <div class="mt-4">
                             <x-input-label for="roles" :value="__('Roles')" />
-                            <select name="roles[]" id="roles" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" multiple>
+                            <select name="roles" id="roles" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+        
+                                <option value="" disabled selected>{{ __('Seleccione un Rol') }}</option> 
+        
                                 @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                    <option value="{{ $role->id }}" {{ old('roles') == $role->id ? 'selected' : '' }}>
+                                        {{ $role->name }}
+                                    </option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('roles')" class="mt-2" />
