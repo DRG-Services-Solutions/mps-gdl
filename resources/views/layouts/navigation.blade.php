@@ -44,6 +44,15 @@
                 </x-slot>
                 {{ __('Gestión de Usuarios') }}
             </x-nav-link>
+
+             <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+                <x-slot name="icon">
+                    <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
+                </x-slot>
+                {{ __('Gestión de Productos') }}
+            </x-nav-link>
+
+
         @endrole
         </div>
 
