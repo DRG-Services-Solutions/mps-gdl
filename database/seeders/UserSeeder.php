@@ -95,7 +95,7 @@ class UserSeeder extends Seeder
         $tecnicos1 = User::firstOrCreate(
             ['username' => 'tecnicos1'],
             ['email' => 'tecnicos1@mps.com',
-             'name' => 'Técnicos de Revisión', 
+             'name' => 'Tecnicos de Revisión', 
              'password' => $defaultPassword,
             ]
 
