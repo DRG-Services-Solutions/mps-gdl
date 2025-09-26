@@ -33,8 +33,7 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'roles' => ['required', 'array'],
-            'roles.*' => ['exists:roles,id'], // Se asegura que los IDs de rol existan
+            'roles' => ['required', 'exists:roles,id'], 
         ]);
 
         $username = strtolower($request->username);
@@ -47,10 +46,11 @@ class UserController extends Controller
         ]);
 
     
-        $roles = Role::whereIn('id', $request->roles)->get();
+        $role = Role::findOrFail($request->roles);
+
 
     
-        $user->assignRole($roles);
+        $user->assignRole($role);
    
 
         return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
