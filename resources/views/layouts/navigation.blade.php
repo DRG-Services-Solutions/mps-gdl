@@ -51,8 +51,6 @@
                 </x-slot>
                 {{ __('Gestión de Productos') }}
             </x-nav-link>
-
-
         @endrole
         </div>
 
