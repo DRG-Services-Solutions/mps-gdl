@@ -21,6 +21,10 @@ Route::middleware('auth')->group(function () {
 //Rutas protegidas por el administrador
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class);
+
+    Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+            ->middleware(['auth', 'verified']) 
+                ->name('users.toggle-status');
 });
 
 require __DIR__.'/auth.php';

@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
 
 class LoginRequest extends FormRequest
 {
@@ -41,15 +44,38 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
+        
+        $username = $this->string('username');
+        $password = $this->string('password');
+        $remember = $this->boolean('remember');
+        
+        $user = User::where('username', $username)->first();
+        
+        if ($user && Hash::check($password, $user->password)) {
+        
+            if (! $user->is_active) {
+            
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'username' => 'Comuníquese con su administrador, su cuenta fue desactivada.', 
+                ]);
+            }
+
+            Auth::login($user, $remember); 
+
+        } else {
+       
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'username' => trans('auth.failed'),
+                'username' => trans('auth.failed'), 
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+        
+        
     }
 
     /**
