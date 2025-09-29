@@ -46,7 +46,6 @@ class Product extends Model
         'unit_cost' => 'decimal:2',
     ];
 
-    // Relaciones
     public function category() {
         return $this->belongsTo(ProductCategory::class, 'product_category_id');
     }
