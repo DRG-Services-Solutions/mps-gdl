@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ManufacturerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MedicalSpecialtyController;
+use App\Http\Controllers\SubcategoryController;
 
 
 Route::get('/', function () {
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('manufacturers', ManufacturerController::class);
     Route::resource('categories', CategoryController::class);
     Route::resource('specialties', MedicalSpecialtyController::class);
+    Route::resource('subcategories', SubcategoryController::class);
 
 
 

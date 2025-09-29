@@ -47,6 +47,58 @@
                     {{ __('Gestión de Usuarios') }}
                 </x-nav-link>
 
+            <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+    
+                {{-- Botón Principal del Dropdown --}}
+                <button @click="open = !open" 
+                        class="flex items-center w-full px-3 py-2 text-sm font-medium leading-5 text-gray-700 transition duration-150 ease-in-out hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:text-gray-900 focus:bg-gray-50 {{ request()->routeIs('manufacturers.*', 'categories.*', 'subcategories.*', 'specialties.*') ? 'bg-gray-50 text-indigo-600' : '' }}">
+                    
+                    <i class="fas fa-sitemap w-5 h-5 mr-3"></i>
+                    {{ __('Inventario Maestro') }}
+                    
+                    {{-- Flecha de Alpine --}}
+                    <svg class="w-4 h-4 ml-auto transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                {{-- Contenido del Dropdown --}}
+                <div x-show="open" 
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="absolute z-50 w-full py-1 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                    
+                    {{-- Enlace: Fabricantes --}}
+                    <x-dropdown-link :href="route('manufacturers.index')">
+                        <i class="fas fa-industry w-4 h-4 mr-2"></i>
+                        {{ __('Fabricantes') }}
+                    </x-dropdown-link>
+
+                    {{-- Enlace: Categorías --}}
+                    <x-dropdown-link :href="route('categories.index')">
+                        <i class="fas fa-tags w-4 h-4 mr-2"></i>
+                        {{ __('Categorías') }}
+                    </x-dropdown-link>
+                    
+                    {{-- Enlace: Subcategorías --}}
+                    <x-dropdown-link :href="route('subcategories.index')">
+                        <i class="fas fa-layer-group w-4 h-4 mr-2"></i>
+                        {{ __('Subcategorías') }}
+                    </x-dropdown-link>
+                    
+                    {{-- Enlace: Especialidades Médicas --}}
+                    <x-dropdown-link :href="route('specialties.index')">
+                        <i class="fas fa-stethoscope w-4 h-4 mr-2"></i>
+                        {{ __('Especialidades') }}
+                    </x-dropdown-link>
+                </div>
+            </div>
+
+
                 <!-- Gestión de Productos con Dropdown -->
                 <div class="relative">
                     <!-- Botón principal de Productos -->
