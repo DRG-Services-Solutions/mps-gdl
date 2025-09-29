@@ -16,6 +16,16 @@ return new class extends Migration
             $table->foreignId('product_category_id')->nullable()->constrained()->nullOnDelete(); 
             $table->foreignId('medical_specialty_id')->nullable()->constrained()->nullOnDelete(); 
             $table->foreignId('specialty_subcategory_id')->nullable()->constrained()->nullOnDelete(); 
+            $table->foreignId('manufacturer_id')
+                ->nullable() 
+                ->constrained() 
+                ->onDelete('set null') 
+                ->after('id');
+            $table->foreignId('category_id')
+                ->nullable() 
+                ->constrained() 
+                ->onDelete('set null') 
+                ->after('manufacturer_id');
 
             $table->string('name');
             $table->string('code')->unique();

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ManufacturerController;
+use App\Http\Controllers\CategoryController;
 
 
 Route::get('/', function () {
@@ -27,6 +28,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     
     Route::resource('products', ProductController::class);
     Route::resource('manufacturers', ManufacturerController::class);
+    Route::resource('categories', CategoryController::class);
+
 
     Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
         ->middleware(['auth', 'verified']) 

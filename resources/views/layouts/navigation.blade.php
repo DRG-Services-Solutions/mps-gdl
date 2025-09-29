@@ -18,7 +18,7 @@
 </div>
 
 <nav @mouseenter="desktopSidebarOpen = true" @mouseleave="desktopSidebarOpen = false"
-     x-data="{ productsMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('specialties.*') || request()->routeIs('subcategories.*') ? 'true' : 'false' }} }"
+     x-data="{ productsMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('specialties.*') || request()->routeIs('subcategories.*') || request()->routeIs('manufacturers.*') ? 'true' : 'false' }} }"
      class="fixed inset-y-0 left-0 z-40 bg-white transition-all duration-300 transform -translate-x-full lg:translate-x-0 shadow-lg"
      :class="{ 'translate-x-0': mobileMenuOpen, 'lg:w-64': desktopSidebarOpen, 'lg:w-20': !desktopSidebarOpen }">
     
@@ -51,7 +51,7 @@
                 <div class="relative">
                     <!-- Botón principal de Productos -->
                     <button @click="productsMenuOpen = !productsMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('specialties.*') || request()->routeIs('subcategories.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('specialties.*') || request()->routeIs('subcategories.*') || request()->routeIs('manufacturers.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
                                 <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
@@ -86,24 +86,31 @@
                         </a>
 
                         <!-- Categorías -->
-                        <a href="#" 
+                        <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-folder fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Categorías') }}</span>
                         </a>
 
                         <!-- Especialidades -->
-                        <a href="#" 
+                        <a href="{{ route('specialties.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-star fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Especialidades') }}</span>
                         </a>
 
                         <!-- Subcategorías -->
-                        <a href="#" 
+                        <a href="{{ route('subcategories.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('subcategories.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-folder-tree fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Subcategorías') }}</span>
+                        </a>
+
+                        <!-- Fabricantes -->
+                        <a href="{{ route('manufacturers.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('manufacturers.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-industry fa-fw text-sm"></i>
+                            <span class="truncate">{{ __('Fabricantes') }}</span>
                         </a>
                     </div>
 
@@ -119,20 +126,25 @@
                             <i class="fas fa-box fa-fw text-sm"></i>
                             <span>{{ __('Productos') }}</span>
                         </a>
-                        <a href="#" 
+                        <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-folder fa-fw text-sm"></i>
                             <span>{{ __('Categorías') }}</span>
                         </a>
-                        <a href="#" 
+                        <a href="{{ route('specialties.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 {{ request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-star fa-fw text-sm"></i>
                             <span>{{ __('Especialidades') }}</span>
                         </a>
-                        <a href="#" 
+                        <a href="{{ route('subcategories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 {{ request()->routeIs('subcategories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-folder-tree fa-fw text-sm"></i>
                             <span>{{ __('Subcategorías') }}</span>
+                        </a>
+                        <a href="{{ route('manufacturers.index') }}" 
+                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 {{ request()->routeIs('manufacturers.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-industry fa-fw text-sm"></i>
+                            <span>{{ __('Fabricantes') }}</span>
                         </a>
                     </div>
                 </div>
