@@ -20,7 +20,7 @@
                                 {{ __('Categoría Principal') }} <span class="text-red-500">*</span>
                             </label>
                             <select name="category_id" id="category_id" required
-                                    class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('category_id') border-red-500 @enderror">
+                                    class="mt-1 block w-full  rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('category_id') border-red-500 @enderror">
                                 <option value="">-- Seleccionar Categoría --</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
                             </label>
                             <input type="text" name="name" id="name" required
                                    value="{{ old('name') }}"
-                                   class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
+                                   class="mt-1 block w-full  rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
                                    placeholder="Ej: Mano (para la categoría Osteosíntesis)">
                             @error('name')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -53,7 +53,7 @@
                                 {{ __('Descripción (Opcional)') }}
                             </label>
                             <textarea name="description" id="description" rows="2"
-                                      class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
+                                      class="mt-1 block w-full  rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
                                       placeholder="Detalles específicos de la subclasificación.">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
