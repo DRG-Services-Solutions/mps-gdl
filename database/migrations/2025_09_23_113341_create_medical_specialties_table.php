@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('medical_specialties', function (Blueprint $table) {
             $table->id();
             $table->string('name'); 
-            $table->string('code')->unique();
             $table->text('description');
-            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

@@ -15,7 +15,6 @@ class MedicalSpecialty extends Model
 
     public function products()
     {
-        // Se relaciona con Product usando la foreign key 'specialty_id' (como definimos antes)
         return $this->hasMany(Product::class, 'specialty_id'); 
     }
 }

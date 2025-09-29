@@ -14,7 +14,11 @@ return new class extends Migration
             $table->id();
             
             $table->foreignId('product_category_id')->nullable()->constrained()->nullOnDelete(); 
-            $table->foreignId('medical_specialty_id')->nullable()->constrained()->nullOnDelete(); 
+            $table->foreignId('specialty_id')
+                  ->nullable() 
+                  ->constrained('medical_specialties') 
+                  ->onDelete('set null');
+
             $table->foreignId('specialty_subcategory_id')->nullable()->constrained()->nullOnDelete(); 
 
             $table->foreignId('manufacturer_id')
