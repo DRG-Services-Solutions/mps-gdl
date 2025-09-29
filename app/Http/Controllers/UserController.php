@@ -7,6 +7,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\RedirectResponse; 
 
 class UserController extends Controller
 {
@@ -106,5 +107,13 @@ class UserController extends Controller
     {
         $user->delete();
         return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
+    }
+
+    public function toggleStatus(User $user): RedirectResponse
+    {
+       $user->is_active = !$user->is_active;
+        $user->save();
+
+        return redirect()->back()->with('success', 'El estado del usuario ha sido actualizado.');
     }
 }

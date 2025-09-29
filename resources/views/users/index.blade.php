@@ -1,5 +1,5 @@
 <x-app-layout>
-    
+
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
@@ -79,6 +79,9 @@
                                         {{ __('Roles') }}
                                     </th>
                                     <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                       {{__('Status') }}
+                                    </th>
+                                    <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         {{ __('Acciones') }}
                                     </th>
                                 </tr>
@@ -121,6 +124,27 @@
                                                 @endforelse
                                             </div>
                                         </td>
+                                         @if(Auth::user()->hasRole('admin') && Auth::id() === $user->id)
+                                            <td data-label="Status" class="px-6 py-4 whitespace-nowrap text-center">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    Activo (Admin)
+                                                </span>
+                                            </td>
+                                        @else
+                                            <td data-label="Status" class="px-6 py-4 whitespace-nowrap text-center">
+                                                <form action="{{ route('users.toggle-status', $user) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <label class="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" onchange="this.closest('form').submit()" class="sr-only peer" {{ $user->is_active ? 'checked' : '' }}>
+                                                        <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                        <span class="ml-3 text-sm font-medium text-gray-700">
+                                                            {{ $user->is_active ? 'Activo' : 'Inactivo' }}
+                                                        </span>
+                                                    </label>
+                                                </form>
+                                            </td>
+                                        @endif
                                         <td class="px-6 py-4 text-right">
                                             <div class="flex items-center justify-end space-x-2">
                                                 <a href="{{ route('users.edit', $user->id) }}" 
@@ -130,12 +154,12 @@
                                                     {{ __('Editar') }}
                                                 </a>
                                                 
-                                                <button @click="deleteUser({{ $user->id }}, '{{ $user->name }}')"
+                                               <!-- <button @click="deleteUser({{ $user->id }}, '{{ $user->name }}')"
                                                         class="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200">
                                                     <i class="fas fa-trash-alt w-4 h-4 mr-1.5"></i>
 
                                                     {{ __('Eliminar') }}
-                                                </button>
+                                                </button> -->
                                             </div>
                                         </td>
                                     </tr>

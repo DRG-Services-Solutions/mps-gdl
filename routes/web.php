@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProductController;
 
 Route::get('/', function () {
     return view('auth.login');
@@ -18,9 +19,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-//Rutas protegidas por el administrador
+
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class);
+    
+    Route::resource('products', ProductController::class);
+
+    Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
+        ->middleware(['auth', 'verified']) 
+        ->name('users.toggle-status');
 });
 
 require __DIR__.'/auth.php';
