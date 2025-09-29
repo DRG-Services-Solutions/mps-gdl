@@ -22,7 +22,7 @@
                             </label>
                             <input type="text" name="name" id="name" required
                                    value="{{ old('name') }}"
-                                   class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
+                                   class="mt-1 block w-full rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
                                    placeholder="Ej: Consumibles Quirúrgicos">
                             @error('name')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -35,7 +35,7 @@
                                 {{ __('Descripción (Opcional)') }}
                             </label>
                             <textarea name="description" id="description" rows="3"
-                                      class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
+                                      class="mt-1 block w-full rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror"
                                       placeholder="Detalles sobre qué tipo de productos abarca esta clasificación.">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>

@@ -62,4 +62,7 @@ class Product extends Model
     {
         return $this->belongsTo(Manufacturer::class);
     }
+
+    
+
 }
