@@ -9,11 +9,7 @@
                     {{ __('Administra los sets, equipos y consumibles utilizados en procedimientos MPS.') }}
                 </p>
             </div>
-            <a href="{{ route('products.create') }}" 
-                class="inline-flex items-center px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
-                <i class="fas fa-plus w-5 h-5 mr-2"></i>
-                {{ __('Registrar Nuevo Producto') }}
-            </a>
+           
         </div>
     </x-slot>
 
@@ -29,6 +25,12 @@
                                 <p class="text-sm text-gray-600">{{ $products->total() }} {{ __('artículos registrados') }}</p>
                             </div>
                         </div>
+                        <a href="{{ route('products.create') }}" 
+                           class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
+                            <i class="fas fa-plus w-5 h-5 mr-2"></i>
+
+                            {{ __('Crear Producto') }}
+                        </a>
                     </div>
                 </div>
 
