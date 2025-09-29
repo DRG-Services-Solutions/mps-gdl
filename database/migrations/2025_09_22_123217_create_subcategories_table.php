@@ -20,7 +20,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
             $table->unique(['category_id', 'name']); 
-
         });
     }
 

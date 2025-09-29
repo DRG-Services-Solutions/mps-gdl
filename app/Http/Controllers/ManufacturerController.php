@@ -12,7 +12,7 @@ class ManufacturerController extends Controller
      */
     public function index()
     {
-        $manufacturers = Manufacturer::all();
+        $manufacturers = Manufacturer::latest()->paginate(10);
         return view('manufacturers.index', compact('manufacturers'));
     }
 
@@ -36,7 +36,7 @@ class ManufacturerController extends Controller
         ]);
         Manufacturer::create($validatedData);
         return redirect()->route('manufacturers.index')
-                         ->with('success', 'Manufacturer created successfully.');
+                         ->with('success', 'Fabricante agregado crrectamente.');
     }
 
     /**

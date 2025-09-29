@@ -3,10 +3,10 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-gray-900 leading-tight">
+                <h2 class="text-xl font-bold text-[#8FC74A] leading-tight">
                     {{ __('Gestión de Usuarios') }}
                 </h2>
-                <p class="mt-1 text-sm text-gray-600">
+                <p class="mt-1 text-sm text-[#307ABD]">
                     {{ __('Administra los usuarios del sistema y sus permisos') }}
                 </p>
             </div>
