@@ -57,4 +57,8 @@ class Product extends Model
     public function specialtySubcategory() {
         return $this->belongsTo(SpecialtySubcategory::class, 'specialty_subcategory_id');
     }
+    
+    public function manufacturer() {
+        return $this->belongsTo(Manufacturer::class);
+    }
 }

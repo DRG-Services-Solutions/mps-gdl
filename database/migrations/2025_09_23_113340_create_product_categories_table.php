@@ -14,6 +14,12 @@ return new class extends Migration
         Schema::create('product_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->foreignId('manufacturer_id')
+                  ->nullable() 
+                  ->constrained() 
+                  ->onDelete('set null') 
+                  ->after('id');
+            
             $table->string('code')->unique();
             $table->text('description');
             $table->boolean('rfid_trackable')->default(false);
@@ -30,5 +36,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('product_categories');
+
     }
 };
