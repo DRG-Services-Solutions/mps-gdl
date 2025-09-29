@@ -45,7 +45,7 @@
                 {{ __('Gestión de Usuarios') }}
             </x-nav-link>
 
-             <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
+             <x-nav-link :href="route('products.index')" :active="request()->routeIs('users.*')">
                 <x-slot name="icon">
                     <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
                 </x-slot>
