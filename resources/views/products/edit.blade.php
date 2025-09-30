@@ -38,7 +38,7 @@
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700">{{ __('Nombre del Producto') }}</label>
                             <input type="text" name="name" id="name" value="{{ old('name', $product->name) }}" required
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('name') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-lg  shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('name') border-red-500 @enderror">
                             @error('name')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -48,7 +48,7 @@
                         <div>
                             <label for="code" class="block text-sm font-medium text-gray-700">{{ __('Código/Referencia') }}</label>
                             <input type="text" name="code" id="code" value="{{ old('code', $product->code) }}" required
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('code') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-lg  shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('code') border-red-500 @enderror">
                             @error('code')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -58,7 +58,7 @@
                         <div>
                             <label for="unit_cost" class="block text-sm font-medium text-gray-700">{{ __('Costo Unitario ($)') }}</label>
                             <input type="number" step="0.01" min="0" name="unit_cost" id="unit_cost" value="{{ old('unit_cost', $product->unit_cost) }}"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('unit_cost') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-lg  shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('unit_cost') border-red-500 @enderror">
                             @error('unit_cost')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -68,7 +68,7 @@
                          <div>
                             <label for="manufacturer_id" class="block text-sm font-medium text-gray-700">{{ __('Categoría del Producto') }}</label>
                             <select name="manufacturer_id" id="manufacturer_id"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('manufacturer_id') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-lg  shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('manufacturer_id') border-red-500 @enderror">
                                 <option value="">{{ __('Seleccione Fabricante') }}</option>
                                 @foreach ($manufacturers as $manufacturer)
                                     <option value="{{ $manufacturer->id }}" {{ old('manufacturer_id', $product->manufacturer_id) == $manufacturer->id ? 'selected' : '' }}>
@@ -82,7 +82,7 @@
                         <div>
                             <label for="product_category_id" class="block text-sm font-medium text-gray-700">{{ __('Categoría del Producto') }}</label>
                             <select name="product_category_id" id="product_category_id"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('product_category_id') border-red-500 @enderror">
+                                class="mt-1 block w-full rounded-lg  shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('product_category_id') border-red-500 @enderror">
                                 <option value="">{{ __('Seleccione una categoría') }}</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}" {{ old('product_category_id', $product->product_category_id) == $category->id ? 'selected' : '' }}>
