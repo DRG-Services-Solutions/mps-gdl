@@ -7,28 +7,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            
+
             // ==========================================================
             // CLAVES FORÁNEAS (CLASIFICACIÓN)
             // ==========================================================
-            
+
             $table->foreignId('manufacturer_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete(); 
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); 
             $table->foreignId('subcategory_id')->nullable()->constrained()->nullOnDelete(); 
             $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 
-            
+
             // ==========================================================
             // IDENTIDAD Y CÓDIGOS
             // ==========================================================
+
             $table->string('name');
             $table->string('code')->unique();
-            
-            // NOTA: Eliminamos 'manufacturer' (string) porque es redundante con manufacturer_id.
+
             $table->string('model')->nullable();
             $table->string('serial_number')->nullable();
             $table->text('description')->nullable();
@@ -36,12 +35,12 @@ return new class extends Migration
             // ==========================================================
             // GESTIÓN E INVENTARIO
             // ==========================================================
-            
+
             // Características de la Identidad de Producto (Tipo)
             $table->boolean('requires_sterilization')->default(false);
             $table->boolean('is_consumable')->default(false);
             $table->boolean('is_single_use')->default(false);
-            
+
             // Trazabilidad (RFID)
             $table->boolean('rfid_enabled')->default(false);
             $table->string('rfid_tag_id')->nullable()->unique(); // Tag UID o Identificador
@@ -56,7 +55,6 @@ return new class extends Migration
             $table->date('expiration_date')->nullable();
             $table->string('lot_number')->nullable();
             $table->longText('specifications')->nullable(); 
-            
             // Estado y Tiempos
             $table->enum('status', ['active', 'inactive', 'maintenance', 'retired'])->default('active');
 

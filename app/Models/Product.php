@@ -13,12 +13,12 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'product_category_id',
-        'medical_specialty_id',
-        'specialty_subcategory_id',
+        'category_id',
+        'specialty_id', 
+        'subcategory_id',
+        'manufacturer_id',
         'name',
         'code',
-        'manufacturer',
         'model',
         'serial_number',
         'description',
@@ -46,28 +46,24 @@ class Product extends Model
         'unit_cost' => 'decimal:2',
     ];
 
+    // Relaciones corregidas
     public function category() {
-        return $this->belongsTo(ProductCategory::class, 'product_category_id');
+        return $this->belongsTo(ProductCategory::class, 'category_id');
     }
 
     public function medicalSpecialty() {
-        return $this->belongsTo(MedicalSpecialty::class, 'medical_specialty_id');
-    }
-
-    public function specialtySubcategory() {
-        return $this->belongsTo(SpecialtySubcategory::class, 'specialty_subcategory_id');
-    }
-    
-    public function manufacturer() 
-    {
-        return $this->belongsTo(Manufacturer::class);
+        return $this->belongsTo(MedicalSpecialty::class, 'specialty_id');
     }
 
     public function subcategory()
     {
-        return $this->belongsTo(Subcategory::class);
+        return $this->belongsTo(Subcategory::class, 'subcategory_id');
     }
-
     
-
-}
+    public function manufacturer() 
+    {
+        return $this->belongsTo(Manufacturer::class);    
+    }
+    
+    }
+    

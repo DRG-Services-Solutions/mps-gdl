@@ -32,7 +32,7 @@ class SubcategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'category_id' => 'required|exists:categories,id', // Debe existir en la tabla categories
+            'category_id' => 'required|exists:product_categories,id', // Debe existir en la tabla categories
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);

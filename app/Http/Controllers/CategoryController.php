@@ -13,6 +13,8 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::withCount('products')->latest()->paginate(10); 
+        $totalCategories = $categories->total();
+
         return view('categories.index', compact('categories'));
     }
 
@@ -30,7 +32,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name',
+            'name' => 'required|string|max:255|unique:product_categories,name',
             'description' => 'nullable|string',
         ]);
 
@@ -62,7 +64,7 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'name' => 'required|string|max:255|unique:product_categories,name,' . $category->id,
             'description' => 'nullable|string',
         ]);
 
