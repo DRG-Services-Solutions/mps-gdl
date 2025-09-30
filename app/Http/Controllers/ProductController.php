@@ -104,7 +104,6 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $request->validate([
-            // CORRECCIÓN 3 (Aplicada): Sincronizar nombres de campos
             'manufacturer_id' => 'nullable|exists:manufacturers,id',
             'category_id' => 'nullable|exists:categories,id',
             'specialty_id' => 'nullable|exists:medical_specialties,id',
@@ -112,7 +111,6 @@ class ProductController extends Controller
             
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:products,code,' . $product->id, 
-            // Eliminamos 'manufacturer' (string)
             'model' => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255',
             'description' => 'nullable|string',

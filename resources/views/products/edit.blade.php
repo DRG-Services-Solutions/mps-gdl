@@ -54,7 +54,7 @@
                             @enderror
                         </div>
 
-                        {{-- Costo Unitario --}}
+                        {{-- Costo --}}
                         <div>
                             <label for="unit_cost" class="block text-sm font-medium text-gray-700">{{ __('Costo Unitario ($)') }}</label>
                             <input type="number" step="0.01" min="0" name="unit_cost" id="unit_cost" value="{{ old('unit_cost', $product->unit_cost) }}"
@@ -65,10 +65,17 @@
                         </div>
 
                         {{-- Fabricante --}}
-                        <div>
-                            <label for="manufacturer" class="block text-sm font-medium text-gray-700">{{ __('Fabricante') }}</label>
-                            <input type="text" name="manufacturer" id="manufacturer" value="{{ old('manufacturer', $product->manufacturer) }}"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                         <div>
+                            <label for="manufacturer_id" class="block text-sm font-medium text-gray-700">{{ __('Categoría del Producto') }}</label>
+                            <select name="manufacturer_id" id="manufacturer_id"
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 @error('manufacturer_id') border-red-500 @enderror">
+                                <option value="">{{ __('Seleccione Fabricante') }}</option>
+                                @foreach ($manufacturers as $manufacturer)
+                                    <option value="{{ $manufacturer->id }}" {{ old('manufacturer_id', $product->manufacturer_id) == $manufacturer->id ? 'selected' : '' }}>
+                                        {{ $manufacturer->name }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
                         {{-- Categoría --}}
