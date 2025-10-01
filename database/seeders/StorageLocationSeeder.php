@@ -1,0 +1,218 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class StorageLocationSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $now = Carbon::now();
+        
+        $locations = [
+            // Almacenes principales
+            [
+                'code' => 'ALM-PRINCIPAL',
+                'name' => 'Almacén Principal',
+                'type' => 'warehouse',
+                'parent_location_id' => null,
+                'building' => 'Edificio A',
+                'floor' => 'Planta Baja',
+                'room' => null,
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Almacén general de productos médicos y quirúrgicos',
+                'requires_authorization' => false,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'ALM-INSTRUMENTAL',
+                'name' => 'Almacén de Instrumental',
+                'type' => 'warehouse',
+                'parent_location_id' => null,
+                'building' => 'Edificio A',
+                'floor' => 'Planta Baja',
+                'room' => 'A-102',
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Almacén dedicado a instrumental quirúrgico reutilizable',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            
+            // Quirófanos
+            [
+                'code' => 'QX-01',
+                'name' => 'Quirófano 1',
+                'type' => 'operating_room',
+                'parent_location_id' => null,
+                'building' => 'Edificio B',
+                'floor' => 'Segundo Piso',
+                'room' => 'B-201',
+                'area' => 'Área Quirúrgica',
+                'shelf' => null,
+                'description' => 'Quirófano para cirugías generales y ortopedia',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'QX-02',
+                'name' => 'Quirófano 2',
+                'type' => 'operating_room',
+                'parent_location_id' => null,
+                'building' => 'Edificio B',
+                'floor' => 'Segundo Piso',
+                'room' => 'B-202',
+                'area' => 'Área Quirúrgica',
+                'shelf' => null,
+                'description' => 'Quirófano para cirugías cardiovasculares',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'QX-03',
+                'name' => 'Quirófano 3',
+                'type' => 'operating_room',
+                'parent_location_id' => null,
+                'building' => 'Edificio B',
+                'floor' => 'Segundo Piso',
+                'room' => 'B-203',
+                'area' => 'Área Quirúrgica',
+                'shelf' => null,
+                'description' => 'Quirófano para neurocirugía',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            
+            // Área de esterilización
+            [
+                'code' => 'CEYE-PRINCIPAL',
+                'name' => 'Central de Equipos y Esterilización',
+                'type' => 'sterilization',
+                'parent_location_id' => null,
+                'building' => 'Edificio B',
+                'floor' => 'Planta Baja',
+                'room' => 'B-105',
+                'area' => 'CEYE',
+                'shelf' => null,
+                'description' => 'Área de limpieza, desinfección y esterilización de instrumental',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'CEYE-RECEPCION',
+                'name' => 'CEYE - Área Sucia',
+                'type' => 'sterilization',
+                'parent_location_id' => null,
+                'building' => 'Edificio B',
+                'floor' => 'Planta Baja',
+                'room' => 'B-105-A',
+                'area' => 'Recepción',
+                'shelf' => null,
+                'description' => 'Área de recepción de instrumental usado',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            
+            // Farmacia
+            [
+                'code' => 'FARM-PRINCIPAL',
+                'name' => 'Farmacia Hospitalaria',
+                'type' => 'pharmacy',
+                'parent_location_id' => null,
+                'building' => 'Edificio A',
+                'floor' => 'Planta Baja',
+                'room' => 'A-110',
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Farmacia principal del hospital',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            
+            // Bodegas
+            [
+                'code' => 'BOD-CONSUMIBLES',
+                'name' => 'Bodega de Consumibles',
+                'type' => 'storage',
+                'parent_location_id' => null,
+                'building' => 'Edificio C',
+                'floor' => 'Sótano',
+                'room' => 'C-S01',
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Bodega para materiales de curación y consumibles desechables',
+                'requires_authorization' => false,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'code' => 'BOD-IMPLANTES',
+                'name' => 'Bodega de Implantes',
+                'type' => 'storage',
+                'parent_location_id' => null,
+                'building' => 'Edificio A',
+                'floor' => 'Planta Baja',
+                'room' => 'A-103',
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Almacenamiento de implantes y prótesis',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            
+            // Ubicaciones externas
+            [
+                'code' => 'EXT-PRESTAMO',
+                'name' => 'Préstamo Externo',
+                'type' => 'external',
+                'parent_location_id' => null,
+                'building' => null,
+                'floor' => null,
+                'room' => null,
+                'area' => null,
+                'shelf' => null,
+                'description' => 'Ubicación temporal para instrumental en préstamo a otras instituciones',
+                'requires_authorization' => true,
+                'is_active' => true,
+                'responsible_user_id' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+        ];
+
+        DB::table('storage_locations')->insert($locations);
+    }
+}

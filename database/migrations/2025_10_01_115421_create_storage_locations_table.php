@@ -19,12 +19,12 @@ return new class extends Migration
             
             // Tipo de ubicación
             $table->enum('type', [
-                'warehouse',        // Almacén general
-                'operating_room',   // Quirófano
-                'sterilization',    // Área de esterilización
-                'pharmacy',         // Farmacia
-                'storage',          // Bodega
-                'external'          // Ubicación externa (préstamo)
+                'warehouse',        
+                'operating_room',   
+                'sterilization',    
+                'pharmacy',         
+                'storage',          
+                'external'          
             ])->default('warehouse');
             
             // Jerarquía (ubicación padre)
@@ -34,15 +34,15 @@ return new class extends Migration
                   ->nullOnDelete();
             
             // Ubicación física detallada
-            $table->string('building')->nullable(); // Edificio
-            $table->string('floor')->nullable();    // Piso
-            $table->string('room')->nullable();     // Sala/Cuarto
-            $table->string('area')->nullable();     // Área específica
-            $table->string('shelf')->nullable();    // Estante
+            $table->string('building')->nullable(); 
+            $table->string('floor')->nullable();    
+            $table->string('room')->nullable();     
+            $table->string('area')->nullable();     
+            $table->string('shelf')->nullable();    
             
             // Información adicional
             $table->text('description')->nullable();
-            $table->boolean('requires_authorization')->default(false); // Requiere autorización especial
+            $table->boolean('requires_authorization')->default(false); 
             $table->boolean('is_active')->default(true);
             
             // Responsable de la ubicación
