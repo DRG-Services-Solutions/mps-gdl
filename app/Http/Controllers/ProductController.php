@@ -46,100 +46,65 @@ class ProductController extends Controller
     // STORE 
     // ==========================================================
     public function store(Request $request): RedirectResponse
-{
+    {
     $validated = $request->validate([
+        // Relaciones
         'manufacturer_id' => 'nullable|exists:manufacturers,id',
         'category_id' => 'nullable|exists:product_categories,id',
         'specialty_id' => 'nullable|exists:medical_specialties,id',
         'subcategory_id' => 'nullable|exists:subcategories,id',
         
+        // Información del catálogo
         'name' => 'required|string|max:255',
         'code' => 'required|string|max:255|unique:products,code',
         'model' => 'nullable|string|max:255',
         'description' => 'nullable|string',
+        'specifications' => 'nullable|string',
         
-        // Tipo de trazabilidad: RFID o Número de Serie
-        'tracking_type' => 'required|in:stock,rfid,both,none',
-        'rfid_tag_id' => 'nullable|string|size:24|unique:products,rfid_tag_id',
-        'serial_number' => 'nullable|string|max:255|unique:products,serial_number',
-        'generate_rfid' => 'nullable|boolean',
+        // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
+        'tracking_type' => 'required|in:stock,rfid,serial,none',
         
+        // Características del producto
         'requires_sterilization' => 'nullable|boolean',
         'is_consumable' => 'nullable|boolean',
         'is_single_use' => 'nullable|boolean',
         
+        // Información de inventario general
         'unit_cost' => 'nullable|numeric|min:0',
         'minimum_stock' => 'nullable|integer|min:0',
-        'current_stock' => 'nullable|integer|min:0',
-        'storage_location' => 'nullable|string|max:255',
         
-        'expiration_date' => 'nullable|date|after_or_equal:today',
-        'lot_number' => 'nullable|string|max:255',
-        'specifications' => 'nullable|string',
-        
-        'status' => 'nullable|in:active,inactive,maintenance,discontinued',
+        // Estado del producto en catálogo
+        'status' => 'nullable|in:active,inactive,discontinued',
     ]);
     
-    // Validaciones de negocio
-    $requiresSterilization = $request->boolean('requires_sterilization');
-    $trackingType = $validated['tracking_type'];
-    
-    // Si requiere esterilización, DEBE tener número de serie (instrumental reutilizable)
-    if ($requiresSterilization && empty($validated['serial_number'])) {
+    // Validación de negocio: coherencia entre características
+    if ($request->boolean('requires_sterilization') && $validated['tracking_type'] !== 'serial') {
         return back()->withErrors([
-            'serial_number' => 'Los instrumentales que requieren esterilización deben tener número de serie de fábrica'
+            'tracking_type' => 'Los instrumentales que requieren esterilización deben usar tracking por número de serie'
         ])->withInput();
     }
     
-    // Si usa tracking RFID, debe tener EPC (consumible/desechable)
-    if (in_array($trackingType, ['rfid', 'both'])) {
-        if (empty($validated['rfid_tag_id']) && !$request->boolean('generate_rfid')) {
-            return back()->withErrors([
-                'rfid_tag_id' => 'Debe proporcionar un EPC o marcar "Generar automáticamente"'
-            ])->withInput();
-        }
-    }
-    
-    // Los productos con RFID NO deben tener serial (son mutuamente excluyentes)
-    if (!empty($validated['rfid_tag_id']) && !empty($validated['serial_number'])) {
+    if ($request->boolean('is_single_use') && $validated['tracking_type'] === 'serial') {
         return back()->withErrors([
-            'tracking_type' => 'Un producto solo puede tener RFID O número de serie, no ambos'
+            'tracking_type' => 'Los productos de un solo uso no deberían usar número de serie'
         ])->withInput();
     }
     
     // Manejo de checkboxes
-    $validated['rfid_enabled'] = in_array($trackingType, ['rfid', 'both']) && !$requiresSterilization;
+    $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
     $validated['is_consumable'] = $request->boolean('is_consumable');
-    $validated['requires_sterilization'] = $requiresSterilization;
     $validated['is_single_use'] = $request->boolean('is_single_use');
     
     // Valores por defecto
     $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
-    $validated['current_stock'] = $validated['current_stock'] ?? 0;
     $validated['status'] = $validated['status'] ?? 'active';
-
-    // Crear producto
-    $productData = array_filter($validated, function($key) {
-        return $key !== 'generate_rfid';
-    }, ARRAY_FILTER_USE_KEY);
     
-    $product = Product::create($productData);
+    // Crear producto en catálogo (sin EPCs ni seriales individuales)
+    $product = Product::create($validated);
     
-    // Generar RFID solo si se solicitó y no tiene serial
-    if ($request->boolean('generate_rfid') && 
-        empty($validated['rfid_tag_id']) && 
-        empty($product->serial_number)) {
-        
-        $epc = EPCGenerator::generate($product->id, $product->category_id ?? 0);
-        $product->update([
-            'rfid_tag_id' => $epc,
-            'rfid_enabled' => true
-        ]);
-    }
-
     return redirect()->route('products.index')
-        ->with('success', 'Producto creado correctamente.');
-    }
+        ->with('success', 'Producto agregado al catálogo correctamente. Ahora puede registrar entradas de inventario.');
+}
 
     // ==========================================================
     // SHOW
