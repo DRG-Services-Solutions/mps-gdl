@@ -94,8 +94,9 @@
                                     {{ __('Número de Serie') }}
                                 </label>
                                 <input type="text" name="serial_number" id="serial_number" value="{{ old('serial_number') }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('serial_number') border-red-500 @enderror"
                                        placeholder="{{ __('Opcional') }}">
+                                @error('serial_number')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Descripción --}}
@@ -111,6 +112,7 @@
                         </div>
                     </div>
 
+                    {{-- SECCIÓN 2: CLASIFICACIÓN --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-sitemap text-indigo-600 text-xl mr-3"></i>
@@ -300,6 +302,137 @@
                                     </span>
                                 </label>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- ✨ NUEVA SECCIÓN: TRACKING Y RFID --}}
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
+                            <i class="fas fa-satellite-dish text-indigo-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Control y Trazabilidad') }}</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- Tipo de Rastreo (NUEVO CAMPO IMPORTANTE) --}}
+                            <div>
+                                <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-radar text-gray-400 mr-2"></i>
+                                    {{ __('Tipo de Rastreo') }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <select name="tracking_type" id="tracking_type" required
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
+                                    <option value="stock" {{ old('tracking_type', 'stock') == 'stock' ? 'selected' : '' }}>
+                                        📦 {{ __('Solo por Stock') }}
+                                    </option>
+                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
+                                        📡 {{ __('Solo por RFID') }}
+                                    </option>
+                                    <option value="both" {{ old('tracking_type') == 'both' ? 'selected' : '' }}>
+                                        🔄 {{ __('Stock y RFID') }}
+                                    </option>
+                                    <option value="none" {{ old('tracking_type') == 'none' ? 'selected' : '' }}>
+                                        🚫 {{ __('Sin rastreo') }}
+                                    </option>
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Define cómo se rastreará este producto en el sistema') }}
+                                </p>
+                                @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Tag RFID --}}
+                            <div>
+                                <label for="rfid_tag_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-microchip text-gray-400 mr-2"></i>
+                                    {{ __('ID de Etiqueta RFID') }}
+                                </label>
+                                <input type="text" name="rfid_tag_id" id="rfid_tag_id" value="{{ old('rfid_tag_id') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('rfid_tag_id') border-red-500 @enderror"
+                                       placeholder="{{ __('Ej: RF-12345678') }}">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Solo si el producto tiene etiqueta RFID asignada') }}
+                                </p>
+                                @error('rfid_tag_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ✨ NUEVA SECCIÓN: LOTE Y CADUCIDAD --}}
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
+                            <i class="fas fa-calendar-alt text-indigo-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Información de Lote y Caducidad') }}</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {{-- Número de Lote --}}
+                            <div>
+                                <label for="lot_number" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-hashtag text-gray-400 mr-2"></i>
+                                    {{ __('Número de Lote') }}
+                                </label>
+                                <input type="text" name="lot_number" id="lot_number" value="{{ old('lot_number') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                                       placeholder="{{ __('Ej: LOTE-2024-001') }}">
+                            </div>
+
+                            {{-- Fecha de Caducidad --}}
+                            <div>
+                                <label for="expiration_date" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-hourglass-end text-gray-400 mr-2"></i>
+                                    {{ __('Fecha de Caducidad') }}
+                                </label>
+                                <input type="date" name="expiration_date" id="expiration_date" value="{{ old('expiration_date') }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('expiration_date') border-red-500 @enderror">
+                                @error('expiration_date')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Estado --}}
+                            <div>
+                                <label for="status" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-toggle-on text-gray-400 mr-2"></i>
+                                    {{ __('Estado del Producto') }}
+                                </label>
+                                <select name="status" id="status"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>
+                                        ✅ {{ __('Activo') }}
+                                    </option>
+                                    <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>
+                                        ⏸️ {{ __('Inactivo') }}
+                                    </option>
+                                    <option value="maintenance" {{ old('status') == 'maintenance' ? 'selected' : '' }}>
+                                        🔧 {{ __('En Mantenimiento') }}
+                                    </option>
+                                    <option value="discontinued" {{ old('status') == 'discontinued' ? 'selected' : '' }}>
+                                        🚫 {{ __('Descontinuado') }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ✨ NUEVA SECCIÓN: ESPECIFICACIONES (OPCIONAL) --}}
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
+                            <i class="fas fa-list-ul text-indigo-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Especificaciones Técnicas (Opcional)') }}</h3>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                            <p class="text-sm text-gray-600 mb-3">
+                                <i class="fas fa-info-circle text-indigo-500 mr-1"></i>
+                                {{ __('Agregue especificaciones técnicas adicionales del producto (dimensiones, peso, materiales, etc.)') }}
+                            </p>
+                            <textarea name="specifications" id="specifications" rows="4"
+                                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                                      placeholder="{{ __('Ejemplo: Dimensiones: 15cm x 5cm x 3cm, Peso: 200g, Material: Acero inoxidable quirúrgico...') }}">{{ old('specifications') }}</textarea>
+                            <p class="mt-2 text-xs text-gray-500">
+                                💡 {{ __('Puede incluir cualquier información técnica relevante sobre el producto') }}
+                            </p>
                         </div>
                     </div>
 
