@@ -4,10 +4,10 @@
             <div class="flex items-center space-x-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900 leading-tight">
-                        {{ __('Catálogo de Productos Quirúrgicos') }}
+                        {{ __('Catálogo de Productos') }}
                     </h2>
                     <p class="mt-1 text-sm text-gray-600">
-                        {{ __('Administra equipos y consumibles utilizados en procedimientos MPS') }}
+                        {{ __('Fichas maestras de productos quirúrgicos y consumibles') }}
                     </p>
                 </div>
             </div>
@@ -19,22 +19,22 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 
                 <!-- Header Section -->
-                <div class="px-6 py-4 bg-gradient-to-r from-teal-50 to-cyan-50 border-b border-gray-200">
+                <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="flex-shrink-0">
-                                <i class="fas fa-boxes text-teal-600 text-2xl"></i>
+                                <i class="fas fa-book text-indigo-600 text-2xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ __('Lista de Artículos') }}</h3>
-                                <p class="text-sm text-gray-600">{{ $products->total() }} {{ __('artículos registrados') }}</p>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ __('Catálogo Maestro') }}</h3>
+                                <p class="text-sm text-gray-600">{{ $products->total() }} {{ __('productos registrados') }}</p>
                             </div>
                         </div>
                         
                         <a href="{{ route('products.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
                             <i class="fas fa-plus mr-2"></i>
-                            {{ __('Crear Producto') }}
+                            {{ __('Agregar al Catálogo') }}
                         </a>
                     </div>
                 </div>
@@ -68,14 +68,14 @@
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                                     {{ __('Categoría') }}
                                 </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
-                                    {{ __('Subcategoría') }}
-                                </th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                    {{ __('Especialidad') }}
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    {{ __('Tipo de Tracking') }}
                                 </th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                    {{ __('Stock') }}
+                                    {{ __('Stock Actual') }}
+                                </th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
+                                    {{ __('Estado') }}
                                 </th>
                                 <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     {{ __('Acciones') }}
@@ -89,19 +89,20 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center space-x-3">
                                             <div class="flex-shrink-0">
-                                                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                                                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                                                     <i class="fas fa-box text-white text-sm"></i>
                                                 </div>
                                             </div>
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
                                                 <div class="text-xs text-gray-500 flex items-center space-x-2">
-                                                    <span>Ref: {{ $product->code ?? 'N/A' }}</span>
-                                                    @if($product->rfid_enabled)
-                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                            <i class="fas fa-wifi mr-1 text-xs"></i>
-                                                            RFID
-                                                        </span>
+                                                    <span class="flex items-center">
+                                                        <i class="fas fa-barcode mr-1"></i>
+                                                        {{ $product->code }}
+                                                    </span>
+                                                    @if($product->model)
+                                                        <span class="text-gray-400">|</span>
+                                                        <span>{{ $product->model }}</span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -121,51 +122,85 @@
                                                 {{ $product->category->name }}
                                             </span>
                                         @else
-                                            <span class="text-sm text-gray-400">Sin categoría</span>
+                                            <span class="text-sm text-gray-400">-</span>
                                         @endif
                                     </td>
 
-                                    <!-- Subcategoría -->
-                                    <td class="px-6 py-4 hidden xl:table-cell">
-                                        @if($product->subcategory)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                                <i class="fas fa-layer-group mr-1 text-xs"></i>
-                                                {{ $product->subcategory->name }}
-                                            </span>
-                                        @else
-                                            <span class="text-sm text-gray-400">N/A</span>
-                                        @endif
-                                    </td>
-
-                                    <!-- Especialidad -->
-                                    <td class="px-6 py-4">
-                                        @if($product->medicalSpecialty)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                                                <i class="fas fa-stethoscope mr-1 text-xs"></i>
-                                                {{ $product->medicalSpecialty->name }}
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                General
-                                            </span>
-                                        @endif
-                                    </td>
-
-                                    <!-- Stock -->
+                                    <!-- Tipo de Tracking -->
                                     <td class="px-6 py-4 text-center">
+                                        @switch($product->tracking_type)
+                                            @case('rfid')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <i class="fas fa-wifi mr-1"></i>
+                                                    RFID
+                                                </span>
+                                                @break
+                                            @case('serial')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    <i class="fas fa-hashtag mr-1"></i>
+                                                    Serial
+                                                </span>
+                                                @break
+                                            @case('stock')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-boxes mr-1"></i>
+                                                    Stock
+                                                </span>
+                                                @break
+                                            @case('none')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    <i class="fas fa-ban mr-1"></i>
+                                                    Sin tracking
+                                                </span>
+                                                @break
+                                        @endswitch
+                                    </td>
+
+                                    <!-- Stock Actual (Calculado) -->
+                                    <td class="px-6 py-4 text-center">
+                                        @php
+                                            $currentStock = $product->getCurrentStock();
+                                            $isLowStock = $product->isLowStock();
+                                        @endphp
                                         <div class="flex flex-col items-center">
                                             <div class="flex items-center space-x-2">
-                                                <span class="text-2xl font-bold {{ $product->current_stock <= $product->minimum_stock ? 'text-red-600' : 'text-gray-900' }}">
-                                                    {{ $product->current_stock }}
+                                                <span class="text-lg font-bold {{ $isLowStock ? 'text-red-600' : 'text-gray-900' }}">
+                                                    {{ $currentStock }}
                                                 </span>
-                                                @if($product->current_stock <= $product->minimum_stock)
-                                                    <i class="fas fa-exclamation-triangle text-red-500" title="Stock bajo"></i>
+                                                @if($isLowStock && $currentStock > 0)
+                                                    <i class="fas fa-exclamation-triangle text-amber-500 text-sm" title="Stock bajo"></i>
+                                                @elseif($currentStock == 0)
+                                                    <i class="fas fa-times-circle text-red-500 text-sm" title="Sin stock"></i>
                                                 @endif
                                             </div>
                                             <div class="text-xs text-gray-500 mt-1">
                                                 Mín: {{ $product->minimum_stock }}
                                             </div>
                                         </div>
+                                    </td>
+
+                                    <!-- Estado -->
+                                    <td class="px-6 py-4 text-center hidden xl:table-cell">
+                                        @switch($product->status)
+                                            @case('active')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Activo
+                                                </span>
+                                                @break
+                                            @case('inactive')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                    <i class="fas fa-pause-circle mr-1"></i>
+                                                    Inactivo
+                                                </span>
+                                                @break
+                                            @case('discontinued')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <i class="fas fa-ban mr-1"></i>
+                                                    Descontinuado
+                                                </span>
+                                                @break
+                                        @endswitch
                                     </td>
 
                                     <!-- Acciones -->
@@ -177,7 +212,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             
-                                            <button @click="productToDelete = { id: {{ $product->id }}, name: '{{ $product->name }}' }; showDeleteModal = true"
+                                            <button @click="productToDelete = { id: {{ $product->id }}, name: '{{ addslashes($product->name) }}' }; showDeleteModal = true"
                                                     class="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
                                                     title="Eliminar producto">
                                                 <i class="fas fa-trash-alt"></i>
@@ -189,13 +224,13 @@
                                 <tr>
                                     <td colspan="7" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
-                                            <i class="fas fa-box-open text-gray-400 text-5xl mb-4"></i>
-                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No hay productos registrados') }}</h3>
-                                            <p class="text-sm text-gray-500 mb-4">{{ __('Comienza agregando tu primer producto al catálogo') }}</p>
+                                            <i class="fas fa-book-open text-gray-400 text-5xl mb-4"></i>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Catálogo Vacío') }}</h3>
+                                            <p class="text-sm text-gray-500 mb-4">{{ __('Comienza agregando productos al catálogo maestro') }}</p>
                                             <a href="{{ route('products.create') }}" 
                                                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
                                                 <i class="fas fa-plus mr-2"></i>
-                                                {{ __('Crear Primer Producto') }}
+                                                {{ __('Agregar Primer Producto') }}
                                             </a>
                                         </div>
                                     </td>
@@ -218,6 +253,49 @@
                         </div>
                     </div>
                 @endif
+            </div>
+
+            <!-- Info Cards -->
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-box text-indigo-600 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Total en Catálogo</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $products->total() }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-wifi text-blue-600 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Con Tracking RFID</p>
+                            <p class="text-2xl font-bold text-gray-900">
+                                {{ $products->where('tracking_type', 'rfid')->count() }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-hashtag text-yellow-600 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Con Número de Serie</p>
+                            <p class="text-2xl font-bold text-gray-900">
+                                {{ $products->where('tracking_type', 'serial')->count() }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -257,8 +335,8 @@
                             </h3>
                             <div class="mt-2">
                                 <p class="text-sm text-gray-500">
-                                    {{ __('¿Estás seguro de que quieres eliminar el producto') }} 
-                                    <span class="font-semibold" x-text="productToDelete?.name"></span>?
+                                    {{ __('¿Estás seguro de eliminar') }} 
+                                    <span class="font-semibold" x-text="productToDelete?.name"></span>{{ __('?') }}
                                     {{ __('Esta acción no se puede deshacer.') }}
                                 </p>
                             </div>
@@ -278,7 +356,7 @@
                                 type="button" 
                                 class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm transition-colors duration-200">
                                 {{ __('Cancelar') }}
-                            </button>
+                        </button>
                     </div>
                 </div>
             </div>
