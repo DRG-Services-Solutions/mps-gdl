@@ -11,16 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_categories', function (Blueprint $table) {
+        Schema::create('manufacturers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('code')->unique();
             $table->text('description');
-            $table->boolean('rfid_trackable')->default(false);
-            $table->boolean('sterilizable')->default(false);
-            $table->boolean('single_use')->default(false);
-            $table->json('characteristics')->nullable();
             $table->timestamps();
+
         });
     }
 
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_categories');
+        Schema::dropIfExists('manufacturers');
     }
 };

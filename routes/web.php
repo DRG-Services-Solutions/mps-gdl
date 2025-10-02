@@ -4,6 +4,11 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ManufacturerController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\MedicalSpecialtyController;
+use App\Http\Controllers\SubcategoryController;
+
 
 Route::get('/', function () {
     return view('auth.login');
@@ -24,6 +29,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('users', UserController::class);
     
     Route::resource('products', ProductController::class);
+    Route::resource('manufacturers', ManufacturerController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::resource('specialties', MedicalSpecialtyController::class);
+    Route::resource('subcategories', SubcategoryController::class);
+
+
 
     Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus'])
         ->middleware(['auth', 'verified']) 
