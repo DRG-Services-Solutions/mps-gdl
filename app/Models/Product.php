@@ -64,11 +64,7 @@ class Product extends Model
         return $this->belongsTo(Manufacturer::class);    
     }
 
-    // Unidades físicas individuales (cada una con su EPC o Serial)
-    public function units()
-    {
-        return $this->hasMany(ProductUnit::class);
-    }
+  
 
     // Movimientos de inventario
     public function movements()
@@ -158,5 +154,20 @@ class Product extends Model
     public function scopeConsumables($query)
     {
         return $query->where('is_consumable', true);
+    }
+
+    public function units()
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
+
+    public function getAvailableStockAttribute()
+    {
+        return $this->availableUnits()->count();
+    }
+
+    public function getTotalStockAttribute()
+    {
+        return $this->units()->count();
     }
 }

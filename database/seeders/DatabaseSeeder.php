@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
                     ProductCategorySeeder::class,
                     MedicalSpecialtySeeder::class,
                     SubcategorySeeder::class,
-                    StorageLocationSeeder::class,
                 ]);
         $this->call(UserSeeder::class);
         

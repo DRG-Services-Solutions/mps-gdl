@@ -8,6 +8,9 @@ use App\Http\Controllers\ManufacturerController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MedicalSpecialtyController;
 use App\Http\Controllers\SubcategoryController;
+use App\Http\Controllers\ProductUnitController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\SupplierController;
 
 
 Route::get('/', function () {
@@ -33,6 +36,25 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('categories', CategoryController::class);
     Route::resource('specialties', MedicalSpecialtyController::class);
     Route::resource('subcategories', SubcategoryController::class);
+    Route::resource('product-units', ProductUnitController::class);
+    Route::resource('suppliers', SupplierController::class);
+    // Ruta adicional para cambiar estado
+    Route::patch('suppliers/{supplier}/toggle-status', [SupplierController::class, 'toggleStatus'])
+        ->name('suppliers.toggle-status');
+
+    Route::resource('purchase-orders', PurchaseOrderController::class);
+    
+    // Acciones adicionales
+    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
+        ->name('purchase-orders.cancel');
+    Route::post('purchase-orders/{purchaseOrder}/mark-paid', [PurchaseOrderController::class, 'markAsPaid'])
+        ->name('purchase-orders.mark-paid');
+    Route::post('purchase-orders/{purchaseOrder}/mark-unpaid', [PurchaseOrderController::class, 'markAsUnpaid'])
+        ->name('purchase-orders.mark-unpaid');
+    
+    // AJAX
+    Route::get('api/products/{product}/details', [PurchaseOrderController::class, 'getProductDetails'])
+        ->name('products.details');
 
 
 

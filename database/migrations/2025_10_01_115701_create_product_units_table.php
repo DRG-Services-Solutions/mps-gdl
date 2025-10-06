@@ -13,84 +13,76 @@ return new class extends Migration
     {
         Schema::create('product_units', function (Blueprint $table) {
             $table->id();
+            
             // Relación con el producto del catálogo
-            $table->foreignId('product_id')
-                  ->constrained('products')
-                  ->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
             
-            // ==========================================================
-            // IDENTIFICADOR ÚNICO (EPC RFID O NÚMERO DE SERIE)
-            // ==========================================================
-            // Este es el identificador ÚNICO de esta unidad física
-            $table->string('unique_identifier', 100)->unique();
-            $table->enum('identifier_type', ['rfid', 'serial']);
+            // Identificadores únicos (solo uno será usado según el tipo de producto)
+            $table->string('epc')->unique()->nullable()->comment('Código EPC para RFID');
+            $table->string('serial_number')->unique()->nullable()->comment('Número de serie para instrumentales');
             
-            // ==========================================================
-            // UBICACIÓN Y ESTADO ACTUAL
-            // ==========================================================
+            // Información de lote y caducidad
+            $table->string('batch_number')->nullable()->comment('Número de lote del fabricante');
+            $table->date('expiration_date')->nullable()->comment('Fecha de caducidad');
+            $table->date('manufacture_date')->nullable()->comment('Fecha de fabricación');
+            
+            // Estado actual de la unidad
+            $table->enum('status', [
+                'available',        // Disponible para uso
+                'in_use',           // En uso actualmente
+                'reserved',         // Reservado para cirugía
+                'in_sterilization', // En proceso de esterilización
+                'maintenance',      // En mantenimiento
+                'quarantine',       // En cuarentena/revisión
+                'damaged',          // Dañado/No funcional
+                'expired',          // Caducado
+                'lost',             // Extraviado
+                'retired'           // Dado de baja
+            ])->default('available');
+            
+            // Ubicación actual
             $table->foreignId('current_location_id')
                   ->nullable()
                   ->constrained('storage_locations')
-                  ->nullOnDelete();
+                  ->onDelete('set null')
+                  ->comment('Ubicación física actual');
             
-            $table->enum('status', [
-                'available',        // Disponible para uso
-                'in_use',          // En uso (asignado a cirugía/paciente)
-                'in_sterilization', // En proceso de esterilización
-                'maintenance',      // En mantenimiento/reparación
-                'damaged',          // Dañado
-                'discarded',        // Descartado/desechado
-                'reserved'          // Reservado
-            ])->default('available');
+            // Información para instrumentales
+            $table->integer('sterilization_cycles')->default(0)->comment('Número de ciclos de esterilización');
+            $table->date('last_sterilization_date')->nullable()->comment('Última fecha de esterilización');
+            $table->date('next_maintenance_date')->nullable()->comment('Próxima fecha de mantenimiento programado');
+            $table->integer('max_sterilization_cycles')->nullable()->comment('Ciclos máximos permitidos');
             
-            // ==========================================================
-            // INFORMACIÓN DE LOTE Y CADUCIDAD (Para consumibles)
-            // ==========================================================
-            $table->string('lot_number')->nullable();
-            $table->date('expiration_date')->nullable();
-            $table->date('received_date'); // Fecha de entrada al inventario
+            // Información de costos
+            $table->decimal('acquisition_cost', 10, 2)->nullable()->comment('Costo de adquisición');
+            $table->date('acquisition_date')->nullable()->comment('Fecha de adquisición');
             
-            // ==========================================================
-            // INFORMACIÓN DE ESTERILIZACIÓN (Para instrumentales)
-            // ==========================================================
-            $table->integer('sterilization_cycles')->default(0);
-            $table->date('last_sterilization_date')->nullable();
-            $table->date('next_sterilization_due')->nullable();
-            $table->integer('max_sterilization_cycles')->nullable(); // Ciclos máximos permitidos
+            // Información del proveedor en esta unidad específica
+            // TEMPORAL: Descomentar cuando exista la tabla suppliers
+                //$table->foreignId('supplier_id')->nullable()->constrained()->onDelete('set null');
+                //$table->string('supplier_invoice')->nullable()->comment('Número de factura del proveedor');
+            // TEMPORAL: Descomentar cuando exista la tabla suppliers
+
             
-            // ==========================================================
-            // ASIGNACIÓN ACTUAL
-            // ==========================================================
-            //$table->foreignId('assigned_to_surgery_id')
-            //      ->nullable()
-            //      ->nullable()
-            //      ->constrained('patients')
-            //      ->nullOnDelete();
+            // Notas y observaciones
+            $table->text('notes')->nullable()->comment('Observaciones generales');
+            $table->text('damage_description')->nullable()->comment('Descripción de daños si aplica');
             
-            $table->timestamp('assigned_at')->nullable();
-            
-            // ==========================================================
-            // INFORMACIÓN DE COSTO (Para esta unidad específica)
-            // ==========================================================
-            $table->decimal('acquisition_cost', 10, 2)->nullable();
-            
-            // ==========================================================
-            // NOTAS Y OBSERVACIONES
-            // ==========================================================
-            $table->text('notes')->nullable();
+            // Campos de auditoría
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             
             $table->timestamps();
             $table->softDeletes();
             
-            // ==========================================================
-            // ÍNDICES PARA OPTIMIZACIÓN
-            // ==========================================================
-            $table->index('unique_identifier');
-            $table->index(['product_id', 'status']);
-            $table->index(['current_location_id', 'status']);
-            $table->index('expiration_date');
-            $table->index('next_sterilization_due');
-            $table->index(['identifier_type', 'status']);
+            // Índices para optimizar consultas
+            $table->index(['product_id', 'status'], 'idx_product_status');
+            $table->index('current_location_id', 'idx_current_location');
+            $table->index('expiration_date', 'idx_expiration');
+            $table->index('status', 'idx_status');
+            $table->index('batch_number', 'idx_batch');
+            $table->index(['epc', 'deleted_at'], 'idx_epc_active');
+            $table->index(['serial_number', 'deleted_at'], 'idx_serial_active');
         });
     }
 
