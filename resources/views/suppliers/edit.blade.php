@@ -52,7 +52,7 @@
                                            name="code" 
                                            id="code" 
                                            value="{{ old('code', $supplier->code) }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('code') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border  rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('code') border-red-500 @enderror"
                                            required>
                                 </div>
                                 @error('code')
@@ -75,7 +75,7 @@
                                            name="name" 
                                            id="name" 
                                            value="{{ old('name', $supplier->name) }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('name') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border  rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('name') border-red-500 @enderror"
                                            required>
                                 </div>
                                 @error('name')
@@ -101,7 +101,7 @@
                                            name="contact_person" 
                                            id="contact_person" 
                                            value="{{ old('contact_person', $supplier->contact_person) }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('contact_person') border-red-500 @enderror">
+                                           class="block w-full pl-10 pr-3 py-2.5 border  rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('contact_person') border-red-500 @enderror">
                                 </div>
                                 @error('contact_person')
                                     <p class="mt-1 text-sm text-red-600">
@@ -123,7 +123,7 @@
                                            name="email" 
                                            id="email" 
                                            value="{{ old('email', $supplier->email) }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('email') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border  rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('email') border-red-500 @enderror"
                                            required>
                                 </div>
                                 @error('email')
@@ -147,7 +147,7 @@
                                        name="phone" 
                                        id="phone" 
                                        value="{{ old('phone', $supplier->phone) }}"
-                                       class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror">
+                                       class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror">
                             </div>
                             @error('phone')
                                 <p class="mt-1 text-sm text-red-600">
@@ -168,7 +168,7 @@
                                 <textarea name="address" 
                                           id="address" 
                                           rows="3"
-                                          class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('address') border-red-500 @enderror">{{ old('address', $supplier->address) }}</textarea>
+                                          class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('address') border-red-500 @enderror">{{ old('address', $supplier->address) }}</textarea>
                             </div>
                             @error('address')
                                 <p class="mt-1 text-sm text-red-600">

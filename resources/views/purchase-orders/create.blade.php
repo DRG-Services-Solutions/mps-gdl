@@ -36,7 +36,7 @@
                                     Proveedor <span class="text-red-500">*</span>
                                 </label>
                                 <select name="supplier_id" 
-                                        class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 @error('supplier_id') border-red-300 @enderror" 
+                                        class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('supplier_id') border-red-300 @enderror" 
                                         required>
                                     <option value="">Seleccionar...</option>
                                     @foreach($suppliers as $supplier)
@@ -56,7 +56,7 @@
                                     Almacén Destino <span class="text-red-500">*</span>
                                 </label>
                                 <select name="destination_warehouse_id" 
-                                        class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 @error('destination_warehouse_id') border-red-300 @enderror" 
+                                        class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('destination_warehouse_id') border-red-300 @enderror" 
                                         required>
                                     <option value="">Seleccionar...</option>
                                     @foreach($warehouses as $warehouse)

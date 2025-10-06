@@ -80,7 +80,7 @@
                                     id="product_id"
                                     x-ref="productSelect"
                                     @change="updateProductInfo()"
-                                    class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('product_id') border-red-300 @enderror" 
+                                    class="block w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('product_id') border-red-300 @enderror" 
                                     required>
                                 <option value="">-- Selecciona un producto --</option>
                                 @foreach($products as $product)
@@ -130,7 +130,7 @@
                                            min="1"
                                            max="100"
                                            value="{{ old('quantity', 1) }}"
-                                           class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('quantity') border-red-300 @enderror" 
+                                           class="pl-10 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('quantity') border-red-300 @enderror" 
                                            placeholder="1"
                                            required>
                                 </div>
@@ -162,7 +162,7 @@
                                            name="batch_number" 
                                            id="batch_number" 
                                            value="{{ old('batch_number') }}"
-                                           class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('batch_number') border-red-300 @enderror" 
+                                           class="pl-10 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('batch_number') border-red-300 @enderror" 
                                            placeholder="Ej: LOTE-2025-001">
                                 </div>
                                 @error('batch_number')
@@ -192,7 +192,7 @@
                                            id="manufacture_date" 
                                            value="{{ old('manufacture_date') }}"
                                            max="{{ date('Y-m-d') }}"
-                                           class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('manufacture_date') border-red-300 @enderror">
+                                           class="pl-10 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('manufacture_date') border-red-300 @enderror">
                                 </div>
                                 @error('manufacture_date')
                                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -219,7 +219,7 @@
                                            id="expiration_date" 
                                            value="{{ old('expiration_date') }}"
                                            min="{{ date('Y-m-d', strtotime('+1 day')) }}"
-                                           class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('expiration_date') border-red-300 @enderror">
+                                           class="pl-10 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('expiration_date') border-red-300 @enderror">
                                 </div>
                                 @error('expiration_date')
                                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -250,7 +250,7 @@
                                                step="0.01"
                                                min="0"
                                                value="{{ old('acquisition_cost') }}"
-                                               class="pl-8 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('acquisition_cost') border-red-300 @enderror" 
+                                               class="pl-8 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('acquisition_cost') border-red-300 @enderror" 
                                                placeholder="0.00">
                                     </div>
                                     @error('acquisition_cost')
@@ -275,7 +275,7 @@
                                                name="supplier_invoice" 
                                                id="supplier_invoice" 
                                                value="{{ old('supplier_invoice') }}"
-                                               class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('supplier_invoice') border-red-300 @enderror" 
+                                               class="pl-10 block w-full rounded-lg  shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('supplier_invoice') border-red-300 @enderror" 
                                                placeholder="Ej: FAC-2025-001">
                                     </div>
                                     @error('supplier_invoice')
@@ -302,7 +302,7 @@
                                 <textarea name="notes" 
                                           id="notes" 
                                           rows="4"
-                                          class="pl-10 pt-3 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('notes') border-red-300 @enderror" 
+                                          class="pl-10 pt-3 block w-full rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 @error('notes') border-red-300 @enderror" 
                                           placeholder="Información adicional sobre este ingreso...">{{ old('notes') }}</textarea>
                             </div>
                             @error('notes')

@@ -51,7 +51,7 @@
                                            name="code" 
                                            id="code" 
                                            value="{{ old('code') }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('code') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('code') border-red-500 @enderror"
                                            placeholder="ej: PROV-001"
                                            required>
                                 </div>
@@ -75,7 +75,7 @@
                                            name="name" 
                                            id="name" 
                                            value="{{ old('name') }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('name') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('name') border-red-500 @enderror"
                                            placeholder="ej: Distribuidora Médica S.A."
                                            required>
                                 </div>
@@ -102,7 +102,7 @@
                                            name="contact_person" 
                                            id="contact_person" 
                                            value="{{ old('contact_person') }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('contact_person') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('contact_person') border-red-500 @enderror"
                                            placeholder="ej: Juan Pérez">
                                 </div>
                                 @error('contact_person')
@@ -125,7 +125,7 @@
                                            name="email" 
                                            id="email" 
                                            value="{{ old('email') }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('email') border-red-500 @enderror"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('email') border-red-500 @enderror"
                                            placeholder="correo@empresa.com"
                                            required>
                                 </div>
@@ -150,7 +150,7 @@
                                        name="phone" 
                                        id="phone" 
                                        value="{{ old('phone') }}"
-                                       class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror"
+                                       class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('phone') border-red-500 @enderror"
                                        placeholder="ej: +52 55 1234 5678">
                             </div>
                             @error('phone')
@@ -172,7 +172,7 @@
                                 <textarea name="address" 
                                           id="address" 
                                           rows="3"
-                                          class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('address') border-red-500 @enderror"
+                                          class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('address') border-red-500 @enderror"
                                           placeholder="Calle, Número, Colonia, Ciudad, Estado, CP">{{ old('address') }}</textarea>
                             </div>
                             @error('address')
