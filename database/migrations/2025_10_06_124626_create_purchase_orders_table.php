@@ -19,11 +19,11 @@ return new class extends Migration
             
             // Estado
             $table->enum('status', [
-                'pending',          // Pendiente
-                'received',         // Recibida completamente
-                'partial',          // Recibida parcialmente
-                'cancelled',        // Cancelada
-                'in_return'         // En devolución
+                'pending',          
+                'received',         
+                'partial',          
+                'cancelled',        
+                'in_return'         
             ])->default('pending');
             
             // Fechas

@@ -7,6 +7,14 @@ use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use App\Models\StorageLocation;
 use App\Models\Product;
+use App\Models\PurchaseOrderReceipt;
+use App\Models\ReceiptItem;
+use App\Services\PurchaseOrderService;
+use App\Models\InventoryMovement;
+use App\Models\ProductUnit;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -16,42 +24,52 @@ class PurchaseOrderController extends Controller
      * Display a listing of purchase orders.
      */
     public function index(Request $request)
-    {
-        $query = PurchaseOrder::with(['supplier', 'destinationWarehouse', 'createdBy']);
+        {
+            $query = PurchaseOrder::with([
+                'supplier',
+                'destinationWarehouse',
+                'createdBy',
+                'items.product', // Para mostrar productos en el acordeón
+                'receipts' => function($q) {
+                    $q->with(['receivedBy', 'warehouse', 'items.product'])
+                    ->latest('received_at');
+                }
+            ])->withCount('receipts'); // Contador de recepciones
 
-        // Filtros
-        if ($request->has('status') && $request->status != '') {
-            $query->where('status', $request->status);
+            // Filtros existentes
+            if ($request->has('status') && $request->status != '') {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->has('supplier_id') && $request->supplier_id != '') {
+                $query->where('supplier_id', $request->supplier_id);
+            }
+
+            if ($request->has('is_paid')) {
+                $query->where('is_paid', $request->boolean('is_paid'));
+            }
+
+            if ($request->has('search') && $request->search != '') {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+                });
+            }
+
+            // Ordenar por más recientes
+            $purchaseOrders = $query->orderBy('order_date', 'desc')
+                                    ->orderBy('created_at', 'desc')
+                                    ->paginate(15)
+                                    ->withQueryString(); // Para mantener filtros en paginación
+
+            // Para los filtros
+            $suppliers = Supplier::active()->orderBy('name')->get();
+
+            return view('purchase-orders.index', compact('purchaseOrders', 'suppliers'));
         }
-
-        if ($request->has('supplier_id') && $request->supplier_id != '') {
-            $query->where('supplier_id', $request->supplier_id);
-        }
-
-        if ($request->has('is_paid')) {
-            $query->where('is_paid', $request->boolean('is_paid'));
-        }
-
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhereHas('supplier', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        // Ordenar por más recientes
-        $purchaseOrders = $query->orderBy('order_date', 'desc')
-                                ->orderBy('created_at', 'desc')
-                                ->paginate(15);
-
-        // Para los filtros
-        $suppliers = Supplier::active()->orderBy('name')->get();
-
-        return view('purchase-orders.index', compact('purchaseOrders', 'suppliers'));
-    }
 
     /**
      * Show the form for creating a new purchase order.
@@ -70,24 +88,52 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Validación de campos estáticos
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'destination_warehouse_id' => 'required|exists:storage_locations,id',
             'expected_date' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string',
-            
-            // Items
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity_ordered' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
+            'items_json' => 'required|string', 
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Crear la orden
+            // 2. Decodificar y Validar el array de Items
+            $items = json_decode($validated['items_json'], true);
+
+            if (empty($items)) {
+                throw new \Exception('La orden de compra debe tener al menos un producto.');
+            }
+
+            // Obtener los IDs de los productos a ordenar para la validación 'exists'
+            $productIds = collect($items)->pluck('product_id')->unique()->toArray();
+            
+            // 🚨 Validación del contenido
+            $itemRules = [
+                '*.product_id' => 'required|exists:products,id',
+                '*.quantity_ordered' => 'required|integer|min:1',
+                '*.unit_price' => 'required|numeric|min:0',
+            ];
+            
+            $validator = Validator::make($items, $itemRules);
+
+            if ($validator->fails()) {
+                throw new \Exception('Error de validación en los productos: ' . $validator->errors()->first());
+            }
+            
+            // ⭐️ Generar el SNAPSHOT de los productos para la inserción
+            // Carga la información relevante de todos los productos en una Colección indexada por 'id'
+            $productsSnapshot = Product::whereIn('id', $productIds)
+                ->get(['id', 'code', 'name'])
+                ->keyBy('id');
+
+
+            // 3. Crear la Orden
             $purchaseOrder = PurchaseOrder::create([
+                'order_number' => $this->generateOrderNumber(),
+                'created_by' => auth()->id(), 
                 'supplier_id' => $validated['supplier_id'],
                 'destination_warehouse_id' => $validated['destination_warehouse_id'],
                 'expected_date' => $validated['expected_date'] ?? null,
@@ -96,17 +142,39 @@ class PurchaseOrderController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Crear los items
-            foreach ($validated['items'] as $item) {
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $item['product_id'],
+            // 4. Preparar la Inserción Masiva con Snapshot
+            $itemsToInsert = [];
+            foreach ($items as $item) {
+                $productId = $item['product_id'];
+                $snapshot = $productsSnapshot->get($productId);
+                
+                // ⚠️ Verificación de seguridad: si el producto no se encontró, ignorarlo o lanzar error.
+                if (!$snapshot) {
+                    throw new \Exception("El producto con ID {$productId} no se encontró o no está disponible.");
+                }
+
+                // El subtotal viene del frontend, pero lo RECALCULAREMOS aquí para máxima seguridad
+                $subtotalCalculated = round($item['quantity_ordered'] * $item['unit_price'], 2);
+
+                $itemsToInsert[] = [
+                    'product_id' => $productId,
                     'quantity_ordered' => $item['quantity_ordered'],
                     'unit_price' => $item['unit_price'],
-                ]);
+                    
+                    // 🚀 DATOS CRÍTICOS (NOT NULL en migración)
+                    'subtotal' => $subtotalCalculated, 
+                    'product_code' => $snapshot->code, // Del snapshot
+                    'product_name' => $snapshot->name, // Del snapshot
+                    // La descripción no es NOT NULL en la migración, pero se puede añadir
+                    
+                    'created_at' => now(), 
+                    'updated_at' => now(), 
+                ];
             }
 
-            // Calcular totales
+            $purchaseOrder->items()->createMany($itemsToInsert);
+
+            // 5. Calcular Totales y Finalizar
             $purchaseOrder->calculateTotals();
 
             DB::commit();
@@ -114,9 +182,16 @@ class PurchaseOrderController extends Controller
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Orden de compra creada exitosamente: ' . $purchaseOrder->order_number);
 
-        } catch (\Exception $e) {
+        } catch (QueryException $e) {
+            // Captura errores específicos de SQL (NOT NULL, FK, UNIQUE)
             DB::rollBack();
-            
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Error en la base de datos. Mensaje: ' . $e->getMessage()); 
+                
+        } catch (\Exception $e) {
+            // Captura errores de lógica (Validación de ítems, empty, etc.)
+            DB::rollBack();
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
@@ -126,16 +201,19 @@ class PurchaseOrderController extends Controller
     /**
      * Display the specified purchase order.
      */
-    public function show(PurchaseOrder $purchaseOrder)
-    {
-        $purchaseOrder->load([
-            'supplier',
-            'destinationWarehouse',
-            'createdBy',
-            'items.product'
-        ]);
+    public function show(PurchaseOrder $purchaseOrder) 
+    {   
+        $purchaseOrder->load([ 'supplier', 
+        'destinationWarehouse',
+        'createdBy', 
+        'items.product' ]); 
+        // Determina si hay productos pendientes por recibir
+    $hasPendingItems = $purchaseOrder->items()
+        ->whereColumn('quantity_received', '<', 'quantity_ordered')
+        ->exists();
 
-        return view('purchase-orders.show', compact('purchaseOrder'));
+    return view('purchase-orders.show', compact('purchaseOrder', 'hasPendingItems'));
+
     }
 
     /**
@@ -317,4 +395,264 @@ class PurchaseOrderController extends Controller
             ]
         ]);
     }
+
+public function __construct(PurchaseOrderService $purchaseOrderService)
+    {
+        $this->purchaseOrderService = $purchaseOrderService;
+    }
+
+    public function receive(Request $request, PurchaseOrder $purchaseOrder)
+{
+    if (!$purchaseOrder->canBeReceived()) {
+        return back()->with('error', 'Esta orden no puede ser recibida en este momento.');
+    }
+
+    $validated = $request->validate([
+        'items' => 'required|array',
+        'items.*.quantity_received' => 'required|integer|min:0',
+        'items.*.batch_number' => 'nullable|string|max:255',
+        'items.*.expiry_date' => 'nullable|date|after:today',
+        'items.*.condition' => 'nullable|in:good,damaged,expired',
+        'items.*.notes' => 'nullable|string|max:500',
+        'notes' => 'nullable|string|max:1000',
+    ]);
+
+    DB::beginTransaction();
+    try {
+        // Crear el registro de recepción
+        $receipt = PurchaseOrderReceipt::create([
+            'receipt_number' => PurchaseOrderReceipt::generateReceiptNumber(),
+            'purchase_order_id' => $purchaseOrder->id,
+            'warehouse_id' => $purchaseOrder->destination_warehouse_id,
+            'received_by' => auth()->id(),
+            'received_at' => now(),
+            'status' => 'pending',
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $totalReceived = 0;
+        $hasIssues = false;
+
+        // Procesar cada item
+        foreach ($validated['items'] as $itemId => $itemData) {
+            $quantityToReceive = (int) $itemData['quantity_received'];
+            
+            if ($quantityToReceive <= 0) {
+                continue;
+            }
+
+            $orderItem = $purchaseOrder->items()->findOrFail($itemId);
+            
+            if ($quantityToReceive > $orderItem->pending_quantity) {
+                throw new \Exception("La cantidad a recibir ({$quantityToReceive}) excede la cantidad pendiente ({$orderItem->pending_quantity}) para {$orderItem->product_name}");
+            }
+
+            $condition = $itemData['condition'] ?? 'good';
+            
+            if ($condition !== 'good') {
+                $hasIssues = true;
+            }
+
+            // Crear el registro de item recibido
+            ReceiptItem::create([
+                'receipt_id' => $receipt->id,
+                'purchase_order_item_id' => $orderItem->id,
+                'product_id' => $orderItem->product_id,
+                'quantity_ordered' => $orderItem->quantity_ordered,
+                'quantity_received' => $quantityToReceive,
+                'unit_price' => $orderItem->unit_price,
+                'batch_number' => $itemData['batch_number'] ?? null,
+                'expiry_date' => $itemData['expiry_date'] ?? null,
+                'condition' => $condition,
+                'notes' => $itemData['notes'] ?? null,
+            ]);
+
+            // Actualizar el item de la orden de compra
+            $orderItem->increment('quantity_received', $quantityToReceive);
+            $orderItem->update([
+                'received_by' => auth()->id(),
+                'received_at' => now(),
+            ]);
+
+            // ========================================
+            // ACTUALIZAR INVENTARIO SEGÚN TIPO DE TRACKING
+            // ========================================
+            if ($condition === 'good') {
+                $product = Product::findOrFail($orderItem->product_id);
+                
+                // Determinar status inicial según condición
+                $initialStatus = match($condition) {
+                    'damaged' => 'damaged',
+                    'expired' => 'expired',
+                    default => 'available',
+                };
+
+                switch ($product->tracking_type) {
+                    case 'stock':
+                        // ==========================================
+                        // PRODUCTOS CON TRACKING POR CANTIDAD (CONSUMIBLES)
+                        // ==========================================
+                        InventoryMovement::create([
+                            'type' => 'entry',
+                            'product_id' => $product->id,
+                            'product_unit_id' => null,
+                            'quantity' => $quantityToReceive,
+                            'from_location_id' => null, // Viene del proveedor (externo)
+                            'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                            'user_id' => auth()->id(),
+                            'reference_number' => $receipt->receipt_number,
+                            'notes' => "Recepción de orden de compra {$purchaseOrder->order_number}",
+                            'unit_cost' => $orderItem->unit_price,
+                            'total_cost' => $orderItem->unit_price * $quantityToReceive,
+                            'lot_number' => $itemData['batch_number'] ?? null,
+                            'expiration_date' => $itemData['expiry_date'] ?? null,
+                            'movement_date' => now(),
+                        ]);
+                        
+                        \Log::info("✅ Movimiento de inventario creado (tipo: stock, cantidad: {$quantityToReceive})");
+                        break;
+
+                    case 'rfid':
+                    case 'serial':
+                        // ==========================================
+                        // PRODUCTOS CON TRACKING INDIVIDUAL (INSTRUMENTALES)
+                        // ==========================================
+                        for ($i = 0; $i < $quantityToReceive; $i++) {
+                            // Crear unidad individual
+                            $unit = ProductUnit::create([
+                                'product_id' => $product->id,
+                                'epc' => $product->tracking_type === 'rfid' ? $this->generateEPC() : null,
+                                'serial_number' => $product->tracking_type === 'serial' ? $this->generateSerialNumber($product) : null,
+                                'batch_number' => $itemData['batch_number'] ?? null,
+                                'expiration_date' => $itemData['expiry_date'] ?? null,
+                                'status' => $initialStatus,
+                                'current_location_id' => $purchaseOrder->destination_warehouse_id,
+                                'sterilization_cycles' => 0,
+                                'acquisition_cost' => $orderItem->unit_price,
+                                'acquisition_date' => now(),
+                                'notes' => "Recibido en orden {$purchaseOrder->order_number}",
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            // Crear movimiento de entrada para esta unidad
+                            InventoryMovement::create([
+                                'type' => 'entry',
+                                'product_id' => $product->id,
+                                'product_unit_id' => $unit->id,
+                                'quantity' => 1,
+                                'from_location_id' => null,
+                                'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                                'user_id' => auth()->id(),
+                                'reference_number' => $receipt->receipt_number,
+                                'notes' => "Recepción de unidad individual - {$purchaseOrder->order_number}",
+                                'unit_cost' => $orderItem->unit_price,
+                                'total_cost' => $orderItem->unit_price,
+                                'movement_date' => now(),
+                            ]);
+                        }
+                        
+                        \Log::info("✅ {$quantityToReceive} unidades individuales creadas (tipo: {$product->tracking_type})");
+                        break;
+
+                    case 'none':
+                    default:
+                        // Sin tracking, solo registrar en movimientos para historial
+                        InventoryMovement::create([
+                            'type' => 'entry',
+                            'product_id' => $product->id,
+                            'product_unit_id' => null,
+                            'quantity' => $quantityToReceive,
+                            'from_location_id' => null,
+                            'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                            'user_id' => auth()->id(),
+                            'reference_number' => $receipt->receipt_number,
+                            'notes' => "Recepción de orden {$purchaseOrder->order_number} (sin tracking)",
+                            'unit_cost' => $orderItem->unit_price,
+                            'total_cost' => $orderItem->unit_price * $quantityToReceive,
+                            'movement_date' => now(),
+                        ]);
+                        break;
+                }
+            }
+
+            $totalReceived += $quantityToReceive;
+        }
+
+        // Actualizar estado de la recepción
+        $receiptStatus = $hasIssues ? 'with_issues' : ($purchaseOrder->isFullyReceived() ? 'completed' : 'partial');
+        $receipt->update(['status' => $receiptStatus]);
+
+        // Actualizar estado de la orden de compra
+        if ($purchaseOrder->isFullyReceived()) {
+            $purchaseOrder->update([
+                'status' => 'received',
+                'received_date' => now(),
+            ]);
+        } else if ($totalReceived > 0) {
+            $purchaseOrder->update([
+                'status' => 'partial',
+            ]);
+        }
+
+        DB::commit();
+
+        $message = "Recepción registrada exitosamente. {$totalReceived} piezas recibidas.";
+        if ($hasIssues) {
+            $message .= " ⚠️ Hay productos con problemas de calidad.";
+        }
+        $message .= " Número de recepción: {$receipt->receipt_number}";
+
+        return redirect()
+            ->route('purchase-orders.show', $purchaseOrder)
+            ->with('success', $message);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        \Log::error('Error al registrar recepción: ' . $e->getMessage());
+        \Log::error($e->getTraceAsString());
+        
+        return back()
+            ->with('error', 'Error al registrar la recepción: ' . $e->getMessage())
+            ->withInput();
+    }
+}
+
+private function generateOrderNumber(): string
+{
+    // Obtener la fecha de hoy en formato YYYYMMDD
+    $today = now()->format('Ymd');
+    
+    // Contar cuántas órdenes ya se han creado hoy
+    // Usamos 'like' para buscar órdenes que empiecen con el prefijo de hoy
+    $count = \App\Models\PurchaseOrder::where('order_number', 'like', "OC-{$today}-%")
+        ->count();
+    
+    // El siguiente consecutivo es el contador + 1
+    $nextNumber = $count + 1;
+    
+    // Formatear el consecutivo con ceros a la izquierda (ej: 001, 010)
+    $suffix = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+    
+    return "OC-{$today}-{$suffix}";
+}
+
+private function generateEPC(): string
+{
+    // El formato EPC-96 requiere 24 caracteres hexadecimales (cada 4 bits = 1 dígito hex).
+    $length = 24; 
+    
+    do {
+        // Genera una cadena aleatoria hexadecimal (0-9, a-f) de 24 caracteres
+        $epc = Str::random($length, '0123456789abcdef'); 
+
+        // Consulta la tabla ProductUnits para ver si el EPC ya existe.
+        // Si no existe, salimos del bucle y usamos ese código.
+        $exists = ProductUnit::where('epc', $epc)->exists();
+        
+    } while ($exists); // Repetir mientras el EPC exista.
+
+    return strtoupper($epc); // Retorna en mayúsculas (ej: A1B2C3D4E5F6789012345678)
+}
+
 }

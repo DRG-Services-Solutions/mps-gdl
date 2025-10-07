@@ -19,13 +19,17 @@ return new class extends Migration
             
             // Precios
             $table->decimal('unit_price', 10, 2)->comment('Precio unitario');
-            $table->decimal('subtotal', 10, 2)->comment('Subtotal línea');
+            $table->decimal('subtotal', 10, 2)->default(0)->comment('Subtotal línea');
             
             // Información del producto (snapshot)
             $table->string('product_code')->comment('Código del producto al momento de la orden');
             $table->string('product_name')->comment('Nombre del producto al momento de la orden');
             $table->text('description')->nullable();
-            
+
+            // Campos de recepción
+            $table->foreignId('received_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('received_at')->nullable();
+
             $table->timestamps();
             
             $table->index('purchase_order_id');

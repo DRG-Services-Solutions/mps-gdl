@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrderItem extends Model
 {
@@ -16,28 +18,41 @@ class PurchaseOrderItem extends Model
         'product_code',
         'product_name',
         'description',
+        'received_by',
+        'received_at',
     ];
 
     protected $casts = [
-        'quantity_ordered' => 'integer',
-        'quantity_received' => 'integer',
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'received_at' => 'datetime',
     ];
 
-    public function purchaseOrder()
+    // Relaciones
+    public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
     }
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function getPendingQuantityAttribute()
+    public function receivedBy(): BelongsTo
     {
-        return $this->quantity_ordered - $this->quantity_received;
+        return $this->belongsTo(User::class, 'received_by');
+    }
+
+    public function receiptItems(): HasMany
+    {
+        return $this->hasMany(ReceiptItem::class);
+    }
+
+    // Atributos calculados
+    public function getPendingQuantityAttribute(): int
+    {
+        return max(0, $this->quantity_ordered - $this->quantity_received);
     }
 
     public function isFullyReceived(): bool
@@ -45,24 +60,18 @@ class PurchaseOrderItem extends Model
         return $this->quantity_received >= $this->quantity_ordered;
     }
 
-    protected static function boot()
+    public function getReceiptProgressAttribute(): float
     {
-        parent::boot();
+        if ($this->quantity_ordered == 0) return 0;
+        return round(($this->quantity_received / $this->quantity_ordered) * 100, 2);
+    }
 
-        static::creating(function ($item) {
-            // Guardar snapshot del producto
-            if ($item->product) {
-                $item->product_code = $item->product->code;
-                $item->product_name = $item->product->name;
-                $item->description = $item->product->description;
-            }
-            
-            // Calcular subtotal
-            $item->subtotal = $item->quantity_ordered * $item->unit_price;
-        });
-
-        static::updating(function ($item) {
-            $item->subtotal = $item->quantity_ordered * $item->unit_price;
-        });
+    // Obtener todas las recepciones de este item
+    public function getReceiptsHistoryAttribute()
+    {
+        return $this->receiptItems()
+            ->with('receipt.receivedBy')
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
 }

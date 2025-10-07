@@ -1,273 +1,325 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Órdenes de Compra') }}
             </h2>
             <a href="{{ route('purchase-orders.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
+               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                <i class="fas fa-plus mr-2"></i>
                 Nueva Orden
             </a>
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ showCancelModal: false, cancelId: null }">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Alertas -->
-            @if(session('success'))
-                <div x-data="{ show: true }" 
-                     x-show="show" 
-                     x-transition
-                     class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-sm">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <p class="text-green-700 font-medium">{{ session('success') }}</p>
-                        </div>
-                        <button @click="show = false" class="text-green-400 hover:text-green-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                        </button>
+            <!-- Filtros -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <form method="GET" action="{{ route('purchase-orders.index') }}" class="flex gap-4 flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                        <input type="text" 
+                               name="search" 
+                               value="{{ request('search') }}"
+                               placeholder="Buscar por número o proveedor..."
+                               class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
+                    <div>
+                        <select name="status" 
+                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Todos los estados</option>
+                            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pendiente</option>
+                            <option value="partial" {{ request('status') === 'partial' ? 'selected' : '' }}>Parcial</option>
+                            <option value="received" {{ request('status') === 'received' ? 'selected' : '' }}>Recibida</option>
+                            <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelada</option>
+                        </select>
+                    </div>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+                        <i class="fas fa-search mr-2"></i>Filtrar
+                    </button>
+                    @if(request()->anyFilled(['search', 'status']))
+                        <a href="{{ route('purchase-orders.index') }}" 
+                           class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                            <i class="fas fa-times mr-2"></i>Limpiar
+                        </a>
+                    @endif
+                </form>
+            </div>
+
+            @if(session('success'))
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {{ session('success') }}
                 </div>
             @endif
 
-            <!-- Tarjeta Principal -->
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <!-- Header -->
-                <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-900">Gestión de Órdenes</h3>
-                            <p class="mt-1 text-sm text-gray-600">Administra todas las órdenes de compra</p>
-                        </div>
-                        <div class="flex items-center space-x-2 text-sm text-gray-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <span class="font-medium">Total: {{ $purchaseOrders->total() }}</span>
-                        </div>
-                    </div>
+            @if(session('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {{ session('error') }}
                 </div>
+            @endif
 
-                <!-- Filtros -->
-                <div class="p-6 bg-gray-50 border-b border-gray-200">
-                    <form method="GET" action="{{ route('purchase-orders.index') }}" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Búsqueda -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-                                <input type="text" 
-                                       name="search" 
-                                       value="{{ request('search') }}"
-                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                                       placeholder="Número de orden...">
-                            </div>
+            <!-- Lista de Órdenes con Acordeón -->
+            <div class="space-y-4">
+                @forelse($purchaseOrders as $order)
+                    <div x-data="{ open: false }" 
+                         class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+                        
+                        <!-- Header de la Orden (Clickeable) -->
+                        <div @click="open = !open" 
+                             class="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center justify-between">
+                                <!-- Info Principal -->
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-4">
+                                        <!-- Número de Orden -->
+                                        <h3 class="text-lg font-semibold text-gray-900">
+                                            {{ $order->order_number }}
+                                        </h3>
+                                        
+                                        <!-- Status Badge -->
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                            @if($order->status === 'pending')  text-yellow-800
+                                            @elseif($order->status === 'partial')  
+                                            @elseif($order->status === 'received') bg-green-100
+                                            @elseif($order->status === 'cancelled')  
+                                            @else  
+                                            @endif">
+                                            {{ $order->status_label }}
+                                        </span>
 
-                            <!-- Proveedor -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Proveedor</label>
-                                <select name="supplier_id" 
-                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Todos</option>
-                                    @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                            {{ $supplier->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Estado -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                                <select name="status" 
-                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Todos</option>
-                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pendiente</option>
-                                    <option value="received" {{ request('status') == 'received' ? 'selected' : '' }}>Recibida</option>
-                                    <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Parcial</option>
-                                    <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelada</option>
-                                    <option value="in_return" {{ request('status') == 'in_return' ? 'selected' : '' }}>En Devolución</option>
-                                </select>
-                            </div>
-
-                            <!-- Pagado -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Pago</label>
-                                <select name="is_paid" 
-                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Todos</option>
-                                    <option value="1" {{ request('is_paid') === '1' ? 'selected' : '' }}>Pagado</option>
-                                    <option value="0" {{ request('is_paid') === '0' ? 'selected' : '' }}>No Pagado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2">
-                            <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-all duration-200">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                                </svg>
-                                Filtrar
-                            </button>
-                            @if(request()->hasAny(['search', 'supplier_id', 'status', 'is_paid']))
-                                <a href="{{ route('purchase-orders.index') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-all duration-200">
-                                    Limpiar
-                                </a>
-                            @endif
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Tabla -->
-                <div class="overflow-x-auto">
-                    @if($purchaseOrders->count() > 0)
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Orden
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Proveedor
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Fecha
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Estado
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Total
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Pago
-                                    </th>
-                                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($purchaseOrders as $order)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                        <!-- Orden -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-bold text-gray-900">{{ $order->order_number }}</div>
-                                                    <div class="text-xs text-gray-500">{{ $order->total_items }} items</div>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <!-- Proveedor -->
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $order->supplier->name }}</div>
-                                        </td>
-
-                                        <!-- Fecha -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $order->order_date->format('d/m/Y') }}</div>
-                                        </td>
-
-                                        <!-- Estado -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                                {{ $order->status_color === 'yellow' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                {{ $order->status_color === 'green' ? 'bg-green-100 text-green-800' : '' }}
-                                                {{ $order->status_color === 'blue' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                {{ $order->status_color === 'red' ? 'bg-red-100 text-red-800' : '' }}
-                                                {{ $order->status_color === 'orange' ? 'bg-orange-100 text-orange-800' : '' }}">
-                                                {{ $order->status_label }}
+                                        <!-- Indicador de Recepciones -->
+                                        @if($order->receipts_count > 0)
+                                            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">
+                                                <i class="fas fa-box-open mr-1"></i>
+                                                {{ $order->receipts_count }} {{ $order->receipts_count === 1 ? 'Recepción' : 'Recepciones' }}
                                             </span>
-                                        </td>
+                                        @endif
+                                    </div>
 
-                                        <!-- Total -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-bold text-gray-900">${{ number_format($order->total, 2) }}</div>
-                                        </td>
+                                    <!-- Info Secundaria -->
+                                    <div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                        <span>
+                                            <i class="fas fa-building text-gray-400 mr-1"></i>
+                                            {{ $order->supplier->name }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                                            {{ $order->order_date->format('d/m/Y') }}
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-warehouse text-gray-400 mr-1"></i>
+                                            {{ $order->destinationWarehouse->name }}
+                                        </span>
+                                        <span class="font-semibold text-gray-900">
+                                            <i class="fas fa-dollar-sign text-gray-400 mr-1"></i>
+                                            ${{ number_format($order->total, 2) }}
+                                        </span>
+                                    </div>
 
-                                        <!-- Pago -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($order->is_paid)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                    Pagado
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                                    Pendiente
-                                                </span>
-                                            @endif
-                                        </td>
-
-                                        <!-- Acciones -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="flex items-center justify-center space-x-3">
-                                                <a href="{{ route('purchase-orders.show', $order) }}" 
-                                                   title="Ver detalles"
-                                                   class="text-blue-600 hover:text-blue-900 transition-colors duration-150">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                    </svg>
-                                                </a>
-                                                
-                                                @if($order->canBeEdited())
-                                                    <a href="{{ route('purchase-orders.edit', $order) }}" 
-                                                       title="Editar"
-                                                       class="text-orange-600 hover:text-orange-900 transition-colors duration-150">
-                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                        </svg>
-                                                    </a>
-                                                @endif
+                                    <!-- Progreso de Recepción -->
+                                    @if($order->status !== 'cancelled')
+                                        <div class="mt-3">
+                                            <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                                <span>Progreso de recepción</span>
+                                                <span class="font-semibold">{{ number_format($order->receipt_progress, 1) }}%</span>
                                             </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @else
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay órdenes</h3>
-                            <p class="mt-1 text-sm text-gray-500">Comienza creando una nueva orden de compra.</p>
-                            <div class="mt-6">
-                                <a href="{{ route('purchase-orders.create') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    Nueva Orden
-                                </a>
+                                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                                <div class="h-2 rounded-full transition-all duration-300
+                                                    @if($order->receipt_progress < 50) 
+                                                    @elseif($order->receipt_progress < 100) 
+                                                    @else bg-green-500
+                                                    @endif"
+                                                    style="width: {{ $order->receipt_progress }}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <!-- Botones de Acción -->
+                                <div class="flex items-center gap-2 ml-4">
+                                    <a href="{{ route('purchase-orders.show', $order) }}" 
+                                       class="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
+                                       @click.stop>
+                                        <i class="fas fa-eye mr-1"></i>Ver
+                                    </a>
+                                    
+                                    @if($order->canBeReceived())
+                                        <a href="{{ route('purchase-orders.show', $order) }}#receive" 
+                                           class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                                           @click.stop>
+                                            <i class="fas fa-box-open mr-1"></i>Recibir
+                                        </a>
+                                    @endif
+
+                                    <!-- Indicador de Acordeón -->
+                                    <div class="ml-2 text-gray-400 transition-transform duration-200"
+                                         :class="{ 'rotate-180': open }">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    @endif
-                </div>
 
-                <!-- Paginación -->
-                @if($purchaseOrders->count() > 0)
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        {{ $purchaseOrders->links() }}
+                        <!-- Contenido del Acordeón (Recepciones) -->
+                        <div x-show="open" 
+                             x-collapse
+                             class="border-t border-gray-200 bg-gray-50">
+                            <div class="px-6 py-4">
+                                <!-- Items de la Orden -->
+                                <div class="mb-6">
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                        <i class="fas fa-list-ul mr-2 text-gray-400"></i>
+                                        Productos Ordenados
+                                    </h4>
+                                    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Ordenado</th>
+                                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Recibido</th>
+                                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Pendiente</th>
+                                                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200">
+                                                @foreach($order->items as $item)
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="px-4 py-3 text-sm">
+                                                            <div class="font-medium text-gray-900">{{ $item->product_code }}</div>
+                                                            <div class="text-gray-500 text-xs">{{ $item->product_name }}</div>
+                                                        </td>
+                                                        <td class="px-4 py-3 text-center text-sm text-gray-900">
+                                                            {{ $item->quantity_ordered }}
+                                                        </td>
+                                                        <td class="px-4 py-3 text-center">
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                                @if($item->quantity_received === 0)  
+                                                                @elseif($item->isFullyReceived())  
+                                                                @else  text-blue-800
+                                                                @endif">
+                                                                {{ $item->quantity_received }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-4 py-3 text-center text-sm">
+                                                            <span class="text-gray-600 font-medium">
+                                                                {{ $item->pending_quantity }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                                            ${{ number_format($item->subtotal, 2) }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Historial de Recepciones -->
+                                @if($order->receipts->count() > 0)
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                            <i class="fas fa-history mr-2 text-gray-400"></i>
+                                            Historial de Recepciones ({{ $order->receipts->count() }})
+                                        </h4>
+                                        <div class="space-y-3">
+                                            @foreach($order->receipts->sortByDesc('received_at') as $receipt)
+                                                <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                                                    <div class="flex items-start justify-between">
+                                                        <!-- Info de la Recepción -->
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-3 mb-2">
+                                                                <span class="font-semibold text-gray-900">
+                                                                    <i class="fas fa-receipt text-indigo-600 mr-1"></i>
+                                                                    {{ $receipt->receipt_number }}
+                                                                </span>
+                                                                <span class="px-2 py-1 rounded text-xs font-semibold
+                                                                    @if($receipt->status === 'pending')  
+                                                                    @elseif($receipt->status === 'partial')  
+                                                                    @elseif($receipt->status === 'completed')  
+                                                                    @elseif($receipt->status === 'with_issues')  
+                                                                    @else  text-gray-800
+                                                                    @endif">
+                                                                    {{ ucfirst($receipt->status) }}
+                                                                </span>
+                                                            </div>
+                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                                                                <div>
+                                                                    <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                                                                    <span class="font-medium">{{ $receipt->received_at->format('d/m/Y H:i') }}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <i class="fas fa-user text-gray-400 mr-1"></i>
+                                                                    {{ $receipt->receivedBy->name }}
+                                                                </div>
+                                                                <div>
+                                                                    <i class="fas fa-warehouse text-gray-400 mr-1"></i>
+                                                                    {{ $receipt->warehouse->name }}
+                                                                </div>
+                                                                <div class="font-semibold text-indigo-600">
+                                                                    <i class="fas fa-box text-gray-400 mr-1"></i>
+                                                                    {{ $receipt->items->sum('quantity_received') }} unidades
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Items Recibidos -->
+                                                            <div class="mt-3 pl-4 border-l-2 border-indigo-200">
+                                                                @foreach($receipt->items as $receiptItem)
+                                                                    <div class="text-xs text-gray-600 py-1">
+                                                                        <span class="font-medium text-gray-700">{{ $receiptItem->product->code }}</span>: 
+                                                                        <span class="text-indigo-600 font-semibold">{{ $receiptItem->quantity_received }}</span> unidades
+                                                                        @if($receiptItem->batch_number)
+                                                                            <span class="text-gray-500">(Lote: {{ $receiptItem->batch_number }})</span>
+                                                                        @endif
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+
+                                                            @if($receipt->notes)
+                                                                <div class="mt-2 text-xs text-gray-500 italic">
+                                                                    <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
+                                                                    {{ $receipt->notes }}
+                                                                </div>
+                                                            @endif
+                                                        </div>
+
+                                                        <!-- Tiempo desde la recepción -->
+                                                        <div class="text-right text-xs text-gray-500 ml-4">
+                                                            {{ $receipt->received_at->diffForHumans() }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="text-center py-8 text-gray-500">
+                                        <i class="fas fa-inbox text-4xl text-gray-300 mb-2"></i>
+                                        <p class="text-sm">No hay recepciones registradas aún</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
-                @endif
+                @empty
+                    <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 text-lg">No hay órdenes de compra</p>
+                        <a href="{{ route('purchase-orders.create') }}" 
+                           class="inline-flex items-center mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                            <i class="fas fa-plus mr-2"></i>
+                            Crear Primera Orden
+                        </a>
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- Paginación -->
+            <div class="mt-6">
+                {{ $purchaseOrders->links() }}
             </div>
         </div>
     </div>

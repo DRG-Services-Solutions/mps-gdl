@@ -20,7 +20,7 @@
             <form action="{{ route('purchase-orders.store') }}" 
                   method="POST" 
                   x-data="purchaseOrderForm()"
-                  @submit.prevent="submitForm">
+                  @submit="submitForm">
                 @csrf
 
                 <div class="space-y-6">
@@ -49,6 +49,11 @@
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            <input type="hidden" name="items_json" :value="JSON.stringify(items)">
+
+                            <div class="flex justify-end gap-3">
+                                </div>
 
                             <!-- Almacén Destino -->
                             <div>
@@ -130,7 +135,7 @@
                                             <!-- Producto -->
                                             <div class="md:col-span-2">
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
-                                                <select :name="'items[' + index + '][product_id]'" 
+                                                <select
                                                         x-model="item.product_id"
                                                         @change="updateProduct(index)"
                                                         class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
@@ -152,7 +157,7 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
                                                 <input type="number" 
-                                                       :name="'items[' + index + '][quantity_ordered]'"
+                                                      
                                                        x-model.number="item.quantity_ordered"
                                                        @input="calculateSubtotal(index)"
                                                        min="1"
@@ -164,7 +169,7 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Precio Unitario *</label>
                                                 <input type="number" 
-                                                       :name="'items[' + index + '][unit_price]'"
+                                                       
                                                        x-model.number="item.unit_price"
                                                        @input="calculateSubtotal(index)"
                                                        step="0.01"
@@ -297,10 +302,11 @@
                 
                 submitForm(e) {
                     if (this.items.length === 0) {
+                        // Si no hay productos, AHORA SÍ prevenimos el envío.
+                        e.preventDefault(); 
                         alert('Debes agregar al menos un producto');
-                        return;
                     }
-                    e.target.submit();
+                    // Si hay productos, no hacemos nada y dejamos que el formulario se envíe solo.
                 }
             }
         }
