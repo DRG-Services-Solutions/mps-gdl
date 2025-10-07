@@ -137,7 +137,7 @@
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
                                                 <select :name="'items[' + index + '][product_id]'" 
                                                         x-model="item.product_id"
-                                                        @change="updateProduct(index)"
+                                                        @change="updateProduct($event, index)"
                                                         class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-orange-500"
                                                         required>
                                                     <option value="">Seleccionar...</option>
@@ -250,74 +250,77 @@
         </div>
     </div>
 
-    @push('scripts')
-    <script>
-        function purchaseOrderEditForm() {
-            return {
-                items: @json($purchaseOrder->items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'quantity_ordered' => $item->quantity_ordered,
-                        'unit_price' => $item->unit_price,
-                        'subtotal' => $item->subtotal,
-                    ];
-                })),
-                
-                addItem() {
-                    this.items.push({
-                        id: null,
-                        product_id: '',
-                        quantity_ordered: 1,
-                        unit_price: 0,
-                        subtotal: 0
-                    });
-                },
-                
-                removeItem(index) {
-                    this.items.splice(index, 1);
-                },
-                
-                updateProduct(index) {
-                    const select = document.querySelector(`select[name="items[${index}][product_id]"]`);
-                    const option = select.options[select.selectedIndex];
-                    
-                    if (option.value) {
-                        this.items[index].unit_price = parseFloat(option.dataset.price) || 0;
-                        this.calculateSubtotal(index);
-                    }
-                },
-                
-                calculateSubtotal(index) {
-                    const item = this.items[index];
-                    item.subtotal = item.quantity_ordered * item.unit_price;
-                },
-                
-                get totalQuantity() {
-                    return this.items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
-                },
-                
-                get subtotal() {
-                    return this.items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-                },
-                
-                get tax() {
-                    return this.subtotal * 0.16;
-                },
-                
-                get total() {
-                    return this.subtotal + this.tax;
-                },
-                
-                submitForm(e) {
-                    if (this.items.length === 0) {
-                        alert('Debes tener al menos un producto');
-                        return;
-                    }
-                    e.target.submit();
-                }
+@push('scripts')
+<script>
+function purchaseOrderEditForm() {
+    return {
+        // Cargar items desde el controlador
+        items: @json($items),
+
+        // Agregar un nuevo item
+        addItem() {
+            this.items.push({
+                id: null,
+                product_id: '',
+                quantity_ordered: 1,
+                unit_price: 0,
+                subtotal: 0
+            });
+        },
+
+        // Remover item por índice
+        removeItem(index) {
+            this.items.splice(index, 1);
+        },
+
+        // Actualizar precio unitario al seleccionar un producto
+        updateProduct(index) {
+            const select = document.querySelector(`select[name="items[${index}][product_id]"]`);
+            const option = select.options[select.selectedIndex];
+
+            if (option.value) {
+                this.items[index].unit_price = parseFloat(option.dataset.price) || 0;
+                this.calculateSubtotal(index);
+            } else {
+                this.items[index].unit_price = 0;
+                this.items[index].subtotal = 0;
             }
+        },
+
+        // Calcular subtotal de un item
+        calculateSubtotal(index) {
+            const item = this.items[index];
+            item.subtotal = (item.quantity_ordered || 0) * (item.unit_price || 0);
+        },
+
+        // Propiedades computadas
+        get totalQuantity() {
+            return this.items.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
+        },
+
+        get subtotal() {
+            return this.items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+        },
+
+        get tax() {
+            return this.subtotal * 0.16;
+        },
+
+        get total() {
+            return this.subtotal + this.tax;
+        },
+
+        // Enviar formulario
+        submitForm(e) {
+            if (this.items.length === 0) {
+                alert('Debes tener al menos un producto');
+                return;
+            }
+            e.target.submit();
         }
-    </script>
-    @endpush
+    }
+}
+</script>
+@endpush
+
 </x-app-layout>

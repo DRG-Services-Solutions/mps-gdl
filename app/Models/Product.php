@@ -170,4 +170,8 @@ class Product extends Model
     {
         return $this->units()->count();
     }
+    public function storageLocation()
+    {
+        return $this->belongsTo(StorageLocation::class);
+    }
 }

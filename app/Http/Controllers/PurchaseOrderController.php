@@ -143,19 +143,32 @@ class PurchaseOrderController extends Controller
      */
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        // No permitir editar si está cancelada
         if (!$purchaseOrder->canBeEdited()) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'No se puede editar una orden cancelada.');
         }
 
         $purchaseOrder->load('items.product');
+
         $suppliers = Supplier::active()->orderBy('name')->get();
         $warehouses = StorageLocation::active()->warehouses()->orderBy('name')->get();
         $products = Product::orderBy('name')->get();
 
-        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products'));
+        // Preparar los items para Alpine.js
+        $items = $purchaseOrder->items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'quantity_ordered' => $item->quantity_ordered,
+                'unit_price' => $item->unit_price,
+                'subtotal' => $item->quantity_ordered * $item->unit_price,
+            ];
+        });
+
+        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products', 'items'));
     }
+
+
 
     /**
      * Update the specified purchase order.

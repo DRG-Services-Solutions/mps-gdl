@@ -11,6 +11,7 @@ use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\ProductUnitController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\StorageLocationController;
 
 
 Route::get('/', function () {
@@ -38,6 +39,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('subcategories', SubcategoryController::class);
     Route::resource('product-units', ProductUnitController::class);
     Route::resource('suppliers', SupplierController::class);
+    Route::resource('storage_locations', StorageLocationController::class);
+
     // Ruta adicional para cambiar estado
     Route::patch('suppliers/{supplier}/toggle-status', [SupplierController::class, 'toggleStatus'])
         ->name('suppliers.toggle-status');
