@@ -77,7 +77,7 @@ class MedicalSpecialtyController extends Controller
      */
     public function destroy(MedicalSpecialty $medicalSpecialty)
     {
-        $specialty->delete();
+        $medicalSpecialty->delete();
 
         return redirect()->route('specialties.index')
                          ->with('success', 'Especialidad eliminada exitosamente.');

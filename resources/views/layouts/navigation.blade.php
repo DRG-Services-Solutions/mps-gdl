@@ -50,6 +50,24 @@
                     {{ __('Gestión de Usuarios') }}
                 </x-nav-link>
 
+                <!-- Órdenes de Compra -->
+                <x-nav-link :href="route('purchase-orders.index')" :active="request()->routeIs('purchase-orders.*')">
+                    <x-slot name="icon">
+                        <i class="fa-solid fa-file-invoice-dollar fa-fw text-lg"></i>
+                    </x-slot>
+                    {{ __('Órdenes de Compra') }}
+                </x-nav-link>
+
+                <!-- Proveedores -->
+                <x-nav-link :href="route('suppliers.index')" :active="request()->routeIs('suppliers.*')">
+                    <x-slot name="icon">
+                        <i class="fa-solid fa-cart-flatbed text-lg"></i>
+                    </x-slot>
+                    {{ __('Proveedores') }}
+                </x-nav-link>
+
+                
+
                 <!-- Catálogos con Dropdown -->
                 <div class="relative">
                     <!-- Botón principal de Catálogos -->
@@ -86,6 +104,13 @@
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('manufacturers.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-industry fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Fabricantes') }}</span>
+                        </a>
+                        
+                        <!-- Ubicaciones -->
+                        <a href="{{ route('storage_locations.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('storage_locations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-warehouse fa-fw text-sm"></i>
+                            <span class="truncate">{{ __('Ubicaciones') }}</span>
                         </a>
 
                         <!-- Categorías -->
@@ -154,6 +179,7 @@
                                   :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
                                 {{ __('Gestión de Productos') }}
                             </span>
+                           
                         </div>
                         <div class="flex-shrink-0 transition-all duration-300" 
                              :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
@@ -178,6 +204,14 @@
                             <i class="fas fa-box fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Productos') }}</span>
                         </a>
+
+                        <!-- Inventario / Unidades de Productos -->
+                        <a href="{{ route('product-units.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-box fa-fw text-sm"></i>
+                            <span class="truncate">{{ __('Inventario') }}</span>
+                        </a>
+                        
                     </div>
 
                     <!-- Tooltip flotante para sidebar colapsado -->
@@ -193,7 +227,11 @@
                             <i class="fas fa-box fa-fw text-sm"></i>
                             <span>{{ __('Productos') }}</span>
                         </a>
+                      
                     </div>
+                    <!-- Inventario / Unidades de Productos -->
+                 
+
                 </div>
             @endrole
         </div>

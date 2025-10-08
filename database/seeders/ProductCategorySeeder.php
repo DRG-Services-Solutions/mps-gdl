@@ -18,7 +18,7 @@ class ProductCategorySeeder extends Seeder
         $categories = [
             [
                 'name' => 'Consumibles Quirúrgicos',
-                'description' => 'Material de un solo uso o con vida útil limitada,'
+                'description' => 'Material de un solo uso o con vida útil limitada,',
             
             ],
             [

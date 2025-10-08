@@ -71,9 +71,7 @@
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     {{ __('Tipo de Tracking') }}
                                 </th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                    {{ __('Stock Actual') }}
-                                </th>
+                               
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
                                     {{ __('Estado') }}
                                 </th>
@@ -156,28 +154,7 @@
                                         @endswitch
                                     </td>
 
-                                    <!-- Stock Actual (Calculado) -->
-                                    <td class="px-6 py-4 text-center">
-                                        @php
-                                            $currentStock = $product->getCurrentStock();
-                                            $isLowStock = $product->isLowStock();
-                                        @endphp
-                                        <div class="flex flex-col items-center">
-                                            <div class="flex items-center space-x-2">
-                                                <span class="text-lg font-bold {{ $isLowStock ? 'text-red-600' : 'text-gray-900' }}">
-                                                    {{ $currentStock }}
-                                                </span>
-                                                @if($isLowStock && $currentStock > 0)
-                                                    <i class="fas fa-exclamation-triangle text-amber-500 text-sm" title="Stock bajo"></i>
-                                                @elseif($currentStock == 0)
-                                                    <i class="fas fa-times-circle text-red-500 text-sm" title="Sin stock"></i>
-                                                @endif
-                                            </div>
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                Mín: {{ $product->minimum_stock }}
-                                            </div>
-                                        </div>
-                                    </td>
+                                
 
                                     <!-- Estado -->
                                     <td class="px-6 py-4 text-center hidden xl:table-cell">
