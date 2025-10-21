@@ -270,7 +270,7 @@
                                            {{ old('is_consumable', $product->is_consumable) ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm font-medium text-gray-700">
                                         <i class="fas fa-recycle text-green-500 mr-1"></i>
-                                        {{ __('Es Consumible') }}
+                                        {{ __('Consumible/ Uso Único') }}
                                     </span>
                                 </label>
                                 <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
@@ -280,15 +280,6 @@
                                     <span class="ml-2 text-sm font-medium text-gray-700">
                                         <i class="fas fa-bacteria text-purple-500 mr-1"></i>
                                         {{ __('Requiere Esterilización') }}
-                                    </span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_single_use" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('is_single_use', $product->is_single_use) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-ban text-red-500 mr-1"></i>
-                                        {{ __('Uso Único') }}
                                     </span>
                                 </label>
                             </div>

@@ -160,7 +160,10 @@
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                        <option value="{{ $category->id }}" 
+                                                {{ old('category_id') == $category->id ? 'selected' : '' }} 
+                                                data-is-consumable="{{ $category->is_consumable }}"
+                                                data-requires-sterilization="{{ $category->requires_sterilization }}">
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
@@ -270,7 +273,7 @@
                             </h4>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="requires_sterilization" value="1" 
+                                    <input type="checkbox" name="requires_sterilization" value="1"  x-model="requiresSterilization"
                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
                                            {{ old('requires_sterilization') ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm font-medium text-gray-700">
@@ -279,21 +282,12 @@
                                     </span>
                                 </label>
                                 <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_consumable" value="1" 
+                                    <input type="checkbox" name="is_consumable" value="1"  x-model="isConsumable"
                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
                                            {{ old('is_consumable') ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm font-medium text-gray-700">
                                         <i class="fas fa-recycle text-green-500 mr-1"></i>
-                                        {{ __('Es Consumible') }}
-                                    </span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_single_use" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('is_single_use') ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-ban text-red-500 mr-1"></i>
-                                        {{ __('Uso Único') }}
+                                        {{ __('Consumible /Uso Único') }}
                                     </span>
                                 </label>
                             </div>
@@ -375,12 +369,27 @@
         function productForm(allSubcategories) {
             return {
                 selectedCategory: '{{ old("category_id") }}',
+                requiresSterilization: {{ old('requires_sterilization') ? 'true' : 'false' }},
+                isConsumable: {{ old('is_consumable') ? 'true' : 'false' }},
                 
                 get filteredSubcategories() {
                     if (!this.selectedCategory) {
                         return [];
                     }
                     return allSubcategories.filter(sub => sub.category_id == this.selectedCategory);
+                }
+                applyCategoryRules() {
+                    const select = document.getElementById('category_id');
+                    const option = select.options[select.selectedIndex];
+
+                    if (option) {
+                    
+                        const isConsumableAttr = option.getAttribute('data-is-consumable');
+                        const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
+
+                        this.isConsumable = isConsumableAttr === '1' || isConsumableAttr === 'true';
+                        this.requiresSterilization = requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true';
+                    }
                 }
             }
         }
