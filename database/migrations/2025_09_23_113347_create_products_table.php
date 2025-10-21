@@ -24,7 +24,6 @@ return new class extends Migration
             // ==========================================================
             $table->string('name');
             $table->string('code')->unique(); // Código interno del catálogo
-            $table->string('model')->nullable(); // Modelo del fabricante
             $table->text('description')->nullable();
             $table->text('specifications')->nullable(); // Especificaciones técnicas
 

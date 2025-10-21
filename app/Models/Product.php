@@ -19,7 +19,6 @@ class Product extends Model
         'manufacturer_id',
         'name',
         'code',
-        'model',
         'description',
         'specifications',
         
