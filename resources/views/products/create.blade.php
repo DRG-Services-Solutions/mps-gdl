@@ -92,17 +92,6 @@
                                 @error('code')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Modelo --}}
-                            <div>
-                                <label for="model" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-cogs text-gray-400 mr-2"></i>
-                                    {{ __('Modelo del Fabricante') }}
-                                </label>
-                                <input type="text" name="model" id="model" value="{{ old('model') }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                       placeholder="{{ __('Opcional') }}">
-                            </div>
-
                             {{-- Estado --}}
                             <div>
                                 <label for="status" class="flex items-center text-sm font-medium text-gray-700 mb-2">

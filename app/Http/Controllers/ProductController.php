@@ -58,7 +58,6 @@ class ProductController extends Controller
         // Información del catálogo
         'name' => 'required|string|max:255',
         'code' => 'required|string|max:255|unique:products,code',
-        'model' => 'nullable|string|max:255',
         'description' => 'nullable|string',
         'specifications' => 'nullable|string',
         
@@ -157,7 +156,6 @@ class ProductController extends Controller
                 'max:255',
                 Rule::unique('products', 'code')->ignore($product->id)
             ],
-            'model' => 'nullable|string|max:255',
             'serial_number' => [
                 'nullable',
                 'string',
