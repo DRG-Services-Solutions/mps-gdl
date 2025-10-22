@@ -18,7 +18,7 @@
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="productForm({{ json_encode($subcategories) }})">
+    <div class="py-8" x-data="productForm({{ json_encode($subcategories) }})" x-init="applyCategoryRules()">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             
             {{-- Alerta informativa --}}
@@ -156,17 +156,20 @@
                                     <i class="fas fa-tags text-gray-400 mr-2"></i>
                                     {{ __('Categoría') }}
                                 </label>
-                                <select name="category_id" id="category_id" x-model="selectedCategory" @change="$nextTick(() => { document.getElementById('subcategory_id').value = '' })"
+                                <select name="category_id" id="category_id" x-model="selectedCategory" 
+                                        @change="applyCategoryRules()"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                        <option value="{{ $category->id }}" 
+                                                {{ old('category_id') == $category->id ? 'selected' : '' }} 
+                                                data-requires-sterilization="{{ $category->requires_sterilization }}">
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                            
+
                             {{-- Subcategoría --}}
                             <div>
                                 <label for="subcategory_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -178,9 +181,7 @@
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     <template x-for="subcategory in filteredSubcategories" :key="subcategory.id">
-                                        <option :value="subcategory.id" 
-                                                :selected="subcategory.id == {{ old('subcategory_id', 'null') }}"
-                                                x-text="subcategory.name"></option>
+                                        <option :value="subcategory.id" :selected="subcategory.id == {{ old('subcategory_id', 'null') }}" x-text="subcategory.name"></option>
                                     </template>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500" x-show="!selectedCategory">
@@ -269,31 +270,20 @@
                                 {{ __('Características del Producto') }}
                             </h4>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="requires_sterilization" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('requires_sterilization') ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
+
+                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200" 
+                                        :class="{
+                                            'cursor-not-allowed text-gray-400': isSterilizationDisabled, 
+                                            'cursor-pointer hover:bg-gray-100': !isSterilizationDisabled 
+                                        }">
+                                    <input type="checkbox" name="requires_sterilization" value="1"
+                                            x-model="requiresSterilization"
+                                            x-bind:disabled="isSterilizationDisabled"
+                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" transition-colors duration-200"
+                                           :class="{'opacity-50 cursor-not-allowed': isSterilizationDisabled}">
+                                    <span class="ml-2 text-sm font-medium text-gray-500" :class="{'text-gray-500': isSterilizationDisabled, 'text-gray-700': !isSterilizationDisabled}">
                                         <i class="fas fa-bacteria text-purple-500 mr-1"></i>
                                         {{ __('Requiere Esterilización') }}
-                                    </span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_consumable" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('is_consumable') ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-recycle text-green-500 mr-1"></i>
-                                        {{ __('Es Consumible') }}
-                                    </span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_single_use" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('is_single_use') ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-ban text-red-500 mr-1"></i>
-                                        {{ __('Uso Único') }}
                                     </span>
                                 </label>
                             </div>
@@ -338,19 +328,7 @@
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 5: ESPECIFICACIONES TÉCNICAS --}}
-                    <div class="mb-8">
-                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-list-ul text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Especificaciones Técnicas (Opcional)') }}</h3>
-                        </div>
-                        
-                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                            <textarea name="specifications" id="specifications" rows="4"
-                                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                      placeholder="{{ __('Dimensiones, peso, materiales, características técnicas...') }}">{{ old('specifications') }}</textarea>
-                        </div>
-                    </div>
+                   
 
                     {{-- Botones de Acción --}}
                     <div class="flex items-center justify-between pt-6 border-t border-gray-200">
@@ -370,20 +348,63 @@
         </div>
     </div>
 
-    @push('scripts')
-    <script>
-        function productForm(allSubcategories) {
-            return {
-                selectedCategory: '{{ old("category_id") }}',
+ @push('scripts')
+<script>
+    function productForm(allSubcategories) {
+        return {
+            // Inicializa con el valor anterior. Usamos el operador de coalescencia ?? para el caso base.
+            selectedCategory: '{{ old("category_id") ?? "" }}',
+            // Inicializa el modelo de Alpine con el valor "old", si existe.
+            requiresSterilization: {{ old('requires_sterilization') ? 'true' : 'false' }},
+
+            // Propiedad computada: Controla el estado 'disabled' del checkbox.
+            get isSterilizationDisabled() {
+                const select = document.getElementById('category_id');
+                const option = select.options[select.selectedIndex];
+            
+                // Si no hay opción seleccionada O la opción no tiene el atributo, lo inhabilitamos.
+                if (!option || option.value === "") return true;
+
+                const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
                 
-                get filteredSubcategories() {
-                    if (!this.selectedCategory) {
-                        return [];
-                    }
-                    return allSubcategories.filter(sub => sub.category_id == this.selectedCategory);
+                // El checkbox SÓLO está HABILITADO si el atributo es '1' o 'true'.
+                // De lo contrario, está inhabilitado (true).
+                return !(requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true');
+            },
+
+            // Propiedad computada: Filtra las subcategorías.
+            get filteredSubcategories() {
+                if (!this.selectedCategory) return [];
+                // Usamos String() para asegurar la comparación de tipos, aunque sub.category_id es probablemente un número.
+                return allSubcategories.filter(sub => String(sub.category_id) === String(this.selectedCategory));
+            },
+
+            // Lógica que se ejecuta al cambiar la Categoría
+            applyCategoryRules() {
+                const select = document.getElementById('category_id');
+                const option = select.options[select.selectedIndex];
+
+                // 1. Vaciar la subcategoría al cambiar la categoría principal
+                // Esto es necesario para evitar enviar un ID obsoleto
+                document.getElementById('subcategory_id').value = '';
+
+                // 2. Controlar el estado del checkbox de esterilización
+                if (option && option.value !== "") { 
+                    const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
+                    const categoryRequiresSterilization = requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true';
+                    
+                    if (!categoryRequiresSterilization) {
+                        // Si la categoría NO lo permite, forzamos el checkbox a desmarcarse y a false.
+                        this.requiresSterilization = false;
+                    } 
+                    // Si la categoría SÍ lo permite, MANTENEMOS el estado (old value o click del usuario).
+                } else {
+                    // Si no hay categoría seleccionada, desmarcar por seguridad
+                    this.requiresSterilization = false;
                 }
             }
         }
-    </script>
-    @endpush
+    }
+</script>
+@endpush
 </x-app-layout>

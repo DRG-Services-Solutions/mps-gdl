@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Category;
 
 class Product extends Model
 {
@@ -20,7 +21,7 @@ class Product extends Model
         'name',
         'code',
         'description',
-        'specifications',
+        
         
         'tracking_type',
         'requires_sterilization',
@@ -44,7 +45,7 @@ class Product extends Model
     
     public function category() 
     {
-        return $this->belongsTo(ProductCategory::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function medicalSpecialty() 
