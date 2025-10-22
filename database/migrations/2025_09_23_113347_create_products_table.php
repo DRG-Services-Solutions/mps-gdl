@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->unique(); // Código interno del catálogo
             $table->text('description')->nullable();
-            $table->text('specifications')->nullable(); // Especificaciones técnicas
+           
 
             // ==========================================================
             // TIPO DE TRAZABILIDAD
@@ -36,9 +36,6 @@ return new class extends Migration
             // CARACTERÍSTICAS DEL TIPO DE PRODUCTO
             // ==========================================================
             $table->boolean('requires_sterilization')->default(false); // Instrumentales reutilizables
-            $table->boolean('is_consumable')->default(false); // Consumibles de un solo uso
-            $table->boolean('is_single_use')->default(false); // De un solo uso
-
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================

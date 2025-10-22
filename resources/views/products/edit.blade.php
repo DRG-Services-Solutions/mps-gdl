@@ -264,15 +264,7 @@
                                         {{ __('RFID Habilitado') }}
                                     </span>
                                 </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="is_consumable" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('is_consumable', $product->is_consumable) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-recycle text-green-500 mr-1"></i>
-                                        {{ __('Consumible/ Uso Único') }}
-                                    </span>
-                                </label>
+                             
                                 <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
                                     <input type="checkbox" name="requires_sterilization" value="1" 
                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
@@ -390,23 +382,7 @@
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 6: ESPECIFICACIONES --}}
-                    <div class="mb-8">
-                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-list-ul text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Especificaciones Técnicas (Opcional)') }}</h3>
-                        </div>
-                        
-                        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                            <p class="text-sm text-gray-600 mb-3">
-                                <i class="fas fa-info-circle text-indigo-500 mr-1"></i>
-                                {{ __('Agregue o modifique las especificaciones técnicas del producto') }}
-                            </p>
-                            <textarea name="specifications" id="specifications" rows="4"
-                                      class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                      placeholder="{{ __('Ejemplo: Dimensiones: 15cm x 5cm x 3cm, Peso: 200g, Material: Acero inoxidable quirúrgico...') }}">{{ old('specifications', $product->specifications) }}</textarea>
-                        </div>
-                    </div>
+                    
 
                     {{-- Botones de Acción --}}
                     <div class="flex items-center justify-between pt-6 border-t border-gray-200">

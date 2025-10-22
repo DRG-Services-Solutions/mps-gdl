@@ -59,15 +59,14 @@ class ProductController extends Controller
         'name' => 'required|string|max:255',
         'code' => 'required|string|max:255|unique:products,code',
         'description' => 'nullable|string',
-        'specifications' => 'nullable|string',
+       
         
         // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
         'tracking_type' => 'required|in:stock,rfid,serial,none',
         
         // Características del producto
         'requires_sterilization' => 'nullable|boolean',
-        'is_consumable' => 'nullable|boolean',
-        'is_single_use' => 'nullable|boolean',
+        
         
         // Información de inventario general
         'unit_cost' => 'nullable|numeric|min:0',
@@ -92,8 +91,7 @@ class ProductController extends Controller
     
     // Manejo de checkboxes
     $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
-    $validated['is_consumable'] = $request->boolean('is_consumable');
-    $validated['is_single_use'] = $request->boolean('is_single_use');
+   
     
     // Valores por defecto
     $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
@@ -173,8 +171,7 @@ class ProductController extends Controller
                 Rule::unique('products', 'rfid_tag_id')->ignore($product->id)
             ],
             'requires_sterilization' => 'nullable|boolean',
-            'is_consumable' => 'nullable|boolean',
-            'is_single_use' => 'nullable|boolean',
+           
             
             // Stock y Costos
             'unit_cost' => 'nullable|numeric|min:0',
@@ -185,7 +182,7 @@ class ProductController extends Controller
             // Lote y Caducidad
             'expiration_date' => 'nullable|date',
             'lot_number' => 'nullable|string|max:255',
-            'specifications' => 'nullable|array', 
+            
             
             // Estado y Tracking
             'status' => 'required|in:active,inactive,maintenance,discontinued',
@@ -194,9 +191,8 @@ class ProductController extends Controller
 
         // Manejo de Checkboxes
         $validated['rfid_enabled'] = $request->boolean('rfid_enabled');
-        $validated['is_consumable'] = $request->boolean('is_consumable');
         $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
-        $validated['is_single_use'] = $request->boolean('is_single_use');
+       
         
         $product->update($validated);
         
