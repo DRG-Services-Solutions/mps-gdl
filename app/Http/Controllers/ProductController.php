@@ -165,7 +165,7 @@ class ProductController extends Controller
             
             // Estado y Tracking
             'status' => 'required|in:active,inactive,maintenance,discontinued',
-            'tracking_type' => 'required|in:stock,rfid,both,none',
+            'tracking_type' => 'required|in:code,rfid,both',
         ]);
 
         // Manejo de Checkboxes
