@@ -265,15 +265,7 @@
                                     </span>
                                 </label>
                              
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="requires_sterilization" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('requires_sterilization', $product->requires_sterilization) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-bacteria text-purple-500 mr-1"></i>
-                                        {{ __('Requiere Esterilización') }}
-                                    </span>
-                                </label>
+                               
                             </div>
                         </div>
                     </div>
