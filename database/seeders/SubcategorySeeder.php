@@ -24,20 +24,20 @@ class SubcategorySeeder extends Seeder
             ['category' => 'Instrumental Quirúrgico', 'name' => 'Pinzas de Campo', 'description' => 'Backhaus, Jones, Doyen'],
             
             // Material de Curación
-            ['category' => 'Material de Curación', 'name' => 'Gasas Estériles', 'description' => 'Gasas de diferentes tamaños en presentación estéril'],
-            ['category' => 'Material de Curación', 'name' => 'Apósitos', 'description' => 'Apósitos adhesivos y no adhesivos'],
-            ['category' => 'Material de Curación', 'name' => 'Vendas', 'description' => 'Vendas elásticas y de gasa'],
-            ['category' => 'Material de Curación', 'name' => 'Esparadrapo', 'description' => 'Cintas adhesivas médicas de diferentes tipos'],
-            ['category' => 'Material de Curación', 'name' => 'Compresas', 'description' => 'Compresas quirúrgicas de diferentes tamaños'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Gasas Estériles', 'description' => 'Gasas de diferentes tamaños en presentación estéril'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Apósitos', 'description' => 'Apósitos adhesivos y no adhesivos'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Vendas', 'description' => 'Vendas elásticas y de gasa'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Esparadrapo', 'description' => 'Cintas adhesivas médicas de diferentes tipos'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Compresas', 'description' => 'Compresas quirúrgicas de diferentes tamaños'],
             
             // Guantes Quirúrgicos
-            ['category' => 'Guantes Quirúrgicos', 'name' => 'Guantes de Látex', 'description' => 'Guantes estériles de látex natural'],
-            ['category' => 'Guantes Quirúrgicos', 'name' => 'Guantes de Nitrilo', 'description' => 'Guantes estériles libres de látex'],
-            ['category' => 'Guantes Quirúrgicos', 'name' => 'Guantes de Exploración', 'description' => 'Guantes no estériles para procedimientos menores'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Guantes de Látex', 'description' => 'Guantes estériles de látex natural'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Guantes de Nitrilo', 'description' => 'Guantes estériles libres de látex'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Guantes de Exploración', 'description' => 'Guantes no estériles para procedimientos menores'],
             
             // Suturas
-            ['category' => 'Suturas', 'name' => 'Suturas Absorbibles', 'description' => 'Vicryl, Monocryl, PDS'],
-            ['category' => 'Suturas', 'name' => 'Suturas No Absorbibles', 'description' => 'Nylon, Seda, Prolene'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Suturas Absorbibles', 'description' => 'Vicryl, Monocryl, PDS'],
+            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Suturas No Absorbibles', 'description' => 'Nylon, Seda, Prolene'],
             ['category' => 'Suturas', 'name' => 'Grapadoras Quirúrgicas', 'description' => 'Grapadoras cutáneas desechables'],
             
             // Jeringas y Agujas
