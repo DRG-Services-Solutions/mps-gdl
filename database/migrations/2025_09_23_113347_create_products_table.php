@@ -30,7 +30,7 @@ return new class extends Migration
             // ==========================================================
             // TIPO DE TRAZABILIDAD
             // ==========================================================
-            $table->enum('tracking_type', ['stock', 'rfid', 'serial', 'none'])->default('stock');
+            $table->enum('tracking_type', ['code', 'rfid', 'serial'])->default('code');
 
             
             // ==========================================================

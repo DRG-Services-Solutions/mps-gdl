@@ -62,7 +62,7 @@ class ProductController extends Controller
        
         
         // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
-        'tracking_type' => 'required|in:stock,rfid,serial,none',
+        'tracking_type' => 'required|in:code,rfid,serial',
         
         // Información de inventario general
         'unit_cost' => 'nullable|numeric|min:0',

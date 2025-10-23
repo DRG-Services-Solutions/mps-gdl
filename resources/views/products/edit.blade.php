@@ -295,17 +295,14 @@
                                 </label>
                                 <select name="tracking_type" id="tracking_type" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                    <option value="stock" {{ old('tracking_type', $product->tracking_type) == 'stock' ? 'selected' : '' }}>
-                                        📦 {{ __('Solo por Stock') }}
+                                    <option value="code" {{ old('tracking_type', $product->tracking_type) == 'code' ? 'selected' : '' }}>
+                                        📦 {{ __('Solo por Code') }}
                                     </option>
                                     <option value="rfid" {{ old('tracking_type', $product->tracking_type) == 'rfid' ? 'selected' : '' }}>
                                         📡 {{ __('Solo por RFID') }}
                                     </option>
                                     <option value="both" {{ old('tracking_type', $product->tracking_type) == 'both' ? 'selected' : '' }}>
                                         🔄 {{ __('Stock y RFID') }}
-                                    </option>
-                                    <option value="none" {{ old('tracking_type', $product->tracking_type) == 'none' ? 'selected' : '' }}>
-                                        🚫 {{ __('Sin rastreo') }}
                                     </option>
                                 </select>
                                 @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
