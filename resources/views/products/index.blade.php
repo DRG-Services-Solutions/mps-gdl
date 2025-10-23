@@ -139,16 +139,10 @@
                                                     Serial
                                                 </span>
                                                 @break
-                                            @case('stock')
+                                            @case('code')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                     <i class="fas fa-boxes mr-1"></i>
-                                                    Stock
-                                                </span>
-                                                @break
-                                            @case('none')
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                    <i class="fas fa-ban mr-1"></i>
-                                                    Sin tracking
+                                                    Code
                                                 </span>
                                                 @break
                                         @endswitch

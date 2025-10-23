@@ -36,9 +36,9 @@ class ProductController extends Controller
     public function create(): View
     {
         $manufacturers = Manufacturer::orderBy('name')->get(); 
-        $categories = Category::orderBy('name')->get(); 
+        $categories = Category::all ();
         $specialties = MedicalSpecialty::orderBy('name')->get();
-        $subcategories = Subcategory::orderBy('name')->get(); 
+        $subcategories = Subcategory::all(); 
         
         return view('products.create', compact('manufacturers', 'categories', 'specialties', 'subcategories'));
     }
@@ -62,11 +62,7 @@ class ProductController extends Controller
        
         
         // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
-        'tracking_type' => 'required|in:stock,rfid,serial,none',
-        
-        // Características del producto
-        'requires_sterilization' => 'nullable|boolean',
-        
+        'tracking_type' => 'required|in:code,rfid,serial',
         
         // Información de inventario general
         'unit_cost' => 'nullable|numeric|min:0',
@@ -75,23 +71,6 @@ class ProductController extends Controller
         // Estado del producto en catálogo
         'status' => 'nullable|in:active,inactive,discontinued',
     ]);
-    
-    // Validación de negocio: coherencia entre características
-    if ($request->boolean('requires_sterilization') && $validated['tracking_type'] !== 'serial') {
-        return back()->withErrors([
-            'tracking_type' => 'Los instrumentales que requieren esterilización deben usar tracking por número de serie'
-        ])->withInput();
-    }
-    
-    if ($request->boolean('is_single_use') && $validated['tracking_type'] === 'serial') {
-        return back()->withErrors([
-            'tracking_type' => 'Los productos de un solo uso no deberían usar número de serie'
-        ])->withInput();
-    }
-    
-    // Manejo de checkboxes
-    $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
-   
     
     // Valores por defecto
     $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
@@ -127,7 +106,7 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $manufacturers = Manufacturer::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get(); // CORREGIDO
+        $categories = Category::orderBy('name')->get(); 
         $specialties = MedicalSpecialty::orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
 
@@ -186,7 +165,7 @@ class ProductController extends Controller
             
             // Estado y Tracking
             'status' => 'required|in:active,inactive,maintenance,discontinued',
-            'tracking_type' => 'required|in:stock,rfid,both,none',
+            'tracking_type' => 'required|in:code,rfid,both',
         ]);
 
         // Manejo de Checkboxes

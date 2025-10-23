@@ -24,9 +24,7 @@ class Product extends Model
         
         
         'tracking_type',
-        'requires_sterilization',
-        'is_consumable',
-        'is_single_use',
+       
         
         'unit_cost',
         'minimum_stock',
@@ -35,9 +33,7 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'requires_sterilization' => 'boolean',
-        'is_consumable' => 'boolean',
-        'is_single_use' => 'boolean',
+        
         'unit_cost' => 'decimal:2',
     ];
 
@@ -429,23 +425,7 @@ class Product extends Model
         return $query->where('tracking_type', 'rfid');
     }
 
-    /**
-     * Scope para instrumentales (con serial)
-     */
-    public function scopeInstrumentals($query)
-    {
-        return $query->where('tracking_type', 'serial')
-                    ->where('requires_sterilization', true);
-    }
-
-    /**
-     * Scope para consumibles
-     */
-    public function scopeConsumables($query)
-    {
-        return $query->where('is_consumable', true);
-    }
-
+    
     /**
      * Scope para productos con stock bajo
      */

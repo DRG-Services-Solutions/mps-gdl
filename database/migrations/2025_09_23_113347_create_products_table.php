@@ -15,8 +15,8 @@ return new class extends Migration
             // CLAVES FORÁNEAS (CLASIFICACIÓN)
             // ==========================================================
             $table->foreignId('manufacturer_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); 
-            $table->foreignId('subcategory_id')->nullable()->constrained()->nullOnDelete(); 
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); // almacena los tipos de productos
+            $table->foreignId('subcategory_id')->nullable()->constrained()->nullOnDelete(); // almacena los subprodcutos
             $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 
 
             // ==========================================================
@@ -30,12 +30,9 @@ return new class extends Migration
             // ==========================================================
             // TIPO DE TRAZABILIDAD
             // ==========================================================
-            $table->enum('tracking_type', ['stock', 'rfid', 'serial', 'none'])->default('stock');
+            $table->enum('tracking_type', ['code', 'rfid', 'serial'])->default('code');
 
-            // ==========================================================
-            // CARACTERÍSTICAS DEL TIPO DE PRODUCTO
-            // ==========================================================
-            $table->boolean('requires_sterilization')->default(false); // Instrumentales reutilizables
+            
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================
