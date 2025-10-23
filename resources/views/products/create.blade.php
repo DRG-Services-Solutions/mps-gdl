@@ -265,28 +265,11 @@
 
                         {{-- Características --}}
                         <div class="mt-6 bg-gray-50 rounded-lg border border-gray-200 p-4">
-                            <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
-                                <i class="fas fa-check-square text-indigo-600 mr-2"></i>
-                                {{ __('Características del Producto') }}
+                            <h4  class="text-lg font-semibold text-gray-900">
+                
+                                {{ __('Este Tipo de Producto necesita Esterilización') }}
                             </h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200" 
-                                        :class="{
-                                            'cursor-not-allowed text-gray-400': isSterilizationDisabled, 
-                                            'cursor-pointer hover:bg-gray-100': !isSterilizationDisabled 
-                                        }">
-                                    <input type="checkbox" name="requires_sterilization" value="1"
-                                            x-model="requiresSterilization"
-                                            x-bind:disabled="isSterilizationDisabled"
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" transition-colors duration-200"
-                                           :class="{'opacity-50 cursor-not-allowed': isSterilizationDisabled}">
-                                    <span class="ml-2 text-sm font-medium text-gray-500" :class="{'text-gray-500': isSterilizationDisabled, 'text-gray-700': !isSterilizationDisabled}">
-                                        <i class="fas fa-bacteria text-purple-500 mr-1"></i>
-                                        {{ __('Requiere Esterilización') }}
-                                    </span>
-                                </label>
-                            </div>
+                            
                         </div>
                     </div>
 

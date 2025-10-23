@@ -32,10 +32,7 @@ return new class extends Migration
             // ==========================================================
             $table->enum('tracking_type', ['stock', 'rfid', 'serial', 'none'])->default('stock');
 
-            // ==========================================================
-            // CARACTERÍSTICAS DEL TIPO DE PRODUCTO
-            // ==========================================================
-            $table->boolean('requires_sterilization')->default(false); // Instrumentales reutilizables
+            
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================
