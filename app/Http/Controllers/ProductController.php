@@ -106,7 +106,7 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $manufacturers = Manufacturer::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get(); // CORREGIDO
+        $categories = Category::orderBy('name')->get(); 
         $specialties = MedicalSpecialty::orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
 

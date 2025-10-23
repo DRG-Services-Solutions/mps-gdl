@@ -69,9 +69,9 @@ class SubcategorySeeder extends Seeder
             ['category' => 'Equipos de Laparoscopía', 'name' => 'Trócares', 'description' => 'Trócares de diferentes diámetros'],
             ['category' => 'Equipos de Laparoscopía', 'name' => 'Pinzas Laparoscópicas', 'description' => 'Pinzas de agarre y disección'],
             
-            // Electrocirugía
-            ['category' => 'Electrocirugía', 'name' => 'Electrodos Monopolares', 'description' => 'Lápices y puntas de electrocirugía'],
-            ['category' => 'Electrocirugía', 'name' => 'Electrodos Bipolares', 'description' => 'Pinzas bipolares'],
+            // Consola
+            ['category' => 'Consola / Equipo Base', 'name' => 'AR-9800', 'description' => 'Lápices y puntas de electrocirugía'],
+            
             
             // Material de Ortopedia
             ['category' => 'Material de Ortopedia', 'name' => 'Instrumental de Osteosíntesis', 'description' => 'Destornilladores, brocas, gubias'],
