@@ -10,15 +10,13 @@ return new class extends Migration
     {
         Schema::create('storage_locations', function (Blueprint $table) {
             $table->id();
-            $table->string('code')->unique()->comment('Código único: ALM-01, RECEP, etc.');
-            $table->string('name')->comment('Nombre descriptivo');
+            $table->string('area', 50); 
+            $table->string('organizer', 10);
+            $table->unsignedSmallInteger('shelf_level');
+            $table->unsignedSmallInteger('shelf_section');
+            $table->unique(['area', 'organizer', 'shelf_level', 'shelf_section'], 'unique_full_location'); 
             $table->text('description')->nullable();
-            $table->enum('type', ['warehouse', 'reception', 'quarantine', 'shipping'])->default('warehouse');
-            $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
-            $table->index('is_active');
-            $table->index('type');
         });
     }
 

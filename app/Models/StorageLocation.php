@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class StorageLocation extends Model
 {
     protected $fillable = [
-        'code',
-        'name',
+        'area',
+        'organizer',
+        'shelf_level',
+        'shelf_section',
         'description',
-        'type',
-        'is_active',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'shelf_level' => 'integer',
+        'shelf_section' => 'integer',
     ];
 
     public function productUnits()
@@ -28,13 +29,13 @@ class StorageLocation extends Model
         return $this->hasMany(PurchaseOrder::class, 'destination_warehouse_id');
     }
 
-    public function scopeActive($query)
+    public function scopeActive($query, string $area)
     {
-        return $query->where('is_active', true);
+        return $query->where('area', $area);
     }
 
-    public function scopeWarehouses($query)
+    public function getFullLocationAttribute()
     {
-        return $query->where('type', 'warehouse');
+        return "{$this->area}-{$this->organizer}-{$this->shelf_level}-{$this->shelf_section}";
     }
 }

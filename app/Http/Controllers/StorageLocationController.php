@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\StorageLocation;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class StorageLocationController extends Controller
 {
@@ -28,12 +29,27 @@ class StorageLocationController extends Controller
      */
     public function store(Request $request)
     {
+        
         $validated = $request->validate([
-            'code' => 'required|unique:storage_locations,code|max:50',
-            'name' => 'required|string|max:100',
+            
+            'area' => 'required|string|max:50',
+            'organizer' => 'required|string|max:10',
+            'shelf_level' => 'required|integer|min:1',
+            'shelf_section' => 'required|integer|min:1',
             'description' => 'nullable|string',
-            'type' => 'required|in:warehouse,reception,quarantine,shipping',
-            'is_active' => 'boolean',
+            
+           
+            'area' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('storage_locations')->where(function ($query) use ($request) {
+                    return $query
+                        ->where('organizer', $request->organizer)
+                        ->where('shelf_level', $request->shelf_level)
+                        ->where('shelf_section', $request->shelf_section);
+                }),
+            ],
         ]);
 
         StorageLocation::create($validated);
@@ -41,7 +57,6 @@ class StorageLocationController extends Controller
         return redirect()->route('storage_locations.index')
             ->with('success', 'Ubicación de almacenamiento creada correctamente.');
     }
-
     /**
      * Display the specified resource.
      */
@@ -55,7 +70,7 @@ class StorageLocationController extends Controller
      */
     public function edit(StorageLocation $storageLocation)
     {
-        return view('storage_locations.edit', compact('storage_location'));
+        return view('storage_locations.edit', compact('storageLocation'));
     }
 
     /**
@@ -63,15 +78,29 @@ class StorageLocationController extends Controller
      */
     public function update(Request $request, StorageLocation $storageLocation)
     {
+        
         $validated = $request->validate([
-            'code' => 'required|max:50|unique:storage_locations,code,' . $storage_location->id,
-            'name' => 'required|string|max:100',
+            'area' => 'required|string|max:50',
+            'organizer' => 'required|string|max:10',
+            'shelf_level' => 'required|integer|min:1',
+            'shelf_section' => 'required|integer|min:1',
             'description' => 'nullable|string',
-            'type' => 'required|in:warehouse,reception,quarantine,shipping',
-            'is_active' => 'boolean',
+
+           
+            'area' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('storage_locations')->where(function ($query) use ($request) {
+                    return $query
+                        ->where('organizer', $request->organizer)
+                        ->where('shelf_level', $request->shelf_level)
+                        ->where('shelf_section', $request->shelf_section);
+                })->ignore($storageLocation->id), 
+            ],
         ]);
 
-        $storage_location->update($validated);
+        $storageLocation->update($validated);
 
         return redirect()->route('storage_locations.index')
             ->with('success', 'Ubicación de almacenamiento actualizada correctamente.');
