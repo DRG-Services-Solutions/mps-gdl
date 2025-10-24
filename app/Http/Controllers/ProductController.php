@@ -69,7 +69,7 @@ class ProductController extends Controller
         'minimum_stock' => 'nullable|integer|min:0',
         
         // Estado del producto en catálogo
-        'status' => 'nullable|in:active,inactive,discontinued',
+        'status' => 'nullable|in:active,inactive,',
     ]);
     
     // Valores por defecto
@@ -149,7 +149,7 @@ class ProductController extends Controller
                 'max:255',
                 Rule::unique('products', 'rfid_tag_id')->ignore($product->id)
             ],
-            'requires_sterilization' => 'nullable|boolean',
+           
            
             
             // Stock y Costos
@@ -170,7 +170,7 @@ class ProductController extends Controller
 
         // Manejo de Checkboxes
         $validated['rfid_enabled'] = $request->boolean('rfid_enabled');
-        $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
+        
        
         
         $product->update($validated);

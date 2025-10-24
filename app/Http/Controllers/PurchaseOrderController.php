@@ -75,13 +75,24 @@ class PurchaseOrderController extends Controller
      * Show the form for creating a new purchase order.
      */
     public function create()
-    {
-        $suppliers = Supplier::active()->orderBy('name')->get();
-        $warehouses = StorageLocation::active()->warehouses()->orderBy('name')->get();
-        $products = Product::orderBy('name')->get();
+{
+    // Obtener todos los proveedores (sin filtro is_active)
+    $suppliers = Supplier::orderBy('name')->get();
+    
+    // Obtener todos los almacenes (storage locations) y ordenarlos por ubicación
+    $warehouses = StorageLocation::orderBy('area')
+        ->orderBy('organizer')
+        ->orderBy('shelf_level')
+        ->orderBy('shelf_section')
+        ->get();
+    
+    // Obtener productos
+    $products = Product::orderBy('name')->get();
 
-        return view('purchase-orders.create', compact('suppliers', 'warehouses', 'products'));
-    }
+    // Pasar a la vista
+    return view('purchase-orders.create', compact('suppliers', 'warehouses', 'products'));
+}
+ 
 
     /**
      * Store a newly created purchase order.
@@ -655,4 +666,21 @@ private function generateEPC(): string
     return strtoupper($epc); // Retorna en mayúsculas (ej: A1B2C3D4E5F6789012345678)
 }
 
+
+private function generateSerialNumber(\App\Models\Product $product): string
+{
+    // Define un prefijo, por ejemplo, el código del producto o 'SN'
+    $prefix = $product->code ? $product->code . '-' : 'SN-';
+    
+    // Contar cuántas unidades con el mismo prefijo ya existen
+    $count = \App\Models\ProductUnit::where('serial_number', 'like', "{$prefix}%")
+        ->count();
+    
+    $nextNumber = $count + 1;
+    
+    // Formatear el consecutivo con ceros a la izquierda (ej: 0001)
+    $suffix = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    
+    return $prefix . $suffix;
+}
 }
