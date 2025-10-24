@@ -263,14 +263,7 @@
                             </div>
                         </div>
 
-                        {{-- Características --}}
-                        <div class="mt-6 bg-gray-50 rounded-lg border border-gray-200 p-4">
-                            <h4  class="text-lg font-semibold text-gray-900">
-                
-                                {{ __('Este Tipo de Producto necesita Esterilización') }}
-                            </h4>
-                            
-                        </div>
+                        
                     </div>
 
                     {{-- SECCIÓN 4: INFORMACIÓN DE INVENTARIO --}}
