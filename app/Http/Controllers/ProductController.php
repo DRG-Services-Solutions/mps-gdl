@@ -59,9 +59,9 @@ class ProductController extends Controller
         'name' => 'required|string|max:255',
         'code' => 'required|string|max:255|unique:products,code',
         'description' => 'nullable|string',
+        'requires_sterilization' => 'nullable|boolean',
        
-        
-        // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
+         // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
         'tracking_type' => 'required|in:code,rfid,serial',
         
         // Información de inventario general

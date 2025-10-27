@@ -21,19 +21,16 @@ class Product extends Model
         'name',
         'code',
         'description',
-        
-        
+        'requires_sterilization',
         'tracking_type',
-       
-        
         'unit_cost',
         'minimum_stock',
-        
         'status',
     ];
 
     protected $casts = [
-        
+
+        'requires_sterilization' => 'boolean',
         'unit_cost' => 'decimal:2',
     ];
 
