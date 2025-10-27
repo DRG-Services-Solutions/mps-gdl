@@ -262,9 +262,35 @@
                                 @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
                         </div>
+                        {{-- REQUIERE ESTERILIZACIÓN  --}}
+                        <div class="md:col-span-2 mt-4">
+                            <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                                
+                                <input type="checkbox" name="requires_sterilization" id="requires_sterilization" value="1"
+                                    x-model="requiresSterilization"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5"
+                                    >
+
+                                <span class="ml-3 text-sm">
+                                    <span class="block font-medium text-gray-900 flex items-center">
+                                        <i class="fas fa-pump-soap text-indigo-600 mr-2"></i>
+                                        {{ __('Requiere Esterilización / Procesamiento') }}
+                                    </span>
+                                    
+                                    {{-- Mensaje de aclaración (Guía) --}}
+                                    <span class="block text-gray-500 mt-1">
+                                        {{ __('Marque **SOLO** para productos clasificados como instrumental quirúrgico o médico **reutilizable** que deba pasar por ciclos de esterilización.') }}
+                                    </span>
+                                </span>
+                            </label>
+
+                            {{-- Campo oculto para asegurar que se envíe '0' si no está marcado --}}
+                            <input type="hidden" :value="requiresSterilization ? '1' : '0'" name="requires_sterilization_hidden">
+                        </div>
 
                         
                     </div>
+                    
 
                     {{-- SECCIÓN 4: INFORMACIÓN DE INVENTARIO --}}
                     <div class="mb-8">
