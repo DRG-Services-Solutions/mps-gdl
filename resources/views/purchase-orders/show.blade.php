@@ -80,9 +80,11 @@
                                         <p class="text-sm font-medium text-gray-500">Proveedor</p>
                                         <p class="mt-1 text-sm font-semibold text-gray-900">{{ $purchaseOrder->supplier->name }}</p>
                                     </div>
-                                    <div>
+                                   <div>
                                         <p class="text-sm font-medium text-gray-500">Almacén Destino</p>
-                                        <p class="mt-1 text-sm font-semibold text-gray-900">{{ $purchaseOrder->destinationWarehouse->name }}</p>
+                                        <p class="mt-1 text-sm font-semibold text-gray-900">
+                                            {{ $purchaseOrder->destinationWarehouse->full_location }}
+                                        </p>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Fecha de Orden</p>
