@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->unique(); // Código interno del catálogo
             $table->text('description')->nullable();
-            $table->boolean('requires_sterilization');
+            $table->boolean('requires_sterilization')->default(0);
 
             // ==========================================================
             // TIPO DE TRAZABILIDAD
