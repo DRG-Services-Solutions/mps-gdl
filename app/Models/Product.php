@@ -22,16 +22,17 @@ class Product extends Model
         'code',
         'description',
         'requires_sterilization',
+        'requires_refrigeration',
         'tracking_type',
-        'unit_cost',
         'minimum_stock',
         'status',
     ];
 
     protected $casts = [
 
+        'requires_refrigeration' => 'boolean',
         'requires_sterilization' => 'boolean',
-        'unit_cost' => 'decimal:2',
+        
     ];
 
     // ==================== RELACIONES ====================

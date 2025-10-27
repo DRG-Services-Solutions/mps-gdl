@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('code')->unique(); // Código interno del catálogo
             $table->text('description')->nullable();
             $table->boolean('requires_sterilization')->default(0);
+            $table->boolean('requires_refrigeration')->default(0);
 
             // ==========================================================
             // TIPO DE TRAZABILIDAD
@@ -36,7 +37,7 @@ return new class extends Migration
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================
-            $table->decimal('unit_cost', 10, 2)->nullable(); // Costo unitario promedio
+            
             $table->integer('minimum_stock')->default(0); // Stock mínimo deseado
 
             // ==========================================================
