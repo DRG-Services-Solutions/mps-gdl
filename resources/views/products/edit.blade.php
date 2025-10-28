@@ -298,8 +298,8 @@
                                     <option value="rfid" {{ old('tracking_type', $product->tracking_type) == 'rfid' ? 'selected' : '' }}>
                                         📡 {{ __('Solo por RFID') }}
                                     </option>
-                                    <option value="both" {{ old('tracking_type', $product->tracking_type) == 'both' ? 'selected' : '' }}>
-                                        🔄 {{ __('Stock y RFID') }}
+                                    <option value="serial" {{ old('tracking_type', $product->tracking_type) == 'serial' ? 'selected' : '' }}>
+                                        🔄 {{ __('Serial') }}
                                     </option>
                                 </select>
                                 @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror

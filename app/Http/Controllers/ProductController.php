@@ -120,7 +120,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             // Relaciones
             'manufacturer_id' => 'nullable|exists:manufacturers,id',
-            'category_id' => 'nullable|exists:product_categories,id', // CORREGIDO: era categories
+            'category_id' => 'nullable|exists:product_categories,id', 
             'specialty_id' => 'nullable|exists:medical_specialties,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
             
@@ -163,12 +163,13 @@ class ProductController extends Controller
             
             // Estado y Tracking
             'status' => 'required|in:active,inactive,maintenance,discontinued',
-            'tracking_type' => 'required|in:code,rfid,both',
+            'tracking_type' => 'required|in:code,rfid,serial',
         ]);
 
         // Manejo de Checkboxes
         $validated['rfid_enabled'] = $request->boolean('rfid_enabled');
-        
+        $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
+        $validated['requires_refrigeration'] = $request->boolean('requires_refrigeration');
        
         
         $product->update($validated);

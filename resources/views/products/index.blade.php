@@ -89,7 +89,6 @@
                                         {{ __('Solo los productos clasificados requieren Refrigeración.') }}
                                     </div>
                                 </th>
-                               
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
                                     {{ __('Estado') }}
                                 </th>
@@ -145,6 +144,12 @@
                                     <!-- Tipo de Tracking -->
                                     <td class="px-6 py-4 text-center">
                                         @switch($product->tracking_type)
+                                            @case('code')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-boxes mr-1"></i>
+                                                    Code
+                                                </span>
+                                                @break
                                             @case('rfid')
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                     <i class="fas fa-wifi mr-1"></i>
@@ -155,12 +160,6 @@
                                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                     <i class="fas fa-hashtag mr-1"></i>
                                                     Serial
-                                                </span>
-                                                @break
-                                            @case('code')
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    <i class="fas fa-boxes mr-1"></i>
-                                                    Code
                                                 </span>
                                                 @break
                                         @endswitch
@@ -272,6 +271,20 @@
                         </div>
                     </div>
                 </div>
+                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-wifi text-blue-600 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Con Tracking Code</p>
+                            <p class="text-2xl font-bold text-gray-900">
+                                {{ $products->where('tracking_type', 'code')->count() }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
 
                 <div class="bg-white border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center">

@@ -103,12 +103,12 @@ class Product extends Model
 
     public function hasIndividualTracking(): bool
     {
-        return in_array($this->tracking_type, ['rfid', 'serial']);
+        return in_array($this->tracking_type, ['code','rfid', 'serial']);
     }
 
     public function usesStockTracking(): bool
     {
-        return $this->tracking_type === 'stock';
+        return $this->tracking_type === 'code';
     }
 
     // ==================== MÉTODOS DE STOCK (MEJORADOS) ====================
@@ -119,7 +119,7 @@ class Product extends Model
     public function getStockInLocation(int $locationId, string $status = 'available'): int
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 // Para productos con tracking por cantidad (consumibles)
                 return $this->getStockByMovements($locationId);
                 
@@ -169,7 +169,7 @@ class Product extends Model
     public function getTotalStockAttribute(): int
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 $entries = $this->movements()
                     ->whereIn('type', ['entry', 'return'])
                     ->sum('quantity');
@@ -198,7 +198,7 @@ class Product extends Model
     public function getAvailableStockAttribute(): int
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 return $this->total_stock; // Para consumibles, todo es disponible
                 
             case 'rfid':
@@ -278,7 +278,7 @@ class Product extends Model
     public function getLocationsWithStock()
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 // Obtener ubicaciones únicas de movimientos
                 $locationIds = $this->movements()
                     ->where('to_location_id', '!=', null)
@@ -353,9 +353,9 @@ class Product extends Model
     public function getInventorySummary(): array
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 return [
-                    'tracking_type' => 'stock',
+                    'tracking_type' => 'code',
                     'total_stock' => $this->total_stock,
                     'minimum_stock' => $this->minimum_stock,
                     'is_low_stock' => $this->isLowStock(),
@@ -391,7 +391,7 @@ class Product extends Model
     public function getInventoryValueAttribute(): float
     {
         switch ($this->tracking_type) {
-            case 'stock':
+            case 'code':
                 return $this->total_stock * ($this->unit_cost ?? 0);
                 
             case 'rfid':
@@ -431,7 +431,7 @@ class Product extends Model
     {
         return $query->where(function($q) {
             // Para productos con tracking 'stock'
-            $q->where('tracking_type', 'stock')
+            $q->where('tracking_type', 'code')
               ->whereRaw('(SELECT COALESCE(SUM(CASE 
                   WHEN type IN ("entry", "return") THEN quantity 
                   WHEN type IN ("exit", "discard") THEN -quantity 
@@ -455,7 +455,7 @@ class Product extends Model
     public function scopeInStock($query)
     {
         return $query->where(function($q) {
-            $q->where('tracking_type', 'stock')
+            $q->where('tracking_type', 'code')
               ->whereRaw('(SELECT COALESCE(SUM(CASE 
                   WHEN type IN ("entry", "return") THEN quantity 
                   WHEN type IN ("exit", "discard") THEN -quantity 
@@ -463,7 +463,7 @@ class Product extends Model
                   FROM inventory_movements 
                   WHERE inventory_movements.product_id = products.id) > 0');
         })->orWhere(function($q) {
-            $q->whereIn('tracking_type', ['rfid', 'serial'])
+            $q->whereIn('tracking_type', ['code','rfid', 'serial'])
               ->whereRaw('(SELECT COUNT(*) 
                   FROM product_units 
                   WHERE product_units.product_id = products.id 
