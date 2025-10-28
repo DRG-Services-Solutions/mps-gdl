@@ -20,15 +20,27 @@ class PurchaseOrderItem extends Model
         'description',
         'received_by',
         'received_at',
+        'batch_number',
+        'expiration_date',
+        'manufacture_date',
+        'status',
+        'supplier_id',
     ];
 
     protected $casts = [
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
         'received_at' => 'datetime',
+        'expiration_date' => 'date',
+        'manufacture_date' => 'date',
     ];
 
     // Relaciones
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
@@ -73,5 +85,17 @@ class PurchaseOrderItem extends Model
             ->with('receipt.receivedBy')
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    public function updateStatus(): void
+    {
+        if ($this->quantity_received == 0) {
+            $this->status = 'pending';
+        } elseif ($this->quantity_received < $this->quantity_ordered) {
+            $this->status = 'partial';
+        } elseif ($this->quantity_received >= $this->quantity_ordered) {
+            $this->status = 'received';
+        }
+        $this->save();
     }
 }
