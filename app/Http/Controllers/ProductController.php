@@ -60,12 +60,12 @@ class ProductController extends Controller
         'code' => 'required|string|max:255|unique:products,code',
         'description' => 'nullable|string',
         'requires_sterilization' => 'nullable|boolean',
+        'requires_refrigeration' => 'nullable|boolean',
        
          // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
         'tracking_type' => 'required|in:code,rfid,serial',
         
         // Información de inventario general
-        'unit_cost' => 'nullable|numeric|min:0',
         'minimum_stock' => 'nullable|integer|min:0',
         
         // Estado del producto en catálogo
@@ -93,7 +93,6 @@ class ProductController extends Controller
             'category', 
             'subcategory', 
             'medicalSpecialty',
-            'units', 
             'stocks'
         ]);
         
@@ -153,7 +152,6 @@ class ProductController extends Controller
            
             
             // Stock y Costos
-            'unit_cost' => 'nullable|numeric|min:0',
             'minimum_stock' => 'nullable|integer|min:0',
             'current_stock' => 'nullable|integer|min:0',
             'storage_location' => 'nullable|string|max:255',

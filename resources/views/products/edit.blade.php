@@ -197,17 +197,7 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                            {{-- Costo Unitario --}}
-                            <div>
-                                <label for="unit_cost" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    {{ __('Costo ($)') }}
-                                </label>
-                                <input type="number" name="unit_cost" id="unit_cost" step="0.01" min="0"
-                                       value="{{ old('unit_cost', $product->unit_cost) }}" 
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                       placeholder="0.00">
-                            </div>
+                           
 
                             {{-- Stock Actual --}}
                             <div>
@@ -270,8 +260,15 @@
                                         class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
                                         {{ old('requires_sterilization', $product->requires_sterilization) ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-pump-soap text-indigo-600 mr-1"></i>
                                         {{ __('Requiere Esterilización') }}
+                                    </span>
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
+                                    <input type="checkbox" name="requires_refrigeration" value="1" 
+                                        class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
+                                        {{ old('requires_refrigeration', $product->requires_refrigeration) ? 'checked' : '' }}>
+                                    <span class="ml-2 text-sm font-medium text-gray-700">
+                                        {{ __('Requiere Refrigeración') }}
                                     </span>
                                 </label>
                             </div>

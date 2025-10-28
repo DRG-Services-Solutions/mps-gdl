@@ -73,12 +73,20 @@
                                 </th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider relative group">
                                     <div class="flex items-center justify-center">
-                                        <i class="fas fa-pump-soap text-xs mr-1 text-gray-500"></i>
                                         {{ __('Esterilización') }}
                                     </div>
                                     {{-- TOOLTIP con el mensaje solicitado --}}
                                     <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
                                         {{ __('Solo los productos de tipo instrumental requieren esterilización.') }}
+                                    </div>
+                                </th>
+                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider relative group">
+                                    <div class="flex items-center justify-center">
+                                        {{ __('Refrigeración') }}
+                                    </div>
+                                    {{-- TOOLTIP con el mensaje solicitado --}}
+                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
+                                        {{ __('Solo los productos clasificados requieren Refrigeración.') }}
                                     </div>
                                 </th>
                                
@@ -164,6 +172,15 @@
                                         @else
                                             {{-- Icono de Cruz o guion (No requiere) --}}
                                             <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Esterilización"></i>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($product->requires_refrigeration)
+                                            {{-- Icono de Check (Sí requiere) --}}
+                                            <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Refrigeration"></i>
+                                        @else
+                                            {{-- Icono de Cruz o guion (No requiere) --}}
+                                            <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Refrigeration"></i>
                                         @endif
                                     </td>
                                     <!-- Estado -->

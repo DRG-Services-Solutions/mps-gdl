@@ -273,19 +273,43 @@
 
                                 <span class="ml-3 text-sm">
                                     <span class="block font-medium text-gray-900 flex items-center">
-                                        <i class="fas fa-pump-soap text-indigo-600 mr-2"></i>
-                                        {{ __('Requiere Esterilización / Procesamiento') }}
+                                        <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                                        {{ __('Requiere Esterilización ') }}
                                     </span>
                                     
                                     {{-- Mensaje de aclaración (Guía) --}}
                                     <span class="block text-gray-500 mt-1">
-                                        {{ __('Marque **SOLO** para productos clasificados como instrumental quirúrgico o médico **reutilizable** que deba pasar por ciclos de esterilización.') }}
+                                        {{ __('Marque SOLO para productos clasificados como instrumental quirúrgico o médico reutilizable que deba pasar por ciclos de esterilización.') }}
                                     </span>
                                 </span>
                             </label>
 
                             {{-- Campo oculto para asegurar que se envíe '0' si no está marcado --}}
                             <input type="hidden" :value="requiresSterilization ? '1' : '0'" name="requires_sterilization_hidden">
+                        </div>
+                        <div class="md:col-span-2 mt-4">
+                            <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                                
+                                <input type="checkbox" name="requires_refrigeration" id="requires_refrigeration" value="1"
+                                    x-model="requiresRefrigeration"
+                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5"
+                                    >
+
+                                <span class="ml-3 text-sm">
+                                    <span class="block font-medium text-gray-900 flex items-center">
+                                        <i class="fas fa-snowflake text-blue-600 mr-2"></i>
+                                        {{ __('Requiere Refrigeration') }}
+                                    </span>
+                                    
+                                    {{-- Mensaje de aclaración (Guía) --}}
+                                    <span class="block text-gray-500 mt-1">
+                                        {{ __('Marque SOLO para productos clasificados que requiere refrigeración') }}
+                                    </span>
+                                </span>
+                            </label>
+
+                            {{-- Campo oculto para asegurar que se envíe '0' si no está marcado --}}
+                            <input type="hidden" :value="requiresRefrigeration ? '1' : '0'" name="requires_refrigeration_hidden">
                         </div>
 
                         
@@ -300,17 +324,7 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Costo Unitario --}}
-                            <div>
-                                <label for="unit_cost" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    {{ __('Costo Unitario Promedio ($)') }}
-                                </label>
-                                <input type="number" name="unit_cost" id="unit_cost" step="0.01" min="0"
-                                       value="{{ old('unit_cost', '0.00') }}" 
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                       placeholder="0.00">
-                            </div>
+                            
 
                             {{-- Stock Mínimo --}}
                             <div>
