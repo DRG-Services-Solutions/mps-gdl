@@ -227,93 +227,98 @@
                                         <strong>Tipos de trazabilidad:</strong>
                                     </p>
                                     <ul class="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-                                        <li><strong>Stock:</strong> Control numérico sin identificadores individuales</li>
+                                        <li><strong>Code:</strong> Control numérico sin identificadores individuales</li>
                                         <li><strong>RFID:</strong> Cada unidad física tendrá etiqueta RFID (se genera al recibir inventario)</li>
                                         <li><strong>Serial:</strong> Instrumental con número de serie grabado de fábrica</li>
-                                        <li><strong>Ninguno:</strong> Sin seguimiento de inventario</li>
+                                        
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="{ 
+                                requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
+                                requiresRefrigeration: {{ old('requires_refrigeration', 0) ? 'true' : 'false' }}
+                            }">
                             {{-- Tipo de Rastreo --}}
-                            <div class="md:col-span-2">
-                                <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-radar text-gray-400 mr-2"></i>
-                                    {{ __('Tipo de Rastreo') }}
-                                    <span class="text-red-500 ml-1">*</span>
-                                </label>
-                                <select name="tracking_type" id="tracking_type" required
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                    <option value="stock" {{ old('tracking_type', 'stock') == 'stock' ? 'selected' : '' }}>
-                                        📦 Solo Stock (control numérico)
-                                    </option>
-                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
-                                        📡 RFID (etiquetas al recibir)
-                                    </option>
-                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>
-                                        🔢 Número de Serie (grabado de fábrica)
-                                    </option>
-                                    <option value="none" {{ old('tracking_type') == 'none' ? 'selected' : '' }}>
-                                        🚫 Sin rastreo
-                                    </option>
-                                </select>
-                                @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="md:col-span-2">
+                                    <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                        <i class="fas fa-radar text-gray-400 mr-2"></i>
+                                        {{ __('Tipo de Rastreo') }}
+                                        <span class="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <select name="tracking_type" id="tracking_type" required
+                                            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
+                                        <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>
+                                            📦 Solo Code (control numérico)
+                                        </option>
+                                        <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
+                                            📡 RFID (etiquetas al recibir)
+                                        </option>
+                                        <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>
+                                            🔢 Número de Serie (grabado de fábrica)
+                                        </option>
+                                    </select>
+                                    @error('tracking_type')
+                                        <p class="mt-1 text-sm text-red-600 flex items-center">
+                                            <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                        </p>
+                                    @enderror
+                                </div>
                             </div>
+
+                            {{-- REQUIERE ESTERILIZACIÓN --}}
+                            <div class="md:col-span-2 mt-4">
+                                <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                                    <input type="checkbox"
+                                        name="requires_sterilization"
+                                        id="requires_sterilization"
+                                        value="1"
+                                        x-model="requiresSterilization"
+                                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5">
+
+                                    <span class="ml-3 text-sm">
+                                        <span class="block font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                                            {{ __('Requiere Esterilización') }}
+                                        </span>
+                                        <span class="block text-gray-500 mt-1">
+                                            {{ __('Marque SOLO para productos clasificados como instrumental quirúrgico o médico reutilizable que deba pasar por ciclos de esterilización.') }}
+                                        </span>
+                                    </span>
+                                </label>
+
+                                {{-- Campo oculto para enviar 0 si no está marcado --}}
+                                <input type="hidden" name="requires_sterilization" :value="requiresSterilization ? 1 : 0">
+                            </div>
+
+                            {{-- REQUIERE REFRIGERACIÓN --}}
+                            <div class="md:col-span-2 mt-4">
+                                <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                                    <input type="checkbox"
+                                            name="requires_refrigeration"
+                                            id="requires_refrigeration"
+                                            value="1"
+                                            x-model="requiresRefrigeration"
+                                            class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5">
+
+                                    <span class="ml-3 text-sm">
+                                        <span class="block font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-snowflake text-blue-600 mr-2"></i>
+                                            {{ __('Requiere Refrigeración') }}
+                                        </span>
+                                        <span class="block text-gray-500 mt-1">
+                                            {{ __('Marque si el producto debe mantenerse en refrigeración.') }}
+                                        </span>
+                                    </span>
+                                </label>
+
+                                {{-- Campo oculto para enviar 0 si no está marcado --}}
+                                <input type="hidden" name="requires_refrigeration" :value="requiresRefrigeration ? 1 : 0">
+                            </div>
+
                         </div>
-                        {{-- REQUIERE ESTERILIZACIÓN  --}}
-                        <div class="md:col-span-2 mt-4">
-                            <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
-                                
-                                <input type="checkbox" name="requires_sterilization" id="requires_sterilization" value="1"
-                                    x-model="requiresSterilization"
-                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5"
-                                    >
-
-                                <span class="ml-3 text-sm">
-                                    <span class="block font-medium text-gray-900 flex items-center">
-                                        <i class="fas fa-shield-alt text-green-600 mr-2"></i>
-                                        {{ __('Requiere Esterilización ') }}
-                                    </span>
-                                    
-                                    {{-- Mensaje de aclaración (Guía) --}}
-                                    <span class="block text-gray-500 mt-1">
-                                        {{ __('Marque SOLO para productos clasificados como instrumental quirúrgico o médico reutilizable que deba pasar por ciclos de esterilización.') }}
-                                    </span>
-                                </span>
-                            </label>
-
-                            {{-- Campo oculto para asegurar que se envíe '0' si no está marcado --}}
-                            <input type="hidden" :value="requiresSterilization ? '1' : '0'" name="requires_sterilization_hidden">
-                        </div>
-                        <div class="md:col-span-2 mt-4">
-                            <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
-                                
-                                <input type="checkbox" name="requires_refrigeration" id="requires_refrigeration" value="1"
-                                    x-model="requiresRefrigeration"
-                                    class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5"
-                                    >
-
-                                <span class="ml-3 text-sm">
-                                    <span class="block font-medium text-gray-900 flex items-center">
-                                        <i class="fas fa-snowflake text-blue-600 mr-2"></i>
-                                        {{ __('Requiere Refrigeration') }}
-                                    </span>
-                                    
-                                    {{-- Mensaje de aclaración (Guía) --}}
-                                    <span class="block text-gray-500 mt-1">
-                                        {{ __('Marque SOLO para productos clasificados que requiere refrigeración') }}
-                                    </span>
-                                </span>
-                            </label>
-
-                            {{-- Campo oculto para asegurar que se envíe '0' si no está marcado --}}
-                            <input type="hidden" :value="requiresRefrigeration ? '1' : '0'" name="requires_refrigeration_hidden">
-                        </div>
-
-                        
-                    </div>
                     
 
                     {{-- SECCIÓN 4: INFORMACIÓN DE INVENTARIO --}}
