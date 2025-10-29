@@ -50,11 +50,6 @@
                                 @enderror
                             </div>
 
-                            <input type="hidden" name="items_json" :value="JSON.stringify(items)">
-
-                            <div class="flex justify-end gap-3">
-                                </div>
-
                             <!-- Almacén Destino -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -67,7 +62,7 @@
                                     @foreach($warehouses as $warehouse)
                                         <option value="{{ $warehouse->id }}" {{ old('destination_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
                                             {{ $warehouse->full_location }} 
-                                            </option>
+                                        </option>
                                     @endforeach
                                 </select>
                                 @error('destination_warehouse_id')
@@ -88,6 +83,9 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Campo oculto para items -->
+                    <input type="hidden" name="items_json" :value="JSON.stringify(items)">
 
                     <!-- Items de la Orden -->
                     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -119,7 +117,8 @@
 
                             <div class="space-y-4">
                                 <template x-for="(item, index) in items" :key="index">
-                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 relative" style="overflow: visible;">
+
                                         <div class="flex justify-between items-start mb-3">
                                             <h4 class="font-semibold text-gray-700">Producto <span x-text="index + 1"></span></h4>
                                             <button type="button" 
@@ -132,32 +131,137 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                            <!-- Producto -->
-                                            <div class="md:col-span-2">
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
-                                                <select
-                                                        x-model="item.product_id"
-                                                        @change="updateProduct(index, $event)"
-                                                        class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                                        required>
-                                                    <option value="">Seleccionar...</option>
-                                                    @foreach($products as $product)
-                                                        <option value="{{ $product->id }}" 
-                                                                data-code="{{ $product->code }}"
-                                                                data-name="{{ $product->name }}"
-                                                                data-description="{{ $product->description }}"
-                                                                data-price="{{ $product->price ?? 0 }}">
-                                                            {{ $product->code }} - {{ $product->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                            <!-- Producto con Búsqueda AJAX -->
+                                            <div class="md:col-span-2" 
+                                                x-data="{
+                                                    searchQuery: '',
+                                                    showDropdown: false,
+                                                    searchResults: [],
+                                                    isSearching: false,
+                                                    selectedProduct: null
+                                                }">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                                    Producto * 
+                                                    <span x-show="isSearching" class="text-xs text-gray-500">(Buscando...)</span>
+                                                </label>
+                                                
+                                                <div class="relative">
+                                                    <!-- Input de Búsqueda -->
+                                                    <div class="relative" x-show="!selectedProduct">
+                                                        <input type="text" 
+                                                            x-model="searchQuery"
+                                                            @input.debounce.300ms="async () => {
+                                                                if (searchQuery.length < 2) {
+                                                                    searchResults = [];
+                                                                    showDropdown = false;
+                                                                    return;
+                                                                }
+                                                                
+                                                                isSearching = true;
+                                                                showDropdown = true;
+                                                                
+                                                                try {
+                                                                    const response = await fetch(`{{ route('products.search') }}?q=${encodeURIComponent(searchQuery)}`);
+                                                                    searchResults = await response.json();
+                                                                } catch (error) {
+                                                                    console.error('Error buscando productos:', error);
+                                                                    searchResults = [];
+                                                                } finally {
+                                                                    isSearching = false;
+                                                                }
+                                                            }"
+                                                            @focus="if(searchQuery.length >= 2) showDropdown = true"
+                                                            @click.away="showDropdown = false"
+                                                            placeholder="Escribe al menos 2 caracteres..."
+                                                            class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 pr-10"
+                                                            autocomplete="off">
+                                                        
+                                                        <!-- Icono de búsqueda/loading -->
+                                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                            <svg x-show="!isSearching" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                                            </svg>
+                                                            <svg x-show="isSearching" x-cloak class="w-5 h-5 text-blue-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Dropdown de Resultados -->
+                                                    <div x-show="showDropdown && !selectedProduct" 
+                                                        x-cloak
+                                                        x-transition
+                                                        class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                        
+                                                        <!-- Resultados -->
+                                                        <template x-for="product in searchResults" :key="product.id">
+                                                            <div @click="
+                                                                    item.product_id = product.id;
+                                                                    item.unit_price = product.price || 0;
+                                                                    calculateSubtotal(index);
+                                                                    selectedProduct = product;
+                                                                    searchQuery = '';
+                                                                    showDropdown = false;
+                                                                "
+                                                                class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors">
+                                                                <div class="flex items-center justify-between">
+                                                                    <div class="flex-1">
+                                                                        <div class="font-medium text-gray-900 text-sm" x-text="product.code"></div>
+                                                                        <div class="text-xs text-gray-600" x-text="product.name"></div>
+                                                                        <div x-show="product.description" x-cloak class="text-xs text-gray-500 mt-0.5" x-text="product.description"></div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+
+                                                        <!-- Mensaje cuando no hay resultados -->
+                                                        <div x-show="searchResults.length === 0 && !isSearching && searchQuery.length >= 2"
+                                                            x-cloak
+                                                            class="px-4 py-6 text-center text-gray-500 text-sm">
+                                                            <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                            </svg>
+                                                            <p>No se encontraron productos</p>
+                                                            <p class="text-xs text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
+                                                        </div>
+
+                                                        <!-- Mensaje de búsqueda mínima -->
+                                                        <div x-show="searchQuery.length > 0 && searchQuery.length < 2"
+                                                            x-cloak
+                                                            class="px-4 py-6 text-center text-gray-500 text-sm">
+                                                            <p>Escribe al menos 2 caracteres para buscar</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Producto seleccionado -->
+                                                    <div x-show="selectedProduct" 
+                                                        x-cloak
+                                                        class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+                                                        <div class="flex-1 min-w-0">
+                                                            <div class="text-sm font-semibold text-green-900 truncate" x-text="selectedProduct?.code"></div>
+                                                            <div class="text-xs text-green-700 truncate" x-text="selectedProduct?.name"></div>
+                                                        </div>
+                                                        <button type="button" 
+                                                                @click="
+                                                                    item.product_id = '';
+                                                                    selectedProduct = null;
+                                                                    item.unit_price = 0;
+                                                                    calculateSubtotal(index);
+                                                                "
+                                                                class="ml-3 flex-shrink-0 text-green-600 hover:text-green-800 transition-colors">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <!-- Cantidad -->
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
                                                 <input type="number" 
-                                                      
                                                        x-model.number="item.quantity_ordered"
                                                        @input="calculateSubtotal(index)"
                                                        min="1"
@@ -169,7 +273,6 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Precio Unitario *</label>
                                                 <input type="number" 
-                                                       
                                                        x-model.number="item.unit_price"
                                                        @input="calculateSubtotal(index)"
                                                        step="0.01"
@@ -268,19 +371,10 @@
                 removeItem(index) {
                     this.items.splice(index, 1);
                 },
-                
-                updateProduct(index, event) {
-                    const selectedOption = event.target.options[event.target.selectedIndex];
-                    
-                    if (selectedOption && selectedOption.value) {
-                        this.items[index].unit_price = parseFloat(selectedOption.dataset.price) || 0;
-                        this.calculateSubtotal(index);
-                    }
-                },
 
                 calculateSubtotal(index) {
                     const item = this.items[index];
-                    item.subtotal = item.quantity_ordered * item.unit_price;
+                    item.subtotal = (item.quantity_ordered || 0) * (item.unit_price || 0);
                 },
                 
                 get totalQuantity() {
@@ -301,11 +395,18 @@
                 
                 submitForm(e) {
                     if (this.items.length === 0) {
-                        // Si no hay productos, AHORA SÍ prevenimos el envío.
                         e.preventDefault(); 
                         alert('Debes agregar al menos un producto');
+                        return;
                     }
-                    // Si hay productos, no hacemos nada y dejamos que el formulario se envíe solo.
+                    
+                    // Validar que todos los items tengan producto seleccionado
+                    const hasEmptyProduct = this.items.some(item => !item.product_id);
+                    if (hasEmptyProduct) {
+                        e.preventDefault();
+                        alert('Todos los productos deben estar seleccionados');
+                        return;
+                    }
                 }
             }
         }

@@ -82,12 +82,9 @@ class PurchaseOrderController extends Controller
         ->orderBy('shelf_level')
         ->orderBy('shelf_section')
         ->get();
-    
-    // Obtener productos
-    $products = Product::orderBy('name')->get();
 
     // Pasar a la vista
-    return view('purchase-orders.create', compact('suppliers', 'warehouses', 'products'));
+    return view('purchase-orders.create', compact('suppliers', 'warehouses'));
 }
  
 
@@ -433,232 +430,232 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
     }
 
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
-{
-    if (!$purchaseOrder->canBeReceived()) {
-        return back()->with('error', 'Esta orden no puede ser recibida en este momento.');
-    }
-
-    $validated = $request->validate([
-        'items' => 'required|array',
-        'items.*.quantity_received' => 'required|integer|min:0',
-        'items.*.batch_number' => 'nullable|string|max:255',
-        'items.*.expiry_date' => 'nullable|date|after:today',
-        'items.*.condition' => 'nullable|in:good,damaged,expired',
-        'items.*.notes' => 'nullable|string|max:500',
-        'notes' => 'nullable|string|max:1000',
-        'invoice_number' => 'nullable|string|max:255',      
-        'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', 
-
-    ]);
-
-    DB::beginTransaction();
-    try {
-        // Crear el registro de recepción
-        $receipt = PurchaseOrderReceipt::create([
-            'receipt_number' => PurchaseOrderReceipt::generateReceiptNumber(),
-            'purchase_order_id' => $purchaseOrder->id,
-            'warehouse_id' => $purchaseOrder->destination_warehouse_id,
-            'received_by' => auth()->id(),
-            'received_at' => now(),
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-            'invoice_number' => $validated['invoice_number'] ?? null,
-        ]);
-        
-        if ($request->hasFile('invoice_file')) {
-            $file = $request->file('invoice_file');
-            $fileName = 'invoice_' . $receipt->receipt_number . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('invoices/receipts', $fileName, 'public');
-            $receipt->update(['invoice_file' => $path]);
+    {
+        if (!$purchaseOrder->canBeReceived()) {
+            return back()->with('error', 'Esta orden no puede ser recibida en este momento.');
         }
 
-        $totalReceived = 0;
-        $hasIssues = false;
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.quantity_received' => 'required|integer|min:0',
+            'items.*.batch_number' => 'nullable|string|max:255',
+            'items.*.expiry_date' => 'nullable|date|after:today',
+            'items.*.condition' => 'nullable|in:good,damaged,expired',
+            'items.*.notes' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
+            'invoice_number' => 'nullable|string|max:255',      
+            'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', 
 
-        // Procesar cada item
-        foreach ($validated['items'] as $itemId => $itemData) {
-            $quantityToReceive = (int) $itemData['quantity_received'];
-            
-            if ($quantityToReceive <= 0) {
-                continue;
-            }
+        ]);
 
-            $orderItem = $purchaseOrder->items()->findOrFail($itemId);
-            
-            if ($quantityToReceive > $orderItem->pending_quantity) {
-                throw new \Exception("La cantidad a recibir ({$quantityToReceive}) excede la cantidad pendiente ({$orderItem->pending_quantity}) para {$orderItem->product_name}");
-            }
-
-            $condition = $itemData['condition'] ?? 'good';
-            
-            if ($condition !== 'good') {
-                $hasIssues = true;
-            }
-
-            // Crear el registro de item recibido
-            ReceiptItem::create([
-                'receipt_id' => $receipt->id,
-                'purchase_order_item_id' => $orderItem->id,
-                'product_id' => $orderItem->product_id,
-                'quantity_ordered' => $orderItem->quantity_ordered,
-                'quantity_received' => $quantityToReceive,
-                'unit_price' => $orderItem->unit_price,
-                'batch_number' => $itemData['batch_number'] ?? null,
-                'expiry_date' => $itemData['expiry_date'] ?? null,
-                'condition' => $condition,
-                'notes' => $itemData['notes'] ?? null,
-            ]);
-
-            // Actualizar el item de la orden de compra
-            $orderItem->increment('quantity_received', $quantityToReceive);
-            $orderItem->update([
+        DB::beginTransaction();
+        try {
+            // Crear el registro de recepción
+            $receipt = PurchaseOrderReceipt::create([
+                'receipt_number' => PurchaseOrderReceipt::generateReceiptNumber(),
+                'purchase_order_id' => $purchaseOrder->id,
+                'warehouse_id' => $purchaseOrder->destination_warehouse_id,
                 'received_by' => auth()->id(),
                 'received_at' => now(),
+                'status' => 'pending',
+                'notes' => $validated['notes'] ?? null,
+                'invoice_number' => $validated['invoice_number'] ?? null,
             ]);
+            
+            if ($request->hasFile('invoice_file')) {
+                $file = $request->file('invoice_file');
+                $fileName = 'invoice_' . $receipt->receipt_number . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('invoices/receipts', $fileName, 'public');
+                $receipt->update(['invoice_file' => $path]);
+            }
 
-            // ========================================
-            // ACTUALIZAR INVENTARIO SEGÚN TIPO DE TRACKING
-            // ========================================
-            if ($condition === 'good') {
-                $product = Product::findOrFail($orderItem->product_id);
+            $totalReceived = 0;
+            $hasIssues = false;
+
+            // Procesar cada item
+            foreach ($validated['items'] as $itemId => $itemData) {
+                $quantityToReceive = (int) $itemData['quantity_received'];
                 
-                // Determinar status inicial según condición
-                $initialStatus = match($condition) {
-                    'damaged' => 'damaged',
-                    'expired' => 'expired',
-                    default => 'available',
-                };
+                if ($quantityToReceive <= 0) {
+                    continue;
+                }
 
-                switch ($product->tracking_type) {
-                    case 'stock':
-                        // ==========================================
-                        // PRODUCTOS CON TRACKING POR CANTIDAD (CONSUMIBLES)
-                        // ==========================================
-                        InventoryMovement::create([
-                            'type' => 'entry',
-                            'product_id' => $product->id,
-                            'product_unit_id' => null,
-                            'quantity' => $quantityToReceive,
-                            'from_location_id' => null, // Viene del proveedor (externo)
-                            'to_location_id' => $purchaseOrder->destination_warehouse_id,
-                            'user_id' => auth()->id(),
-                            'reference_number' => $receipt->receipt_number,
-                            'notes' => "Recepción de orden de compra {$purchaseOrder->order_number}",
-                            'unit_cost' => $orderItem->unit_price,
-                            'total_cost' => $orderItem->unit_price * $quantityToReceive,
-                            'lot_number' => $itemData['batch_number'] ?? null,
-                            'expiration_date' => $itemData['expiry_date'] ?? null,
-                            'movement_date' => now(),
-                        ]);
-                        
-                        \Log::info("✅ Movimiento de inventario creado (tipo: stock, cantidad: {$quantityToReceive})");
-                        break;
+                $orderItem = $purchaseOrder->items()->findOrFail($itemId);
+                
+                if ($quantityToReceive > $orderItem->pending_quantity) {
+                    throw new \Exception("La cantidad a recibir ({$quantityToReceive}) excede la cantidad pendiente ({$orderItem->pending_quantity}) para {$orderItem->product_name}");
+                }
 
-                    case 'rfid':
-                    case 'serial':
-                        // ==========================================
-                        // PRODUCTOS CON TRACKING INDIVIDUAL (INSTRUMENTALES)
-                        // ==========================================
-                        for ($i = 0; $i < $quantityToReceive; $i++) {
-                            // Crear unidad individual
-                            $unit = ProductUnit::create([
-                                'product_id' => $product->id,
-                                'epc' => $product->tracking_type === 'rfid' ? $this->generateEPC() : null,
-                                'serial_number' => $product->tracking_type === 'serial' ? $this->generateSerialNumber($product) : null,
-                                'batch_number' => $itemData['batch_number'] ?? null,
-                                'expiration_date' => $itemData['expiry_date'] ?? null,
-                                'status' => $initialStatus,
-                                'current_location_id' => $purchaseOrder->destination_warehouse_id,
-                                'sterilization_cycles' => 0,
-                                'acquisition_cost' => $orderItem->unit_price,
-                                'acquisition_date' => now(),
-                                'notes' => "Recibido en orden {$purchaseOrder->order_number}",
-                                'created_by' => auth()->id(),
-                            ]);
+                $condition = $itemData['condition'] ?? 'good';
+                
+                if ($condition !== 'good') {
+                    $hasIssues = true;
+                }
 
-                            // Crear movimiento de entrada para esta unidad
+                // Crear el registro de item recibido
+                ReceiptItem::create([
+                    'receipt_id' => $receipt->id,
+                    'purchase_order_item_id' => $orderItem->id,
+                    'product_id' => $orderItem->product_id,
+                    'quantity_ordered' => $orderItem->quantity_ordered,
+                    'quantity_received' => $quantityToReceive,
+                    'unit_price' => $orderItem->unit_price,
+                    'batch_number' => $itemData['batch_number'] ?? null,
+                    'expiry_date' => $itemData['expiry_date'] ?? null,
+                    'condition' => $condition,
+                    'notes' => $itemData['notes'] ?? null,
+                ]);
+
+                // Actualizar el item de la orden de compra
+                $orderItem->increment('quantity_received', $quantityToReceive);
+                $orderItem->update([
+                    'received_by' => auth()->id(),
+                    'received_at' => now(),
+                ]);
+
+                // ========================================
+                // ACTUALIZAR INVENTARIO SEGÚN TIPO DE TRACKING
+                // ========================================
+                if ($condition === 'good') {
+                    $product = Product::findOrFail($orderItem->product_id);
+                    
+                    // Determinar status inicial según condición
+                    $initialStatus = match($condition) {
+                        'damaged' => 'damaged',
+                        'expired' => 'expired',
+                        default => 'available',
+                    };
+
+                    switch ($product->tracking_type) {
+                        case 'stock':
+                            // ==========================================
+                            // PRODUCTOS CON TRACKING POR CANTIDAD (CONSUMIBLES)
+                            // ==========================================
                             InventoryMovement::create([
                                 'type' => 'entry',
                                 'product_id' => $product->id,
-                                'product_unit_id' => $unit->id,
-                                'quantity' => 1,
+                                'product_unit_id' => null,
+                                'quantity' => $quantityToReceive,
+                                'from_location_id' => null, // Viene del proveedor (externo)
+                                'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                                'user_id' => auth()->id(),
+                                'reference_number' => $receipt->receipt_number,
+                                'notes' => "Recepción de orden de compra {$purchaseOrder->order_number}",
+                                'unit_cost' => $orderItem->unit_price,
+                                'total_cost' => $orderItem->unit_price * $quantityToReceive,
+                                'lot_number' => $itemData['batch_number'] ?? null,
+                                'expiration_date' => $itemData['expiry_date'] ?? null,
+                                'movement_date' => now(),
+                            ]);
+                            
+                            \Log::info("✅ Movimiento de inventario creado (tipo: stock, cantidad: {$quantityToReceive})");
+                            break;
+
+                        case 'rfid':
+                        case 'serial':
+                            // ==========================================
+                            // PRODUCTOS CON TRACKING INDIVIDUAL (INSTRUMENTALES)
+                            // ==========================================
+                            for ($i = 0; $i < $quantityToReceive; $i++) {
+                                // Crear unidad individual
+                                $unit = ProductUnit::create([
+                                    'product_id' => $product->id,
+                                    'epc' => $product->tracking_type === 'rfid' ? $this->generateEPC() : null,
+                                    'serial_number' => $product->tracking_type === 'serial' ? $this->generateSerialNumber($product) : null,
+                                    'batch_number' => $itemData['batch_number'] ?? null,
+                                    'expiration_date' => $itemData['expiry_date'] ?? null,
+                                    'status' => $initialStatus,
+                                    'current_location_id' => $purchaseOrder->destination_warehouse_id,
+                                    'sterilization_cycles' => 0,
+                                    'acquisition_cost' => $orderItem->unit_price,
+                                    'acquisition_date' => now(),
+                                    'notes' => "Recibido en orden {$purchaseOrder->order_number}",
+                                    'created_by' => auth()->id(),
+                                ]);
+
+                                // Crear movimiento de entrada para esta unidad
+                                InventoryMovement::create([
+                                    'type' => 'entry',
+                                    'product_id' => $product->id,
+                                    'product_unit_id' => $unit->id,
+                                    'quantity' => 1,
+                                    'from_location_id' => null,
+                                    'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                                    'user_id' => auth()->id(),
+                                    'reference_number' => $receipt->receipt_number,
+                                    'notes' => "Recepción de unidad individual - {$purchaseOrder->order_number}",
+                                    'unit_cost' => $orderItem->unit_price,
+                                    'total_cost' => $orderItem->unit_price,
+                                    'movement_date' => now(),
+                                ]);
+                            }
+                            
+                            \Log::info("✅ {$quantityToReceive} unidades individuales creadas (tipo: {$product->tracking_type})");
+                            break;
+
+                        case 'none':
+                        default:
+                            // Sin tracking, solo registrar en movimientos para historial
+                            InventoryMovement::create([
+                                'type' => 'entry',
+                                'product_id' => $product->id,
+                                'product_unit_id' => null,
+                                'quantity' => $quantityToReceive,
                                 'from_location_id' => null,
                                 'to_location_id' => $purchaseOrder->destination_warehouse_id,
                                 'user_id' => auth()->id(),
                                 'reference_number' => $receipt->receipt_number,
-                                'notes' => "Recepción de unidad individual - {$purchaseOrder->order_number}",
+                                'notes' => "Recepción de orden {$purchaseOrder->order_number} (sin tracking)",
                                 'unit_cost' => $orderItem->unit_price,
-                                'total_cost' => $orderItem->unit_price,
+                                'total_cost' => $orderItem->unit_price * $quantityToReceive,
                                 'movement_date' => now(),
                             ]);
-                        }
-                        
-                        \Log::info("✅ {$quantityToReceive} unidades individuales creadas (tipo: {$product->tracking_type})");
-                        break;
-
-                    case 'none':
-                    default:
-                        // Sin tracking, solo registrar en movimientos para historial
-                        InventoryMovement::create([
-                            'type' => 'entry',
-                            'product_id' => $product->id,
-                            'product_unit_id' => null,
-                            'quantity' => $quantityToReceive,
-                            'from_location_id' => null,
-                            'to_location_id' => $purchaseOrder->destination_warehouse_id,
-                            'user_id' => auth()->id(),
-                            'reference_number' => $receipt->receipt_number,
-                            'notes' => "Recepción de orden {$purchaseOrder->order_number} (sin tracking)",
-                            'unit_cost' => $orderItem->unit_price,
-                            'total_cost' => $orderItem->unit_price * $quantityToReceive,
-                            'movement_date' => now(),
-                        ]);
-                        break;
+                            break;
+                    }
                 }
+
+                $totalReceived += $quantityToReceive;
             }
 
-            $totalReceived += $quantityToReceive;
+            // Actualizar estado de la recepción
+            $receiptStatus = $hasIssues ? 'with_issues' : ($purchaseOrder->isFullyReceived() ? 'completed' : 'partial');
+            $receipt->update(['status' => $receiptStatus]);
+
+            // Actualizar estado de la orden de compra
+            if ($purchaseOrder->isFullyReceived()) {
+                $purchaseOrder->update([
+                    'status' => 'received',
+                    'received_date' => now(),
+                ]);
+            } else if ($totalReceived > 0) {
+                $purchaseOrder->update([
+                    'status' => 'partial',
+                ]);
+            }
+
+            DB::commit();
+
+            $message = "Recepción registrada exitosamente. {$totalReceived} piezas recibidas.";
+            if ($hasIssues) {
+                $message .= " ⚠️ Hay productos con problemas de calidad.";
+            }
+            $message .= " Número de recepción: {$receipt->receipt_number}";
+
+            return redirect()
+                ->route('purchase-orders.show', $purchaseOrder)
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            \Log::error('Error al registrar recepción: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            return back()
+                ->with('error', 'Error al registrar la recepción: ' . $e->getMessage())
+                ->withInput();
         }
-
-        // Actualizar estado de la recepción
-        $receiptStatus = $hasIssues ? 'with_issues' : ($purchaseOrder->isFullyReceived() ? 'completed' : 'partial');
-        $receipt->update(['status' => $receiptStatus]);
-
-        // Actualizar estado de la orden de compra
-        if ($purchaseOrder->isFullyReceived()) {
-            $purchaseOrder->update([
-                'status' => 'received',
-                'received_date' => now(),
-            ]);
-        } else if ($totalReceived > 0) {
-            $purchaseOrder->update([
-                'status' => 'partial',
-            ]);
-        }
-
-        DB::commit();
-
-        $message = "Recepción registrada exitosamente. {$totalReceived} piezas recibidas.";
-        if ($hasIssues) {
-            $message .= " ⚠️ Hay productos con problemas de calidad.";
-        }
-        $message .= " Número de recepción: {$receipt->receipt_number}";
-
-        return redirect()
-            ->route('purchase-orders.show', $purchaseOrder)
-            ->with('success', $message);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-        
-        \Log::error('Error al registrar recepción: ' . $e->getMessage());
-        \Log::error($e->getTraceAsString());
-        
-        return back()
-            ->with('error', 'Error al registrar la recepción: ' . $e->getMessage())
-            ->withInput();
     }
-}
 
 private function generateOrderNumber(): string
 {
@@ -714,4 +711,42 @@ private function generateSerialNumber(\App\Models\Product $product): string
     
     return $prefix . $suffix;
 }
+/**
+ * Búsqueda AJAX de productos para órdenes de compra
+ */
+public function search(Request $request)
+    {
+        try {
+            $query = $request->get('q', '');
+            
+            if (strlen($query) < 2) {
+                return response()->json([]);
+            }
+            
+            $products = Product::where(function($q) use ($query) {
+                    $q->where('code', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+                })
+                ->select('id', 'code', 'name', 'description') // ✅ SIN 'price'
+                ->orderBy('code')
+                ->limit(50)
+                ->get()
+                ->map(function($product) {
+                    return [
+                        'id' => $product->id,
+                        'code' => $product->code,
+                        'name' => $product->name,
+                        'description' => $product->description,
+                        'price' => 0 // ✅ Precio por defecto en 0
+                    ];
+                });
+            
+            return response()->json($products);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en búsqueda de productos: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
 }

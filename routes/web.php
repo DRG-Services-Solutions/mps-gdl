@@ -67,6 +67,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('api/products/{product}/details', [PurchaseOrderController::class, 'getProductDetails'])
         ->name('products.details');
 
+    Route::get('/api/products/search', [PurchaseOrderController::class, 'search'])->name('products.search');
+
+
+
     // ========================================
     // HISTORIAL DE RECEPCIONES (opcional - para después)
     // ========================================
