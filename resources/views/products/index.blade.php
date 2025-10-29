@@ -63,7 +63,7 @@
                                     {{ __('Producto') }}
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
-                                    {{ __('Fabricante') }}
+                                    {{ __('Proveedor/Fabricante') }}
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                                     {{ __('Categoría') }}
@@ -126,7 +126,7 @@
                                     
                                     <!-- Fabricante -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900">{{ $product->manufacturer->name ?? 'Sin fabricante' }}</div>
+                                        <div class="text-sm text-gray-900">{{ $product->suppliers->name ?? 'Sin fabricante' }}</div>
                                     </td>
 
                                     <!-- Categoría -->

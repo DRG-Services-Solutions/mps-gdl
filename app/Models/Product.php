@@ -17,7 +17,7 @@ class Product extends Model
         'category_id',
         'specialty_id', 
         'subcategory_id',
-        'manufacturer_id',
+        'supplier_id',
         'name',
         'code',
         'description',
@@ -52,9 +52,9 @@ class Product extends Model
         return $this->belongsTo(Subcategory::class, 'subcategory_id');
     }
     
-    public function manufacturer() 
+    public function supplier() 
     {
-        return $this->belongsTo(Manufacturer::class);    
+        return $this->belongsTo(Supplier::class);    
     }
 
     /**
