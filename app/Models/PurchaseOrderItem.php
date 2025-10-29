@@ -24,7 +24,6 @@ class PurchaseOrderItem extends Model
         'expiration_date',
         'manufacture_date',
         'status',
-        'supplier_id',
     ];
 
     protected $casts = [

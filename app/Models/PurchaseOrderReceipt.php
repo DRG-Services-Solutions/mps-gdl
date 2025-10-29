@@ -16,6 +16,9 @@ class PurchaseOrderReceipt extends Model
         'received_at',
         'status',
         'notes',
+        'invoice_file', 
+        'invoice_number',    
+
     ];
 
     protected $casts = [

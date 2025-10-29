@@ -376,7 +376,7 @@
                         </button>
                     </div>
 
-                    <form action="{{ route('purchase-orders.receive', $purchaseOrder) }}" method="POST">
+                    <form action="{{ route('purchase-orders.receive', $purchaseOrder) }}" method="POST" enctype="multipart/form-data">                        
                         @csrf
                         <div class="overflow-y-auto max-h-96 border rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
@@ -432,6 +432,43 @@
                             </table>
                         </div>
 
+
+
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Número de Factura -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-file-invoice text-gray-400 mr-1"></i>
+                                    Número de Factura (Opcional)
+                                </label>
+                                <input type="text" 
+                                    name="invoice_number"
+                                    class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    placeholder="Ej: FAC-2024-001">
+                            </div>
+
+                            <!-- Archivo de Factura -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i class="fas fa-paperclip text-gray-400 mr-1"></i>
+                                    Adjuntar Factura (Opcional)
+                                </label>
+                                <input type="file" 
+                                    name="invoice_file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    class="block w-full text-sm text-gray-500
+                                            file:mr-4 file:py-2 file:px-4
+                                            file:rounded-lg file:border-0
+                                            file:text-sm file:font-semibold
+                                            file:bg-green-50 file:text-green-700
+                                            hover:file:bg-green-100">
+                                <p class="mt-1 text-xs text-gray-500">PDF, JPG, PNG (Máx. 5MB)</p>
+                            </div>
+                        </div>
+
+
+                    
+                        <!-- Notas de Recepcion -->
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Notas de Recepción</label>
                             <textarea name="notes" 

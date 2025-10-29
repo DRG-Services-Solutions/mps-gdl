@@ -137,7 +137,7 @@
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Producto *</label>
                                                 <select
                                                         x-model="item.product_id"
-                                                        @change="updateProduct(index)"
+                                                        @change="updateProduct(index, $event)"
                                                         class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
                                                         required>
                                                     <option value="">Seleccionar...</option>
@@ -269,16 +269,15 @@
                     this.items.splice(index, 1);
                 },
                 
-                updateProduct(index) {
-                    const select = document.querySelector(`select[name="items[${index}][product_id]"]`);
-                    const option = select.options[select.selectedIndex];
+                updateProduct(index, event) {
+                    const selectedOption = event.target.options[event.target.selectedIndex];
                     
-                    if (option.value) {
-                        this.items[index].unit_price = parseFloat(option.dataset.price) || 0;
+                    if (selectedOption && selectedOption.value) {
+                        this.items[index].unit_price = parseFloat(selectedOption.dataset.price) || 0;
                         this.calculateSubtotal(index);
                     }
                 },
-                
+
                 calculateSubtotal(index) {
                     const item = this.items[index];
                     item.subtotal = item.quantity_ordered * item.unit_price;

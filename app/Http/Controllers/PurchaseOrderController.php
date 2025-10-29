@@ -36,7 +36,6 @@ class PurchaseOrderController extends Controller
                 }
             ])->withCount('receipts'); // Contador de recepciones
 
-            // Filtros existentes
             if ($request->has('status') && $request->status != '') {
                 $query->where('status', $request->status);
             }
@@ -59,13 +58,11 @@ class PurchaseOrderController extends Controller
                 });
             }
 
-            // Ordenar por más recientes
             $purchaseOrders = $query->orderBy('order_date', 'desc')
                                     ->orderBy('created_at', 'desc')
                                     ->paginate(15)
                                     ->withQueryString(); // Para mantener filtros en paginación
 
-            // Para los filtros
             $suppliers = Supplier::active()->orderBy('name')->get();
 
             return view('purchase-orders.index', compact('purchaseOrders', 'suppliers'));
@@ -110,9 +107,10 @@ class PurchaseOrderController extends Controller
 
         try {
             DB::beginTransaction();
-
+        
             // 2. Decodificar y Validar el array de Items
             $items = json_decode($validated['items_json'], true);
+            \Log::info('📥 Items recibidos del frontend:', ['items' => $items]);
 
             if (empty($items)) {
                 throw new \Exception('La orden de compra debe tener al menos un producto.');
@@ -121,7 +119,6 @@ class PurchaseOrderController extends Controller
             // Obtener los IDs de los productos a ordenar para la validación 'exists'
             $productIds = collect($items)->pluck('product_id')->unique()->toArray();
             
-            // 🚨 Validación del contenido
             $itemRules = [
                 '*.product_id' => 'required|exists:products,id',
                 '*.quantity_ordered' => 'required|integer|min:1',
@@ -135,11 +132,11 @@ class PurchaseOrderController extends Controller
             }
             
             // ⭐️ Generar el SNAPSHOT de los productos para la inserción
-            // Carga la información relevante de todos los productos en una Colección indexada por 'id'
             $productsSnapshot = Product::whereIn('id', $productIds)
-                ->get(['id', 'code', 'name'])
+                ->get(['id', 'code', 'name', 'description']) // ✅ Incluir 'description'
                 ->keyBy('id');
 
+            \Log::info('🔍 Snapshot de productos:', ['snapshot' => $productsSnapshot->toArray()]);
 
             // 3. Crear la Orden
             $purchaseOrder = PurchaseOrder::create([
@@ -152,6 +149,8 @@ class PurchaseOrderController extends Controller
                 'order_date' => now(),
                 'status' => 'pending',
             ]);
+            
+            \Log::info('✅ Orden creada:', ['order_id' => $purchaseOrder->id, 'order_number' => $purchaseOrder->order_number]);
 
             // 4. Preparar la Inserción Masiva con Snapshot
             $itemsToInsert = [];
@@ -170,44 +169,65 @@ class PurchaseOrderController extends Controller
                 $itemsToInsert[] = [
                     'product_id' => $productId,
                     'quantity_ordered' => $item['quantity_ordered'],
+                    'quantity_received' => 0,
                     'unit_price' => $item['unit_price'],
-                    
-                    // 🚀 DATOS CRÍTICOS (NOT NULL en migración)
                     'subtotal' => $subtotalCalculated, 
-                    'product_code' => $snapshot->code, // Del snapshot
-                    'product_name' => $snapshot->name, // Del snapshot
-                    // La descripción no es NOT NULL en la migración, pero se puede añadir
-                    
+                    'product_code' => $snapshot->code,
+                    'product_name' => $snapshot->name,
+                    'description' => $snapshot->description ?? null,
+                    'status' => 'pending',
+                    'supplier_id' => $validated['supplier_id'],
                     'created_at' => now(), 
                     'updated_at' => now(), 
                 ];
             }
+            
+            // ✅ Log DESPUÉS del foreach para ver el array completo
+            \Log::info('📦 Items preparados para insertar:', ['count' => count($itemsToInsert), 'items' => $itemsToInsert]);
 
             $purchaseOrder->items()->createMany($itemsToInsert);
+            
+            \Log::info('✅ Items insertados en BD:', ['count' => $purchaseOrder->items()->count()]);
 
             // 5. Calcular Totales y Finalizar
             $purchaseOrder->calculateTotals();
-
+            
+            \Log::info('💰 Totales calculados:', [
+                'subtotal' => $purchaseOrder->subtotal,
+                'tax' => $purchaseOrder->tax,
+                'total' => $purchaseOrder->total
+            ]);
+            
             DB::commit();
+            
+            \Log::info('🎉 Orden de compra creada exitosamente');
 
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Orden de compra creada exitosamente: ' . $purchaseOrder->order_number);
 
         } catch (QueryException $e) {
-            // Captura errores específicos de SQL (NOT NULL, FK, UNIQUE)
             DB::rollBack();
+            \Log::error('❌ Error de base de datos:', [
+                'message' => $e->getMessage(),
+                'sql' => $e->getSql() ?? 'N/A'
+            ]);
+            
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error en la base de datos. Mensaje: ' . $e->getMessage()); 
                 
         } catch (\Exception $e) {
-            // Captura errores de lógica (Validación de ítems, empty, etc.)
             DB::rollBack();
+            \Log::error('❌ Error general:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
         }
-    }
+    }   
 
     /**
      * Display the specified purchase order.
@@ -426,6 +446,9 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
         'items.*.condition' => 'nullable|in:good,damaged,expired',
         'items.*.notes' => 'nullable|string|max:500',
         'notes' => 'nullable|string|max:1000',
+        'invoice_number' => 'nullable|string|max:255',      
+        'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', 
+
     ]);
 
     DB::beginTransaction();
@@ -439,7 +462,15 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
             'received_at' => now(),
             'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
+            'invoice_number' => $validated['invoice_number'] ?? null,
         ]);
+        
+        if ($request->hasFile('invoice_file')) {
+            $file = $request->file('invoice_file');
+            $fileName = 'invoice_' . $receipt->receipt_number . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('invoices/receipts', $fileName, 'public');
+            $receipt->update(['invoice_file' => $path]);
+        }
 
         $totalReceived = 0;
         $hasIssues = false;
