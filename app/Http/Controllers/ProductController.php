@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Manufacturer; 
+use App\Models\Supplier; 
 use App\Models\Category;
 use App\Models\MedicalSpecialty;
 use App\Models\Subcategory;  
@@ -20,7 +20,7 @@ class ProductController extends Controller
     public function index(): View
     {
         $products = Product::with([
-            'manufacturer', 
+            'supplier', 
             'category',
             'subcategory', 
             'medicalSpecialty',
@@ -35,12 +35,12 @@ class ProductController extends Controller
     // ==========================================================
     public function create(): View
     {
-        $manufacturers = Manufacturer::orderBy('name')->get(); 
+        $suppliers = Supplier::orderBy('name')->get(); 
         $categories = Category::all ();
         $specialties = MedicalSpecialty::orderBy('name')->get();
         $subcategories = Subcategory::all(); 
         
-        return view('products.create', compact('manufacturers', 'categories', 'specialties', 'subcategories'));
+        return view('products.create', compact('suppliers', 'categories', 'specialties', 'subcategories'));
     }
 
     // ==========================================================
@@ -50,7 +50,7 @@ class ProductController extends Controller
     {
     $validated = $request->validate([
         // Relaciones
-        'manufacturer_id' => 'nullable|exists:manufacturers,id',
+        'supplier_id' => 'nullable|exists:suppliers,id', 
         'category_id' => 'nullable|exists:product_categories,id',
         'specialty_id' => 'nullable|exists:medical_specialties,id',
         'subcategory_id' => 'nullable|exists:subcategories,id',
@@ -89,7 +89,7 @@ class ProductController extends Controller
     public function show(Product $product): View
     {
         $product->load([
-            'manufacturer', 
+            'supplier', 
             'category', 
             'subcategory', 
             'medicalSpecialty',
@@ -104,12 +104,12 @@ class ProductController extends Controller
     // ==========================================================
     public function edit(Product $product): View
     {
-        $manufacturers = Manufacturer::orderBy('name')->get();
+        $suppliers = Supplier::orderBy('name')->get();
         $categories = Category::orderBy('name')->get(); 
         $specialties = MedicalSpecialty::orderBy('name')->get();
         $subcategories = Subcategory::orderBy('name')->get();
 
-        return view('products.edit', compact('product', 'manufacturers', 'categories', 'specialties', 'subcategories'));
+        return view('products.edit', compact('product', 'suppliers', 'categories', 'specialties', 'subcategories'));
     }
 
     // ==========================================================
@@ -119,19 +119,14 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             // Relaciones
-            'manufacturer_id' => 'nullable|exists:manufacturers,id',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'category_id' => 'nullable|exists:product_categories,id', 
             'specialty_id' => 'nullable|exists:medical_specialties,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
             
             // Identidad
             'name' => 'required|string|max:255',
-            'code' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('products', 'code')->ignore($product->id)
-            ],
+            'code' => ['required', 'string', 'max:255', Rule::unique('products', 'code')->ignore($product->id)],
             'serial_number' => [
                 'nullable',
                 'string',
@@ -210,7 +205,7 @@ class ProductController extends Controller
      */
     public function lowStock(): View
     {
-        $products = Product::with(['manufacturer', 'category'])
+        $products = Product::with(['supplier', 'category'])
             ->whereColumn('current_stock', '<=', 'minimum_stock')
             ->where('status', 'active')
             ->orderBy('current_stock', 'asc')
@@ -224,7 +219,7 @@ class ProductController extends Controller
      */
     public function expiringSoon(): View
     {
-        $products = Product::with(['manufacturer', 'category'])
+        $products = Product::with(['supplier', 'category'])
             ->whereNotNull('expiration_date')
             ->whereDate('expiration_date', '<=', now()->addDays(30))
             ->where('status', 'active')
@@ -273,7 +268,7 @@ class ProductController extends Controller
             'rfid_tag_id' => 'required|string'
         ]);
 
-        $product = Product::with(['manufacturer', 'category', 'medicalSpecialty'])
+        $product = Product::with(['supplier', 'category', 'medicalSpecialty'])
             ->where('rfid_tag_id', $request->rfid_tag_id)
             ->where('rfid_enabled', true)
             ->first();

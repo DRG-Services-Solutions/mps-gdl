@@ -14,7 +14,8 @@ return new class extends Migration
             // ==========================================================
             // CLAVES FORÁNEAS (CLASIFICACIÓN)
             // ==========================================================
-            $table->foreignId('manufacturer_id')->nullable()->constrained()->nullOnDelete();
+          // Migración de products (¡Correcta!)
+            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); // almacena los tipos de productos
             $table->foreignId('subcategory_id')->nullable()->constrained()->nullOnDelete(); // almacena los subprodcutos
             $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 

@@ -110,22 +110,32 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Fabricante --}}
+                            {{-- Proveedor --}}
                             <div>
-                                <label for="manufacturer_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-industry text-gray-400 mr-2"></i>
-                                    {{ __('Fabricante') }}
+                                    {{ __('Proveedor') }}
                                 </label>
-                                <select name="manufacturer_id" id="manufacturer_id"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('manufacturer_id') border-red-500 @enderror">
-                                    <option value="">{{ __('-- Seleccione un fabricante --') }}</option>
-                                    @foreach($manufacturers as $manufacturer)
-                                        <option value="{{ $manufacturer->id }}" {{ old('manufacturer_id', $product->manufacturer_id) == $manufacturer->id ? 'selected' : '' }}>
-                                            {{ $manufacturer->name }}
+                                <select name="supplier_id" id="supplier_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('supplier_id') border-red-500 @enderror">
+                                    <option value="">{{ __('-- Seleccione un proveedor --') }}</option>
+                                    {{-- Bucle sobre la colección $suppliers que debe venir del controlador --}}
+                                    @foreach($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" 
+                                            {{-- Para la vista CREATE, usa old() --}}
+                                            @if (!isset($product))
+                                                {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}
+                                            @endif
+                                            {{-- Para la vista EDIT, usa old() o el valor actual del producto --}}
+                                            @if (isset($product))
+                                                {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}
+                                            @endif>
+                
+                                            {{ $supplier->name }}
                                         </option>
                                     @endforeach
                                 </select>
-                                @error('manufacturer_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                                @error('supplier_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
                             {{-- Categoría --}}
