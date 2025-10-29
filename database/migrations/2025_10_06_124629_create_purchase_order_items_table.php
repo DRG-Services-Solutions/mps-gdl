@@ -16,11 +16,28 @@ return new class extends Migration
             // Cantidades
             $table->integer('quantity_ordered')->comment('Cantidad solicitada');
             $table->integer('quantity_received')->default(0)->comment('Cantidad recibida');
+           
+            // Proveedor
+            $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
             
+            // Lote Caducidad
+            $table->string('batch_number')->nullable()->comment('Número de lote del fabricante');
+            $table->date('expiration_date')->nullable()->comment('Fecha de caducidad');
+            $table->date('manufacture_date')->nullable()->comment('Fecha de fabricación');
+
             // Precios
             $table->decimal('unit_price', 10, 2)->comment('Precio unitario');
             $table->decimal('subtotal', 10, 2)->default(0)->comment('Subtotal línea');
             
+            // Estatus
+            $table->enum('status', [
+                'pending',          
+                'received',         
+                'partial',          
+                'cancelled',        
+                'in_return'         
+            ])->default('pending');
+
             // Información del producto (snapshot)
             $table->string('product_code')->comment('Código del producto al momento de la orden');
             $table->string('product_name')->comment('Nombre del producto al momento de la orden');
