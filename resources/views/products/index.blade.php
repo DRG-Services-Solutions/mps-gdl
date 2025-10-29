@@ -126,7 +126,7 @@
                                     
                                     <!-- Fabricante -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900">{{ $product->suppliers->name ?? 'Sin fabricante' }}</div>
+                                        <div class="text-sm text-gray-900">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
                                     </td>
 
                                     <!-- Categoría -->
