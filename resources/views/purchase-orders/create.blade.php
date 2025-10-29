@@ -88,7 +88,7 @@
                     <input type="hidden" name="items_json" :value="JSON.stringify(items)">
 
                     <!-- Items de la Orden -->
-                    <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                    <div class="bg-white shadow-xl sm:rounded-lg" style="min-height: 400px; overflow: visible;">
                         <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center">
                             <h3 class="text-xl font-bold text-white">Productos</h3>
                             <button type="button" 
@@ -100,7 +100,7 @@
                                 Agregar Producto
                             </button>
                         </div>
-                        <div class="p-6">
+                        <div class="p-6" style="overflow: visible;">
                             <template x-if="items.length === 0">
                                 <div class="text-center py-12 bg-gray-50 rounded-lg">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,9 +115,11 @@
                                 </div>
                             </template>
 
-                            <div class="space-y-4">
+                            <div class="space-y-4" style="overflow: visible;">
+
                                 <template x-for="(item, index) in items" :key="index">
-                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 relative" style="overflow: visible;">
+                                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50" style="position: relative; overflow: visible;">
+
 
                                         <div class="flex justify-between items-start mb-3">
                                             <h4 class="font-semibold text-gray-700">Producto <span x-text="index + 1"></span></h4>
@@ -130,22 +132,26 @@
                                             </button>
                                         </div>
 
-                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4" style="overflow: visible;">
+
                                             <!-- Producto con Búsqueda AJAX -->
-                                            <div class="md:col-span-2" 
-                                                x-data="{
-                                                    searchQuery: '',
-                                                    showDropdown: false,
-                                                    searchResults: [],
-                                                    isSearching: false,
-                                                    selectedProduct: null
-                                                }">
+                                           <div class="md:col-span-2" 
+                                            x-data="{
+                                                searchQuery: '',
+                                                showDropdown: false,
+                                                searchResults: [],
+                                                isSearching: false,
+                                                selectedProduct: null
+                                            }"
+                                            style="position: relative; overflow: visible; z-index: 100;">
+
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Producto * 
                                                     <span x-show="isSearching" class="text-xs text-gray-500">(Buscando...)</span>
                                                 </label>
                                                 
-                                                <div class="relative">
+                                                <div class="relative" style="overflow: visible;">
+
                                                     <!-- Input de Búsqueda -->
                                                     <div class="relative" x-show="!selectedProduct">
                                                         <input type="text" 
@@ -192,7 +198,8 @@
                                                     <div x-show="showDropdown && !selectedProduct" 
                                                         x-cloak
                                                         x-transition
-                                                        class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                        class="absolute z-[999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+                                                        style="min-width: 500px;">
                                                         
                                                         <!-- Resultados -->
                                                         <template x-for="product in searchResults" :key="product.id">
