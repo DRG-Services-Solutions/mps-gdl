@@ -446,6 +446,9 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
         'items.*.condition' => 'nullable|in:good,damaged,expired',
         'items.*.notes' => 'nullable|string|max:500',
         'notes' => 'nullable|string|max:1000',
+        'invoice_number' => 'nullable|string|max:255',      
+        'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', 
+
     ]);
 
     DB::beginTransaction();
@@ -459,7 +462,15 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
             'received_at' => now(),
             'status' => 'pending',
             'notes' => $validated['notes'] ?? null,
+            'invoice_number' => $validated['invoice_number'] ?? null,
         ]);
+        
+        if ($request->hasFile('invoice_file')) {
+            $file = $request->file('invoice_file');
+            $fileName = 'invoice_' . $receipt->receipt_number . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('invoices/receipts', $fileName, 'public');
+            $receipt->update(['invoice_file' => $path]);
+        }
 
         $totalReceived = 0;
         $hasIssues = false;

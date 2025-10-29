@@ -286,6 +286,26 @@
                                                                     {{ $receipt->notes }}
                                                                 </div>
                                                             @endif
+
+                                                            <!-- Información de Factura -->
+                                                            <div class="mt-3 flex flex-wrap gap-3">
+                                                                @if($receipt->invoice_number)
+                                                                    <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                                                                        <i class="fas fa-file-invoice mr-1.5"></i>
+                                                                        Factura: {{ $receipt->invoice_number }}
+                                                                    </span>
+                                                                @endif
+                                                                
+                                                                @if($receipt->invoice_file)
+                                                                    <a href="{{ Storage::url($receipt->invoice_file) }}" 
+                                                                    target="_blank"
+                                                                    download
+                                                                    class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium transition-colors">
+                                                                        <i class="fas fa-download mr-1.5"></i>
+                                                                        Descargar Factura
+                                                                    </a>
+                                                                @endif
+                                                            </div>
                                                         </div>
 
                                                         <!-- Tiempo desde la recepción -->
