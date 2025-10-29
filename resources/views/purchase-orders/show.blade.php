@@ -494,5 +494,5 @@
             </div>
         </div>
 
-    </div> {{-- ⬆️ Cierre del x-data --}}
+    </div>
 </x-app-layout>

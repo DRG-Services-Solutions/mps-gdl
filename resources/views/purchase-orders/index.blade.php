@@ -297,9 +297,8 @@
                                                                 @endif
                                                                 
                                                                 @if($receipt->invoice_file)
-                                                                    <a href="{{ Storage::url($receipt->invoice_file) }}" 
+                                                                    <a href="{{ asset('storage/' . $receipt->invoice_file) }}" 
                                                                     target="_blank"
-                                                                    download
                                                                     class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium transition-colors">
                                                                         <i class="fas fa-download mr-1.5"></i>
                                                                         Descargar Factura
