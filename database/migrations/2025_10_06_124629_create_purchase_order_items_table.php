@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('quantity_received')->default(0)->comment('Cantidad recibida');
            
             // Proveedor
-            $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
+            $table->foreignId('supplier_id')->nullable()->constrained()->onDelete('restrict');
             
             // Lote Caducidad
             $table->string('batch_number')->nullable()->comment('Número de lote del fabricante');
