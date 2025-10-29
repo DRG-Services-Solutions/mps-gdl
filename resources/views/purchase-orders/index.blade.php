@@ -124,15 +124,17 @@
                                                 <span>Progreso de recepción</span>
                                                 <span class="font-semibold">{{ number_format($order->receipt_progress, 1) }}%</span>
                                             </div>
+
                                             <div class="w-full bg-gray-200 rounded-full h-2">
                                                 <div class="h-2 rounded-full transition-all duration-300
-                                                    @if($order->receipt_progress < 50) 
-                                                    @elseif($order->receipt_progress < 100) 
+                                                    @if($order->receipt_progress < 50) bg-red-500
+                                                    @elseif($order->receipt_progress < 100) bg-yellow-500
                                                     @else bg-green-500
                                                     @endif"
                                                     style="width: {{ $order->receipt_progress }}%">
                                                 </div>
                                             </div>
+
                                         </div>
                                     @endif
                                 </div>
@@ -257,7 +259,7 @@
                                                                 </div>
                                                                 <div>
                                                                     <i class="fas fa-warehouse text-gray-400 mr-1"></i>
-                                                                    {{ $receipt->warehouse->name }}
+                                                                    {{ $receipt->warehouse->full_location ?? $receipt->warehouse->area }}
                                                                 </div>
                                                                 <div class="font-semibold text-indigo-600">
                                                                     <i class="fas fa-box text-gray-400 mr-1"></i>
