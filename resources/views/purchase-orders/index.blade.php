@@ -48,8 +48,27 @@
             </div>
 
             @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                    {{ session('success') }}
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-r mb-4 shadow-md">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 text-xl mr-3 mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">{{ session('success') }}</p>
+                                
+                                @if(session('print_jobs_count') && session('print_jobs_count') > 0)
+                                    <a href="{{ route('receipts.print-jobs', session('receipt_id')) }}" 
+                                    class="mt-2 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium shadow">
+                                        <i class="fas fa-tags mr-2"></i>
+                                        Ver Estado de Impresión de Etiquetas
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                        <button onclick="this.parentElement.parentElement.style.display='none'" 
+                                class="text-green-700 hover:text-green-900">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
             @endif
 
@@ -230,8 +249,8 @@
                                         <div class="space-y-3">
                                             @foreach($order->receipts->sortByDesc('received_at') as $receipt)
                                                 <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
-                                                    <div class="flex items-start justify-between">
-                                                        <!-- Info de la Recepción -->
+                                                    <!-- Header de la Recepción -->
+                                                    <div class="flex items-start justify-between mb-3">
                                                         <div class="flex-1">
                                                             <div class="flex items-center gap-3 mb-2">
                                                                 <span class="font-semibold text-gray-900">
@@ -239,87 +258,106 @@
                                                                     {{ $receipt->receipt_number }}
                                                                 </span>
                                                                 <span class="px-2 py-1 rounded text-xs font-semibold
-                                                                    @if($receipt->status === 'pending')  
-                                                                    @elseif($receipt->status === 'partial')  
-                                                                    @elseif($receipt->status === 'completed')  
-                                                                    @elseif($receipt->status === 'with_issues')  
-                                                                    @else  text-gray-800
+                                                                    @if($receipt->status === 'pending') bg-yellow-100 text-yellow-800
+                                                                    @elseif($receipt->status === 'partial') bg-blue-100 text-blue-800
+                                                                    @elseif($receipt->status === 'completed') bg-green-100 text-green-800
+                                                                    @elseif($receipt->status === 'with_issues') bg-red-100 text-red-800
+                                                                    @else bg-gray-100 text-gray-800
                                                                     @endif">
                                                                     {{ ucfirst($receipt->status) }}
                                                                 </span>
                                                             </div>
-                                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                                                                <div>
-                                                                    <i class="fas fa-calendar text-gray-400 mr-1"></i>
-                                                                    <span class="font-medium">{{ $receipt->received_at->format('d/m/Y H:i') }}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <i class="fas fa-user text-gray-400 mr-1"></i>
-                                                                    {{ $receipt->receivedBy->name }}
-                                                                </div>
-                                                                <div>
-                                                                    <i class="fas fa-warehouse text-gray-400 mr-1"></i>
-                                                                    {{ $receipt->warehouse->full_location ?? $receipt->warehouse->area }}
-                                                                </div>
-                                                                <div class="font-semibold text-indigo-600">
-                                                                    <i class="fas fa-box text-gray-400 mr-1"></i>
-                                                                    {{ $receipt->items->sum('quantity_received') }} unidades
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            <!-- Items Recibidos -->
-                                                            <div class="mt-3 pl-4 border-l-2 border-indigo-200">
-                                                                @foreach($receipt->items as $receiptItem)
-                                                                    <div class="text-xs text-gray-600 py-1">
-                                                                        <span class="font-medium text-gray-700">{{ $receiptItem->product->code }}</span>: 
-                                                                        <span class="text-indigo-600 font-semibold">{{ $receiptItem->quantity_received }}</span> unidades
-                                                                        
-                                                                        @if($receiptItem->batch_number)
-                                                                            <span class="ml-2 text-gray-500">
-                                                                                <i class="fas fa-tag text-xs"></i> Lote: <span class="font-medium">{{ $receiptItem->batch_number }}</span>
-                                                                            </span>
-                                                                        @endif
-                                                                        
-                                                                        @if($receiptItem->expiry_date)
-                                                                            <span class="ml-2 text-gray-500">
-                                                                                <i class="fas fa-calendar text-xs"></i> Caduca: <span class="font-medium">{{ $receiptItem->expiry_date->format('d/m/Y') }}</span>
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
-                                                                @endforeach
-                                                            </div>
+                                                        </div>
 
-                                                            @if($receipt->notes)
-                                                                <div class="mt-2 text-xs text-gray-500 italic">
-                                                                    <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
-                                                                    {{ $receipt->notes }}
-                                                                </div>
-                                                            @endif
+                                                        <!-- Botón de Etiquetas RFID (Derecha Superior) -->
+                                                        @php
+                                                            $printJobsCount = \App\Models\PrintJob::where('receipt_id', $receipt->id)->count();
+                                                        @endphp
+                                                        
+                                                        @if($printJobsCount > 0)
+                                                            <a href="{{ route('receipts.print-jobs', $receipt) }}" 
+                                                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg text-sm font-medium">
+                                                                <i class="fas fa-tags mr-2"></i>
+                                                                Etiquetas RFID
+                                                                <span class="ml-2 px-2 py-0.5 bg-white bg-opacity-30 rounded-full text-xs font-bold">
+                                                                    {{ $printJobsCount }}
+                                                                </span>
+                                                            </a>
+                                                        @endif
+                                                    </div>
 
-                                                            <!-- Información de Factura -->
-                                                            <div class="mt-3 flex flex-wrap gap-3">
-                                                                @if($receipt->invoice_number)
-                                                                    <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
-                                                                        <i class="fas fa-file-invoice mr-1.5"></i>
-                                                                        Factura: {{ $receipt->invoice_number }}
+                                                    <!-- Información de la Recepción -->
+                                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                                        <div>
+                                                            <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                                                            <span class="font-medium">{{ $receipt->received_at->format('d/m/Y H:i') }}</span>
+                                                        </div>
+                                                        <div>
+                                                            <i class="fas fa-user text-gray-400 mr-1"></i>
+                                                            {{ $receipt->receivedBy->name }}
+                                                        </div>
+                                                        <div>
+                                                            <i class="fas fa-warehouse text-gray-400 mr-1"></i>
+                                                            {{ $receipt->warehouse->full_location ?? $receipt->warehouse->area }}
+                                                        </div>
+                                                        <div class="font-semibold text-indigo-600">
+                                                            <i class="fas fa-box text-gray-400 mr-1"></i>
+                                                            {{ $receipt->items->sum('quantity_received') }} unidades
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Items Recibidos -->
+                                                    <div class="mt-3 pl-4 border-l-2 border-indigo-200">
+                                                        @foreach($receipt->items as $receiptItem)
+                                                            <div class="text-xs text-gray-600 py-1">
+                                                                <span class="font-medium text-gray-700">{{ $receiptItem->product->code }}</span>: 
+                                                                <span class="text-indigo-600 font-semibold">{{ $receiptItem->quantity_received }}</span> unidades
+                                                                
+                                                                @if($receiptItem->batch_number)
+                                                                    <span class="ml-2 text-gray-500">
+                                                                        <i class="fas fa-tag text-xs"></i> Lote: <span class="font-medium">{{ $receiptItem->batch_number }}</span>
                                                                     </span>
                                                                 @endif
                                                                 
-                                                                @if($receipt->invoice_file)
-                                                                    <a href="{{ asset('storage/' . $receipt->invoice_file) }}" 
-                                                                    target="_blank"
-                                                                    class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium transition-colors">
-                                                                        <i class="fas fa-download mr-1.5"></i>
-                                                                        Descargar Factura
-                                                                    </a>
+                                                                @if($receiptItem->expiry_date)
+                                                                    <span class="ml-2 text-gray-500">
+                                                                        <i class="fas fa-calendar text-xs"></i> Caduca: <span class="font-medium">{{ $receiptItem->expiry_date->format('d/m/Y') }}</span>
+                                                                    </span>
                                                                 @endif
                                                             </div>
-                                                        </div>
+                                                        @endforeach
+                                                    </div>
 
-                                                        <!-- Tiempo desde la recepción -->
-                                                        <div class="text-right text-xs text-gray-500 ml-4">
-                                                            {{ $receipt->received_at->diffForHumans() }}
+                                                    @if($receipt->notes)
+                                                        <div class="mt-2 text-xs text-gray-500 italic">
+                                                            <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
+                                                            {{ $receipt->notes }}
                                                         </div>
+                                                    @endif
+
+                                                    <!-- Información de Factura -->
+                                                    <div class="mt-3 flex flex-wrap gap-3">
+                                                        @if($receipt->invoice_number)
+                                                            <span class="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                                                                <i class="fas fa-file-invoice mr-1.5"></i>
+                                                                Factura: {{ $receipt->invoice_number }}
+                                                            </span>
+                                                        @endif
+                                                        
+                                                        @if($receipt->invoice_file)
+                                                            <a href="{{ asset('storage/' . $receipt->invoice_file) }}" 
+                                                            target="_blank"
+                                                            class="inline-flex items-center px-3 py-1.5 bg-green-50 text-green-700 rounded-md hover:bg-green-100 text-xs font-medium transition-colors">
+                                                                <i class="fas fa-download mr-1.5"></i>
+                                                                Descargar Factura
+                                                            </a>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Tiempo desde la recepción (Footer) -->
+                                                    <div class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 text-right">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        {{ $receipt->received_at->diffForHumans() }}
                                                     </div>
                                                 </div>
                                             @endforeach

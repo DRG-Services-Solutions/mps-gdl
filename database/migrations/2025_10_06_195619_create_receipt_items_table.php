@@ -35,7 +35,6 @@ return new class extends Migration
             $table->index('product_id');
             $table->index('batch_number');
             $table->index('expiry_date');
-            $table->index('condition');
         });
     }
 

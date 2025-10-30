@@ -17,6 +17,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\RfidLabelService;
 
 class PurchaseOrderController extends Controller
 {
@@ -424,7 +425,7 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
-public function __construct(PurchaseOrderService $purchaseOrderService)
+    public function __construct(PurchaseOrderService $purchaseOrderService)
     {
         $this->purchaseOrderService = $purchaseOrderService;
     }
@@ -632,18 +633,30 @@ public function __construct(PurchaseOrderService $purchaseOrderService)
                     'status' => 'partial',
                 ]);
             }
+            // ✅ Generar trabajos de impresión RFID
+            $rfidService = new RfidLabelService();
+            $printJobsCreated = $rfidService->createPrintJobsForReceipt($receipt);
 
             DB::commit();
 
+            // Construir mensaje de éxito
             $message = "Recepción registrada exitosamente. {$totalReceived} piezas recibidas.";
             if ($hasIssues) {
                 $message .= " ⚠️ Hay productos con problemas de calidad.";
             }
             $message .= " Número de recepción: {$receipt->receipt_number}";
 
+            // Agregar información de etiquetas RFID si aplica
+            if ($printJobsCreated > 0) {
+                $message .= " 🏷️ {$printJobsCreated} etiquetas RFID encoladas para impresión.";
+            }
+
+            // Redireccionar con mensaje y enlace a trabajos de impresión
             return redirect()
                 ->route('purchase-orders.show', $purchaseOrder)
-                ->with('success', $message);
+                ->with('success', $message)
+                ->with('print_jobs_count', $printJobsCreated)
+                ->with('receipt_id', $receipt->id);
 
         } catch (\Exception $e) {
             DB::rollBack();
