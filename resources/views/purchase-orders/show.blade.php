@@ -358,7 +358,8 @@
                     x-transition:enter-start="opacity-0 translate-y-4 scale-95"
                     x-transition:enter-end="opacity-100 translate-y-0 scale-100"
                     @click.away="showReceiveModal = false"
-                    class="relative bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6">
+                    class="relative bg-white rounded-2xl shadow-xl max-w-6xl w-full p-6"
+                    x-data="receiveModal()">
                     
                     <div class="flex items-center justify-between mb-4">
                         <div>
@@ -376,9 +377,9 @@
                         </button>
                     </div>
 
-                    <form action="{{ route('purchase-orders.receive', $purchaseOrder) }}" method="POST" enctype="multipart/form-data">                        
+                    <form action="{{ route('purchase-orders.receive', $purchaseOrder) }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <div class="overflow-y-auto max-h-96 border rounded-lg">
+                        <div class="overflow-y-auto max-h-[60vh] border rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50 sticky top-0">
                                     <tr>
@@ -386,7 +387,8 @@
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Solicitada</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Recibido</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">A Recibir</th>
-                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Última Recepción</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Lote</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Caducidad</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -418,13 +420,20 @@
                                                     class="w-20 text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                                     {{ $fullyReceived ? 'disabled' : '' }}>
                                             </td>
-                                            <td class="px-4 py-3 text-center text-xs text-gray-500">
-                                                @if($item->received_at)
-                                                    <div>{{ $item->receivedBy ? $item->receivedBy->name : 'Sistema' }}</div>
-                                                    <div class="text-gray-400">{{ $item->received_at->format('d/m/Y H:i') }}</div>
-                                                @else
-                                                    <span class="text-gray-400">-</span>
-                                                @endif
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="text" 
+                                                    name="items[{{ $item->id }}][batch_number]" 
+                                                    placeholder="LOT-2025-001"
+                                                    class="w-32 text-center border border-gray-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    {{ $fullyReceived ? 'disabled' : '' }}>
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                <input type="date" 
+                                                    name="items[{{ $item->id }}][expiry_date]" 
+                                                    min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                                    @change="checkExpiryDate($event, '{{ $item->product_name }}')"
+                                                    class="w-36 text-center border border-gray-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    {{ $fullyReceived ? 'disabled' : '' }}>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -432,8 +441,7 @@
                             </table>
                         </div>
 
-
-
+                        <!-- Información de Factura -->
                         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Número de Factura -->
                             <div>
@@ -466,11 +474,12 @@
                             </div>
                         </div>
 
-
-                    
-                        <!-- Notas de Recepcion -->
+                        <!-- Notas de Recepción -->
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Notas de Recepción</label>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-sticky-note text-gray-400 mr-1"></i>
+                                Notas de Recepción (Opcional)
+                            </label>
                             <textarea name="notes" 
                                     rows="2"
                                     class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -494,5 +503,26 @@
             </div>
         </div>
 
+        @push('scripts')
+        <script>
+        function receiveModal() {
+            return {
+                checkExpiryDate(event, productName) {
+                    const selectedDate = new Date(event.target.value);
+                    const today = new Date();
+                    const diffTime = selectedDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 30 && diffDays > 0) {
+                        alert(`⚠️ ADVERTENCIA:\n\nEl producto "${productName}" tiene una caducidad muy próxima (${diffDays} días).\n\n¿Estás seguro de recibir este producto?`);
+                        event.target.classList.add('border-red-500', 'bg-red-50');
+                    } else {
+                        event.target.classList.remove('border-red-500', 'bg-red-50');
+                    }
+                }
+            }
+        }
+        </script>
+        @endpush
     </div>
 </x-app-layout>

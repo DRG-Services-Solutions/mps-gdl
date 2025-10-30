@@ -16,7 +16,6 @@ class ReceiptItem extends Model
         'unit_price',
         'batch_number',
         'expiry_date',
-        'condition',
         'notes',
     ];
 

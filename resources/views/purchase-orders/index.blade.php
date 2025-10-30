@@ -273,8 +273,17 @@
                                                                     <div class="text-xs text-gray-600 py-1">
                                                                         <span class="font-medium text-gray-700">{{ $receiptItem->product->code }}</span>: 
                                                                         <span class="text-indigo-600 font-semibold">{{ $receiptItem->quantity_received }}</span> unidades
+                                                                        
                                                                         @if($receiptItem->batch_number)
-                                                                            <span class="text-gray-500">(Lote: {{ $receiptItem->batch_number }})</span>
+                                                                            <span class="ml-2 text-gray-500">
+                                                                                <i class="fas fa-tag text-xs"></i> Lote: <span class="font-medium">{{ $receiptItem->batch_number }}</span>
+                                                                            </span>
+                                                                        @endif
+                                                                        
+                                                                        @if($receiptItem->expiry_date)
+                                                                            <span class="ml-2 text-gray-500">
+                                                                                <i class="fas fa-calendar text-xs"></i> Caduca: <span class="font-medium">{{ $receiptItem->expiry_date->format('d/m/Y') }}</span>
+                                                                            </span>
                                                                         @endif
                                                                     </div>
                                                                 @endforeach
