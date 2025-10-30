@@ -138,11 +138,7 @@
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
                             {{ __('Catálogos') }}
                         </div>
-                        <a href="{{ route('manufacturers.index') }}" 
-                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('manufacturers.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-industry fa-fw text-sm"></i>
-                            <span>{{ __('Fabricantes') }}</span>
-                        </a>
+                        
                         <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-tags fa-fw text-sm"></i>

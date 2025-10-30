@@ -24,7 +24,6 @@ return new class extends Migration
             // Control de calidad y trazabilidad
             $table->string('batch_number')->nullable()->comment('Número de lote');
             $table->date('expiry_date')->nullable()->comment('Fecha de caducidad');
-            $table->enum('condition', ['good', 'damaged', 'expired'])->default('good')->comment('Condición del producto');
             
             // Notas específicas de esta recepción
             $table->text('notes')->nullable();
@@ -36,7 +35,6 @@ return new class extends Migration
             $table->index('product_id');
             $table->index('batch_number');
             $table->index('expiry_date');
-            $table->index('condition');
         });
     }
 
