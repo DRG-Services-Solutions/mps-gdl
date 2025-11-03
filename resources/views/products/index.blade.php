@@ -109,18 +109,25 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="text-sm font-semibold text-gray-900">  <a href="#">{{ $product->name }}</a></div>
-                                                <div class="text-xs text-gray-500 flex items-center space-x-2">
+                                                <a href="{{ route('products.show', $product) }}" 
+                                                class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors duration-150">
+                                                    {{ $product->name }}
+                                                </a>
+                                                <div class="text-xs text-gray-500 flex items-center space-x-2 mt-1">
                                                     <span class="flex items-center">
                                                         <i class="fas fa-barcode mr-1"></i>
                                                         {{ $product->code }}
                                                     </span>
                                                     @if($product->model)
                                                         <span class="text-gray-400">|</span>
-                                                        <span>{{ $product->model }}</span>
+                                                        <span class="flex items-center">
+                                                            <i class="fas fa-tag mr-1"></i>
+                                                            {{ $product->model }}
+                                                        </span>
                                                     @endif
                                                 </div>
                                             </div>
+
                                         </div>
                                     </td>
                                     
