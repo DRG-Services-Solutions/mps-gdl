@@ -60,7 +60,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                    {{ __('Producto') }}
+                                  {{ __('Producto') }}
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
                                     {{ __('Proveedor/Fabricante') }}
@@ -109,7 +109,7 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
+                                                <div class="text-sm font-semibold text-gray-900">  <a href="#">{{ $product->name }}</a></div>
                                                 <div class="text-xs text-gray-500 flex items-center space-x-2">
                                                     <span class="flex items-center">
                                                         <i class="fas fa-barcode mr-1"></i>
@@ -126,7 +126,7 @@
                                     
                                     <!-- Fabricante -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
+                                        <div class="text-sm text-gray-900 text-center">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
                                     </td>
 
                                     <!-- Categoría -->
