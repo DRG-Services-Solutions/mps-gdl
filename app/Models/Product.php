@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Category;
+use App\Models\MedicalSpecialty;      
+use App\Models\Subcategory;           
+use App\Models\Supplier;              
+use App\Models\InventoryMovement;     
+use App\Models\ProductUnit;           
+use App\Models\StorageLocation;       
+
 
 class Product extends Model
 {
@@ -35,6 +42,9 @@ class Product extends Model
 
         'requires_refrigeration' => 'boolean',
         'requires_sterilization' => 'boolean',
+        'requires_temperature' => 'boolean',
+        'list_price' => 'decimal:2',
+
         
     ];
 
@@ -45,7 +55,7 @@ class Product extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function medicalSpecialty() 
+    public function specialty() 
     {
         return $this->belongsTo(MedicalSpecialty::class, 'specialty_id');
     }

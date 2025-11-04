@@ -10,7 +10,7 @@ class MedicalSpecialty extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['name', 'description', 'is_active',];
     protected $table = 'medical_specialties'; 
 
     public function products()

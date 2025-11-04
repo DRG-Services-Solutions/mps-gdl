@@ -23,7 +23,7 @@ class ProductController extends Controller
             'supplier', 
             'category',
             'subcategory', 
-            'specialty', // Cambiado de medicalSpecialty a specialty
+            'specialty', 
         ])->latest()->paginate(10);
         
         return view('products.index', compact('products'));
