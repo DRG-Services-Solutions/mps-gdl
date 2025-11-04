@@ -162,9 +162,7 @@
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" 
-                                                {{ old('category_id') == $category->id ? 'selected' : '' }} 
-                                                data-requires-sterilization="{{ $category->requires_sterilization ? '1' : '0' }}">
+                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
@@ -241,11 +239,7 @@
                             </div>
                         </div>
                         
-                        <div class="space-y-4" x-data="{ 
-                                requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
-                                requiresRefrigeration: {{ old('requires_refrigeration', 0) ? 'true' : 'false' }},
-                                requiresTemperature: {{ old('requires_temperature', 0) ? 'true' : 'false' }}
-                            }">
+                        <div class="space-y-4">
                             
                             {{-- Tipo de Rastreo --}}
                             <div>
@@ -273,17 +267,15 @@
                                 @enderror
                             </div>
 
-                            {{-- REQUIERE ESTERILIZACIÓN --}}
+                            {{-- REQUIERE ESTERILIZACIÓN (SIEMPRE HABILITADO) --}}
                             <div>
-                                <label class="relative flex items-start p-4 border-2 rounded-lg shadow-sm bg-white hover:border-indigo-400 cursor-pointer transition-all duration-200"
-                                       :class="isSterilizationDisabled ? 'border-gray-200 opacity-60 cursor-not-allowed' : 'border-gray-300'">
+                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-green-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                         name="requires_sterilization"
                                         id="requires_sterilization"
                                         value="1"
-                                        x-model="requiresSterilization"
-                                        :disabled="isSterilizationDisabled"
-                                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {{ old('requires_sterilization') ? 'checked' : '' }}
+                                        class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
                                         <span class="block font-medium text-gray-900 flex items-center">
@@ -297,14 +289,14 @@
                                 </label>
                             </div>
 
-                            {{-- REQUIERE REFRIGERACIÓN --}}
+                            {{-- REQUIERE REFRIGERACIÓN (SIEMPRE HABILITADO) --}}
                             <div>
                                 <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-blue-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                             name="requires_refrigeration"
                                             id="requires_refrigeration"
                                             value="1"
-                                            x-model="requiresRefrigeration"
+                                            {{ old('requires_refrigeration') ? 'checked' : '' }}
                                             class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
@@ -319,14 +311,14 @@
                                 </label>
                             </div>
 
-                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C --}}
+                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C (SIEMPRE HABILITADO) --}}
                             <div>
                                 <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-orange-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                             name="requires_temperature"
                                             id="requires_temperature"
                                             value="1"
-                                            x-model="requiresTemperature"
+                                            {{ old('requires_temperature') ? 'checked' : '' }}
                                             class="h-5 w-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
@@ -422,75 +414,21 @@
             // Estado inicial
             selectedCategory: '{{ old("category_id") ?? "" }}',
             selectedSubcategory: '{{ old("subcategory_id") ?? "" }}',
-            requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
             
             // Computed: Filtra subcategorías por categoría seleccionada
             get filteredSubcategories() {
                 if (!this.selectedCategory) {
                     return [];
                 }
-                // Convertir ambos a string para comparación segura
                 return allSubcategories.filter(sub => {
                     return String(sub.category_id) === String(this.selectedCategory);
                 });
             },
 
-            // Computed: Determina si el checkbox de esterilización está deshabilitado
-            get isSterilizationDisabled() {
-                const select = document.getElementById('category_id');
-                if (!select) return true;
-                
-                const option = select.options[select.selectedIndex];
-                if (!option || option.value === "") return true;
-
-                const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
-                
-                // El checkbox está HABILITADO solo si la categoría lo requiere
-                return !(requiresSterilizationAttr === '1');
-            },
-
             // Método que se ejecuta al cambiar la categoría
             onCategoryChange() {
-                console.log('Categoría cambiada a:', this.selectedCategory);
-                
-                // 1. Limpiar la subcategoría al cambiar la categoría
+                // Solo limpiar la subcategoría al cambiar la categoría
                 this.selectedSubcategory = '';
-                
-                // 2. Verificar si la categoría requiere esterilización
-                const select = document.getElementById('category_id');
-                if (!select) return;
-                
-                const option = select.options[select.selectedIndex];
-                
-                if (option && option.value !== "") { 
-                    const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
-                    const categoryRequiresSterilization = requiresSterilizationAttr === '1';
-                    
-                    console.log('Categoría requiere esterilización:', categoryRequiresSterilization);
-                    
-                    if (categoryRequiresSterilization) {
-                        // Si la categoría requiere esterilización, ACTIVAR automáticamente
-                        this.requiresSterilization = true;
-                    } else {
-                        // Si no requiere, DESACTIVAR
-                        this.requiresSterilization = false;
-                    }
-                } else {
-                    // Sin categoría seleccionada, desactivar
-                    this.requiresSterilization = false;
-                }
-                
-                console.log('Estado de requiresSterilization:', this.requiresSterilization);
-            },
-
-            // Método de inicialización (se ejecuta al cargar la página)
-            init() {
-                // Si hay una categoría seleccionada (por old()), aplicar reglas
-                if (this.selectedCategory) {
-                    this.$nextTick(() => {
-                        this.onCategoryChange();
-                    });
-                }
             }
         }
     }

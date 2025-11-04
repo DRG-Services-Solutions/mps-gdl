@@ -220,7 +220,7 @@
                                 {{ __('Características del Producto') }}
                             </h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {{-- Requiere Esterilización con Tooltip --}}
+                                {{-- REQUIERE ESTERILIZACIÓN (SIEMPRE HABILITADO) --}}
                                 <div class="relative group">
                                     <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
                                         <input type="checkbox" name="requires_sterilization" value="1" 
@@ -239,7 +239,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Requiere Refrigeración con Tooltip --}}
+                                {{-- REQUIERE REFRIGERACIÓN (SIEMPRE HABILITADO) --}}
                                 <div class="relative group">
                                     <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
                                         <input type="checkbox" name="requires_refrigeration" value="1" 
@@ -258,7 +258,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Requiere Control de Temperatura --}}
+                                {{-- REQUIERE CONTROL DE TEMPERATURA (SIEMPRE HABILITADO) --}}
                                 <div class="relative group">
                                     <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
                                         <input type="checkbox" name="requires_temperature" value="1" 
@@ -276,6 +276,7 @@
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
