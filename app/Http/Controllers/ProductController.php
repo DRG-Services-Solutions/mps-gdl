@@ -48,6 +48,7 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
@@ -74,6 +75,7 @@ class ProductController extends Controller
             // Estado del producto en catálogo
             'status' => 'nullable|in:active,inactive,discontinued',
         ]);
+       
         
         // Valores por defecto para campos opcionales
         $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
