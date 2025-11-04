@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
                     ProductCategorySeeder::class,
                     MedicalSpecialtySeeder::class,
                     SubcategorySeeder::class,
+                    SupplierSeeder::class,
+
                 ]);
         $this->call(UserSeeder::class);
         
