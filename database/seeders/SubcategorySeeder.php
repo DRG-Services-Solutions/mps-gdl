@@ -15,8 +15,8 @@ class SubcategorySeeder extends Seeder
         
         $subcategories = [
             // Instrumental Quirúrgico
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Tijeras Quirúrgicas', 'description' => 'Tijeras Mayo, Metzenbaum, iris y de disección'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Bisturís', 'description' => 'Mangos de bisturí y hojas desechables'],
+            ['category' => 'Instrumental Quirúrgico Reutilizable', 'name' => 'Tijeras Quirúrgicas', 'description' => 'Tijeras Mayo, Metzenbaum, iris y de disección'],
+            ['category' => 'Instrumental Quirúrgico Reutilizable', 'name' => 'Instrumental Artroscópico', 'description' => 'Material de Artrroscopia'],
             
             // Material de Curación
             ['category' => 'Consumibles Quirúrgicos', 'name' => 'Gasas Estériles', 'description' => 'Gasas de diferentes tamaños en presentación estéril'],

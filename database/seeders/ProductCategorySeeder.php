@@ -22,7 +22,7 @@ class ProductCategorySeeder extends Seeder
             
             ],
             [
-                'name' => 'Instrumental Quirúrgico',
+                'name' => 'Instrumental Quirúrgico Reutilizable',
                 'description' => 'Sets quirúrgicos que requieren esterilización antes y después de cada cirugía.'
             ],
             [

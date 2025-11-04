@@ -133,8 +133,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {{-- Proveedor --}}
-                           <div>
+                        {{-- Proveedor --}}
+                        <div>
                                 <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-industry text-gray-400 mr-2"></i>
                                     {{ __('Proveedor') }}
@@ -158,13 +158,13 @@
                                     {{ __('Categoría') }}
                                 </label>
                                 <select name="category_id" id="category_id" x-model="selectedCategory" 
-                                        @change="applyCategoryRules()"
+                                        @change="onCategoryChange()"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}" 
                                                 {{ old('category_id') == $category->id ? 'selected' : '' }} 
-                                                data-requires-sterilization="{{ $category->requires_sterilization }}">
+                                                data-requires-sterilization="{{ $category->requires_sterilization ? '1' : '0' }}">
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
@@ -178,16 +178,21 @@
                                     {{ __('Subcategoría') }}
                                 </label>
                                 <select name="subcategory_id" id="subcategory_id" 
+                                        x-model="selectedSubcategory"
                                         :disabled="!selectedCategory || filteredSubcategories.length === 0"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     <template x-for="subcategory in filteredSubcategories" :key="subcategory.id">
-                                        <option :value="subcategory.id" :selected="subcategory.id == {{ old('subcategory_id', 'null') }}" x-text="subcategory.name"></option>
+                                        <option :value="subcategory.id" x-text="subcategory.name"></option>
                                     </template>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500" x-show="!selectedCategory">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     {{ __('Primero seleccione una categoría') }}
+                                </p>
+                                <p class="mt-1 text-xs text-gray-500" x-show="selectedCategory && filteredSubcategories.length === 0">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('No hay subcategorías disponibles para esta categoría') }}
                                 </p>
                             </div>
 
@@ -372,7 +377,7 @@
                             <div>
                                 <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    {{ __('Precio de Lista') }}
+                                    {{ __('Precio Unitario') }}
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-medium">
@@ -410,44 +415,81 @@
         </div>
     </div>
 
- @push('scripts')
+@push('scripts')
 <script>
     function productForm(allSubcategories) {
         return {
+            // Estado inicial
             selectedCategory: '{{ old("category_id") ?? "" }}',
-            requiresSterilization: {{ old('requires_sterilization') ? 'true' : 'false' }},
+            selectedSubcategory: '{{ old("subcategory_id") ?? "" }}',
+            requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
+            
+            // Computed: Filtra subcategorías por categoría seleccionada
+            get filteredSubcategories() {
+                if (!this.selectedCategory) {
+                    return [];
+                }
+                // Convertir ambos a string para comparación segura
+                return allSubcategories.filter(sub => {
+                    return String(sub.category_id) === String(this.selectedCategory);
+                });
+            },
 
+            // Computed: Determina si el checkbox de esterilización está deshabilitado
             get isSterilizationDisabled() {
                 const select = document.getElementById('category_id');
+                if (!select) return true;
+                
                 const option = select.options[select.selectedIndex];
-            
                 if (!option || option.value === "") return true;
 
                 const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
                 
-                return !(requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true');
+                // El checkbox está HABILITADO solo si la categoría lo requiere
+                return !(requiresSterilizationAttr === '1');
             },
 
-            get filteredSubcategories() {
-                if (!this.selectedCategory) return [];
-                return allSubcategories.filter(sub => String(sub.category_id) === String(this.selectedCategory));
-            },
-
-            applyCategoryRules() {
+            // Método que se ejecuta al cambiar la categoría
+            onCategoryChange() {
+                console.log('Categoría cambiada a:', this.selectedCategory);
+                
+                // 1. Limpiar la subcategoría al cambiar la categoría
+                this.selectedSubcategory = '';
+                
+                // 2. Verificar si la categoría requiere esterilización
                 const select = document.getElementById('category_id');
+                if (!select) return;
+                
                 const option = select.options[select.selectedIndex];
-
-                document.getElementById('subcategory_id').value = '';
-
+                
                 if (option && option.value !== "") { 
                     const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
-                    const categoryRequiresSterilization = requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true';
+                    const categoryRequiresSterilization = requiresSterilizationAttr === '1';
                     
-                    if (!categoryRequiresSterilization) {
+                    console.log('Categoría requiere esterilización:', categoryRequiresSterilization);
+                    
+                    if (categoryRequiresSterilization) {
+                        // Si la categoría requiere esterilización, ACTIVAR automáticamente
+                        this.requiresSterilization = true;
+                    } else {
+                        // Si no requiere, DESACTIVAR
                         this.requiresSterilization = false;
                     }
                 } else {
+                    // Sin categoría seleccionada, desactivar
                     this.requiresSterilization = false;
+                }
+                
+                console.log('Estado de requiresSterilization:', this.requiresSterilization);
+            },
+
+            // Método de inicialización (se ejecuta al cargar la página)
+            init() {
+                // Si hay una categoría seleccionada (por old()), aplicar reglas
+                if (this.selectedCategory) {
+                    this.$nextTick(() => {
+                        this.onCategoryChange();
+                    });
                 }
             }
         }
