@@ -26,6 +26,9 @@ class Product extends Model
         'tracking_type',
         'minimum_stock',
         'status',
+        'list_price',
+        'requires_temperature',
+
     ];
 
     protected $casts = [

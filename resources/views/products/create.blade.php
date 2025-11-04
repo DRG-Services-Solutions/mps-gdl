@@ -142,18 +142,8 @@
                                 <select name="supplier_id" id="supplier_id"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('supplier_id') border-red-500 @enderror">
                                     <option value="">{{ __('-- Seleccione un proveedor --') }}</option>
-                                    {{-- Bucle sobre la colección $suppliers que debe venir del controlador --}}
                                     @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}" 
-                                            {{-- Para la vista CREATE, usa old() --}}
-                                            @if (!isset($product))
-                                                {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}
-                                            @endif
-                                            {{-- Para la vista EDIT, usa old() o el valor actual del producto --}}
-                                            @if (isset($product))
-                                                {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}
-                                            @endif>
-                
+                                        <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
                                             {{ $supplier->name }}
                                         </option>
                                     @endforeach
@@ -224,7 +214,7 @@
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-route text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Tipo de Trazabilidad') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Tipo de Trazabilidad y Requisitos') }}</h3>
                         </div>
 
                         {{-- Información explicativa --}}
@@ -241,57 +231,58 @@
                                         <li><strong>Code:</strong> Control numérico sin identificadores individuales</li>
                                         <li><strong>RFID:</strong> Cada unidad física tendrá etiqueta RFID (se genera al recibir inventario)</li>
                                         <li><strong>Serial:</strong> Instrumental con número de serie grabado de fábrica</li>
-                                        
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" x-data="{ 
+                        <div class="space-y-4" x-data="{ 
                                 requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
-                                requiresRefrigeration: {{ old('requires_refrigeration', 0) ? 'true' : 'false' }}
+                                requiresRefrigeration: {{ old('requires_refrigeration', 0) ? 'true' : 'false' }},
+                                requiresTemperature: {{ old('requires_temperature', 0) ? 'true' : 'false' }}
                             }">
+                            
                             {{-- Tipo de Rastreo --}}
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="md:col-span-2">
-                                    <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                        <i class="fas fa-radar text-gray-400 mr-2"></i>
-                                        {{ __('Tipo de Rastreo') }}
-                                        <span class="text-red-500 ml-1">*</span>
-                                    </label>
-                                    <select name="tracking_type" id="tracking_type" required
-                                            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                        <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>
-                                            📦 Solo Code (control numérico)
-                                        </option>
-                                        <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
-                                            📡 RFID (etiquetas al recibir)
-                                        </option>
-                                        <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>
-                                            🔢 Número de Serie (grabado de fábrica)
-                                        </option>
-                                    </select>
-                                    @error('tracking_type')
-                                        <p class="mt-1 text-sm text-red-600 flex items-center">
-                                            <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
-                                        </p>
-                                    @enderror
-                                </div>
+                            <div>
+                                <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-radar text-gray-400 mr-2"></i>
+                                    {{ __('Tipo de Rastreo') }}
+                                    <span class="text-red-500 ml-1">*</span>
+                                </label>
+                                <select name="tracking_type" id="tracking_type" required
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
+                                    <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>
+                                        📦 Solo Code (control numérico)
+                                    </option>
+                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
+                                        📡 RFID (etiquetas al recibir)
+                                    </option>
+                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>
+                                        🔢 Número de Serie (grabado de fábrica)
+                                    </option>
+                                </select>
+                                @error('tracking_type')
+                                    <p class="mt-1 text-sm text-red-600 flex items-center">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                    </p>
+                                @enderror
                             </div>
 
                             {{-- REQUIERE ESTERILIZACIÓN --}}
-                            <div class="md:col-span-2 mt-4">
-                                <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                            <div>
+                                <label class="relative flex items-start p-4 border-2 rounded-lg shadow-sm bg-white hover:border-indigo-400 cursor-pointer transition-all duration-200"
+                                       :class="isSterilizationDisabled ? 'border-gray-200 opacity-60 cursor-not-allowed' : 'border-gray-300'">
                                     <input type="checkbox"
                                         name="requires_sterilization"
                                         id="requires_sterilization"
                                         value="1"
                                         x-model="requiresSterilization"
-                                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5">
+                                        :disabled="isSterilizationDisabled"
+                                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
 
-                                    <span class="ml-3 text-sm">
+                                    <span class="ml-3 text-sm flex-1">
                                         <span class="block font-medium text-gray-900 flex items-center">
-                                            <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                                            <i class="fas fa-shield-virus text-green-600 mr-2"></i>
                                             {{ __('Requiere Esterilización') }}
                                         </span>
                                         <span class="block text-gray-500 mt-1">
@@ -299,38 +290,58 @@
                                         </span>
                                     </span>
                                 </label>
-
-                                {{-- Campo oculto para enviar 0 si no está marcado --}}
-                                <input type="hidden" name="requires_sterilization" :value="requiresSterilization ? 1 : 0">
                             </div>
 
                             {{-- REQUIERE REFRIGERACIÓN --}}
-                            <div class="md:col-span-2 mt-4">
-                                <label class="relative flex items-start p-4 border border-gray-300 rounded-lg shadow-sm bg-white hover:border-indigo-500 cursor-pointer transition-all duration-200">
+                            <div>
+                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-blue-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                             name="requires_refrigeration"
                                             id="requires_refrigeration"
                                             value="1"
                                             x-model="requiresRefrigeration"
-                                            class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5">
+                                            class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5">
 
-                                    <span class="ml-3 text-sm">
+                                    <span class="ml-3 text-sm flex-1">
                                         <span class="block font-medium text-gray-900 flex items-center">
                                             <i class="fas fa-snowflake text-blue-600 mr-2"></i>
                                             {{ __('Requiere Refrigeración') }}
                                         </span>
                                         <span class="block text-gray-500 mt-1">
-                                            {{ __('Marque si el producto debe mantenerse en refrigeración.') }}
+                                            {{ __('Marque si el producto debe mantenerse en refrigeración constante (temperatura entre 2°C y 8°C típicamente).') }}
                                         </span>
                                     </span>
                                 </label>
+                            </div>
 
-                                {{-- Campo oculto para enviar 0 si no está marcado --}}
-                                <input type="hidden" name="requires_refrigeration" :value="requiresRefrigeration ? 1 : 0">
+                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C --}}
+                            <div>
+                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-orange-400 cursor-pointer transition-all duration-200">
+                                    <input type="checkbox"
+                                            name="requires_temperature"
+                                            id="requires_temperature"
+                                            value="1"
+                                            x-model="requiresTemperature"
+                                            class="h-5 w-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5">
+
+                                    <span class="ml-3 text-sm flex-1">
+                                        <span class="block font-medium text-gray-900 flex items-center">
+                                            <i class="fas fa-thermometer-half text-orange-600 mr-2"></i>
+                                            {{ __('Requiere Control de Temperatura') }}
+                                        </span>
+                                        <span class="block text-gray-500 mt-1">
+                                            {{ __('Marque si el producto requiere almacenamiento con temperatura controlada menor a 45°C (pero no necesariamente refrigeración). Ejemplos: medicamentos termosensibles, reactivos, algunos dispositivos electrónicos médicos.') }}
+                                        </span>
+                                        <span class="block text-xs text-orange-600 mt-2 font-medium">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            {{ __('Temperatura de almacenamiento: < 45°C') }}
+                                        </span>
+                                    </span>
+                                </label>
                             </div>
 
                         </div>
-                    
+                    </div>
 
                     {{-- SECCIÓN 4: INFORMACIÓN DE INVENTARIO --}}
                     <div class="mb-8">
@@ -340,8 +351,6 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-
                             {{-- Stock Mínimo --}}
                             <div>
                                 <label for="minimum_stock" class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -349,18 +358,39 @@
                                     {{ __('Stock Mínimo Deseado') }}
                                 </label>
                                 <input type="number" name="minimum_stock" id="minimum_stock" min="0"
-                                       value="{{ old('minimum_stock', '0') }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
+                                       value="{{ old('minimum_stock', 0) }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('minimum_stock') border-red-500 @enderror"
                                        placeholder="0">
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     {{ __('Cantidad mínima para generar alertas de reorden') }}
                                 </p>
+                                @error('minimum_stock')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Precio de Lista --}}
+                            <div>
+                                <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
+                                    {{ __('Precio de Lista') }}
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-medium">
+                                        $
+                                    </span>
+                                    <input type="number" name="list_price" id="list_price" min="0" step="0.01"
+                                           value="{{ old('list_price', 0) }}"
+                                           class="w-full pl-8 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('list_price') border-red-500 @enderror"
+                                           placeholder="0.00">
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Precio de referencia del producto') }}
+                                </p>
+                                @error('list_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
                         </div>
                     </div>
-
-                   
 
                     {{-- Botones de Acción --}}
                     <div class="flex items-center justify-between pt-6 border-t border-gray-200">
@@ -384,54 +414,39 @@
 <script>
     function productForm(allSubcategories) {
         return {
-            // Inicializa con el valor anterior. Usamos el operador de coalescencia ?? para el caso base.
             selectedCategory: '{{ old("category_id") ?? "" }}',
-            // Inicializa el modelo de Alpine con el valor "old", si existe.
             requiresSterilization: {{ old('requires_sterilization') ? 'true' : 'false' }},
 
-            // Propiedad computada: Controla el estado 'disabled' del checkbox.
             get isSterilizationDisabled() {
                 const select = document.getElementById('category_id');
                 const option = select.options[select.selectedIndex];
             
-                // Si no hay opción seleccionada O la opción no tiene el atributo, lo inhabilitamos.
                 if (!option || option.value === "") return true;
 
                 const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
                 
-                // El checkbox SÓLO está HABILITADO si el atributo es '1' o 'true'.
-                // De lo contrario, está inhabilitado (true).
                 return !(requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true');
             },
 
-            // Propiedad computada: Filtra las subcategorías.
             get filteredSubcategories() {
                 if (!this.selectedCategory) return [];
-                // Usamos String() para asegurar la comparación de tipos, aunque sub.category_id es probablemente un número.
                 return allSubcategories.filter(sub => String(sub.category_id) === String(this.selectedCategory));
             },
 
-            // Lógica que se ejecuta al cambiar la Categoría
             applyCategoryRules() {
                 const select = document.getElementById('category_id');
                 const option = select.options[select.selectedIndex];
 
-                // 1. Vaciar la subcategoría al cambiar la categoría principal
-                // Esto es necesario para evitar enviar un ID obsoleto
                 document.getElementById('subcategory_id').value = '';
 
-                // 2. Controlar el estado del checkbox de esterilización
                 if (option && option.value !== "") { 
                     const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
                     const categoryRequiresSterilization = requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true';
                     
                     if (!categoryRequiresSterilization) {
-                        // Si la categoría NO lo permite, forzamos el checkbox a desmarcarse y a false.
                         this.requiresSterilization = false;
-                    } 
-                    // Si la categoría SÍ lo permite, MANTENEMOS el estado (old value o click del usuario).
+                    }
                 } else {
-                    // Si no hay categoría seleccionada, desmarcar por seguridad
                     this.requiresSterilization = false;
                 }
             }

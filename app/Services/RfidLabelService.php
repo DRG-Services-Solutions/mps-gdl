@@ -9,43 +9,47 @@ use App\Models\PurchaseOrderReceipt;
 class RfidLabelService
 {
     /**
-     * Generar EPC único en formato hexadecimal (24 caracteres)
-     * Formato EPC-96: Header(2) + CompanyPrefix(7) + ItemRef(6) + Serial(9)
+     * Generar EPC único en formato hexadecimal (24 caracteres = 96 bits)
+     * Formato SGTIN-96: Header(2) + Company(6) + Item(5) + Serial(11)
      */
     public function generateEPC(int $productId, int $unitId): string
     {
-        // Header (2 hex) - 30 para consumibles RFID
-        $header = '30';
+        $maxAttempts = 10;
         
-        // Company Prefix (7 hex) - ID de tu empresa (configurable)
-        $companyPrefix = str_pad(dechex(config('rfid.company_prefix', 1234567)), 7, '0', STR_PAD_LEFT);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            // Generar 12 bytes aleatorios = 24 caracteres hexadecimales
+            $epc = strtoupper(bin2hex(random_bytes(12)));
+            
+            // Verificar que no exista en la base de datos
+            $existsInUnits = \DB::table('product_units')->where('epc', $epc)->exists();
+            $existsInJobs = \DB::table('print_jobs')->where('epc_code', $epc)->exists();
+            
+            if (!$existsInUnits && !$existsInJobs) {
+                \Log::info("✅ EPC aleatorio único generado: {$epc}");
+                return $epc;
+            }
+            
+            \Log::warning("⚠️ EPC duplicado: {$epc}, regenerando (intento {$attempt})");
+        }
         
-        // Item Reference (6 hex) - ID del producto
-        $itemRef = str_pad(dechex($productId), 6, '0', STR_PAD_LEFT);
-        
-        // Serial Number (9 hex) - ID de unidad + timestamp para unicidad
-        $serialBase = $unitId . substr(time(), -4);
-        $serial = str_pad(dechex($serialBase), 9, '0', STR_PAD_LEFT);
-        
-        // Concatenar todo (24 caracteres hex)
-        $epc = strtoupper($header . $companyPrefix . $itemRef . $serial);
-        
-        // Asegurar 24 caracteres exactos
-        return substr(str_pad($epc, 24, '0', STR_PAD_LEFT), 0, 24);
+        // Esto es extremadamente improbable (1 en 79 septillones)
+        throw new \Exception("No se pudo generar un EPC único después de {$maxAttempts} intentos");
     }
 
+
+
     /**
-     * Generar comando ZPL para etiqueta 4"x1" (102mm x 25mm)
-     * Zebra ZT411R con módulo RFID
+     * Generar comando ZPL para etiqueta 7.4cm x 1.8cm (74mm x 18mm)
+     * Zebra ZT411R con módulo RFID - SOLO CODIFICACIÓN, SIN TEXTO
      */
     public function generateZPL(array $labelData): string
     {
         $epc = $labelData['epc'];
-        $productCode = $labelData['product_code'];
-        $productName = substr($labelData['product_name'], 0, 30); // Limitar nombre
-        $batchNumber = $labelData['batch_number'] ?? '';
-        $expiryDate = $labelData['expiry_date'] ?? '';
 
+        // Cálculos para 7.4cm x 1.8cm a 203 DPI
+        // 74mm / 25.4 * 203 = ~591 dots de ancho
+        // 18mm / 25.4 * 203 = ~144 dots de alto
+        
         $zpl = <<<ZPL
 ^XA
 
@@ -81,15 +85,26 @@ ZPL;
         foreach ($receipt->items as $item) {
             // Solo productos con tracking RFID
             if ($item->product->tracking_type !== 'rfid') {
+                \Log::info("Producto {$item->product->code} no tiene tracking RFID, omitiendo");
                 continue;
             }
 
-            // Obtener todas las unidades creadas para este item
+            \Log::info("Procesando producto RFID: {$item->product->code}, cantidad: {$item->quantity_received}");
+
+            // Obtener todas las unidades creadas para este producto en esta recepción
             $units = ProductUnit::where('product_id', $item->product_id)
-                ->where('batch_number', $item->batch_number)
+                ->where('current_location_id', $receipt->warehouse_id)
                 ->whereNull('print_job_id') // Solo unidades sin etiqueta impresa
+                ->orderBy('created_at', 'desc')
                 ->limit($item->quantity_received)
                 ->get();
+
+            \Log::info("Unidades encontradas: {$units->count()}");
+
+            if ($units->isEmpty()) {
+                \Log::warning("No se encontraron unidades para producto {$item->product->code}");
+                continue;
+            }
 
             foreach ($units as $unit) {
                 // Generar EPC único
@@ -124,9 +139,13 @@ ZPL;
                 // Vincular el trabajo de impresión a la unidad
                 $unit->update(['print_job_id' => $printJob->id]);
 
+                \Log::info("✅ Print Job creado: {$printJob->job_number} para unidad {$unit->id} con EPC: {$epc}");
+
                 $jobsCreated++;
             }
         }
+
+        \Log::info("Total de print jobs creados: {$jobsCreated}");
 
         return $jobsCreated;
     }

@@ -77,18 +77,6 @@
                                 @error('code')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Número de serie --}}
-                            <div>
-                                <label for="serial_number" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-key text-gray-400 mr-2"></i>
-                                    {{ __('Número de Serie') }}
-                                </label>
-                                <input type="text" name="serial_number" id="serial_number" value="{{ old('serial_number', $product->serial_number) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('serial_number') border-red-500 @enderror"
-                                       placeholder="{{ __('Opcional') }}">
-                                @error('serial_number')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
-
                             {{-- Descripción --}}
                             <div class="md:col-span-2">
                                 <label for="description" class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -119,18 +107,9 @@
                                 <select name="supplier_id" id="supplier_id"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('supplier_id') border-red-500 @enderror">
                                     <option value="">{{ __('-- Seleccione un proveedor --') }}</option>
-                                    {{-- Bucle sobre la colección $suppliers que debe venir del controlador --}}
                                     @foreach($suppliers as $supplier)
                                         <option value="{{ $supplier->id }}" 
-                                            {{-- Para la vista CREATE, usa old() --}}
-                                            @if (!isset($product))
-                                                {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}
-                                            @endif
-                                            {{-- Para la vista EDIT, usa old() o el valor actual del producto --}}
-                                            @if (isset($product))
-                                                {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}
-                                            @endif>
-                
+                                                {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}>
                                             {{ $supplier->name }}
                                         </option>
                                     @endforeach
@@ -199,29 +178,14 @@
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 3: INVENTARIO --}}
+                    {{-- SECCIÓN 3: INVENTARIO Y CARACTERÍSTICAS --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-warehouse text-indigo-600 text-xl mr-3"></i>
                             <h3 class="text-lg font-semibold text-gray-900">{{ __('Inventario y Características') }}</h3>
                         </div>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                           
-
-                            {{-- Stock Actual --}}
-                            <div>
-                                <label for="current_stock" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-boxes text-gray-400 mr-2"></i>
-                                    {{ __('Stock Actual') }}
-                                </label>
-                                <input type="number" name="current_stock" id="current_stock" min="0"
-                                       value="{{ old('current_stock', $product->current_stock) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('current_stock') border-red-500 @enderror"
-                                       placeholder="0">
-                                @error('current_stock')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
-
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             {{-- Stock Mínimo --}}
                             <div>
                                 <label for="minimum_stock" class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -231,20 +195,21 @@
                                 <input type="number" name="minimum_stock" id="minimum_stock" min="0"
                                        value="{{ old('minimum_stock', $product->minimum_stock) }}"
                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('minimum_stock') border-red-500 @enderror"
-                                       placeholder="1">
+                                       placeholder="0">
                                 @error('minimum_stock')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Ubicación --}}
+                            {{-- Precio de Lista --}}
                             <div>
-                                <label for="storage_location" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
-                                    {{ __('Ubicación') }}
+                                <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
+                                    {{ __('Precio de Lista') }}
                                 </label>
-                                <input type="text" name="storage_location" id="storage_location"
-                                       value="{{ old('storage_location', $product->storage_location) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                       placeholder="{{ __('Ej: Estante A3') }}">
+                                <input type="number" name="list_price" id="list_price" min="0" step="0.01"
+                                       value="{{ old('list_price', $product->list_price) }}"
+                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('list_price') border-red-500 @enderror"
+                                       placeholder="0.00">
+                                @error('list_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
                         </div>
                         
@@ -254,38 +219,68 @@
                                 <i class="fas fa-check-square text-indigo-600 mr-2"></i>
                                 {{ __('Características del Producto') }}
                             </h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="rfid_enabled" value="1" 
-                                           class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                           {{ old('rfid_enabled', $product->rfid_enabled) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        <i class="fas fa-wifi text-blue-500 mr-1"></i>
-                                        {{ __('RFID Habilitado') }}
-                                    </span>
-                                </label>
-                             
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="requires_sterilization" value="1" 
-                                        class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                        {{ old('requires_sterilization', $product->requires_sterilization) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        {{ __('Requiere Esterilización') }}
-                                    </span>
-                                </label>
-                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
-                                    <input type="checkbox" name="requires_refrigeration" value="1" 
-                                        class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
-                                        {{ old('requires_refrigeration', $product->requires_refrigeration) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm font-medium text-gray-700">
-                                        {{ __('Requiere Refrigeración') }}
-                                    </span>
-                                </label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {{-- Requiere Esterilización con Tooltip --}}
+                                <div class="relative group">
+                                    <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
+                                        <input type="checkbox" name="requires_sterilization" value="1" 
+                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
+                                            {{ old('requires_sterilization', $product->requires_sterilization) ? 'checked' : '' }}>
+                                        <span class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                                            {{ __('Requiere Esterilización') }}
+                                            <i class="fas fa-info-circle text-gray-400 ml-1"></i>
+                                        </span>
+                                    </label>
+                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap bottom-full mb-2 left-1/2 transform -translate-x-1/2 shadow-lg">
+                                        {{ __('Solo los productos de tipo instrumental requieren esterilización.') }}
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                            <div class="border-4 border-transparent border-t-indigo-600"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Requiere Refrigeración con Tooltip --}}
+                                <div class="relative group">
+                                    <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
+                                        <input type="checkbox" name="requires_refrigeration" value="1" 
+                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
+                                            {{ old('requires_refrigeration', $product->requires_refrigeration) ? 'checked' : '' }}>
+                                        <span class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                                            {{ __('Requiere Refrigeración') }}
+                                            <i class="fas fa-info-circle text-gray-400 ml-1"></i>
+                                        </span>
+                                    </label>
+                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap bottom-full mb-2 left-1/2 transform -translate-x-1/2 shadow-lg">
+                                        {{ __('Solo los productos clasificados requieren Refrigeración.') }}
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                            <div class="border-4 border-transparent border-t-indigo-600"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Requiere Control de Temperatura --}}
+                                <div class="relative group">
+                                    <label class="inline-flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors duration-200">
+                                        <input type="checkbox" name="requires_temperature" value="1" 
+                                            class="form-checkbox h-5 w-5 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500" 
+                                            {{ old('requires_temperature', $product->requires_temperature) ? 'checked' : '' }}>
+                                        <span class="ml-2 text-sm font-medium text-gray-700 flex items-center">
+                                            {{ __('Control de Temperatura') }}
+                                            <i class="fas fa-info-circle text-gray-400 ml-1"></i>
+                                        </span>
+                                    </label>
+                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap bottom-full mb-2 left-1/2 transform -translate-x-1/2 shadow-lg">
+                                        {{ __('Productos que requieren monitoreo constante de temperatura.') }}
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                                            <div class="border-4 border-transparent border-t-indigo-600"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 4: TRACKING Y RFID --}}
+                    {{-- SECCIÓN 4: TRACKING --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-satellite-dish text-indigo-600 text-xl mr-3"></i>
@@ -303,64 +298,23 @@
                                 <select name="tracking_type" id="tracking_type" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
                                     <option value="code" {{ old('tracking_type', $product->tracking_type) == 'code' ? 'selected' : '' }}>
-                                        📦 {{ __('Solo por Code') }}
+                                        📦 {{ __('Code (Por Lote)') }}
                                     </option>
                                     <option value="rfid" {{ old('tracking_type', $product->tracking_type) == 'rfid' ? 'selected' : '' }}>
-                                        📡 {{ __('Solo por RFID') }}
+                                        📡 {{ __('RFID (Individual)') }}
                                     </option>
                                     <option value="serial" {{ old('tracking_type', $product->tracking_type) == 'serial' ? 'selected' : '' }}>
-                                        🔄 {{ __('Serial') }}
+                                        🔢 {{ __('Serial (Único)') }}
                                     </option>
                                 </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Define cómo se rastreará este producto en el sistema') }}
+                                </p>
                                 @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- Tag RFID --}}
-                            <div>
-                                <label for="rfid_tag_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-microchip text-gray-400 mr-2"></i>
-                                    {{ __('ID de Etiqueta RFID') }}
-                                </label>
-                                <input type="text" name="rfid_tag_id" id="rfid_tag_id" value="{{ old('rfid_tag_id', $product->rfid_tag_id) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('rfid_tag_id') border-red-500 @enderror"
-                                       placeholder="{{ __('Ej: RF-12345678') }}">
-                                @error('rfid_tag_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- SECCIÓN 5: LOTE Y CADUCIDAD --}}
-                    <div class="mb-8">
-                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-calendar-alt text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Información de Lote y Caducidad') }}</h3>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {{-- Número de Lote --}}
-                            <div>
-                                <label for="lot_number" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-hashtag text-gray-400 mr-2"></i>
-                                    {{ __('Número de Lote') }}
-                                </label>
-                                <input type="text" name="lot_number" id="lot_number" value="{{ old('lot_number', $product->lot_number) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                       placeholder="{{ __('Ej: LOTE-2024-001') }}">
-                            </div>
-
-                            {{-- Fecha de Caducidad --}}
-                            <div>
-                                <label for="expiration_date" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-hourglass-end text-gray-400 mr-2"></i>
-                                    {{ __('Fecha de Caducidad') }}
-                                </label>
-                                <input type="date" name="expiration_date" id="expiration_date" 
-                                       value="{{ old('expiration_date', $product->expiration_date ? $product->expiration_date->format('Y-m-d') : '') }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('expiration_date') border-red-500 @enderror">
-                                @error('expiration_date')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Estado --}}
+                            {{-- Estado del Producto --}}
                             <div>
                                 <label for="status" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-toggle-on text-gray-400 mr-2"></i>
@@ -375,18 +329,17 @@
                                     <option value="inactive" {{ old('status', $product->status) == 'inactive' ? 'selected' : '' }}>
                                         ⏸️ {{ __('Inactivo') }}
                                     </option>
-                                    <option value="maintenance" {{ old('status', $product->status) == 'maintenance' ? 'selected' : '' }}>
-                                        🔧 {{ __('En Mantenimiento') }}
-                                    </option>
                                     <option value="discontinued" {{ old('status', $product->status) == 'discontinued' ? 'selected' : '' }}>
                                         🚫 {{ __('Descontinuado') }}
                                     </option>
                                 </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('El estado determina la disponibilidad en el catálogo') }}
+                                </p>
                             </div>
                         </div>
                     </div>
-
-                    
 
                     {{-- Botones de Acción --}}
                     <div class="flex items-center justify-between pt-6 border-t border-gray-200">

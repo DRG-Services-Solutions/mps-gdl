@@ -24,10 +24,11 @@ return new class extends Migration
             // IDENTIDAD Y CÓDIGOS DEL PRODUCTO (CATÁLOGO)
             // ==========================================================
             $table->string('name');
-            $table->string('code')->unique(); // Código interno del catálogo
+            $table->string('code')->unique(); 
             $table->text('description')->nullable();
             $table->boolean('requires_sterilization')->default(0);
             $table->boolean('requires_refrigeration')->default(0);
+            $table->boolean('requires_temperature')->default(0);
 
             // ==========================================================
             // TIPO DE TRAZABILIDAD
@@ -40,6 +41,7 @@ return new class extends Migration
             // ==========================================================
             
             $table->integer('minimum_stock')->default(0); // Stock mínimo deseado
+            $table->decimal('list_price')->default(0);
 
             // ==========================================================
             // ESTADO DEL PRODUCTO EN EL CATÁLOGO

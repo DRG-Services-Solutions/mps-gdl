@@ -60,10 +60,10 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                    {{ __('Producto') }}
+                                  {{ __('Producto') }}
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
-                                    {{ __('Proveedor/Fabricante') }}
+                                    {{ __('Proveedor') }}
                                 </th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                                     {{ __('Categoría') }}
@@ -75,7 +75,6 @@
                                     <div class="flex items-center justify-center">
                                         {{ __('Esterilización') }}
                                     </div>
-                                    {{-- TOOLTIP con el mensaje solicitado --}}
                                     <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
                                         {{ __('Solo los productos de tipo instrumental requieren esterilización.') }}
                                     </div>
@@ -84,7 +83,6 @@
                                     <div class="flex items-center justify-center">
                                         {{ __('Refrigeración') }}
                                     </div>
-                                    {{-- TOOLTIP con el mensaje solicitado --}}
                                     <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
                                         {{ __('Solo los productos clasificados requieren Refrigeración.') }}
                                     </div>
@@ -109,24 +107,23 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
-                                                <div class="text-xs text-gray-500 flex items-center space-x-2">
+                                                <a href="{{ route('products.show', $product) }}" 
+                                                class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors duration-150">
+                                                    {{ $product->name }}
+                                                </a>
+                                                <div class="text-xs text-gray-500 flex items-center space-x-2 mt-1">
                                                     <span class="flex items-center">
                                                         <i class="fas fa-barcode mr-1"></i>
                                                         {{ $product->code }}
                                                     </span>
-                                                    @if($product->model)
-                                                        <span class="text-gray-400">|</span>
-                                                        <span>{{ $product->model }}</span>
-                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     
-                                    <!-- Fabricante -->
+                                    <!-- Proveedor -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
+                                        <div class="text-sm text-gray-900 text-center">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
                                     </td>
 
                                     <!-- Categoría -->
@@ -164,24 +161,25 @@
                                                 @break
                                         @endswitch
                                     </td>
+
+                                    <!-- Esterilización -->
                                     <td class="px-6 py-4 text-center">
                                         @if($product->requires_sterilization)
-                                            {{-- Icono de Check (Sí requiere) --}}
                                             <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Esterilización"></i>
                                         @else
-                                            {{-- Icono de Cruz o guion (No requiere) --}}
                                             <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Esterilización"></i>
                                         @endif
                                     </td>
+
+                                    <!-- Refrigeración -->
                                     <td class="px-6 py-4 text-center">
                                         @if($product->requires_refrigeration)
-                                            {{-- Icono de Check (Sí requiere) --}}
-                                            <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Refrigeration"></i>
+                                            <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Refrigeración"></i>
                                         @else
-                                            {{-- Icono de Cruz o guion (No requiere) --}}
-                                            <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Refrigeration"></i>
+                                            <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Refrigeración"></i>
                                         @endif
                                     </td>
+
                                     <!-- Estado -->
                                     <td class="px-6 py-4 text-center hidden xl:table-cell">
                                         @switch($product->status)
@@ -225,7 +223,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
+                                    <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <i class="fas fa-book-open text-gray-400 text-5xl mb-4"></i>
                                             <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Catálogo Vacío') }}</h3>
@@ -259,7 +257,7 @@
             </div>
 
             <!-- Info Cards -->
-            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
@@ -271,13 +269,14 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="bg-white border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
-                            <i class="fas fa-wifi text-blue-600 text-2xl"></i>
+                            <i class="fas fa-boxes text-green-600 text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">Con Tracking Code</p>
+                            <p class="text-sm font-medium text-gray-500">Tracking Code</p>
                             <p class="text-2xl font-bold text-gray-900">
                                 {{ $products->where('tracking_type', 'code')->count() }}
                             </p>
@@ -285,14 +284,13 @@
                     </div>
                 </div>
 
-
                 <div class="bg-white border border-gray-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <div class="flex-shrink-0">
                             <i class="fas fa-wifi text-blue-600 text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">Con Tracking RFID</p>
+                            <p class="text-sm font-medium text-gray-500">Tracking RFID</p>
                             <p class="text-2xl font-bold text-gray-900">
                                 {{ $products->where('tracking_type', 'rfid')->count() }}
                             </p>
@@ -306,7 +304,7 @@
                             <i class="fas fa-hashtag text-yellow-600 text-2xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">Con Número de Serie</p>
+                            <p class="text-sm font-medium text-gray-500">Número de Serie</p>
                             <p class="text-2xl font-bold text-gray-900">
                                 {{ $products->where('tracking_type', 'serial')->count() }}
                             </p>
