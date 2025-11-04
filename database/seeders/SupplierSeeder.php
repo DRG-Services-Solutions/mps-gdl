@@ -19,7 +19,7 @@ class SupplierSeeder extends Seeder
             // ========================================
             [
                 'code' => 'SUP-001',
-                'name' => 'Arthrex México',
+                'name' => 'Arthrex',
                 'contact_person' => 'Carlos Mendoza',
                 'email' => 'carlos.mendoza@arthrex.com.mx',
                 'phone' => '+52 55 5123 4567',
@@ -28,7 +28,7 @@ class SupplierSeeder extends Seeder
             ],
             [
                 'code' => 'SUP-002',
-                'name' => 'Stryker México',
+                'name' => 'Stryker',
                 'contact_person' => 'Ana Patricia González',
                 'email' => 'ana.gonzalez@stryker.com',
                 'phone' => '+52 55 9180 2000',
