@@ -16,18 +16,10 @@ class SubcategorySeeder extends Seeder
         $subcategories = [
             // Instrumental Quirúrgico
             ['category' => 'Instrumental Quirúrgico', 'name' => 'Tijeras Quirúrgicas', 'description' => 'Tijeras Mayo, Metzenbaum, iris y de disección'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Pinzas de Disección', 'description' => 'Pinzas con y sin dientes para manipulación de tejidos'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Pinzas Hemostáticas', 'description' => 'Kelly, Crile, Mosquito, Rochester'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Separadores', 'description' => 'Farabeuf, Richardson, Volkmann, Balfour'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Portaagujas', 'description' => 'Mayo-Hegar, Mathieu, Crile-Wood'],
             ['category' => 'Instrumental Quirúrgico', 'name' => 'Bisturís', 'description' => 'Mangos de bisturí y hojas desechables'],
-            ['category' => 'Instrumental Quirúrgico', 'name' => 'Pinzas de Campo', 'description' => 'Backhaus, Jones, Doyen'],
             
             // Material de Curación
             ['category' => 'Consumibles Quirúrgicos', 'name' => 'Gasas Estériles', 'description' => 'Gasas de diferentes tamaños en presentación estéril'],
-            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Apósitos', 'description' => 'Apósitos adhesivos y no adhesivos'],
-            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Vendas', 'description' => 'Vendas elásticas y de gasa'],
-            ['category' => 'Consumibles Quirúrgicos', 'name' => 'Esparadrapo', 'description' => 'Cintas adhesivas médicas de diferentes tipos'],
             ['category' => 'Consumibles Quirúrgicos', 'name' => 'Compresas', 'description' => 'Compresas quirúrgicas de diferentes tamaños'],
             
             // Guantes Quirúrgicos
