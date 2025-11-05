@@ -31,29 +31,12 @@ class StorageLocationController extends Controller
     {
         
         $validated = $request->validate([
+            'name' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:200',
+            'code' => 'nullable|string|max:200',
+        ]);       
             
-            'area' => 'required|string|max:50',
-            'organizer' => 'required|string|max:10',
-            'shelf_level' => 'required|integer|min:1',
-            'shelf_section' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-            
-           
-            'area' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('storage_locations')->where(function ($query) use ($request) {
-                    return $query
-                        ->where('organizer', $request->organizer)
-                        ->where('shelf_level', $request->shelf_level)
-                        ->where('shelf_section', $request->shelf_section);
-                }),
-            ],
-        ]);
-
         StorageLocation::create($validated);
-
         return redirect()->route('storage_locations.index')
             ->with('success', 'Ubicación de almacenamiento creada correctamente.');
     }
@@ -80,25 +63,11 @@ class StorageLocationController extends Controller
     {
         
         $validated = $request->validate([
-            'area' => 'required|string|max:50',
-            'organizer' => 'required|string|max:10',
-            'shelf_level' => 'required|integer|min:1',
-            'shelf_section' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-
-           
-            'area' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('storage_locations')->where(function ($query) use ($request) {
-                    return $query
-                        ->where('organizer', $request->organizer)
-                        ->where('shelf_level', $request->shelf_level)
-                        ->where('shelf_section', $request->shelf_section);
-                })->ignore($storageLocation->id), 
-            ],
+            'name' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:200',
+            'code' => 'nullable|string|max:200',
         ]);
+            
 
         $storageLocation->update($validated);
 
