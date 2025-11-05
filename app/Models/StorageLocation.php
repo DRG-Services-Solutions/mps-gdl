@@ -13,7 +13,6 @@ class StorageLocation extends Model
         'name',
         'description',
         'code',
-        
     ];
 
 

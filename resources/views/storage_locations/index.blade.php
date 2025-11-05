@@ -46,31 +46,19 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Ubicación Completa</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden md:table-cell">Área</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden md:table-cell">Organizador</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden lg:table-cell">Nivel/Sección</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden lg:table-cell">Descripción</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Codigo</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden md:table-cell">Nombre</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden md:table-cell">Descripcion</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($locations as $location)
                                 <tr class="hover:bg-gray-50 transition-colors duration-200">
-                                    
-                                    <td class="px-6 py-4 font-bold text-indigo-700">
-                                        {{-- El accesor getFullLocationAttribute() genera: AREA-ORGANIZER-LEVEL-SECTION --}}
-                                        {{ $location->full_location ?? $location->area . '-' . $location->organizer . '-' . $location->shelf_level . '-' . $location->shelf_section }}
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 text-gray-700 hidden md:table-cell">{{ $location->area }}</td>
-                                    <td class="px-6 py-4 text-gray-700 hidden md:table-cell">{{ $location->organizer }}</td>
-                                    <td class="px-6 py-4 text-center text-gray-700 hidden lg:table-cell">{{ $location->shelf_level }}/ {{ $location->shelf_section }}</td>
-                                    
-                                    <td class="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                                        {{ Str::limit($location->description, 30) ?? 'Sin descripción' }}
-                                    </td>
-                                    
+                          
+                                    <td class="px-6 py-4 text-gray-700 hidden md:table-cell">{{ $location->code }}</td>
+                                    <td class="px-6 py-4 text-gray-700 hidden md:table-cell">{{ $location->name }}</td>
+                                    <td class="px-6 py-4 text-gray-700 hidden md:table-cell">{{ $location->description }}</td>
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex justify-end space-x-2">
                                             <a href="{{ route('storage_locations.edit', $location) }}" 

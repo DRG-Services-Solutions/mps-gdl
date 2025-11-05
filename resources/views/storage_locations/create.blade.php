@@ -4,7 +4,7 @@
 {{ __('Crear Ubicación Física') }}
 </h2>
 <p class="mt-1 text-sm text-gray-600">
-{{ __('Define los componentes (Área, Organizador, Nivel y Sección) de la nueva ubicación.') }}
+{{ __('Define los componentes de la nueva ubicación.') }}
 </p>
 </x-slot>
 
