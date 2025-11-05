@@ -5,8 +5,13 @@ namespace App\Services;
 class EPCGenerator
 {
     /**
-     * Genera un EPC de 24 caracteres hexadecimales (96 bits)
-     * Solo para productos con etiqueta RFID impresa
+     * Genera un EPC en formato SGTIN-96 (24 caracteres hexadecimales = 96 bits)
+     * 
+     * ESTRUCTURA:
+     * - Header: 30 (2 chars) - Identifica SGTIN-96
+     * - Company Prefix: 6 chars hex - ID de empresa
+     * - Item Reference: 6 chars hex - ID de producto/categoría
+     * - Serial Number: 10 chars hex - Número único
      * 
      * @param int $productId
      * @param int $categoryId
@@ -14,48 +19,117 @@ class EPCGenerator
      */
     public static function generate($productId, $categoryId = 0)
     {
-        $header = 0x30;
-        $filter = 1;
-        $partition = 3;
-        $companyPrefix = (int) config('rfid.company_prefix_numeric', 614141);
-        $itemReference = $categoryId & 0xFFFFF;
-        $serialNumber = $productId & 0x3FFFFFFFFF;
+        // 1. Header SGTIN-96 (2 chars hex)
+        $header = '30';
         
-        $binary = '';
-        $binary .= str_pad(decbin($header), 8, '0', STR_PAD_LEFT);
-        $filterPartition = ($filter << 3) | $partition;
-        $binary .= str_pad(decbin($filterPartition), 6, '0', STR_PAD_LEFT);
-        $binary .= str_pad(decbin($companyPrefix), 24, '0', STR_PAD_LEFT);
-        $binary .= str_pad(decbin($itemReference), 20, '0', STR_PAD_LEFT);
-        $binary .= str_pad(decbin($serialNumber), 38, '0', STR_PAD_LEFT);
-        $binary = str_pad(substr($binary, 0, 96), 96, '0', STR_PAD_RIGHT);
+        // 2. Company Prefix (6 chars hex)
+        // Obtener del config o usar valor por defecto
+        $companyPrefixNumeric = (int) config('rfid.company_prefix_numeric', 614141);
+        $companyPrefix = str_pad(dechex($companyPrefixNumeric), 6, '0', STR_PAD_LEFT);
         
-        $hex = '';
-        for ($i = 0; $i < 96; $i += 4) {
-            $nibble = substr($binary, $i, 4);
-            $hex .= dechex(bindec($nibble));
+        // 3. Item Reference (6 chars hex)
+        // Usar categoryId o productId como referencia
+        $itemRefNumeric = $categoryId > 0 ? $categoryId : $productId;
+        $itemReference = str_pad(dechex($itemRefNumeric), 6, '0', STR_PAD_LEFT);
+        
+        // 4. Serial Number (10 chars hex = 40 bits)
+        // Generar serial único: timestamp + productId + random
+        $timestamp = substr(dechex(time()), -4); // 4 chars del timestamp
+        $productHex = str_pad(dechex($productId), 4, '0', STR_PAD_LEFT); // 4 chars
+        $randomHex = bin2hex(random_bytes(1)); // 2 chars aleatorios
+        
+        $serialNumber = strtoupper($timestamp . $productHex . $randomHex);
+        
+        // Construir EPC completo (24 chars hex)
+        $epc = strtoupper($header . $companyPrefix . $itemReference . $serialNumber);
+        
+        // Validar longitud
+        if (strlen($epc) !== 24) {
+            \Log::error("EPC generado con longitud incorrecta: " . strlen($epc) . " chars");
+            // Ajustar a 24 caracteres
+            $epc = str_pad(substr($epc, 0, 24), 24, '0', STR_PAD_RIGHT);
         }
         
-        return strtoupper($hex);
+        \Log::info("EPC generado: {$epc}");
+        \Log::info("  └─ Header: {$header} | Company: {$companyPrefix} | Item: {$itemReference} | Serial: {$serialNumber}");
+        
+        return $epc;
+    }
+    
+    /**
+     * Genera un EPC completamente aleatorio (para productos sin categoría)
+     * Mantiene formato SGTIN-96
+     * 
+     * @return string
+     */
+    public static function generateRandom()
+    {
+        // Header SGTIN-96
+        $header = '30';
+        
+        // Company Prefix
+        $companyPrefixNumeric = (int) config('rfid.company_prefix_numeric', 614141);
+        $companyPrefix = str_pad(dechex($companyPrefixNumeric), 6, '0', STR_PAD_LEFT);
+        
+        // Item Reference + Serial aleatorios (16 chars hex)
+        $randomPart = strtoupper(bin2hex(random_bytes(8)));
+        
+        $epc = strtoupper($header . $companyPrefix . $randomPart);
+        
+        \Log::info("EPC aleatorio generado: {$epc}");
+        
+        return $epc;
     }
     
     /**
      * Valida formato de EPC
+     * 
+     * @param string $epc
+     * @return bool
      */
     public static function validateEPC($epc)
     {
-        return preg_match('/^[A-F0-9]{24}$/', $epc) === 1;
+        // Debe ser exactamente 24 caracteres hexadecimales
+        if (!preg_match('/^[A-F0-9]{24}$/', $epc)) {
+            return false;
+        }
+        
+        // El header debe ser '30' para SGTIN-96
+        $header = substr($epc, 0, 2);
+        if ($header !== '30') {
+            \Log::warning("EPC con header inválido: {$header} (esperado: 30)");
+            return false;
+        }
+        
+        return true;
     }
     
     /**
-     * Genera comando ZPL para etiqueta RFID
+     * Genera comando ZPL CORRECTO para etiqueta RFID
+     * 
+     * COMANDO RFID CRÍTICO:
+     * ^RS8 = Configurar protocolo RFID Gen2
+     * ^RFW,E,2,6 = Escribir en EPC bank, desde word 2, 6 words (96 bits)
+     * 
+     * @param string $epc
+     * @param array $productData
+     * @return string
      */
     public static function generateZPLCommand($epc, $productData = [])
     {
+        // Validar EPC antes de generar ZPL
+        if (!self::validateEPC($epc)) {
+            throw new \Exception("EPC inválido para generar ZPL: {$epc}");
+        }
+        
+        // Datos del producto (truncados para la etiqueta)
         $name = substr($productData['name'] ?? 'Producto', 0, 30);
         $code = $productData['code'] ?? 'N/A';
-        $category = $productData['category'] ?? '';
+        $category = substr($productData['category'] ?? '', 0, 25);
         $lot = $productData['lot_number'] ?? '';
+        
+        // Calcular longitud en words (24 chars hex = 12 bytes = 96 bits = 6 words)
+        $lengthInWords = 6;
         
         $zpl = <<<ZPL
 ^XA
@@ -87,12 +161,81 @@ class EPCGenerator
 ^FO20,340^A0N,20,20^FH\^FDRFID EPC:^FS
 ^FO20,365^A0N,18,18^FH\^FD{$epc}^FS
 
-^RFW,H^FD{$epc}^FS
+^RS8
+^RFW,E,2,{$lengthInWords}^FD{$epc}^FS
 
 ^PQ1,0,1,Y
 ^XZ
 ZPL;
 
+        \Log::info("ZPL generado para EPC: {$epc}");
+        \Log::info("  └─ Comando RFID: ^RS8 + ^RFW,E,2,{$lengthInWords}");
+        
         return $zpl;
+    }
+    
+    /**
+     * Genera comando ZPL SOLO para codificación RFID (sin texto impreso)
+     * Útil para etiquetas pequeñas de 7.4cm x 1.8cm
+     * 
+     * @param string $epc
+     * @return string
+     */
+    public static function generateZPLRFIDOnly($epc)
+    {
+        // Validar EPC
+        if (!self::validateEPC($epc)) {
+            throw new \Exception("EPC inválido para generar ZPL: {$epc}");
+        }
+        
+        $lengthInWords = 6;
+        
+        $zpl = <<<ZPL
+^XA
+
+~TA000
+~JSN
+^LT0
+^MNW
+^MTT
+^PON
+^PMN
+^LH0,0
+
+^MMT
+^PW591
+^LL144
+^LS0
+
+^RS8
+^RFW,E,2,{$lengthInWords}^FD{$epc}^FS
+
+^XZ
+ZPL;
+
+        return $zpl;
+    }
+    
+    /**
+     * Decodificar un EPC en sus componentes
+     * Útil para debugging
+     * 
+     * @param string $epc
+     * @return array
+     */
+    public static function decode($epc)
+    {
+        if (strlen($epc) !== 24) {
+            return ['error' => 'Longitud inválida'];
+        }
+        
+        return [
+            'full_epc' => $epc,
+            'header' => substr($epc, 0, 2),
+            'company_prefix' => substr($epc, 2, 6),
+            'item_reference' => substr($epc, 8, 6),
+            'serial_number' => substr($epc, 14, 10),
+            'is_valid' => self::validateEPC($epc),
+        ];
     }
 }

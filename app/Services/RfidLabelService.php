@@ -9,44 +9,96 @@ use App\Models\PurchaseOrderReceipt;
 class RfidLabelService
 {
     /**
-     * Generar EPC único en formato hexadecimal (24 caracteres = 96 bits)
-     * Formato SGTIN-96: Header(2) + Company(6) + Item(5) + Serial(11)
+     * Generar EPC único en formato SGTIN-96 (24 caracteres hex = 96 bits)
+     * 
+     * FORMATO SGTIN-96:
+     * - Header: 8 bits (0x30 = SGTIN-96)
+     * - Filter: 3 bits (tipo de producto)
+     * - Partition: 3 bits (indica cómo dividir Company y Item)
+     * - Company Prefix: 20-40 bits (tu código de empresa GS1)
+     * - Item Reference: 4-24 bits (tu código de producto interno)
+     * - Serial: 38 bits (número de serie único)
+     * 
+     * SIMPLIFICADO (sin GS1 real):
+     * - Header: 30 (fijo, identifica SGTIN-96)
+     * - Company: 6 caracteres hex (tu ID de empresa)
+     * - Product: 6 caracteres hex (código de producto)
+     * - Serial: 12 caracteres hex (número único secuencial o aleatorio)
+     * 
+     * Total: 2 + 6 + 6 + 10 = 24 caracteres hex = 96 bits
      */
     public function generateEPC(int $productId, int $unitId): string
     {
         $maxAttempts = 10;
         
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            // Generar 12 bytes aleatorios = 24 caracteres hexadecimales
-            $epc = strtoupper(bin2hex(random_bytes(12)));
+            // FORMATO SGTIN-96 SIMPLIFICADO:
+            
+            // 1. Header (2 chars hex): Siempre "30" para SGTIN-96
+            $header = '30';
+            
+            // 2. Company Prefix (6 chars hex): Usar ID de tu empresa o constante
+            // Puedes cambiarlo por tu código GS1 si tienes uno
+            $companyPrefix = str_pad(dechex(123456), 6, '0', STR_PAD_LEFT); // Ejemplo: 01E240
+            
+            // 3. Item Reference (6 chars hex): Basado en product_id
+            $itemReference = str_pad(dechex($productId), 6, '0', STR_PAD_LEFT);
+            
+            // 4. Serial Number (10 chars hex): Aleatorio o secuencial
+            // Opción A: Completamente aleatorio (40 bits)
+            $serialNumber = strtoupper(bin2hex(random_bytes(5))); // 5 bytes = 10 chars hex
+            
+            // Opción B: Basado en timestamp + unitId (más predecible pero único)
+            // $timestamp = substr(dechex(time()), -5); // Últimos 5 chars del timestamp
+            // $serialNumber = str_pad($timestamp, 5, '0', STR_PAD_LEFT) . str_pad(dechex($unitId), 5, '0', STR_PAD_LEFT);
+            
+            // Construir EPC completo (24 chars hex)
+            $epc = strtoupper($header . $companyPrefix . $itemReference . $serialNumber);
             
             // Verificar que no exista en la base de datos
             $existsInUnits = \DB::table('product_units')->where('epc', $epc)->exists();
             $existsInJobs = \DB::table('print_jobs')->where('epc_code', $epc)->exists();
             
             if (!$existsInUnits && !$existsInJobs) {
-                \Log::info("✅ EPC aleatorio único generado: {$epc}");
+                \Log::info("✅ EPC SGTIN-96 generado: {$epc}");
+                \Log::info("   └─ Header: {$header} | Company: {$companyPrefix} | Product: {$itemReference} | Serial: {$serialNumber}");
                 return $epc;
             }
             
             \Log::warning("⚠️ EPC duplicado: {$epc}, regenerando (intento {$attempt})");
         }
         
-        // Esto es extremadamente improbable (1 en 79 septillones)
         throw new \Exception("No se pudo generar un EPC único después de {$maxAttempts} intentos");
     }
 
-
-
     /**
-     * Generar comando ZPL para etiqueta 7.4cm x 1.8cm (74mm x 18mm)
-     * Zebra ZT411R con módulo RFID - SOLO CODIFICACIÓN, SIN TEXTO
+     * Generar comando ZPL para etiqueta RFID 7.4cm x 1.8cm (74mm x 18mm)
+     * Zebra ZT411R con módulo RFID UHF
+     * 
+     * COMANDO RFID CORRECTO:
+     * ^RS = Configuración de parámetros RFID
+     * ^RFW = Escribir datos RFID
+     * 
+     * FORMATO: ^RFW,H,memoria,inicio,longitud^FDdatos^FS
+     * - H = datos en hexadecimal
+     * - memoria: E = EPC bank (memoria principal del tag)
+     * - inicio: 2 = comenzar después del CRC (word 2)
+     * - longitud: 12 = cantidad de words (12 words × 16 bits = 192 bits, pero usamos 96 bits = 6 words)
      */
     public function generateZPL(array $labelData): string
     {
         $epc = $labelData['epc'];
+        
+        // Validar que el EPC tenga exactamente 24 caracteres hexadecimales
+        if (strlen($epc) !== 24 || !ctype_xdigit($epc)) {
+            throw new \Exception("EPC inválido: debe ser 24 caracteres hexadecimales. Recibido: {$epc}");
+        }
 
-        // Cálculos para 7.4cm x 1.8cm a 203 DPI
+        // Calcular longitud en WORDS (no en caracteres)
+        // 24 chars hex = 12 bytes = 96 bits = 6 words de 16 bits
+        $lengthInWords = 6;
+        
+        // Cálculos para etiqueta de 7.4cm x 1.8cm a 203 DPI
         // 74mm / 25.4 * 203 = ~591 dots de ancho
         // 18mm / 25.4 * 203 = ~144 dots de alto
         
@@ -57,7 +109,7 @@ class RfidLabelService
 ~JSN
 ^LT0
 ^MNW
-^MTD
+^MTT
 ^PON
 ^PMN
 ^LH0,0
@@ -67,10 +119,14 @@ class RfidLabelService
 ^LL144
 ^LS0
 
-^RFW,H,1,2,1^FD{$epc}^FS
+^RS8
+^RFW,E,2,{$lengthInWords}^FD{$epc}^FS
 
 ^XZ
 ZPL;
+
+        \Log::info("🏷️ ZPL generado para EPC: {$epc}");
+        \Log::info("   └─ Longitud: {$lengthInWords} words (96 bits)");
 
         return $zpl;
     }
@@ -107,7 +163,7 @@ ZPL;
             }
 
             foreach ($units as $unit) {
-                // Generar EPC único
+                // Generar EPC único en formato SGTIN-96
                 $epc = $this->generateEPC($item->product_id, $unit->id);
                 
                 // Actualizar la unidad con el EPC
@@ -122,7 +178,7 @@ ZPL;
                     'expiry_date' => $item->expiry_date ? $item->expiry_date->format('d/m/Y') : 'N/A',
                 ];
 
-                // Generar comando ZPL
+                // Generar comando ZPL corregido
                 $zpl = $this->generateZPL($labelData);
 
                 // Crear trabajo de impresión
@@ -139,13 +195,14 @@ ZPL;
                 // Vincular el trabajo de impresión a la unidad
                 $unit->update(['print_job_id' => $printJob->id]);
 
-                \Log::info("✅ Print Job creado: {$printJob->job_number} para unidad {$unit->id} con EPC: {$epc}");
+                \Log::info("✅ Print Job creado: {$printJob->job_number}");
+                \Log::info("   └─ Unidad: {$unit->id} | EPC: {$epc}");
 
                 $jobsCreated++;
             }
         }
 
-        \Log::info("Total de print jobs creados: {$jobsCreated}");
+        \Log::info("🎉 Total de print jobs creados: {$jobsCreated}");
 
         return $jobsCreated;
     }
@@ -168,8 +225,12 @@ ZPL;
                     'error_message' => null,
                 ]);
                 $retriedCount++;
+                
+                \Log::info("🔄 Reintentando job: {$job->job_number}");
             }
         }
+
+        \Log::info("🔄 Total de jobs reintentados: {$retriedCount}");
 
         return $retriedCount;
     }

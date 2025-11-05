@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->string('razon_social')->nullable();
             $table->timestamps();
             
             $table->index('is_active');
