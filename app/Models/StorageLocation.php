@@ -10,19 +10,11 @@ class StorageLocation extends Model
     protected $table = 'storage_locations';
 
     protected $fillable = [
-        'area',
-        'organizer',
-        'shelf_level',
-        'shelf_section',
+        'name',
         'description',
-        
+        'code',
     ];
 
-    protected $casts = [
-        'shelf_level'   => 'integer',
-        'shelf_section' => 'integer',
-       
-    ];
 
     /* ============================
        📦 Relaciones
@@ -40,26 +32,4 @@ class StorageLocation extends Model
         return $this->hasMany(PurchaseOrder::class, 'destination_warehouse_id');
     }
 
-    /* ============================
-       🔍 Scopes (Filtros reutilizables)
-    ============================ */
-
-   
-
-    // ✅ Si quieres filtrar por área: scope específico
-    public function scopeByArea($query, string $area)
-    {
-        return $query->where('area', $area);
-    }
-
-   
-
-    /* ============================
-       🏷 Accesor (mostrar ubicación completa)
-    ============================ */
-
-    public function getFullLocationAttribute()
-    {
-        return "{$this->area}-{$this->organizer}-{$this->shelf_level}-{$this->shelf_section}";
-    }
 }

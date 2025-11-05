@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StorageLocation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use app\Models\User;
 
 class StorageLocationController extends Controller
 {
@@ -14,7 +15,8 @@ class StorageLocationController extends Controller
     public function index()
     {
         $locations = StorageLocation::latest()->paginate(10);
-        return view('storage_locations.index', compact('locations'));    }
+        return view('storage_locations.index', compact('locations'));    
+    }
 
     /**
      * Show the form for creating a new resource.
@@ -29,30 +31,14 @@ class StorageLocationController extends Controller
      */
     public function store(Request $request)
     {
-        
-        $validated = $request->validate([
-            
-            'area' => 'required|string|max:50',
-            'organizer' => 'required|string|max:10',
-            'shelf_level' => 'required|integer|min:1',
-            'shelf_section' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-            
-           
-            'area' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('storage_locations')->where(function ($query) use ($request) {
-                    return $query
-                        ->where('organizer', $request->organizer)
-                        ->where('shelf_level', $request->shelf_level)
-                        ->where('shelf_section', $request->shelf_section);
-                }),
-            ],
-        ]);
-
-        StorageLocation::create($validated);
+        //Validacion de los datos que vienen del formulario
+        $validatedData = $request->validate([
+            'name' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:200',
+            'code' => 'nullable|string|max:200',
+        ]);       
+  
+        StorageLocation::create($validatedData);
 
         return redirect()->route('storage_locations.index')
             ->with('success', 'Ubicación de almacenamiento creada correctamente.');
@@ -79,28 +65,14 @@ class StorageLocationController extends Controller
     public function update(Request $request, StorageLocation $storageLocation)
     {
         
-        $validated = $request->validate([
-            'area' => 'required|string|max:50',
-            'organizer' => 'required|string|max:10',
-            'shelf_level' => 'required|integer|min:1',
-            'shelf_section' => 'required|integer|min:1',
-            'description' => 'nullable|string',
-
-           
-            'area' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('storage_locations')->where(function ($query) use ($request) {
-                    return $query
-                        ->where('organizer', $request->organizer)
-                        ->where('shelf_level', $request->shelf_level)
-                        ->where('shelf_section', $request->shelf_section);
-                })->ignore($storageLocation->id), 
-            ],
+        $request->validate([
+            'name' => 'nullable|string|max:200',
+            'description' => 'nullable|string|max:200',
+            'code' => 'nullable|string|max:200',
         ]);
 
-        $storageLocation->update($validated);
+        $safeData->$request->safe();
+        $storageLocation->update($safeData->all());
 
         return redirect()->route('storage_locations.index')
             ->with('success', 'Ubicación de almacenamiento actualizada correctamente.');

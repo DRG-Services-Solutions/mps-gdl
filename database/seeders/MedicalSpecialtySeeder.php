@@ -12,12 +12,16 @@ class MedicalSpecialtySeeder extends Seeder
     {
         $specialties = [
             [
-                'name' => 'Artroscopia de hombro',
-                'description' => 'cirugía mínimamente invasiva que utiliza una pequeña cámara (artroscopio) a través de incisiones pequeñas para examinar y reparar tejidos dentro o alrededor de la articulación del hombro.',
+                'name' => 'Artroscopia de mano',
+                'description' => 'cirugía mínimamente invasiva que utiliza una pequeña cámara (artroscopio) a través de incisiones pequeñas para examinar y reparar tejidos dentro o alrededor de la articulación de la mano.',
             ],
             [
                 'name' => 'Artroscopia de hombro',
                 'description' => 'cirugía mínimamente invasiva que utiliza una pequeña cámara (artroscopio) a través de incisiones pequeñas para examinar y reparar tejidos dentro o alrededor de la articulación del hombro.',
+            ],
+             [
+                'name' => 'Artroscopia de Rodilla',
+                'description' => 'cirugía mínimamente invasiva que utiliza una pequeña cámara (artroscopio) a través de incisiones pequeñas para examinar y reparar tejidos dentro o alrededor de la articulación de la rodilla.',
             ],
         ];
 

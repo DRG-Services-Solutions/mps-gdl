@@ -10,12 +10,9 @@ return new class extends Migration
     {
         Schema::create('storage_locations', function (Blueprint $table) {
             $table->id();
-            $table->string('area', 50); 
-            $table->string('organizer', 10);
-            $table->unsignedSmallInteger('shelf_level');
-            $table->unsignedSmallInteger('shelf_section');
-            $table->unique(['area', 'organizer', 'shelf_level', 'shelf_section'], 'unique_full_location'); 
-            $table->text('description')->nullable();
+            $table->string('name')->nullable();
+            $table->string('description')->nullable();
+            $table->string('code')->nullable();
             $table->timestamps();
         });
     }

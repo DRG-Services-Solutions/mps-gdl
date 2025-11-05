@@ -17,18 +17,65 @@ class ProductController extends Controller
     // ==========================================================
     // INDEX 
     // ==========================================================
-    public function index(): View
-    {
-        $products = Product::with([
-            'supplier', 
-            'category',
-            'subcategory', 
-            'medicalSpecialty',
-
-        ])->latest()->paginate(10);
-        
-        return view('products.index', compact('products'));
+   public function index(Request $request): View
+{
+    // Query base con relaciones
+    $query = Product::with([
+        'supplier', 
+        'category',
+        'subcategory', 
+        'specialty', 
+    ]);
+    
+    // ========================================
+    // FILTRO: Búsqueda por nombre o código
+    // ========================================
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('code', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%");
+        });
     }
+    
+    // ========================================
+    // FILTRO: Proveedor
+    // ========================================
+    if ($request->filled('supplier_id')) {
+        $query->where('supplier_id', $request->supplier_id);
+    }
+    
+    // ========================================
+    // FILTRO: Categoría
+    // ========================================
+    if ($request->filled('category_id')) {
+        $query->where('category_id', $request->category_id);
+    }
+    
+    // ========================================
+    // FILTRO: Tipo de Tracking
+    // ========================================
+    if ($request->filled('tracking_type')) {
+        $query->where('tracking_type', $request->tracking_type);
+    }
+    
+    // ========================================
+    // FILTRO: Estado
+    // ========================================
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    
+    // Obtener productos paginados
+    $products = $query->latest()->paginate(10)->withQueryString();
+    
+    // Obtener datos para los filtros (select options)
+    $suppliers = \App\Models\Supplier::orderBy('name')->get();
+    $categories = \App\Models\Category::orderBy('name')->get();
+    
+    return view('products.index', compact('products', 'suppliers', 'categories'));
+}
 
     // ==========================================================
     // CREATE
@@ -36,7 +83,7 @@ class ProductController extends Controller
     public function create(): View
     {
         $suppliers = Supplier::orderBy('name')->get(); 
-        $categories = Category::all ();
+        $categories = Category::orderBy('name')->get(); // Agregado orderBy
         $specialties = MedicalSpecialty::orderBy('name')->get();
         $subcategories = Subcategory::all(); 
         
@@ -48,42 +95,52 @@ class ProductController extends Controller
     // ==========================================================
     public function store(Request $request): RedirectResponse
     {
-    $validated = $request->validate([
-        // Relaciones
-        'supplier_id' => 'nullable|exists:suppliers,id', 
-        'category_id' => 'nullable|exists:product_categories,id',
-        'specialty_id' => 'nullable|exists:medical_specialties,id',
-        'subcategory_id' => 'nullable|exists:subcategories,id',
-        
-        // Información del catálogo
-        'name' => 'required|string|max:255',
-        'code' => 'required|string|max:255|unique:products,code',
-        'description' => 'nullable|string',
-        'requires_sterilization' => 'nullable|boolean',
-        'requires_refrigeration' => 'nullable|boolean',
-        'requires_temperature' => 'nullable|boolean',
+        $validated = $request->validate([
+            
+            // Relaciones (FKs)
+            'supplier_id' => 'nullable|exists:suppliers,id', 
+            'category_id' => 'nullable|exists:product_categories,id',
+            'subcategory_id' => 'nullable|exists:subcategories,id',
+            'specialty_id' => 'nullable|exists:medical_specialties,id',
+            
+            // Información básica del catálogo
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:255|unique:products,code',
+            'description' => 'nullable|string',
+            
+            // Características booleanas
+            'requires_sterilization' => 'nullable|boolean',
+            'requires_refrigeration' => 'nullable|boolean',
+            'requires_temperature' => 'nullable|boolean',
+           
+            // Tipo de trazabilidad
+            'tracking_type' => 'required|in:code,rfid,serial',
+            
+            // Información de inventario
+            'minimum_stock' => 'nullable|integer|min:0',
+            'list_price' => 'nullable|numeric|min:0',
+            
+            // Estado del producto en catálogo
+            'status' => 'nullable|in:active,inactive,discontinued',
+        ]);
        
-         // Tipo de trazabilidad (define QUÉ tipo usará, no identificadores específicos)
-        'tracking_type' => 'required|in:code,rfid,serial',
         
-        // Información de inventario general
-        'minimum_stock' => 'nullable|integer|min:0',
-        'list_price' => 'nullable|decimal|min:0',
+        // Valores por defecto para campos opcionales
+        $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
+        $validated['list_price'] = $validated['list_price'] ?? 0;
+        $validated['status'] = $validated['status'] ?? 'active';
         
-        // Estado del producto en catálogo
-        'status' => 'nullable|in:active,inactive,',
-    ]);
-    
-    // Valores por defecto
-    $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
-    $validated['status'] = $validated['status'] ?? 'active';
-    
-    // Crear producto en catálogo (sin EPCs ni seriales individuales)
-    $product = Product::create($validated);
-    
-    return redirect()->route('products.index')
-        ->with('success', 'Producto agregado al catálogo correctamente. Ahora puede registrar entradas de inventario.');
-}
+        // Asegurar que los booleanos tengan valores correctos
+        $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
+        $validated['requires_refrigeration'] = $request->boolean('requires_refrigeration');
+        $validated['requires_temperature'] = $request->boolean('requires_temperature');
+        
+        // Crear producto en catálogo
+        $product = Product::create($validated);
+        
+        return redirect()->route('products.index')
+            ->with('success', 'Producto agregado al catálogo correctamente.');
+    }
 
     // ==========================================================
     // SHOW
@@ -94,8 +151,7 @@ class ProductController extends Controller
             'supplier', 
             'category', 
             'subcategory', 
-            'medicalSpecialty',
-         
+            'specialty', // Cambiado de medicalSpecialty a specialty
         ]);
         
         return view('products.show', compact('product'));
@@ -109,7 +165,7 @@ class ProductController extends Controller
         $suppliers = Supplier::orderBy('name')->get();
         $categories = Category::orderBy('name')->get(); 
         $specialties = MedicalSpecialty::orderBy('name')->get();
-        $subcategories = Subcategory::orderBy('name')->get();
+        $subcategories = Subcategory::all();
 
         return view('products.edit', compact('product', 'suppliers', 'categories', 'specialties', 'subcategories'));
     }
@@ -120,54 +176,37 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $request->validate([
-            // Relaciones
+            // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id',
             'category_id' => 'nullable|exists:product_categories,id', 
-            'specialty_id' => 'nullable|exists:medical_specialties,id',
             'subcategory_id' => 'nullable|exists:subcategories,id',
+            'specialty_id' => 'nullable|exists:medical_specialties,id',
             
-            // Identidad
+            // Información básica
             'name' => 'required|string|max:255',
             'code' => ['required', 'string', 'max:255', Rule::unique('products', 'code')->ignore($product->id)],
-            'serial_number' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('products', 'serial_number')->ignore($product->id)
-            ],
             'description' => 'nullable|string',
             
-            // RFID y Características
-            'rfid_enabled' => 'nullable|boolean',
-            'rfid_tag_id' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('products', 'rfid_tag_id')->ignore($product->id)
-            ],
-           
-           
+            // Características booleanas
+            'requires_sterilization' => 'nullable|boolean',
+            'requires_refrigeration' => 'nullable|boolean',
+            'requires_temperature' => 'nullable|boolean',
             
-            // Stock y Costos
-            'minimum_stock' => 'nullable|integer|min:0',
-            'current_stock' => 'nullable|integer|min:0',
-            'storage_location' => 'nullable|string|max:255',
-            
-            // Lote y Caducidad
-            'expiration_date' => 'nullable|date',
-            'lot_number' => 'nullable|string|max:255',
-            
-            
-            // Estado y Tracking
-            'status' => 'required|in:active,inactive,maintenance,discontinued',
+            // Tipo de trazabilidad
             'tracking_type' => 'required|in:code,rfid,serial',
+            
+            // Información de inventario
+            'minimum_stock' => 'nullable|integer|min:0',
+            'list_price' => 'nullable|numeric|min:0',
+            
+            // Estado
+            'status' => 'required|in:active,inactive,discontinued',
         ]);
 
-        // Manejo de Checkboxes
-        $validated['rfid_enabled'] = $request->boolean('rfid_enabled');
+        // Asegurar que los booleanos tengan valores correctos
         $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
         $validated['requires_refrigeration'] = $request->boolean('requires_refrigeration');
-       
+        $validated['requires_temperature'] = $request->boolean('requires_temperature');
         
         $product->update($validated);
         
@@ -176,7 +215,7 @@ class ProductController extends Controller
     }
 
     // ==========================================================
-    // DESTROY (Eliminación)
+    // DESTROY (Eliminación suave)
     // ==========================================================
     public function destroy(Product $product): RedirectResponse
     {
@@ -187,7 +226,7 @@ class ProductController extends Controller
     }
 
     // ==========================================================
-    // RESTORE (Restaurar) - AGREGADO
+    // RESTORE (Restaurar producto eliminado)
     // ==========================================================
     public function restore($id): RedirectResponse
     {
@@ -203,78 +242,197 @@ class ProductController extends Controller
     // ==========================================================
     
     /**
-     * Productos con stock bajo
+     * Productos con stock bajo (alerta de reorden)
      */
     public function lowStock(): View
     {
         $products = Product::with(['supplier', 'category'])
-            ->whereColumn('current_stock', '<=', 'minimum_stock')
             ->where('status', 'active')
-            ->orderBy('current_stock', 'asc')
+            ->where('minimum_stock', '>', 0) // Solo productos con stock mínimo configurado
+            ->orderBy('minimum_stock', 'asc')
             ->paginate(10);
         
         return view('products.low-stock', compact('products'));
     }
 
     /**
-     * Productos próximos a vencer
+     * Búsqueda de productos
      */
-    public function expiringSoon(): View
+    public function search(Request $request): View
     {
-        $products = Product::with(['supplier', 'category'])
-            ->whereNotNull('expiration_date')
-            ->whereDate('expiration_date', '<=', now()->addDays(30))
-            ->where('status', 'active')
-            ->orderBy('expiration_date', 'asc')
-            ->paginate(10);
-        
-        return view('products.expiring-soon', compact('products'));
-    }
+        $query = Product::with(['supplier', 'category', 'subcategory', 'specialty']);
 
-    /**
-     * Actualizar stock de un producto
-     */
-    public function updateStock(Request $request, Product $product): RedirectResponse
-    {
-        $validated = $request->validate([
-            'quantity' => 'required|integer',
-            'operation' => 'required|in:add,subtract,set'
-        ]);
-
-        $currentStock = $product->current_stock;
-
-        switch ($validated['operation']) {
-            case 'add':
-                $newStock = $currentStock + $validated['quantity'];
-                break;
-            case 'subtract':
-                $newStock = max(0, $currentStock - $validated['quantity']);
-                break;
-            case 'set':
-                $newStock = max(0, $validated['quantity']);
-                break;
+        // Búsqueda por nombre o código
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
-        $product->update(['current_stock' => $newStock]);
+        // Filtro por categoría
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
 
-        return redirect()->back()
-            ->with('success', 'Stock actualizado correctamente.');
+        // Filtro por proveedor
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        // Filtro por tipo de tracking
+        if ($request->filled('tracking_type')) {
+            $query->where('tracking_type', $request->tracking_type);
+        }
+
+        // Filtro por estado
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $products = $query->latest()->paginate(10);
+        
+        // Para mantener los filtros en la paginación
+        $products->appends($request->all());
+
+        return view('products.index', compact('products'));
     }
 
     /**
-     * Buscar producto por RFID
+     * Productos que requieren esterilización
      */
-    public function searchByRfid(Request $request): View
+    public function requiresSterilization(): View
     {
-        $request->validate([
-            'rfid_tag_id' => 'required|string'
-        ]);
+        $products = Product::with(['supplier', 'category'])
+            ->where('requires_sterilization', true)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->paginate(10);
+        
+        return view('products.requires-sterilization', compact('products'));
+    }
 
-        $product = Product::with(['supplier', 'category', 'medicalSpecialty'])
-            ->where('rfid_tag_id', $request->rfid_tag_id)
-            ->where('rfid_enabled', true)
-            ->first();
+    /**
+     * Productos que requieren refrigeración
+     */
+    public function requiresRefrigeration(): View
+    {
+        $products = Product::with(['supplier', 'category'])
+            ->where('requires_refrigeration', true)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->paginate(10);
+        
+        return view('products.requires-refrigeration', compact('products'));
+    }
 
-        return view('products.rfid-result', compact('product'));
+    /**
+     * Productos que requieren control de temperatura
+     */
+    public function requiresTemperature(): View
+    {
+        $products = Product::with(['supplier', 'category'])
+            ->where('requires_temperature', true)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->paginate(10);
+        
+        return view('products.requires-temperature', compact('products'));
+    }
+
+    /**
+     * Estadísticas generales del catálogo
+     */
+    public function statistics(): View
+    {
+        $stats = [
+            'total' => Product::count(),
+            'active' => Product::where('status', 'active')->count(),
+            'inactive' => Product::where('status', 'inactive')->count(),
+            'discontinued' => Product::where('status', 'discontinued')->count(),
+            'tracking_code' => Product::where('tracking_type', 'code')->count(),
+            'tracking_rfid' => Product::where('tracking_type', 'rfid')->count(),
+            'tracking_serial' => Product::where('tracking_type', 'serial')->count(),
+            'requires_sterilization' => Product::where('requires_sterilization', true)->count(),
+            'requires_refrigeration' => Product::where('requires_refrigeration', true)->count(),
+            'requires_temperature' => Product::where('requires_temperature', true)->count(),
+            'by_category' => Product::with('category')
+                ->selectRaw('category_id, count(*) as total')
+                ->groupBy('category_id')
+                ->get(),
+            'by_supplier' => Product::with('supplier')
+                ->selectRaw('supplier_id, count(*) as total')
+                ->groupBy('supplier_id')
+                ->get(),
+        ];
+        
+        return view('products.statistics', compact('stats'));
+    }
+
+    /**
+     * Exportar catálogo a CSV
+     */
+    public function exportCsv()
+    {
+        $products = Product::with(['supplier', 'category', 'subcategory', 'specialty'])->get();
+        
+        $filename = 'catalogo_productos_' . now()->format('Y-m-d_His') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function() use ($products) {
+            $file = fopen('php://output', 'w');
+            
+            // Encabezados
+            fputcsv($file, [
+                'ID',
+                'Código',
+                'Nombre',
+                'Descripción',
+                'Proveedor',
+                'Categoría',
+                'Subcategoría',
+                'Especialidad',
+                'Tipo Tracking',
+                'Requiere Esterilización',
+                'Requiere Refrigeración',
+                'Requiere Control Temperatura',
+                'Stock Mínimo',
+                'Precio Lista',
+                'Estado',
+                'Fecha Creación',
+            ]);
+
+            // Datos
+            foreach ($products as $product) {
+                fputcsv($file, [
+                    $product->id,
+                    $product->code,
+                    $product->name,
+                    $product->description,
+                    $product->supplier?->name ?? 'N/A',
+                    $product->category?->name ?? 'N/A',
+                    $product->subcategory?->name ?? 'N/A',
+                    $product->specialty?->name ?? 'N/A',
+                    $product->tracking_type,
+                    $product->requires_sterilization ? 'Sí' : 'No',
+                    $product->requires_refrigeration ? 'Sí' : 'No',
+                    $product->requires_temperature ? 'Sí' : 'No',
+                    $product->minimum_stock,
+                    $product->list_price,
+                    $product->status,
+                    $product->created_at->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

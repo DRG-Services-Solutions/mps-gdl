@@ -133,8 +133,8 @@
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                           {{-- Proveedor --}}
-                           <div>
+                        {{-- Proveedor --}}
+                        <div>
                                 <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-industry text-gray-400 mr-2"></i>
                                     {{ __('Proveedor') }}
@@ -158,13 +158,11 @@
                                     {{ __('Categoría') }}
                                 </label>
                                 <select name="category_id" id="category_id" x-model="selectedCategory" 
-                                        @change="applyCategoryRules()"
+                                        @change="onCategoryChange()"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" 
-                                                {{ old('category_id') == $category->id ? 'selected' : '' }} 
-                                                data-requires-sterilization="{{ $category->requires_sterilization }}">
+                                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
                                             {{ $category->name }}
                                         </option>
                                     @endforeach
@@ -178,16 +176,21 @@
                                     {{ __('Subcategoría') }}
                                 </label>
                                 <select name="subcategory_id" id="subcategory_id" 
+                                        x-model="selectedSubcategory"
                                         :disabled="!selectedCategory || filteredSubcategories.length === 0"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed">
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     <template x-for="subcategory in filteredSubcategories" :key="subcategory.id">
-                                        <option :value="subcategory.id" :selected="subcategory.id == {{ old('subcategory_id', 'null') }}" x-text="subcategory.name"></option>
+                                        <option :value="subcategory.id" x-text="subcategory.name"></option>
                                     </template>
                                 </select>
                                 <p class="mt-1 text-xs text-gray-500" x-show="!selectedCategory">
                                     <i class="fas fa-info-circle mr-1"></i>
                                     {{ __('Primero seleccione una categoría') }}
+                                </p>
+                                <p class="mt-1 text-xs text-gray-500" x-show="selectedCategory && filteredSubcategories.length === 0">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('No hay subcategorías disponibles para esta categoría') }}
                                 </p>
                             </div>
 
@@ -236,11 +239,7 @@
                             </div>
                         </div>
                         
-                        <div class="space-y-4" x-data="{ 
-                                requiresSterilization: {{ old('requires_sterilization', 0) ? 'true' : 'false' }},
-                                requiresRefrigeration: {{ old('requires_refrigeration', 0) ? 'true' : 'false' }},
-                                requiresTemperature: {{ old('requires_temperature', 0) ? 'true' : 'false' }}
-                            }">
+                        <div class="space-y-4">
                             
                             {{-- Tipo de Rastreo --}}
                             <div>
@@ -268,17 +267,15 @@
                                 @enderror
                             </div>
 
-                            {{-- REQUIERE ESTERILIZACIÓN --}}
+                            {{-- REQUIERE ESTERILIZACIÓN (SIEMPRE HABILITADO) --}}
                             <div>
-                                <label class="relative flex items-start p-4 border-2 rounded-lg shadow-sm bg-white hover:border-indigo-400 cursor-pointer transition-all duration-200"
-                                       :class="isSterilizationDisabled ? 'border-gray-200 opacity-60 cursor-not-allowed' : 'border-gray-300'">
+                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-green-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                         name="requires_sterilization"
                                         id="requires_sterilization"
                                         value="1"
-                                        x-model="requiresSterilization"
-                                        :disabled="isSterilizationDisabled"
-                                        class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {{ old('requires_sterilization') ? 'checked' : '' }}
+                                        class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
                                         <span class="block font-medium text-gray-900 flex items-center">
@@ -292,14 +289,14 @@
                                 </label>
                             </div>
 
-                            {{-- REQUIERE REFRIGERACIÓN --}}
+                            {{-- REQUIERE REFRIGERACIÓN (SIEMPRE HABILITADO) --}}
                             <div>
                                 <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-blue-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                             name="requires_refrigeration"
                                             id="requires_refrigeration"
                                             value="1"
-                                            x-model="requiresRefrigeration"
+                                            {{ old('requires_refrigeration') ? 'checked' : '' }}
                                             class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
@@ -314,14 +311,14 @@
                                 </label>
                             </div>
 
-                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C --}}
+                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C (SIEMPRE HABILITADO) --}}
                             <div>
                                 <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-orange-400 cursor-pointer transition-all duration-200">
                                     <input type="checkbox"
                                             name="requires_temperature"
                                             id="requires_temperature"
                                             value="1"
-                                            x-model="requiresTemperature"
+                                            {{ old('requires_temperature') ? 'checked' : '' }}
                                             class="h-5 w-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5">
 
                                     <span class="ml-3 text-sm flex-1">
@@ -372,7 +369,7 @@
                             <div>
                                 <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    {{ __('Precio de Lista') }}
+                                    {{ __('Precio Unitario') }}
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-medium">
@@ -410,45 +407,28 @@
         </div>
     </div>
 
- @push('scripts')
+@push('scripts')
 <script>
     function productForm(allSubcategories) {
         return {
+            // Estado inicial
             selectedCategory: '{{ old("category_id") ?? "" }}',
-            requiresSterilization: {{ old('requires_sterilization') ? 'true' : 'false' }},
-
-            get isSterilizationDisabled() {
-                const select = document.getElementById('category_id');
-                const option = select.options[select.selectedIndex];
+            selectedSubcategory: '{{ old("subcategory_id") ?? "" }}',
             
-                if (!option || option.value === "") return true;
-
-                const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
-                
-                return !(requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true');
-            },
-
+            // Computed: Filtra subcategorías por categoría seleccionada
             get filteredSubcategories() {
-                if (!this.selectedCategory) return [];
-                return allSubcategories.filter(sub => String(sub.category_id) === String(this.selectedCategory));
+                if (!this.selectedCategory) {
+                    return [];
+                }
+                return allSubcategories.filter(sub => {
+                    return String(sub.category_id) === String(this.selectedCategory);
+                });
             },
 
-            applyCategoryRules() {
-                const select = document.getElementById('category_id');
-                const option = select.options[select.selectedIndex];
-
-                document.getElementById('subcategory_id').value = '';
-
-                if (option && option.value !== "") { 
-                    const requiresSterilizationAttr = option.getAttribute('data-requires-sterilization');
-                    const categoryRequiresSterilization = requiresSterilizationAttr === '1' || requiresSterilizationAttr === 'true';
-                    
-                    if (!categoryRequiresSterilization) {
-                        this.requiresSterilization = false;
-                    }
-                } else {
-                    this.requiresSterilization = false;
-                }
+            // Método que se ejecuta al cambiar la categoría
+            onCategoryChange() {
+                // Solo limpiar la subcategoría al cambiar la categoría
+                this.selectedSubcategory = '';
             }
         }
     }

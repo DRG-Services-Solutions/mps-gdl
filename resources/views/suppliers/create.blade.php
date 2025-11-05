@@ -138,11 +138,11 @@
                         </div>
 
                         {{-- Teléfono --}}
-                        <div>
+                        <div class="mb-5">
                             <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('Teléfono') }}
                             </label>
-                            <div class="relative">
+                            <div class="relative mb-5">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i class="fas fa-phone text-gray-400"></i>
                                 </div>
@@ -158,6 +158,53 @@
                                     <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                                 </p>
                             @enderror
+
+                            {{-- RFC --}}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- RFC --}}
+                            <div>
+                                <label for="rfc" class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ __('RFC') }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                    <input type="text" 
+                                           name="rfc" 
+                                           id="contact_person" 
+                                           value="{{ old('rfc') }}"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('rfc') border-red-500 @enderror"
+                                           placeholder="ej: XAXX010101000">
+                                </div>
+                                @error('rfc')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
+                            {{-- Razon Social --}}
+                            <div>
+                                <label for="razon_social" class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ __('Razon Social') }}
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-user text-gray-400"></i>
+                                    </div>
+                                    <input type="text" 
+                                           name="razon_social" 
+                                           id="razon_social" 
+                                           value="{{ old('razon_social') }}"
+                                           class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('razon_social') border-red-500 @enderror"
+                                           placeholder="ej: Medical S.A. DE C.V.">
+                                </div>
+                                @error('razon_social')
+                                    <p class="mt-1 text-sm text-red-600">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                    </p>
+                                @enderror
+                            </div>
                         </div>
 
                         {{-- Dirección --}}
@@ -181,6 +228,8 @@
                                 </p>
                             @enderror
                         </div>
+
+                        
 
                         {{-- Estado Activo --}}
                         <div class="flex items-center">

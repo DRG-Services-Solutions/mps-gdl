@@ -38,6 +38,8 @@ class SupplierController extends Controller
             'email' => 'required|email|max:255|unique:suppliers,email',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
+            'rfc' => 'nullable|string|max:250',
+            'razon_social' => 'nullable|string|max:250',
             'is_active' => 'boolean',
         ]);
 
@@ -78,6 +80,8 @@ class SupplierController extends Controller
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
             'is_active' => 'boolean',
+            'rfc' => 'nullable|string|max:255',
+            'razon_social' => 'nullable|string|max:250',
         ]);
 
         $supplier->update($validated);

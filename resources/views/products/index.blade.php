@@ -14,7 +14,7 @@
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="{ showDeleteModal: false, productToDelete: null }">
+    <div class="py-8" x-data="{ showDeleteModal: false, productToDelete: null, showFilters: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 
@@ -37,6 +37,203 @@
                             {{ __('Agregar al Catálogo') }}
                         </a>
                     </div>
+                </div>
+
+                <!-- Search and Filters Section -->
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <form method="GET" action="{{ route('products.index') }}" class="space-y-4">
+                        <!-- Quick Search Bar -->
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" 
+                                       name="search" 
+                                       value="{{ request('search') }}"
+                                       placeholder="{{ __('Buscar por nombre o código...') }}"
+                                       class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200">
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <button type="button" 
+                                        @click="showFilters = !showFilters"
+                                        class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                                    <i class="fas fa-filter mr-2"></i>
+                                    {{ __('Filtros') }}
+                                    <span x-show="showFilters">
+                                        <i class="fas fa-chevron-up ml-2"></i>
+                                    </span>
+                                    <span x-show="!showFilters">
+                                        <i class="fas fa-chevron-down ml-2"></i>
+                                    </span>
+                                </button>
+                                
+                                <button type="submit" 
+                                        class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md">
+                                    <i class="fas fa-search mr-2"></i>
+                                    {{ __('Buscar') }}
+                                </button>
+                                
+                                @if(request()->hasAny(['search', 'supplier_id', 'category_id', 'tracking_type', 'status']))
+                                    <a href="{{ route('products.index') }}" 
+                                       class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200">
+                                        <i class="fas fa-times mr-2"></i>
+                                        {{ __('Limpiar') }}
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Advanced Filters (Collapsible) -->
+                        <div x-show="showFilters" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 transform -translate-y-2"
+                             x-transition:enter-end="opacity-100 transform translate-y-0"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100 transform translate-y-0"
+                             x-transition:leave-end="opacity-0 transform -translate-y-2"
+                             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200"
+                             style="display: none;">
+                            
+                            <!-- Supplier Filter -->
+                            <div>
+                                <label for="supplier_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-building mr-1 text-gray-400"></i>
+                                    {{ __('Proveedor') }}
+                                </label>
+                                <select name="supplier_id" 
+                                        id="supplier_id"
+                                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm rounded-lg transition-all duration-200">
+                                    <option value="">{{ __('Todos los proveedores') }}</option>
+                                    @foreach($suppliers ?? [] as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                            {{ $supplier->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div>
+                                <label for="category_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-tag mr-1 text-gray-400"></i>
+                                    {{ __('Categoría') }}
+                                </label>
+                                <select name="category_id" 
+                                        id="category_id"
+                                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm rounded-lg transition-all duration-200">
+                                    <option value="">{{ __('Todas las categorías') }}</option>
+                                    @foreach($categories ?? [] as $category)
+                                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Tracking Type Filter -->
+                            <div>
+                                <label for="tracking_type" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-barcode mr-1 text-gray-400"></i>
+                                    {{ __('Tipo de Tracking') }}
+                                </label>
+                                <select name="tracking_type" 
+                                        id="tracking_type"
+                                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm rounded-lg transition-all duration-200">
+                                    <option value="">{{ __('Todos los tipos') }}</option>
+                                    <option value="code" {{ request('tracking_type') == 'code' ? 'selected' : '' }}>
+                                        <i class="fas fa-boxes"></i> Code
+                                    </option>
+                                    <option value="rfid" {{ request('tracking_type') == 'rfid' ? 'selected' : '' }}>
+                                        <i class="fas fa-wifi"></i> RFID
+                                    </option>
+                                    <option value="serial" {{ request('tracking_type') == 'serial' ? 'selected' : '' }}>
+                                        <i class="fas fa-hashtag"></i> Serial
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Status Filter -->
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-info-circle mr-1 text-gray-400"></i>
+                                    {{ __('Estado') }}
+                                </label>
+                                <select name="status" 
+                                        id="status"
+                                        class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm rounded-lg transition-all duration-200">
+                                    <option value="">{{ __('Todos los estados') }}</option>
+                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>
+                                        {{ __('Activo') }}
+                                    </option>
+                                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>
+                                        {{ __('Inactivo') }}
+                                    </option>
+                                    <option value="discontinued" {{ request('status') == 'discontinued' ? 'selected' : '' }}>
+                                        {{ __('Descontinuado') }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Active Filters Display -->
+                        @if(request()->hasAny(['search', 'supplier_id', 'category_id', 'tracking_type', 'status']))
+                            <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                                <span class="text-sm font-medium text-gray-700">{{ __('Filtros activos:') }}</span>
+                                
+                                @if(request('search'))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                        {{ __('Búsqueda: ') }} "{{ request('search') }}"
+                                        <a href="{{ route('products.index', array_diff_key(request()->query(), ['search' => ''])) }}" 
+                                           class="ml-1.5 text-indigo-600 hover:text-indigo-800">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </a>
+                                    </span>
+                                @endif
+                                
+                                @if(request('supplier_id'))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        {{ __('Proveedor: ') }} {{ $suppliers->find(request('supplier_id'))?->name }}
+                                        <a href="{{ route('products.index', array_diff_key(request()->query(), ['supplier_id' => ''])) }}" 
+                                           class="ml-1.5 text-purple-600 hover:text-purple-800">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </a>
+                                    </span>
+                                @endif
+                                
+                                @if(request('category_id'))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                                        {{ __('Categoría: ') }} {{ $categories->find(request('category_id'))?->name }}
+                                        <a href="{{ route('products.index', array_diff_key(request()->query(), ['category_id' => ''])) }}" 
+                                           class="ml-1.5 text-pink-600 hover:text-pink-800">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </a>
+                                    </span>
+                                @endif
+                                
+                                @if(request('tracking_type'))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ __('Tracking: ') }} {{ strtoupper(request('tracking_type')) }}
+                                        <a href="{{ route('products.index', array_diff_key(request()->query(), ['tracking_type' => ''])) }}" 
+                                           class="ml-1.5 text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </a>
+                                    </span>
+                                @endif
+                                
+                                @if(request('status'))
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        {{ __('Estado: ') }} {{ __(ucfirst(request('status'))) }}
+                                        <a href="{{ route('products.index', array_diff_key(request()->query(), ['status' => ''])) }}" 
+                                           class="ml-1.5 text-green-600 hover:text-green-800">
+                                            <i class="fas fa-times text-xs"></i>
+                                        </a>
+                                    </span>
+                                @endif
+                            </div>
+                        @endif
+                    </form>
                 </div>
 
                 <!-- Success Message -->
@@ -225,14 +422,22 @@
                                 <tr>
                                     <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center">
-                                            <i class="fas fa-book-open text-gray-400 text-5xl mb-4"></i>
-                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('Catálogo Vacío') }}</h3>
-                                            <p class="text-sm text-gray-500 mb-4">{{ __('Comienza agregando productos al catálogo maestro') }}</p>
-                                            <a href="{{ route('products.create') }}" 
-                                               class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
-                                                <i class="fas fa-plus mr-2"></i>
-                                                {{ __('Agregar Primer Producto') }}
-                                            </a>
+                                            <i class="fas fa-box-open text-gray-400 text-5xl mb-4"></i>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No se encontraron productos') }}</h3>
+                                            <p class="text-sm text-gray-500 mb-4">{{ __('Intenta ajustar tus filtros de búsqueda') }}</p>
+                                            @if(request()->hasAny(['search', 'supplier_id', 'category_id', 'tracking_type', 'status']))
+                                                <a href="{{ route('products.index') }}" 
+                                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
+                                                    <i class="fas fa-redo mr-2"></i>
+                                                    {{ __('Limpiar Filtros') }}
+                                                </a>
+                                            @else
+                                                <a href="{{ route('products.create') }}" 
+                                                   class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
+                                                    <i class="fas fa-plus mr-2"></i>
+                                                    {{ __('Agregar Primer Producto') }}
+                                                </a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -249,7 +454,7 @@
                                 {{ __('Mostrando') }} {{ $products->firstItem() }} {{ __('al') }} {{ $products->lastItem() }} {{ __('de') }} {{ $products->total() }} {{ __('productos') }}
                             </div>
                             <div>
-                                {{ $products->links() }}
+                                {{ $products->appends(request()->query())->links() }}
                             </div>
                         </div>
                     </div>

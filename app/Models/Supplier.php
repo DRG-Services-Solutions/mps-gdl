@@ -14,6 +14,8 @@ class Supplier extends Model
         'phone',
         'address',
         'is_active',
+        'rfc',
+        'razon_social'
     ];
 
     protected $casts = [

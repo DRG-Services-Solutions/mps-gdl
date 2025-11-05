@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             
             // Identificadores únicos (solo uno será usado según el tipo de producto)
-            $table->string('epc')->unique()->nullable()->comment('Código EPC para RFID');
-            $table->string('serial_number')->unique()->nullable()->comment('Número de serie para instrumentales');
+            $table->string('epc')->nullable()->comment('Código EPC para RFID');
+            $table->string('serial_number')->nullable()->comment('Número de serie para instrumentales');
             
             // Información de lote y caducidad
             $table->string('batch_number')->nullable()->comment('Número de lote del fabricante');
@@ -28,16 +28,16 @@ return new class extends Migration
             
             // Estado actual de la unidad
             $table->enum('status', [
-                'available',        // Disponible para uso
-                'in_use',           // En uso actualmente
-                'reserved',         // Reservado para cirugía
-                'in_sterilization', // En proceso de esterilización
-                'maintenance',      // En mantenimiento
-                'quarantine',       // En cuarentena/revisión
-                'damaged',          // Dañado/No funcional
-                'expired',          // Caducado
-                'lost',             // Extraviado
-                'retired'           // Dado de baja
+                'available',        
+                'in_use',           
+                'reserved',         
+                'in_sterilization', 
+                'maintenance',      
+                'quarantine',       
+                'damaged',          
+                'expired',          
+                'lost',             
+                'retired'           
             ])->default('available');
             
             // Ubicación actual
@@ -81,8 +81,8 @@ return new class extends Migration
             $table->index('expiration_date', 'idx_expiration');
             $table->index('status', 'idx_status');
             $table->index('batch_number', 'idx_batch');
-            $table->index(['epc', 'deleted_at'], 'idx_epc_active');
-            $table->index(['serial_number', 'deleted_at'], 'idx_serial_active');
+            $table->unique(['epc', 'deleted_at'], 'unique_epc_active');
+            $table->unique(['serial_number', 'deleted_at'], 'unique_serial_active');        
         });
     }
 

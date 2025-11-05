@@ -25,10 +25,7 @@ class ProductCategorySeeder extends Seeder
                 'name' => 'Instrumental Quirúrgico',
                 'description' => 'Sets quirúrgicos que requieren esterilización antes y después de cada cirugía.'
             ],
-            [
-                'name' => 'Consola / Equipo Base',
-                'description' => 'Unidad base a la que se conectan ciertos consumibles bajo compatibilidad exclusiva.'
-            ],
+        
         ];
         $now = Carbon::now();
 
