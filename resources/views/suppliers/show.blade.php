@@ -101,6 +101,32 @@
                             </div>
                         </div>
 
+                        {{-- RFC --}}
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fa fa-solid fa-file text-red-600"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">{{ __('RFC') }}</p>
+                                <p class="text-base font-semibold text-gray-900">{{ $supplier->rfc ?? 'No especificada' }}</p>
+                            </div>
+                        </div>
+
+                        {{-- Razon Social --}}
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="h-10 w-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <i class="fa-solid fa-building-columns text-yellow-600"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">{{ __('Razon Social') }}</p>
+                                <p class="text-base font-semibold text-gray-900">{{ $supplier->razon_social ?? 'No especificada' }}</p>
+                            </div>
+                        </div>
+
                         {{-- Dirección --}}
                         <div class="flex items-start space-x-3">
                             <div class="flex-shrink-0">

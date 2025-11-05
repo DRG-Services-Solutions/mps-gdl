@@ -156,6 +156,54 @@
                             @enderror
                         </div>
 
+                        {{-- rfc --}}
+                        <div>
+                            <label for="rfc" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ __('RFC') }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute top-3 left-3 pointer-events-none">
+                                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                                </div>
+                                <input    type="text"
+                                          name="rfc" 
+                                          id="rfc" 
+                                          value="{{ old('rfc', $supplier->rfc) }}"
+                                          class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('rfc') border-red-500 @enderror">
+                            </div>
+                            @error('rfc')
+                                <p class="mt-1 text-sm text-red-600">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+
+                        {{-- razon social --}}
+                        <div>
+                            <label for="razon_social" class="block text-sm font-medium text-gray-700 mb-2">
+                                {{ __('Razon Social') }}
+                            </label>
+                            <div class="relative">
+                                <div class="absolute top-3 left-3 pointer-events-none">
+                                    <i class="fas fa-map-marker-alt text-gray-400"></i>
+                                </div>
+                                <input    type="text"
+                                          name="razon_social" 
+                                          id="razon_social" 
+                                          value="{{ old('razon_social', $supplier->razon_social) }}"
+                                          class="block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('razon_social') border-red-500 @enderror">
+                            </div>
+                            @error('razon_social')
+                                <p class="mt-1 text-sm text-red-600">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+
+                        
+
                         {{-- Dirección --}}
                         <div>
                             <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
