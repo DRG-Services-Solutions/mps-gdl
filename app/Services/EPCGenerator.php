@@ -181,38 +181,35 @@ ZPL;
      * @param string $epc
      * @return string
      */
+    /**
+ * Genera comando ZPL MINIMALISTA para codificación RFID
+ * Usa ^RFW,H (formato hexadecimal simple)
+ * 
+ * @param string $epc
+ * @return string
+ */
     public static function generateZPLRFIDOnly($epc)
     {
         // Validar EPC
         if (!self::validateEPC($epc)) {
-            throw new \Exception("EPC inválido para generar ZPL: {$epc}");
+            throw new \Exception("EPC inválido: {$epc}");
         }
         
-        $lengthInWords = 6;
+        \Log::info("=== GENERANDO ZPL CON ^RFW,H ===");
+        \Log::info("EPC: {$epc}");
+        \Log::info("Longitud: " . strlen($epc));
         
-        $zpl = <<<ZPL
-^XA
-
-~TA000
-~JSN
-^LT0
-^MNW
-^MTT
-^PON
-^PMN
-^LH0,0
-
-^MMT
-^PW591
-^LL144
-^LS0
-
-^RS8
-^RFW,E,2,{$lengthInWords}^FD{$epc}^FS
-
-^XZ
-ZPL;
-
+        // ========================================
+        // COMANDO FUNCIONAL (formato H)
+        // ========================================
+        $zpl = "^XA\n";
+        $zpl .= "^RFW,H^FD{$epc}^FS\n";  // 🎯 ESTE ES EL COMANDO CORRECTO
+        $zpl .= "^XZ";
+        
+        \Log::info("ZPL generado:");
+        \Log::info($zpl);
+        \Log::info("================================");
+        
         return $zpl;
     }
     

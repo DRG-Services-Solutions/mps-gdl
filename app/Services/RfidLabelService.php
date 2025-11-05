@@ -86,50 +86,27 @@ class RfidLabelService
      * - longitud: 12 = cantidad de words (12 words × 16 bits = 192 bits, pero usamos 96 bits = 6 words)
      */
     public function generateZPL(array $labelData): string
-    {
-        $epc = $labelData['epc'];
-        
-        // Validar que el EPC tenga exactamente 24 caracteres hexadecimales
-        if (strlen($epc) !== 24 || !ctype_xdigit($epc)) {
-            throw new \Exception("EPC inválido: debe ser 24 caracteres hexadecimales. Recibido: {$epc}");
-        }
-
-        // Calcular longitud en WORDS (no en caracteres)
-        // 24 chars hex = 12 bytes = 96 bits = 6 words de 16 bits
-        $lengthInWords = 6;
-        
-        // Cálculos para etiqueta de 7.4cm x 1.8cm a 203 DPI
-        // 74mm / 25.4 * 203 = ~591 dots de ancho
-        // 18mm / 25.4 * 203 = ~144 dots de alto
-        
-        $zpl = <<<ZPL
-^XA
-
-~TA000
-~JSN
-^LT0
-^MNW
-^MTT
-^PON
-^PMN
-^LH0,0
-
-^MMT
-^PW591
-^LL144
-^LS0
-
-^RS8
-^RFW,E,2,{$lengthInWords}^FD{$epc}^FS
-
-^XZ
-ZPL;
-
-        \Log::info("🏷️ ZPL generado para EPC: {$epc}");
-        \Log::info("   └─ Longitud: {$lengthInWords} words (96 bits)");
-
-        return $zpl;
+{
+    $epc = $labelData['epc'];
+    
+    // Validar EPC
+    if (strlen($epc) !== 24 || !ctype_xdigit($epc)) {
+        throw new \Exception("EPC inválido: debe ser 24 caracteres hexadecimales. Recibido: {$epc}");
     }
+
+    \Log::info("🏷️ Generando ZPL para EPC: {$epc}");
+    
+    // ========================================
+    // COMANDO CORRECTO: ^RFW,H (no E,2,6)
+    // ========================================
+    $zpl = "^XA\n";
+    $zpl .= "^RFW,H^FD{$epc}^FS\n";  // 🎯 Formato hexadecimal simple
+    $zpl .= "^XZ";
+
+    \Log::info("✅ ZPL generado con ^RFW,H");
+    
+    return $zpl;
+}
 
     /**
      * Crear trabajos de impresión para una recepción
