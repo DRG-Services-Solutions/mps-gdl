@@ -14,6 +14,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\StorageLocationController;
 use App\Http\Controllers\PurchaseOrderReceiptController;
 use App\Http\Controllers\PrintJobMonitorController;
+use App\Http\Controllers\ProductLayoutController;
 
 
 Route::get('/', function () {
@@ -76,7 +77,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('receipts.print-jobs.retry');
     Route::post('/receipts/{receipt}/print-jobs/cancel', [PrintJobMonitorController::class, 'cancel'])
         ->name('receipts.print-jobs.cancel');
-
+    //ruta de prodcutsLayout
+    Route::resource('product_layouts', ProductLayoutController::class);
 
 
     // ========================================
