@@ -14,7 +14,7 @@ class ProductLayoutController extends Controller
      */
     public function index()
     {
-        $productlayouts = ProductLayout::with('storageLocation')
+        $productLayouts = ProductLayout::with('storageLocation')
                                         ->latest()
                                         ->paginate(20);
         return view('product_layouts.index', compact('productLayouts'));                                
@@ -25,9 +25,9 @@ class ProductLayoutController extends Controller
      */
     public function create()
     {
-        $storageLocations = StorageLocation::orderBy('name)')->get();
+        $storageLocations = StorageLocation::orderBy('name')->get();
 
-        return view('product_layout.create', compact('storageLocations'));
+        return view('product_layouts.create', compact('storageLocations'));
     }
 
     /**
@@ -38,13 +38,11 @@ class ProductLayoutController extends Controller
         $validated = $request->validate([
             //Claves foraneas de la tabla, estas deben existir en sus propias tablas
             'storage_location_id' => 'required|exists:storage_locations,id',
-            'product_id' => 'required|exists:products,id',
-
             //estante
             'shelf' => 'required|integer|min:1',
 
             //nivel
-            'level' => 'required|sgtring|max:2',
+            'level' => 'required|string|max:2',
 
             //posicion
             'position' => 'required|numeric',

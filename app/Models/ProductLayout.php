@@ -8,7 +8,6 @@ class ProductLayout extends Model
 {
     protected $fillable = [
         'storage_location_id',
-        'product_id',
         'shelf',
         'level',
         'position',

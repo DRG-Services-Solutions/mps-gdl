@@ -34,7 +34,6 @@
                     <select id="storage_location_id" name="storage_location_id" required
                             class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('storage_location_id') border-red-500 @enderror">
                         <option value="">{{ __('Seleccione una bodega') }}</option>
-                        {{-- $storageLocations viene del método create() del controlador --}}
                         @foreach($storageLocations as $location)
                             <option value="{{ $location->id }}" {{ old('storage_location_id') == $location->id ? 'selected' : '' }}>
                                 {{ $location->name }} ({{ $location->code }})
@@ -44,22 +43,6 @@
                     @error('storage_location_id')
                         <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
                     @enderror
-                </div>
-
-                {{-- Campo de Producto (Asumiendo que tienes una lista de $products) --}}
-                {{-- Si no tienes la lista $products en el controlador, remueve este bloque o añádela --}}
-                <div>
-                    <label for="product_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        {{ __('Producto') }} <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="product_id" name="product_id" required
-                            placeholder="ID o Código de Producto (temporal)"
-                            value="{{ old('product_id') }}"
-                            class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('product_id') border-red-500 @enderror">
-                    @error('product_id')
-                        <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
-                    @enderror
-                    {{-- Idealmente, esto sería un SELECT o un buscador de productos real --}}
                 </div>
 
 
@@ -95,7 +78,7 @@
                     {{-- Posición (position) --}}
                     <div>
                         <label for="position" class="block text-sm font-medium text-gray-700 mb-1">
-                            {{ __('Posición Decimal (Ej: 3.2, 1.0)') }} <span class="text-red-500">*</span>
+                            {{ __('Posición (Ej: 3.2, 1.0)') }} <span class="text-red-500">*</span>
                         </label>
                         <input type="number" id="position" name="position" required
                                value="{{ old('position') }}" step="0.01"
