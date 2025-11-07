@@ -32,4 +32,9 @@ class StorageLocation extends Model
         return $this->hasMany(PurchaseOrder::class, 'destination_warehouse_id');
     }
 
+    public function productLayouts()
+    {
+        return $this->hasMany(ProductLayout::class);
+    }
+
 }

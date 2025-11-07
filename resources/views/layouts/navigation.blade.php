@@ -66,6 +66,14 @@
                     {{ __('Proveedores') }}
                 </x-nav-link>
 
+                 <!-- Lay Out -->
+                <x-nav-link :href="route('product_layouts.index')" :active="request()->routeIs('product_layouts.*')">
+                    <x-slot name="icon">
+                        <i class="fa-solid fa-cart-flatbed text-lg"></i>
+                    </x-slot>
+                    {{ __('Lay Out') }}
+                </x-nav-link>
+
                 
 
                 <!-- Catálogos con Dropdown -->
