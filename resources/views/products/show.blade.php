@@ -85,6 +85,130 @@
                 {{-- Columna Principal --}}
                 <div class="lg:col-span-2 space-y-6">
                     
+                    {{-- UBICACIONES FÍSICAS --}}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-map-marker-alt text-indigo-600 mr-2"></i>
+                                {{ __('Ubicaciones Físicas') }}
+                                @if($product->productLayouts->isNotEmpty())
+                                    <span class="ml-2 px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-bold rounded-full">
+                                        {{ $product->productLayouts->count() }}
+                                    </span>
+                                @endif
+                            </h3>
+                            <a href="{{ route('product_layouts.index') }}" 
+                               class="inline-flex items-center px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-600 text-sm font-medium rounded-lg border border-indigo-200 transition-all duration-200">
+                                <i class="fas fa-plus mr-2"></i>
+                                {{ __('Asignar Nueva Ubicación') }}
+                            </a>
+                        </div>
+                        <div class="p-6">
+                            @if($product->productLayouts->isNotEmpty())
+                                <div class="space-y-3">
+                                    @foreach($product->productLayouts as $layout)
+                                        <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-indigo-50 rounded-lg border border-indigo-100 hover:border-indigo-300 transition-all duration-200 group">
+                                            <div class="flex items-center gap-4 flex-1">
+                                                {{-- Icono de Ubicación --}}
+                                                <div class="flex-shrink-0">
+                                                    <div class="h-12 w-12 rounded-lg bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                                                        <i class="fas fa-warehouse text-indigo-600 text-xl"></i>
+                                                    </div>
+                                                </div>
+                                                
+                                                {{-- Información de Ubicación --}}
+                                                <div class="flex-1">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <h4 class="font-semibold text-gray-900">
+                                                            {{ $layout->storageLocation->name ?? 'N/A' }}
+                                                        </h4>
+                                                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-bold rounded">
+                                                            {{ $layout->storageLocation->code ?? 'N/A' }}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="flex items-center gap-4 text-sm text-gray-600">
+                                                        <span class="inline-flex items-center">
+                                                            <i class="fas fa-layer-group text-indigo-500 mr-1"></i>
+                                                            <strong class="mr-1">Estante:</strong> {{ $layout->shelf }}
+                                                        </span>
+                                                        <span class="inline-flex items-center">
+                                                            <i class="fas fa-sort text-indigo-500 mr-1"></i>
+                                                            <strong class="mr-1">Nivel:</strong> {{ $layout->level }}
+                                                        </span>
+                                                        <span class="inline-flex items-center">
+                                                            <i class="fas fa-map-pin text-indigo-500 mr-1"></i>
+                                                            <strong class="mr-1">Posición:</strong> {{ number_format($layout->position, 2) }}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div class="mt-2">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-600 text-white">
+                                                            <i class="fas fa-barcode mr-1"></i>
+                                                            {{ $layout->full_location_code }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {{-- Acciones --}}
+                                            <div class="flex items-center gap-2">
+                                                <a href="{{ route('product_layouts.show', $layout) }}" 
+                                                   class="inline-flex items-center px-3 py-2 bg-white hover:bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-200 transition-all duration-200"
+                                                   title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                
+                                                <form action="{{ route('product_layouts.remove-product', $layout) }}" 
+                                                      method="POST"
+                                                      onsubmit="return confirm('¿Estás seguro de que deseas remover este producto de esta ubicación?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit"
+                                                            class="inline-flex items-center px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-200 transition-all duration-200"
+                                                            title="Remover de esta ubicación">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                {{-- Resumen de ubicaciones --}}
+                                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="flex items-center gap-2 text-sm text-blue-800">
+                                        <i class="fas fa-info-circle"></i>
+                                        <p>
+                                            <strong>{{ $product->productLayouts->count() }}</strong> 
+                                            {{ $product->productLayouts->count() === 1 ? 'ubicación asignada' : 'ubicaciones asignadas' }} 
+                                            en 
+                                            <strong>{{ $product->productLayouts->pluck('storageLocation')->unique('id')->count() }}</strong>
+                                            {{ $product->productLayouts->pluck('storageLocation')->unique('id')->count() === 1 ? 'bodega' : 'bodegas' }}
+                                        </p>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="text-center py-12">
+                                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
+                                        <i class="fas fa-map-marker-alt text-amber-600 text-2xl"></i>
+                                    </div>
+                                    <h4 class="text-lg font-semibold text-gray-900 mb-2">
+                                        {{ __('Sin ubicaciones asignadas') }}
+                                    </h4>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        {{ __('Este producto no tiene ninguna ubicación física asignada en las bodegas') }}
+                                    </p>
+                                    <a href="{{ route('product_layouts.index') }}" 
+                                       class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
+                                        <i class="fas fa-plus mr-2"></i>
+                                        {{ __('Asignar Primera Ubicación') }}
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
                     {{-- CLASIFICACIÓN --}}
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
