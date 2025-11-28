@@ -479,13 +479,16 @@
 
                     {{-- ACCIONES RÁPIDAS --}}
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+
                         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                                 <i class="fas fa-bolt text-indigo-600 mr-2"></i>
                                 {{ __('Acciones Rápidas') }}
                             </h3>
                         </div>
+                        
                         <div class="p-6 space-y-3">
+
                             <a href="{{ route('products.edit', $product) }}" 
                                class="w-full inline-flex items-center justify-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200">
                                 <i class="fas fa-edit mr-2"></i>
@@ -502,12 +505,11 @@
                                     {{ __('Eliminar Producto') }}
                                 </button>
                             </form>
+
                         </div>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
 </x-app-layout>

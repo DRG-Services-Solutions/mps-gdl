@@ -61,7 +61,7 @@
                                     <option value="">Seleccionar...</option>
                                     @foreach($warehouses as $warehouse)
                                         <option value="{{ $warehouse->id }}" {{ old('destination_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
-                                            {{ $warehouse->full_location }} 
+                                            {{ $warehouse->name }} 
                                         </option>
                                     @endforeach
                                 </select>
