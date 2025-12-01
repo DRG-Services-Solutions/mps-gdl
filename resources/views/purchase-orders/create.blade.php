@@ -50,25 +50,7 @@
                                 @enderror
                             </div>
 
-                            <!-- Almacén Destino -->
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Almacén Destino <span class="text-red-500">*</span>
-                                </label>
-                                <select name="destination_warehouse_id" 
-                                        class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('destination_warehouse_id') border-red-300 @enderror" 
-                                        required>
-                                    <option value="">Seleccionar...</option>
-                                    @foreach($warehouses as $warehouse)
-                                        <option value="{{ $warehouse->id }}" {{ old('destination_warehouse_id') == $warehouse->id ? 'selected' : '' }}>
-                                            {{ $warehouse->full_location }} 
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('destination_warehouse_id')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                            
 
                             <!-- Fecha Esperada -->
                             <div>

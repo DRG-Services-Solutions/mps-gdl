@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('inventory_movements', function (Blueprint $table) {
             $table->id();
+
+            //Relacion con legal entity
+            $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
             // ==========================================================
             // TIPO DE MOVIMIENTO
             // ==========================================================

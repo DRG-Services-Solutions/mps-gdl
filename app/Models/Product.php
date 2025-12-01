@@ -12,6 +12,9 @@ use App\Models\Supplier;
 use App\Models\InventoryMovement;     
 use App\Models\ProductUnit;           
 use App\Models\StorageLocation;       
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 
 class Product extends Model
@@ -68,6 +71,11 @@ class Product extends Model
     public function supplier() 
     {
         return $this->belongsTo(Supplier::class);    
+    }
+
+    public function productLayouts(): HasMany
+    {
+        return $this->hasMany(ProductLayout::class);
     }
 
     /**

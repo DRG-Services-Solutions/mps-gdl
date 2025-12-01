@@ -78,11 +78,7 @@ class PurchaseOrderController extends Controller
     $suppliers = Supplier::orderBy('name')->get();
     
     // Obtener todos los almacenes (storage locations) y ordenarlos por ubicación
-    $warehouses = StorageLocation::orderBy('area')
-        ->orderBy('organizer')
-        ->orderBy('shelf_level')
-        ->orderBy('shelf_section')
-        ->get();
+    $warehouses = StorageLocation::orderBy('name')->get();
 
     // Pasar a la vista
     return view('purchase-orders.create', compact('suppliers', 'warehouses'));
@@ -233,7 +229,6 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder) 
     {   
         $purchaseOrder->load([ 'supplier', 
-        'destinationWarehouse',
         'createdBy', 
         'items.product' ]); 
         // Determina si hay productos pendientes por recibir

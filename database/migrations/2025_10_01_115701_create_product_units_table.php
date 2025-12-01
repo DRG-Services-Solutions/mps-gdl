@@ -13,7 +13,11 @@ return new class extends Migration
     {
         Schema::create('product_units', function (Blueprint $table) {
             $table->id();
-            
+            /**
+             * Relacion con legal entities
+             */
+            $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
+
             // Relación con el producto del catálogo
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             
