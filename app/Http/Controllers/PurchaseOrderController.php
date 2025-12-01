@@ -229,7 +229,6 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder) 
     {   
         $purchaseOrder->load([ 'supplier', 
-        'destinationWarehouse',
         'createdBy', 
         'items.product' ]); 
         // Determina si hay productos pendientes por recibir
