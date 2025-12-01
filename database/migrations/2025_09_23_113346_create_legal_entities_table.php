@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('razon_social');
             $table->string('rfc');
-            $table->text('addess')->nullable();
+            $table->text('address')->nullable();
             $table->string('phone', 20);
             $table->string('email')->nullable();
             $table->string('is_active')->default(true);

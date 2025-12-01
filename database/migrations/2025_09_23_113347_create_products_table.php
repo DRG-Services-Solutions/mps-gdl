@@ -19,7 +19,6 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); // almacena los tipos de productos
             $table->foreignId('subcategory_id')->nullable()->constrained()->nullOnDelete(); // almacena los subprodcutos
             $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 
-
             // ==========================================================
             // IDENTIDAD Y CÓDIGOS DEL PRODUCTO (CATÁLOGO)
             // ==========================================================

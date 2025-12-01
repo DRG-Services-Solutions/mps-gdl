@@ -42,12 +42,11 @@ class LegalEntityController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'razon_social' => 'required|string|max:255',
-            'rfc' => 'required|string|size:13|unique:legal_entities,rfc',
+            'rfc' => 'required|string|unique:legal_entities,rfc',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email',
             'is_active' => 'boolean',
-            'notes' => 'nullable|string',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
