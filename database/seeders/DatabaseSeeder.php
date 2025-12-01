@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
                     MedicalSpecialtySeeder::class,
                     SubcategorySeeder::class,
                     SupplierSeeder::class,
+                    ProductSeeder::class,
 
                 ]);
         $this->call(UserSeeder::class);
