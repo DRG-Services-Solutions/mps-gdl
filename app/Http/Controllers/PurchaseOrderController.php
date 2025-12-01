@@ -12,6 +12,7 @@ use App\Models\ReceiptItem;
 use App\Services\PurchaseOrderService;
 use App\Models\InventoryMovement;
 use App\Models\ProductUnit;
+use App\Models\LegalEntity;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
@@ -21,69 +22,84 @@ use App\Services\RfidLabelService;
 
 class PurchaseOrderController extends Controller
 {
+    protected $purchaseOrderService;
+
+    public function __construct(PurchaseOrderService $purchaseOrderService)
+    {
+        $this->purchaseOrderService = $purchaseOrderService;
+    }
+
     /**
      * Display a listing of purchase orders.
      */
     public function index(Request $request)
-        {
-            $query = PurchaseOrder::with([
-                'supplier',
-                'destinationWarehouse',
-                'createdBy',
-                'items.product', // Para mostrar productos en el acordeón
-                'receipts' => function($q) {
-                    $q->with(['receivedBy', 'warehouse', 'items.product'])
-                    ->latest('received_at');
-                }
-            ])->withCount('receipts'); // Contador de recepciones
-
-            if ($request->has('status') && $request->status != '') {
-                $query->where('status', $request->status);
+    {
+        $query = PurchaseOrder::with([
+            'supplier',
+            'legalEntity', 
+            'destinationWarehouse',
+            'createdBy',
+            'items.product',
+            'receipts' => function($q) {
+                $q->with(['receivedBy', 'warehouse', 'items.product'])
+                  ->latest('received_at');
             }
+        ])->withCount('receipts');
 
-            if ($request->has('supplier_id') && $request->supplier_id != '') {
-                $query->where('supplier_id', $request->supplier_id);
-            }
-
-            if ($request->has('is_paid')) {
-                $query->where('is_paid', $request->boolean('is_paid'));
-            }
-
-            if ($request->has('search') && $request->search != '') {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhereHas('supplier', function($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-                });
-            }
-
-            $purchaseOrders = $query->orderBy('order_date', 'desc')
-                                    ->orderBy('created_at', 'desc')
-                                    ->paginate(15)
-                                    ->withQueryString(); // Para mantener filtros en paginación
-
-            $suppliers = Supplier::active()->orderBy('name')->get();
-
-            return view('purchase-orders.index', compact('purchaseOrders', 'suppliers'));
+        // Filtro por estado
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status', $request->status);
         }
+
+        // Filtro por proveedor
+        if ($request->has('supplier_id') && $request->supplier_id != '') {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        // Filtro por estado de pago
+        if ($request->has('is_paid')) {
+            $query->where('is_paid', $request->boolean('is_paid'));
+        }
+
+        // Búsqueda por texto
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('supplier', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // ✅ Filtro por Legal Entity
+        if ($request->filled('legal_entity')) {
+            $query->where('legal_entity_id', $request->legal_entity);
+        }
+
+        $purchaseOrders = $query->orderBy('order_date', 'desc')
+                                ->orderBy('created_at', 'desc')
+                                ->paginate(15)
+                                ->withQueryString();
+
+        $suppliers = Supplier::active()->orderBy('name')->get();
+        $legalEntities = LegalEntity::active()->orderBy('name')->get(); 
+
+        return view('purchase-orders.index', compact('purchaseOrders', 'suppliers', 'legalEntities')); 
+    }
 
     /**
      * Show the form for creating a new purchase order.
      */
     public function create()
-{
-    // Obtener todos los proveedores (sin filtro is_active)
-    $suppliers = Supplier::orderBy('name')->get();
+    {
+        $suppliers = Supplier::orderBy('name')->get();
+        
     
-    // Obtener todos los almacenes (storage locations) y ordenarlos por ubicación
-    $warehouses = StorageLocation::orderBy('name')->get();
+        $legalEntities = LegalEntity::active()->orderBy('name')->get(); 
 
-    // Pasar a la vista
-    return view('purchase-orders.create', compact('suppliers', 'warehouses'));
-}
- 
+        return view('purchase-orders.create', compact('suppliers', 'legalEntities'));
+    }
 
     /**
      * Store a newly created purchase order.
@@ -93,7 +109,7 @@ class PurchaseOrderController extends Controller
         // 1. Validación de campos estáticos
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
-            'destination_warehouse_id' => 'required|exists:storage_locations,id',
+            'legal_entity_id' => 'required|exists:legal_entities,id', 
             'expected_date' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string',
             'items_json' => 'required|string', 
@@ -110,7 +126,6 @@ class PurchaseOrderController extends Controller
                 throw new \Exception('La orden de compra debe tener al menos un producto.');
             }
 
-            // Obtener los IDs de los productos a ordenar para la validación 'exists'
             $productIds = collect($items)->pluck('product_id')->unique()->toArray();
             
             $itemRules = [
@@ -125,9 +140,9 @@ class PurchaseOrderController extends Controller
                 throw new \Exception('Error de validación en los productos: ' . $validator->errors()->first());
             }
             
-            // ⭐️ Generar el SNAPSHOT de los productos para la inserción
+            // Generar el SNAPSHOT de los productos
             $productsSnapshot = Product::whereIn('id', $productIds)
-                ->get(['id', 'code', 'name', 'description']) // ✅ Incluir 'description'
+                ->get(['id', 'code', 'name', 'description'])
                 ->keyBy('id');
 
             \Log::info('🔍 Snapshot de productos:', ['snapshot' => $productsSnapshot->toArray()]);
@@ -137,7 +152,7 @@ class PurchaseOrderController extends Controller
                 'order_number' => $this->generateOrderNumber(),
                 'created_by' => auth()->id(), 
                 'supplier_id' => $validated['supplier_id'],
-                'destination_warehouse_id' => $validated['destination_warehouse_id'],
+                'legal_entity_id' => $validated['legal_entity_id'], 
                 'expected_date' => $validated['expected_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'order_date' => now(),
@@ -146,18 +161,16 @@ class PurchaseOrderController extends Controller
             
             \Log::info('✅ Orden creada:', ['order_id' => $purchaseOrder->id, 'order_number' => $purchaseOrder->order_number]);
 
-            // 4. Preparar la Inserción Masiva con Snapshot
+            // 4. Preparar la Inserción Masiva
             $itemsToInsert = [];
             foreach ($items as $item) {
                 $productId = $item['product_id'];
                 $snapshot = $productsSnapshot->get($productId);
                 
-                // ⚠️ Verificación de seguridad: si el producto no se encontró, ignorarlo o lanzar error.
                 if (!$snapshot) {
                     throw new \Exception("El producto con ID {$productId} no se encontró o no está disponible.");
                 }
 
-                // El subtotal viene del frontend, pero lo RECALCULAREMOS aquí para máxima seguridad
                 $subtotalCalculated = round($item['quantity_ordered'] * $item['unit_price'], 2);
 
                 $itemsToInsert[] = [
@@ -176,14 +189,13 @@ class PurchaseOrderController extends Controller
                 ];
             }
             
-            // ✅ Log DESPUÉS del foreach para ver el array completo
             \Log::info('📦 Items preparados para insertar:', ['count' => count($itemsToInsert), 'items' => $itemsToInsert]);
 
             $purchaseOrder->items()->createMany($itemsToInsert);
             
             \Log::info('✅ Items insertados en BD:', ['count' => $purchaseOrder->items()->count()]);
 
-            // 5. Calcular Totales y Finalizar
+            // 5. Calcular Totales
             $purchaseOrder->calculateTotals();
             
             \Log::info('💰 Totales calculados:', [
@@ -221,23 +233,27 @@ class PurchaseOrderController extends Controller
                 ->withInput()
                 ->with('error', 'Error al crear la orden de compra: ' . $e->getMessage());
         }
-    }   
+    }
 
     /**
      * Display the specified purchase order.
      */
     public function show(PurchaseOrder $purchaseOrder) 
     {   
-        $purchaseOrder->load([ 'supplier', 
-        'createdBy', 
-        'items.product' ]); 
-        // Determina si hay productos pendientes por recibir
-    $hasPendingItems = $purchaseOrder->items()
-        ->whereColumn('quantity_received', '<', 'quantity_ordered')
-        ->exists();
+        $purchaseOrder->load([
+            'supplier',
+            'legalEntity',
+            'destinationWarehouse',
+            'createdBy', 
+            'items.product'
+        ]); 
 
-    return view('purchase-orders.show', compact('purchaseOrder', 'hasPendingItems'));
+        // Determinar si hay productos pendientes por recibir
+        $hasPendingItems = $purchaseOrder->items()
+            ->whereColumn('quantity_received', '<', 'quantity_ordered')
+            ->exists();
 
+        return view('purchase-orders.show', compact('purchaseOrder', 'hasPendingItems'));
     }
 
     /**
@@ -255,6 +271,7 @@ class PurchaseOrderController extends Controller
         $suppliers = Supplier::active()->orderBy('name')->get();
         $warehouses = StorageLocation::active()->warehouses()->orderBy('name')->get();
         $products = Product::orderBy('name')->get();
+        $legalEntities = LegalEntity::active()->orderBy('name')->get();
 
         // Preparar los items para Alpine.js
         $items = $purchaseOrder->items->map(function ($item) {
@@ -267,17 +284,14 @@ class PurchaseOrderController extends Controller
             ];
         });
 
-        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products', 'items'));
+        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products', 'items', 'legalEntities')); // ✅ CORREGIDO: agregadas comillas
     }
-
-
 
     /**
      * Update the specified purchase order.
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // No permitir editar si está cancelada
         if (!$purchaseOrder->canBeEdited()) {
             return redirect()->route('purchase-orders.show', $purchaseOrder)
                 ->with('error', 'No se puede editar una orden cancelada.');
@@ -286,6 +300,7 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'destination_warehouse_id' => 'required|exists:storage_locations,id',
+            'legal_entity_id' => 'required|exists:legal_entities,id',
             'expected_date' => 'nullable|date',
             'notes' => 'nullable|string',
             
@@ -304,6 +319,7 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->update([
                 'supplier_id' => $validated['supplier_id'],
                 'destination_warehouse_id' => $validated['destination_warehouse_id'],
+                'legal_entity_id' => $validated['legal_entity_id'], 
                 'expected_date' => $validated['expected_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
@@ -353,78 +369,8 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * Cancel the purchase order.
+     * Receive items from purchase order.
      */
-    public function cancel(Request $request, PurchaseOrder $purchaseOrder)
-    {
-        $validated = $request->validate([
-            'cancellation_reason' => 'required|string|max:500',
-        ]);
-
-        if (!$purchaseOrder->canBeEdited()) {
-            return redirect()->back()
-                ->with('error', 'Esta orden ya está cancelada.');
-        }
-
-        $purchaseOrder->update([
-            'status' => 'cancelled',
-            'cancellation_reason' => $validated['cancellation_reason'],
-        ]);
-
-        return redirect()->route('purchase-orders.show', $purchaseOrder)
-            ->with('success', 'Orden de compra cancelada.');
-    }
-
-    /**
-     * Mark as paid.
-     */
-    public function markAsPaid(PurchaseOrder $purchaseOrder)
-    {
-        $purchaseOrder->update([
-            'is_paid' => true,
-            'paid_date' => now(),
-        ]);
-
-        return redirect()->back()
-            ->with('success', 'Orden marcada como pagada.');
-    }
-
-    /**
-     * Mark as unpaid.
-     */
-    public function markAsUnpaid(PurchaseOrder $purchaseOrder)
-    {
-        $purchaseOrder->update([
-            'is_paid' => false,
-            'paid_date' => null,
-        ]);
-
-        return redirect()->back()
-            ->with('success', 'Orden marcada como no pagada.');
-    }
-
-    /**
-     * Get product details for adding to order (AJAX).
-     */
-    public function getProductDetails(Product $product)
-    {
-        return response()->json([
-            'success' => true,
-            'product' => [
-                'id' => $product->id,
-                'code' => $product->code,
-                'name' => $product->name,
-                'description' => $product->description,
-                'unit_price' => $product->price ?? 0, // Asume que tienes un campo price
-            ]
-        ]);
-    }
-
-    public function __construct(PurchaseOrderService $purchaseOrderService)
-    {
-        $this->purchaseOrderService = $purchaseOrderService;
-    }
-
     public function receive(Request $request, PurchaseOrder $purchaseOrder)
     {
         if (!$purchaseOrder->canBeReceived()) {
@@ -441,7 +387,6 @@ class PurchaseOrderController extends Controller
             'notes' => 'nullable|string|max:1000',
             'invoice_number' => 'nullable|string|max:255',      
             'invoice_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240', 
-
         ]);
 
         DB::beginTransaction();
@@ -515,7 +460,6 @@ class PurchaseOrderController extends Controller
                 if ($condition === 'good') {
                     $product = Product::findOrFail($orderItem->product_id);
                     
-                    // Determinar status inicial según condición
                     $initialStatus = match($condition) {
                         'damaged' => 'damaged',
                         'expired' => 'expired',
@@ -524,15 +468,14 @@ class PurchaseOrderController extends Controller
 
                     switch ($product->tracking_type) {
                         case 'stock':
-                            // ==========================================
                             // PRODUCTOS CON TRACKING POR CANTIDAD (CONSUMIBLES)
-                            // ==========================================
                             InventoryMovement::create([
                                 'type' => 'entry',
                                 'product_id' => $product->id,
                                 'product_unit_id' => null,
+                                'legal_entity_id' => $purchaseOrder->legal_entity_id,
                                 'quantity' => $quantityToReceive,
-                                'from_location_id' => null, // Viene del proveedor (externo)
+                                'from_location_id' => null,
                                 'to_location_id' => $purchaseOrder->destination_warehouse_id,
                                 'user_id' => auth()->id(),
                                 'reference_number' => $receipt->receipt_number,
@@ -549,13 +492,12 @@ class PurchaseOrderController extends Controller
 
                         case 'rfid':
                         case 'serial':
-                            // ==========================================
                             // PRODUCTOS CON TRACKING INDIVIDUAL (INSTRUMENTALES)
-                            // ==========================================
                             for ($i = 0; $i < $quantityToReceive; $i++) {
                                 // Crear unidad individual
                                 $unit = ProductUnit::create([
                                     'product_id' => $product->id,
+                                    'legal_entity_id' => $purchaseOrder->legal_entity_id,
                                     'epc' => $product->tracking_type === 'rfid' ? $this->generateEPC() : null,
                                     'serial_number' => $product->tracking_type === 'serial' ? $this->generateSerialNumber($product) : null,
                                     'batch_number' => $itemData['batch_number'] ?? null,
@@ -574,6 +516,7 @@ class PurchaseOrderController extends Controller
                                     'type' => 'entry',
                                     'product_id' => $product->id,
                                     'product_unit_id' => $unit->id,
+                                    'legal_entity_id' => $purchaseOrder->legal_entity_id, 
                                     'quantity' => 1,
                                     'from_location_id' => null,
                                     'to_location_id' => $purchaseOrder->destination_warehouse_id,
@@ -591,11 +534,12 @@ class PurchaseOrderController extends Controller
 
                         case 'none':
                         default:
-                            // Sin tracking, solo registrar en movimientos para historial
+                            // Sin tracking
                             InventoryMovement::create([
                                 'type' => 'entry',
                                 'product_id' => $product->id,
                                 'product_unit_id' => null,
+                                'legal_entity_id' => $purchaseOrder->legal_entity_id, 
                                 'quantity' => $quantityToReceive,
                                 'from_location_id' => null,
                                 'to_location_id' => $purchaseOrder->destination_warehouse_id,
@@ -628,7 +572,8 @@ class PurchaseOrderController extends Controller
                     'status' => 'partial',
                 ]);
             }
-            // ✅ Generar trabajos de impresión RFID
+
+            // Generar trabajos de impresión RFID
             $rfidService = new RfidLabelService();
             $printJobsCreated = $rfidService->createPrintJobsForReceipt($receipt);
 
@@ -641,12 +586,10 @@ class PurchaseOrderController extends Controller
             }
             $message .= " Número de recepción: {$receipt->receipt_number}";
 
-            // Agregar información de etiquetas RFID si aplica
             if ($printJobsCreated > 0) {
                 $message .= " 🏷️ {$printJobsCreated} etiquetas RFID encoladas para impresión.";
             }
 
-            // Redireccionar con mensaje y enlace a trabajos de impresión
             return redirect()
                 ->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', $message)
@@ -665,64 +608,78 @@ class PurchaseOrderController extends Controller
         }
     }
 
-private function generateOrderNumber(): string
-{
-    // Obtener la fecha de hoy en formato YYYYMMDD
-    $today = now()->format('Ymd');
-    
-    // Contar cuántas órdenes ya se han creado hoy
-    // Usamos 'like' para buscar órdenes que empiecen con el prefijo de hoy
-    $count = \App\Models\PurchaseOrder::where('order_number', 'like', "OC-{$today}-%")
-        ->count();
-    
-    // El siguiente consecutivo es el contador + 1
-    $nextNumber = $count + 1;
-    
-    // Formatear el consecutivo con ceros a la izquierda (ej: 001, 010)
-    $suffix = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
-    
-    return "OC-{$today}-{$suffix}";
-}
+    /**
+     * Cancel the purchase order.
+     */
+    public function cancel(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        $validated = $request->validate([
+            'cancellation_reason' => 'required|string|max:500',
+        ]);
 
-private function generateEPC(): string
-{
-    // El formato EPC-96 requiere 24 caracteres hexadecimales (cada 4 bits = 1 dígito hex).
-    $length = 24; 
-    
-    do {
-        // Genera una cadena aleatoria hexadecimal (0-9, a-f) de 24 caracteres
-        $epc = Str::random($length, '0123456789abcdef'); 
+        if (!$purchaseOrder->canBeEdited()) {
+            return redirect()->back()
+                ->with('error', 'Esta orden ya está cancelada.');
+        }
 
-        // Consulta la tabla ProductUnits para ver si el EPC ya existe.
-        // Si no existe, salimos del bucle y usamos ese código.
-        $exists = ProductUnit::where('epc', $epc)->exists();
-        
-    } while ($exists); // Repetir mientras el EPC exista.
+        $purchaseOrder->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $validated['cancellation_reason'],
+        ]);
 
-    return strtoupper($epc); // Retorna en mayúsculas (ej: A1B2C3D4E5F6789012345678)
-}
+        return redirect()->route('purchase-orders.show', $purchaseOrder)
+            ->with('success', 'Orden de compra cancelada.');
+    }
 
+    /**
+     * Mark as paid.
+     */
+    public function markAsPaid(PurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->update([
+            'is_paid' => true,
+            'paid_date' => now(),
+        ]);
 
-private function generateSerialNumber(\App\Models\Product $product): string
-{
-    // Define un prefijo, por ejemplo, el código del producto o 'SN'
-    $prefix = $product->code ? $product->code . '-' : 'SN-';
-    
-    // Contar cuántas unidades con el mismo prefijo ya existen
-    $count = \App\Models\ProductUnit::where('serial_number', 'like', "{$prefix}%")
-        ->count();
-    
-    $nextNumber = $count + 1;
-    
-    // Formatear el consecutivo con ceros a la izquierda (ej: 0001)
-    $suffix = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-    
-    return $prefix . $suffix;
-}
-/**
- * Búsqueda AJAX de productos para órdenes de compra
- */
-public function search(Request $request)
+        return redirect()->back()
+            ->with('success', 'Orden marcada como pagada.');
+    }
+
+    /**
+     * Mark as unpaid.
+     */
+    public function markAsUnpaid(PurchaseOrder $purchaseOrder)
+    {
+        $purchaseOrder->update([
+            'is_paid' => false,
+            'paid_date' => null,
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Orden marcada como no pagada.');
+    }
+
+    /**
+     * Get product details for adding to order (AJAX).
+     */
+    public function getProductDetails(Product $product)
+    {
+        return response()->json([
+            'success' => true,
+            'product' => [
+                'id' => $product->id,
+                'code' => $product->code,
+                'name' => $product->name,
+                'description' => $product->description,
+                'unit_price' => $product->price ?? 0,
+            ]
+        ]);
+    }
+
+    /**
+     * Búsqueda AJAX de productos para órdenes de compra
+     */
+    public function search(Request $request)
     {
         try {
             $query = $request->get('q', '');
@@ -733,9 +690,9 @@ public function search(Request $request)
             
             $products = Product::where(function($q) use ($query) {
                     $q->where('code', 'like', "%{$query}%")
-                    ->orWhere('name', 'like', "%{$query}%");
+                      ->orWhere('name', 'like', "%{$query}%");
                 })
-                ->select('id', 'code', 'name', 'description') // ✅ SIN 'price'
+                ->select('id', 'code', 'name', 'description')
                 ->orderBy('code')
                 ->limit(50)
                 ->get()
@@ -745,7 +702,7 @@ public function search(Request $request)
                         'code' => $product->code,
                         'name' => $product->name,
                         'description' => $product->description,
-                        'price' => 0 // ✅ Precio por defecto en 0
+                        'price' => 0
                     ];
                 });
             
@@ -756,5 +713,46 @@ public function search(Request $request)
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-    
+
+    // ========================================
+    // MÉTODOS PRIVADOS / HELPERS
+    // ========================================
+
+    private function generateOrderNumber(): string
+    {
+        $today = now()->format('Ymd');
+        
+        $count = PurchaseOrder::where('order_number', 'like', "OC-{$today}-%")
+            ->count();
+        
+        $nextNumber = $count + 1;
+        $suffix = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        
+        return "OC-{$today}-{$suffix}";
+    }
+
+    private function generateEPC(): string
+    {
+        $length = 24; 
+        
+        do {
+            $epc = Str::random($length, '0123456789abcdef'); 
+            $exists = ProductUnit::where('epc', $epc)->exists();
+        } while ($exists);
+
+        return strtoupper($epc);
+    }
+
+    private function generateSerialNumber(Product $product): string
+    {
+        $prefix = $product->code ? $product->code . '-' : 'SN-';
+        
+        $count = ProductUnit::where('serial_number', 'like', "{$prefix}%")
+            ->count();
+        
+        $nextNumber = $count + 1;
+        $suffix = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        
+        return $prefix . $suffix;
+    }
 }

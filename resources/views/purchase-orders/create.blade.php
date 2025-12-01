@@ -50,7 +50,31 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Razón Social (Legal Entity) -->
+                            <div>
+                                <label for="legal_entity_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    {{ __('Razón Social') }} <span class="text-red-500">*</span>
+                                </label>
+                                <select name="legal_entity_id" 
+                                        id="legal_entity_id"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('legal_entity_id') border-red-500 @enderror"
+                                        required>
+                                    <option value="">{{ __('Seleccionar razón social...') }}</option>
+                                    @foreach(\App\Models\LegalEntity::active()->orderBy('name')->get() as $entity)
+                                        <option value="{{ $entity->id }}" 
+                                                {{ old('legal_entity_id', $purchaseOrder->legal_entity_id ?? '') == $entity->id ? 'selected' : '' }}>
+                                            {{ $entity->name }} - {{ $entity->rfc }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('legal_entity_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Selecciona la razón social con la que se realiza esta compra') }}
+                                </p>
+                            </div>
 
                             <!-- Fecha Esperada -->
                             <div>

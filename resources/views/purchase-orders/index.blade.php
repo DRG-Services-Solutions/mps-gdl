@@ -127,6 +127,11 @@
                                             {{ $order->order_date->format('d/m/Y') }}
                                         </span>
                                         <span>
+                                            <i class="fas fa-briefcase"></i>
+                                            {{ $order->legalEntity->name ?? 'Sin asignar' }}
+                                        </span>
+
+                                        <span>
                                             <i class="fas fa-warehouse text-gray-400 mr-1"></i>
                                             {{ $order->destinationWarehouse->name }}
                                         </span>
