@@ -23,7 +23,7 @@
      x-data="{ 
          inventoryMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') ? 'true' : 'false' }},
          purchasesMenuOpen: {{ request()->routeIs('purchase-orders.*') || request()->routeIs('suppliers.*') ? 'true' : 'false' }},
-         catalogsMenuOpen: {{ request()->routeIs('storage_locations.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'true' : 'false' }}
+         catalogsMenuOpen: {{ request()->routeIs('storage_locations.*') || request()->routeIs('legal-entities.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'true' : 'false' }}
      }"
      class="fixed inset-y-0 left-0 z-40 bg-white transition-all duration-300 transform -translate-x-full lg:translate-x-0 shadow-lg"
      :class="{ 'translate-x-0': mobileMenuOpen, 'lg:w-64': desktopSidebarOpen, 'lg:w-20': !desktopSidebarOpen }">
@@ -210,7 +210,7 @@
                 <!-- Catálogos Dropdown -->
                 <div class="relative">
                     <button @click="catalogsMenuOpen = !catalogsMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('storage_locations.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('storage_locations.*') || request()->routeIs('legal-entities.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
                                 <i class="fas fa-cog fa-fw text-lg"></i>
@@ -241,6 +241,13 @@
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('storage_locations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-warehouse fa-fw text-sm"></i>
                             <span class="truncate">{{ __('Ubicaciones') }}</span>
+                        </a>
+
+                        <!-- ✅ RAZONES SOCIALES / LEGAL ENTITIES -->
+                        <a href="{{ route('legal-entities.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('legal-entities.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-briefcase fa-fw text-sm"></i>
+                            <span class="truncate">{{ __('Razones Sociales') }}</span>
                         </a>
 
                         <a href="{{ route('categories.index') }}" 
@@ -275,6 +282,14 @@
                             <i class="fas fa-warehouse fa-fw text-sm"></i>
                             <span>{{ __('Ubicaciones') }}</span>
                         </a>
+                        
+                        <!-- ✅ RAZONES SOCIALES EN TOOLTIP -->
+                        <a href="{{ route('legal-entities.index') }}" 
+                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('legal-entities.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-briefcase fa-fw text-sm"></i>
+                            <span>{{ __('Razones Sociales') }}</span>
+                        </a>
+                        
                         <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-tags fa-fw text-sm"></i>

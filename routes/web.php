@@ -14,6 +14,7 @@ use App\Http\Controllers\StorageLocationController;
 use App\Http\Controllers\PurchaseOrderReceiptController;
 use App\Http\Controllers\PrintJobMonitorController;
 use App\Http\Controllers\ProductLayoutController;
+use App\Http\Controllers\LegalEntityController;
 
 // ========================================
 // RUTAS PÚBLICAS
