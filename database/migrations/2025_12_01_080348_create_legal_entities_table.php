@@ -12,6 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('legal_entities', function (Blueprint $table) {
+
+        
             $table->id();
             $table->string('name');
             $table->string('razon_social');

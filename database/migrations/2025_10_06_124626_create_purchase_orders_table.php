@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
             $table->foreignId('destination_warehouse_id')->constrained('storage_locations')->onDelete('restrict');
             $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
+            $talbe->foreignId('legal_entity_id')->constrained('legal_entities')->onDelete('restrict');
             
             
             // Estado
