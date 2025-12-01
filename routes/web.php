@@ -128,6 +128,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             ->name('print-jobs.cancel');
     });
 
+    /**
+     * RUTAS DE LEGAL ENTITIES
+     */
+    Route::resource('legal-entities', LegalEntityController::class);
+    
+    // Ruta adicional para cambiar el estado activo/inactivo
+    Route::post('legal-entities/{legalEntity}/toggle-status', [LegalEntityController::class, 'toggleStatus'])
+        ->name('legal-entities.toggle-status');
+
+
     // ========================================
     // HISTORIAL DE RECEPCIONES (FUTURO)
     // ========================================
