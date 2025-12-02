@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LegalEntity extends Model
 {
@@ -26,6 +27,16 @@ class LegalEntity extends Model
     /**
      * Relaciones
      */
+
+    public function getActiveSubWarehouses()
+    {
+        return $this->subWarehouses()->active()->orderBy('name')->get();
+    }
+
+    public function subWarehouses(): HasMany
+    {
+        return $this->hasMany(SubWarehouse::class);
+    }
 
     public function purchaseOrders()
     {

@@ -17,6 +17,13 @@ return new class extends Migration
              * Relacion con legal entities
              */
             $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
+            $table->foreignId('sub_warehouse_id')
+                  ->nullable()
+                  ->after('legal_entity_id')
+                  ->constrained('sub_warehouses')
+                  ->onDelete('set null');
+            
+            
 
             // Relación con el producto del catálogo
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
@@ -86,7 +93,8 @@ return new class extends Migration
             $table->index('status', 'idx_status');
             $table->index('batch_number', 'idx_batch');
             $table->unique(['epc', 'deleted_at'], 'unique_epc_active');
-            $table->unique(['serial_number', 'deleted_at'], 'unique_serial_active');        
+            $table->unique(['serial_number', 'deleted_at'], 'unique_serial_active');
+            $table->index('sub_warehouse_id');        
         });
     }
 

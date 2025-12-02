@@ -138,6 +138,15 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('legal-entities/{legalEntity}/toggle-status', [LegalEntityController::class, 'toggleStatus'])
         ->name('legal-entities.toggle-status');
 
+    /**
+     * Rutas de sub warehouses
+     */
+    // Sub-Warehouses (Almacenes Virtuales)
+    Route::post('/sub-warehouses', [SubWarehouseController::class, 'store'])->name('sub-warehouses.store');
+    Route::put('/sub-warehouses/{subWarehouse}', [SubWarehouseController::class, 'update'])->name('sub-warehouses.update');
+    Route::patch('/sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])->name('sub-warehouses.toggle-status');
+    Route::delete('/sub-warehouses/{subWarehouse}', [SubWarehouseController::class, 'destroy'])->name('sub-warehouses.destroy');
+   
 
     // ========================================
     // HISTORIAL DE RECEPCIONES (FUTURO)

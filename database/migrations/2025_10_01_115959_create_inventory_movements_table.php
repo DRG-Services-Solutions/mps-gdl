@@ -16,6 +16,11 @@ return new class extends Migration
 
             //Relacion con legal entity
             $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
+            $table->foreignId('sub_warehouse_id')
+                  ->nullable()
+                  ->after('legal_entity_id')
+                  ->constrained('sub_warehouses')
+                  ->onDelete('set null');
             // ==========================================================
             // TIPO DE MOVIMIENTO
             // ==========================================================
@@ -117,6 +122,8 @@ return new class extends Migration
             $table->index(['to_location_id', 'movement_date']);
             $table->index(['type', 'movement_date']);
             $table->index('reference_number');
+            $table->index('sub_warehouse_id');        
+
         });
     }
 
