@@ -134,7 +134,7 @@
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {{-- Proveedor --}}
-                        <div>
+                            <div>
                                 <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-industry text-gray-400 mr-2"></i>
                                     {{ __('Proveedor') }}
@@ -150,6 +150,7 @@
                                 </select>
                                 @error('supplier_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
+                            
 
                             {{-- Categoría --}}
                             <div>

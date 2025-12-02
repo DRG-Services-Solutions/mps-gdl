@@ -11,7 +11,6 @@ class PurchaseOrderReceipt extends Model
     protected $fillable = [
         'receipt_number',
         'purchase_order_id',
-        'warehouse_id',
         'received_by',
         'received_at',
         'status',

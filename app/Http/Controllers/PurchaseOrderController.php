@@ -94,7 +94,6 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::orderBy('name')->get();
-        
     
         $legalEntities = LegalEntity::active()->orderBy('name')->get(); 
 
@@ -299,7 +298,6 @@ class PurchaseOrderController extends Controller
 
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
-            'destination_warehouse_id' => 'required|exists:storage_locations,id',
             'legal_entity_id' => 'required|exists:legal_entities,id',
             'expected_date' => 'nullable|date',
             'notes' => 'nullable|string',
@@ -318,7 +316,7 @@ class PurchaseOrderController extends Controller
             // Actualizar la orden
             $purchaseOrder->update([
                 'supplier_id' => $validated['supplier_id'],
-                'destination_warehouse_id' => $validated['destination_warehouse_id'],
+
                 'legal_entity_id' => $validated['legal_entity_id'], 
                 'expected_date' => $validated['expected_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
@@ -395,7 +393,6 @@ class PurchaseOrderController extends Controller
             $receipt = PurchaseOrderReceipt::create([
                 'receipt_number' => PurchaseOrderReceipt::generateReceiptNumber(),
                 'purchase_order_id' => $purchaseOrder->id,
-                'warehouse_id' => $purchaseOrder->destination_warehouse_id,
                 'received_by' => auth()->id(),
                 'received_at' => now(),
                 'status' => 'pending',
@@ -468,7 +465,6 @@ class PurchaseOrderController extends Controller
 
                     switch ($product->tracking_type) {
                         case 'stock':
-                            // PRODUCTOS CON TRACKING POR CANTIDAD (CONSUMIBLES)
                             InventoryMovement::create([
                                 'type' => 'entry',
                                 'product_id' => $product->id,
@@ -541,8 +537,8 @@ class PurchaseOrderController extends Controller
                                 'product_unit_id' => null,
                                 'legal_entity_id' => $purchaseOrder->legal_entity_id, 
                                 'quantity' => $quantityToReceive,
-                                'from_location_id' => null,
-                                'to_location_id' => $purchaseOrder->destination_warehouse_id,
+                                //'from_location_id' => null,
+                                //'to_location_id' => $purchaseOrder->destination_warehouse_id,
                                 'user_id' => auth()->id(),
                                 'reference_number' => $receipt->receipt_number,
                                 'notes' => "Recepción de orden {$purchaseOrder->order_number} (sin tracking)",

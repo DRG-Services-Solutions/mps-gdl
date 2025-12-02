@@ -133,7 +133,7 @@
 
                                         <span>
                                             <i class="fas fa-warehouse text-gray-400 mr-1"></i>
-                                            {{ $order->destinationWarehouse->name }}
+                                            {{ $order->legalEntity->name }}
                                         </span>
                                         <span class="font-semibold text-gray-900">
                                             <i class="fas fa-dollar-sign text-gray-400 mr-1"></i>
@@ -301,10 +301,7 @@
                                                             <i class="fas fa-user text-gray-400 mr-1"></i>
                                                             {{ $receipt->receivedBy->name }}
                                                         </div>
-                                                        <div>
-                                                            <i class="fas fa-warehouse text-gray-400 mr-1"></i>
-                                                            {{ $receipt->warehouse->full_location ?? $receipt->warehouse->area }}
-                                                        </div>
+                                                  
                                                         <div class="font-semibold text-indigo-600">
                                                             <i class="fas fa-box text-gray-400 mr-1"></i>
                                                             {{ $receipt->items->sum('quantity_received') }} unidades
