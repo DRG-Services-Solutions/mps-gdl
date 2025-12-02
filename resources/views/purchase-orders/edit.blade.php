@@ -52,27 +52,58 @@
                                 @enderror
                             </div>
 
-                            <!-- Almacén Destino -->
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Almacén Destino <span class="text-red-500">*</span>
+                                <label for="legal_entity_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Razón Social <span class="text-red-500">*</span>
                                 </label>
-                                <select name="destination_warehouse_id" 
-                                        class="block w-full rounded-lg focus:ring-2 focus:ring-orange-500 @error('destination_warehouse_id') border-red-300 @enderror" 
-                                        required>
-                                    <option value="">Seleccionar...</option>
-                                    @foreach($warehouses as $warehouse)
-                                        <option value="{{ $warehouse->id }}" 
-                                                {{ old('destination_warehouse_id', $purchaseOrder->destination_warehouse_id) == $warehouse->id ? 'selected' : '' }}>
-                                            {{ $warehouse->name }}
+                                <select name="legal_entity_id" 
+                                        id="legal_entity_id" 
+                                        required
+                                        onchange="updateSubWarehouses()"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Seleccione una razón social</option>
+                                    @foreach($legalEntities as $entity)
+                                        <option value="{{ $entity->id }}" 
+                                                {{ (old('legal_entity_id', $purchaseOrder->legal_entity_id) == $entity->id) ? 'selected' : '' }}>
+                                            {{ $entity->name }} ({{ $entity->rfc }})
                                         </option>
                                     @endforeach
                                 </select>
-                                @error('destination_warehouse_id')
+                                @error('legal_entity_id')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
 
+                            <!-- ✅ NUEVO: Selector de Sub-Almacén Virtual -->
+                            <div>
+                                <label for="sub_warehouse_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Sub-Almacén Virtual
+                                    <span class="text-gray-500 text-xs">(Opcional - organización interna)</span>
+                                </label>
+                                <select name="sub_warehouse_id" 
+                                        id="sub_warehouse_id"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Sin asignar</option>
+                                    <!-- Se llenará dinámicamente con JavaScript -->
+                                </select>
+                                
+                                @if($purchaseOrder->subWarehouse)
+                                    <p class="mt-1 text-xs text-indigo-600">
+                                        <i class="fas fa-warehouse mr-1"></i>
+                                        Actualmente asignado: <strong>{{ $purchaseOrder->subWarehouse->name }}</strong>
+                                    </p>
+                                @endif
+                                
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Los productos recibidos se organizarán en este sub-almacén virtual
+                                </p>
+                                @error('sub_warehouse_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            
                             <!-- Fecha Esperada -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">

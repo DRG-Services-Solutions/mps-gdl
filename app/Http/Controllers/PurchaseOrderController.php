@@ -13,6 +13,8 @@ use App\Services\PurchaseOrderService;
 use App\Models\InventoryMovement;
 use App\Models\ProductUnit;
 use App\Models\LegalEntity;
+use App\Models\SubWareHouse;
+
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
@@ -40,6 +42,7 @@ class PurchaseOrderController extends Controller
             'destinationWarehouse',
             'createdBy',
             'items.product',
+            'subWareHouse',
             'receipts' => function($q) {
                 $q->with(['receivedBy', 'warehouse', 'items.product'])
                   ->latest('received_at');
@@ -94,10 +97,10 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $suppliers = Supplier::orderBy('name')->get();
-    
         $legalEntities = LegalEntity::active()->orderBy('name')->get(); 
+        $subWarehouses = SubWareHouse::with('legalEntity')->where('is_active', true)->orderBy('name')->get()->groupBy('legal_entity_id');
 
-        return view('purchase-orders.create', compact('suppliers', 'legalEntities'));
+        return view('purchase-orders.create', compact('suppliers', 'legalEntities', 'subWarehouses'));
     }
 
     /**
@@ -109,10 +112,20 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'legal_entity_id' => 'required|exists:legal_entities,id', 
+            'sub_warehouse_id' => 'nullable|exists:sub_warehouses,id', 
             'expected_date' => 'nullable|date|after_or_equal:today',
             'notes' => 'nullable|string',
             'items_json' => 'required|string', 
         ]);
+
+        if ($request->filled('sub_warehouse_id')) {
+            $subWarehouse = SubWarehouse::find($request->sub_warehouse_id);
+            if ($subWarehouse && $subWarehouse->legal_entity_id != $request->legal_entity_id) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'El sub-almacén seleccionado no pertenece a la razón social elegida.');
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -152,6 +165,7 @@ class PurchaseOrderController extends Controller
                 'created_by' => auth()->id(), 
                 'supplier_id' => $validated['supplier_id'],
                 'legal_entity_id' => $validated['legal_entity_id'], 
+                'sub_warehouse_id' => $validated['sub_warehouse_id'],
                 'expected_date' => $validated['expected_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'order_date' => now(),
@@ -242,6 +256,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->load([
             'supplier',
             'legalEntity',
+            'subWarehouse',
             'destinationWarehouse',
             'createdBy', 
             'items.product'
@@ -268,9 +283,14 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->load('items.product');
 
         $suppliers = Supplier::active()->orderBy('name')->get();
-        $warehouses = StorageLocation::active()->warehouses()->orderBy('name')->get();
         $products = Product::orderBy('name')->get();
         $legalEntities = LegalEntity::active()->orderBy('name')->get();
+        $subWarehouses = SubWarehouse::with('legalEntity')
+                                     ->where('is_active', true)
+                                     ->orderBy('name')
+                                     ->get()
+                                     ->groupBy('legal_entity_id');
+
 
         // Preparar los items para Alpine.js
         $items = $purchaseOrder->items->map(function ($item) {
@@ -299,6 +319,7 @@ class PurchaseOrderController extends Controller
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'legal_entity_id' => 'required|exists:legal_entities,id',
+            'sub_warehouse_id' => 'nullable|exists:sub_warehouses,id',
             'expected_date' => 'nullable|date',
             'notes' => 'nullable|string',
             
@@ -318,9 +339,19 @@ class PurchaseOrderController extends Controller
                 'supplier_id' => $validated['supplier_id'],
 
                 'legal_entity_id' => $validated['legal_entity_id'], 
+                'sub_warehouse_id' => $validated['sub_warehouse_id'], 
                 'expected_date' => $validated['expected_date'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
+
+            if ($request->filled('sub_warehouse_id')) {
+                $subWarehouse = SubWarehouse::find($request->sub_warehouse_id);
+                if ($subWarehouse && $subWarehouse->legal_entity_id != $request->legal_entity_id) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->with('error', 'El sub-almacén seleccionado no pertenece a la razón social elegida.');
+                }
+            }
 
             // IDs de items existentes en el request
             $itemIds = collect($validated['items'])->pluck('id')->filter();

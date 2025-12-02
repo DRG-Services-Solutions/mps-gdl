@@ -76,6 +76,27 @@
                                 </p>
                             </div>
 
+                            <div>
+                                <label for="sub_warehouse_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Sub-Almacén Virtual
+                                    <span class="text-gray-500 text-xs">(Opcional - organización interna)</span>
+                                </label>
+                                <select name="sub_warehouse_id" 
+                                        id="sub_warehouse_id"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">Sin asignar</option>
+                                    <!-- Se llenará dinámicamente con JavaScript -->
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Los productos recibidos se organizarán en este sub-almacén virtual
+                                </p>
+                                @error('sub_warehouse_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+
                             <!-- Fecha Esperada -->
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -423,6 +444,59 @@
                 }
             }
         }
+
+        const subWarehousesData = @json($subWarehouses);
+
+        // Función para actualizar el selector de sub-almacenes
+        function updateSubWarehouses() {
+            const legalEntitySelect = document.getElementById('legal_entity_id');
+            const subWarehouseSelect = document.getElementById('sub_warehouse_id');
+            
+            const selectedEntityId = legalEntitySelect.value;
+            
+            // Limpiar opciones actuales (excepto la primera)
+            subWarehouseSelect.innerHTML = '<option value="">Sin asignar</option>';
+            
+            if (!selectedEntityId) {
+                subWarehouseSelect.disabled = true;
+                return;
+            }
+            
+            // Habilitar el selector
+            subWarehouseSelect.disabled = false;
+            
+            // Obtener sub-almacenes de la entidad seleccionada
+            const subWarehouses = subWarehousesData[selectedEntityId] || [];
+            
+            if (subWarehouses.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No hay sub-almacenes disponibles';
+                option.disabled = true;
+                subWarehouseSelect.appendChild(option);
+                return;
+            }
+            
+            // Agregar opciones de sub-almacenes
+            subWarehouses.forEach(subWarehouse => {
+                const option = document.createElement('option');
+                option.value = subWarehouse.id;
+                option.textContent = subWarehouse.name;
+                
+                // Mantener selección si existe (para old values)
+                if ("{{ old('sub_warehouse_id') }}" == subWarehouse.id) {
+                    option.selected = true;
+                }
+                
+                subWarehouseSelect.appendChild(option);
+            });
+        }
+
+        // Ejecutar al cargar la página si hay una entidad seleccionada
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSubWarehouses();
+        });
+
     </script>
     @endpush
 </x-app-layout>
