@@ -3,33 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\SubWarehouse;
-use Illuminate\Http\Request;
 use App\Models\LegalEntity;
+use Illuminate\Http\Request;
 
 class SubWarehouseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request([
+        $validated = $request->validate([
             'legal_entity_id' => 'required|exists:legal_entities,id',
             'name' => [
                 'required',
@@ -38,33 +19,16 @@ class SubWarehouseController extends Controller
                 'unique:sub_warehouses,name,NULL,id,legal_entity_id,' . $request->legal_entity_id
             ],
             'description' => 'nullable|string',
-            'name.unique' => 'Ya existe un sub-almacen con este nombre',                
+        ], [
+            'name.unique' => 'Ya existe un sub-almacén con este nombre para esta razón social.',
         ]);
-            SubWarehouse::create($validated);
 
-            return redirect()->back()->with('success', 'Sub-almacen creado exitosamente');
+        SubWarehouse::create($validated);
 
+        return redirect()->back()
+            ->with('success', 'Sub-almacén creado exitosamente.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(SubWarehouse $subWarehouse)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(SubWarehouse $subWarehouse)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, SubWarehouse $subWarehouse)
     {
         $validated = $request->validate([
@@ -85,14 +49,6 @@ class SubWarehouseController extends Controller
             ->with('success', 'Sub-almacén actualizado exitosamente.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(SubWarehouse $subWarehouse)
-    {
-        //
-    }
-
     public function toggleStatus(SubWarehouse $subWarehouse)
     {
         $subWarehouse->update([
@@ -103,5 +59,18 @@ class SubWarehouseController extends Controller
 
         return redirect()->back()
             ->with('success', "Sub-almacén {$status} exitosamente.");
+    }
+
+    public function destroy(SubWarehouse $subWarehouse)
+    {
+        if ($subWarehouse->productUnits()->count() > 0) {
+            return redirect()->back()
+                ->with('error', 'No se puede eliminar el sub-almacén porque tiene productos asignados.');
+        }
+
+        $subWarehouse->delete();
+
+        return redirect()->back()
+            ->with('success', 'Sub-almacén eliminado exitosamente.');
     }
 }

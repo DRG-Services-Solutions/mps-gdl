@@ -13,13 +13,9 @@ return new class extends Migration
     {
         Schema::create('product_units', function (Blueprint $table) {
             $table->id();
-            /**
-             * Relacion con legal entities
-             */
             $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
             $table->foreignId('sub_warehouse_id')
                   ->nullable()
-                  ->after('legal_entity_id')
                   ->constrained('sub_warehouses')
                   ->onDelete('set null');
             

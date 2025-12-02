@@ -15,6 +15,7 @@ use App\Http\Controllers\PurchaseOrderReceiptController;
 use App\Http\Controllers\PrintJobMonitorController;
 use App\Http\Controllers\ProductLayoutController;
 use App\Http\Controllers\LegalEntityController;
+use App\Http\Controllers\SubWarehouseController;
 
 // ========================================
 // RUTAS PÚBLICAS
