@@ -31,7 +31,6 @@ class InventoryMovement extends Model
         'approved_by',
         'legal_entity_id',
         'sub_warehouse_id',
-
     ];
 
     protected $casts = [
