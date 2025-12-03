@@ -46,6 +46,11 @@ class PurchaseOrder extends Model
     // RELACIONES
     // ========================================
 
+    public function subWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(subWarehouse::class);
+    }
+    
     public function legalEntity(): BelongsTo
     {
         return $this->belongsTo(LegalEntity::class);
