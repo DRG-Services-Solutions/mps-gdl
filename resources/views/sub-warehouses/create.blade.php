@@ -133,22 +133,7 @@
                         </p>
                     </div>
 
-                    <!-- Información adicional -->
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                        <div class="flex items-start">
-                            <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                            <div class="text-sm text-blue-800">
-                                <p class="font-semibold mb-2">¿Qué son los sub-almacenes virtuales?</p>
-                                <ul class="list-disc list-inside space-y-1 text-xs">
-                                    <li>Son categorías para organizar tu inventario dentro de cada razón social</li>
-                                    <li>No representan ubicaciones físicas, son solo para organización virtual</li>
-                                    <li>Útiles para separar por especialidad médica, tipo de producto, o cliente</li>
-                                    <li>Cada producto puede asignarse a un sub-almacén al recibirlo</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
+                    
                     <!-- Botones -->
                     <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                         <a href="{{ route('sub-warehouses.index') }}" 
@@ -165,33 +150,7 @@
                 </form>
             </div>
 
-            <!-- Ejemplos de uso -->
-            <div class="mt-6 bg-white rounded-lg shadow-md p-6">
-                <h4 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-                    Ejemplos de Sub-Almacenes
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <p class="font-semibold text-gray-700 mb-2">Por Especialidad Médica:</p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-1">
-                            <li>Traumatología</li>
-                            <li>Ortopedia</li>
-                            <li>Cardiología</li>
-                            <li>Cirugía General</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-700 mb-2">Por Tipo de Producto:</p>
-                        <ul class="list-disc list-inside text-gray-600 space-y-1">
-                            <li>Instrumentos Quirúrgicos</li>
-                            <li>Implantes y Prótesis</li>
-                            <li>Consumibles Médicos</li>
-                            <li>Material de Curación</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </x-app-layout>
