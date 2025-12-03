@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained()->onDelete('restrict');
             $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
             $table->foreignId('legal_entity_id')->constrained('legal_entities')->onDelete('restrict');
-            $table->foreignId('sub_warehouse_id')->nullable()->constrained('')->onDelete('set null');
+            $table->foreignId('sub_warehouse_id')->nullable()->constrained()->onDelete('set null');
             
             
             // Estado
