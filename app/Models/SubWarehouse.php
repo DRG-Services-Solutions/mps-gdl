@@ -31,15 +31,19 @@ class SubWarehouse extends Model
         return $this->belongsTo(LegalEntity::class);
     }
 
+    //Obtenemos todos los productos asignados a este sub almacen
     public function productUnits(): HasMany
     {
         return $this->hasMany(ProductUnit::class);
     }
 
+    //Obtenemos todos los movimientos de inventario asignados a este sub almacen
     public function inventoryMovements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
     }
+
+   
 
     // ========================================
     // SCOPES
@@ -56,7 +60,7 @@ class SubWarehouse extends Model
     }
 
     // ========================================
-    // MÉTODOS
+    // Metodos utiles
     // ========================================
 
     /**

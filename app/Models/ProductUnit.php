@@ -32,6 +32,8 @@ class ProductUnit extends Model
         'damage_description',
         'created_by',
         'updated_by',
+        'legal_entity_id',
+        'sub_warehouse_id',
     ];
 
     protected $casts = [
@@ -77,6 +79,31 @@ class ProductUnit extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    /**
+     * Obtener entidad legal de cada producto asignada 
+     */
+
+    public function legalEntity(): BelongsTo
+    {
+        return $this->belongsTo(LegalEntity::class);
+    }
+
+    /**
+     * Obtener el sub almacen asignado a esta unidad
+     */
+    public function subWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(SubWarehouse::class);
+    }
+
+    /**
+     * Obtener la orden de compra de donde proviene este producto
+     */
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class);
+    }
+
     // ==================== SCOPES ====================
     
     public function scopeAvailable($query)
@@ -117,6 +144,11 @@ class ProductUnit extends Model
         return $query->whereNotNull('next_maintenance_date')
                      ->where('next_maintenance_date', '<=', Carbon::now()->addDays($days))
                      ->where('next_maintenance_date', '>', Carbon::now());
+    }
+
+    public function scopeByLegalEntity($query, $legalEntityId)
+    {
+        return $query->where('legal_entity_id', $legalEntityId);
     }
 
     // ==================== MÉTODOS AUXILIARES ====================

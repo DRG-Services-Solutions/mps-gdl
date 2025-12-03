@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
             $table->foreignId('sub_warehouse_id')
                   ->nullable()
-                  ->constrained('sub_warehouses')
+                  ->constrained('')
                   ->onDelete('set null');
             // ==========================================================
             // TIPO DE MOVIMIENTO
