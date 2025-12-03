@@ -143,10 +143,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
      * Rutas de sub warehouses
      */
     // Sub-Warehouses (Almacenes Virtuales)
-    Route::post('/sub-warehouses', [SubWarehouseController::class, 'store'])->name('sub-warehouses.store');
-    Route::put('/sub-warehouses/{subWarehouse}', [SubWarehouseController::class, 'update'])->name('sub-warehouses.update');
-    Route::patch('/sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])->name('sub-warehouses.toggle-status');
-    Route::delete('/sub-warehouses/{subWarehouse}', [SubWarehouseController::class, 'destroy'])->name('sub-warehouses.destroy');
+    Route::resource('sub-warehouses', SubWarehouseController::class);
+    Route::patch('sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])
+    ->name('sub-warehouses.toggle-status');
+
+
    
 
     // ========================================

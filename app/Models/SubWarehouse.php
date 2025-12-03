@@ -20,6 +20,12 @@ class SubWarehouse extends Model
         'is_active' => 'boolean',
     ];
 
+    
+    public function purchaseOrders(): HasMany
+    {   
+        return $this->hasMany(PurchaseOrder::class);
+    }   
+
     public function legalEntity(): BelongsTo
     {
         return $this->belongsTo(LegalEntity::class);
