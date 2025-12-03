@@ -301,7 +301,7 @@
                                                 </td>
                                                 <td class="px-6 py-4 text-center">
                                                     <span class="text-xs font-mono text-gray-600">
-                                                        {{ $unit->epc_code ?? $unit->serial_number ?? '-' }}
+                                                        {{ $unit->epc ?? $unit->serial_number ?? '-' }}
                                                     </span>
                                                 </td>
                                                 <td class="px-6 py-4 text-center">
