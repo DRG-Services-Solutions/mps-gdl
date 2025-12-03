@@ -80,12 +80,7 @@
                                         <p class="text-sm font-medium text-gray-500">Proveedor</p>
                                         <p class="mt-1 text-sm font-semibold text-gray-900">{{ $purchaseOrder->supplier->name }}</p>
                                     </div>
-                                   <div>
-                                        <p class="text-sm font-medium text-gray-500">Almacén Destino</p>
-                                        <p class="mt-1 text-sm font-semibold text-gray-900">
-                                            {{ $purchaseOrder->destinationWarehouse->full_location }}
-                                        </p>
-                                    </div>
+                                  
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Fecha de Orden</p>
                                         <p class="mt-1 text-sm text-gray-900">{{ $purchaseOrder->order_date->format('d/m/Y') }}</p>
@@ -93,6 +88,16 @@
                                     <div>
                                         <p class="text-sm font-medium text-gray-500">Fecha Esperada</p>
                                         <p class="mt-1 text-sm text-gray-900">{{ $purchaseOrder->expected_date ? $purchaseOrder->expected_date->format('d/m/Y') : 'No definida' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-500">{{ __('Razón Social') }}</label>
+                                        <div class="mt-1 flex items-center space-x-2">
+                                            <i class="fas fa-briefcase text-indigo-600"></i>
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">{{ $purchaseOrder->legalEntity->name }}</p>
+                                                <p class="text-xs text-gray-500 font-mono">{{ $purchaseOrder->legalEntity->rfc }}</p>
+                                            </div>
+                                        </div>
                                     </div>
                                     @if($purchaseOrder->received_date)
                                         <div>
@@ -366,9 +371,7 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Recepción de Orden: {{ $purchaseOrder->order_number }}
                             </h3>
-                            <p class="text-sm text-gray-600 mt-1">
-                                Almacén de destino: <strong>{{ $purchaseOrder->destinationWarehouse->name }}</strong>
-                            </p>
+                            
                         </div>
                         <button @click="showReceiveModal = false" class="text-gray-400 hover:text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

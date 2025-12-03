@@ -58,7 +58,7 @@
                         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
-                                    <div class="flex-shrink-0 bg-white<x-app-layout>
+                                    <div class="flex-shrink-0 bg-white<x-app-layout">
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">

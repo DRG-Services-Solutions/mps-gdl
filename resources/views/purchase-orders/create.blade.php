@@ -50,7 +50,53 @@
                                 @enderror
                             </div>
 
-                            
+                            <!-- Razón Social (Legal Entity) -->
+                            <div>
+                                <label for="legal_entity_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    {{ __('Razón Social') }} <span class="text-red-500">*</span>
+                                </label>
+                                <select name="legal_entity_id" 
+                                        id="legal_entity_id"
+                                        onchange="updateSubWarehouses()"
+                                        class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('legal_entity_id') border-red-300 @enderror"
+                                        required>
+                                    <option value="">{{ __('Seleccionar razón social...') }}</option>
+                                    @foreach($legalEntities as $entity)
+                                        <option value="{{ $entity->id }}" 
+                                                {{ old('legal_entity_id') == $entity->id ? 'selected' : '' }}>
+                                            {{ $entity->name }} - {{ $entity->rfc }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('legal_entity_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    {{ __('Selecciona la razón social con la que se realiza esta compra') }}
+                                </p>
+                            </div>
+
+                            <!-- Sub-Almacén Virtual -->
+                            <div>
+                                <label for="sub_warehouse_id" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Sub-Almacén Virtual
+                                    <span class="text-gray-500 text-xs font-normal">(Opcional)</span>
+                                </label>
+                                <select name="sub_warehouse_id" 
+                                        id="sub_warehouse_id"
+                                        class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('sub_warehouse_id') border-red-300 @enderror">
+                                    <option value="">Sin asignar</option>
+                                    <!-- Se llenará dinámicamente con JavaScript -->
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-warehouse mr-1"></i>
+                                    Los productos se organizarán en este sub-almacén
+                                </p>
+                                @error('sub_warehouse_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
                             <!-- Fecha Esperada -->
                             <div>
@@ -98,11 +144,8 @@
                             </template>
 
                             <div class="space-y-4" style="overflow: visible;">
-
                                 <template x-for="(item, index) in items" :key="index">
                                     <div class="border border-gray-200 rounded-lg p-4 bg-gray-50" style="position: relative; overflow: visible;">
-
-
                                         <div class="flex justify-between items-start mb-3">
                                             <h4 class="font-semibold text-gray-700">Producto <span x-text="index + 1"></span></h4>
                                             <button type="button" 
@@ -115,17 +158,16 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" style="overflow: visible;">
-
                                             <!-- Producto con Búsqueda AJAX -->
-                                           <div class="md:col-span-2" 
-                                            x-data="{
-                                                searchQuery: '',
-                                                showDropdown: false,
-                                                searchResults: [],
-                                                isSearching: false,
-                                                selectedProduct: null
-                                            }"
-                                            style="position: relative; overflow: visible; z-index: 100;">
+                                            <div class="md:col-span-2" 
+                                                x-data="{
+                                                    searchQuery: '',
+                                                    showDropdown: false,
+                                                    searchResults: [],
+                                                    isSearching: false,
+                                                    selectedProduct: null
+                                                }"
+                                                style="position: relative; overflow: visible; z-index: 100;">
 
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Producto * 
@@ -133,7 +175,6 @@
                                                 </label>
                                                 
                                                 <div class="relative" style="overflow: visible;">
-
                                                     <!-- Input de Búsqueda -->
                                                     <div class="relative" x-show="!selectedProduct">
                                                         <input type="text" 
@@ -399,6 +440,70 @@
                 }
             }
         }
+
+        // Data de sub-almacenes agrupados por legal_entity_id
+        const subWarehousesData = @json($subWarehouses ?? []);
+
+        // Función para actualizar el selector de sub-almacenes
+        function updateSubWarehouses() {
+            const legalEntitySelect = document.getElementById('legal_entity_id');
+            const subWarehouseSelect = document.getElementById('sub_warehouse_id');
+            
+            const selectedEntityId = legalEntitySelect.value;
+            
+            // Limpiar opciones actuales (excepto la primera)
+            subWarehouseSelect.innerHTML = '<option value="">Sin asignar</option>';
+            
+            if (!selectedEntityId) {
+                subWarehouseSelect.disabled = true;
+                return;
+            }
+            
+            // Habilitar el selector
+            subWarehouseSelect.disabled = false;
+            
+            // Obtener sub-almacenes de la entidad seleccionada
+            const subWarehouses = subWarehousesData[selectedEntityId] || [];
+            
+            if (subWarehouses.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No hay sub-almacenes disponibles';
+                option.disabled = true;
+                subWarehouseSelect.appendChild(option);
+                return;
+            }
+            
+            // Agregar opciones de sub-almacenes
+            subWarehouses.forEach(subWarehouse => {
+                const option = document.createElement('option');
+                option.value = subWarehouse.id;
+                option.textContent = subWarehouse.name;
+                
+                // Mantener selección si existe (para old values)
+                if ("{{ old('sub_warehouse_id') }}" == subWarehouse.id) {
+                    option.selected = true;
+                }
+                
+                subWarehouseSelect.appendChild(option);
+            });
+        }
+
+        // Ejecutar al cargar la página si hay una entidad seleccionada
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSubWarehouses();
+        });
     </script>
+
+    <style>
+        #sub_warehouse_id:disabled {
+            background-color: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        #sub_warehouse_id option[disabled] {
+            color: #9ca3af;
+        }
+    </style>
     @endpush
 </x-app-layout>

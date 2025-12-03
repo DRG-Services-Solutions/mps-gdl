@@ -15,6 +15,7 @@ use App\Http\Controllers\PurchaseOrderReceiptController;
 use App\Http\Controllers\PrintJobMonitorController;
 use App\Http\Controllers\ProductLayoutController;
 use App\Http\Controllers\LegalEntityController;
+use App\Http\Controllers\SubWarehouseController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -138,6 +139,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('legal-entities/{legalEntity}/toggle-status', [LegalEntityController::class, 'toggleStatus'])
         ->name('legal-entities.toggle-status');
 
+    /**
+     * Rutas de sub warehouses
+     */
+    // Sub-Warehouses (Almacenes Virtuales)
+    Route::resource('sub-warehouses', SubWarehouseController::class);
+    Route::patch('sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])
+    ->name('sub-warehouses.toggle-status');
+
+
+   
 
     // ========================================
     // HISTORIAL DE RECEPCIONES (FUTURO)

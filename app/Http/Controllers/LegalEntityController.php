@@ -62,21 +62,33 @@ class LegalEntityController extends Controller
      */
     public function show(LegalEntity $legalEntity)
     {
+        // Cargar relaciones necesarias
         $legalEntity->load([
-            'productUnits.product',
+            'subWarehouses', // ✅ AGREGAR ESTA LÍNEA
+            'productUnits' => function($query) {
+                $query->with(['product', 'storageLocation'])
+                    ->latest()
+                    ->limit(15);
+            },
             'purchaseOrders' => function($query) {
-                $query->latest()->limit(10);
+                $query->with('supplier')
+                    ->latest()
+                    ->limit(10);
             },
             'inventoryMovements' => function($query) {
-                $query->latest()->limit(20);
+                $query->with('product')
+                    ->latest()
+                    ->limit(20);
             }
         ]);
 
+        // Calcular estadísticas
         $totalInventoryValue = $legalEntity->getTotalInventoryValue();
         $totalUnits = $legalEntity->getTotalUnitsCount();
 
         return view('legal-entities.show', compact('legalEntity', 'totalInventoryValue', 'totalUnits'));
     }
+
 
     /**
      * Show the form for editing the specified legal entity.

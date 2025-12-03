@@ -27,6 +27,8 @@ class PurchaseOrder extends Model
         'notes',
         'cancellation_reason',
         'created_by',
+        'legal_entity_id',
+        'sub_warehouse_id',
     ];
 
     protected $casts = [
@@ -43,6 +45,16 @@ class PurchaseOrder extends Model
     // ========================================
     // RELACIONES
     // ========================================
+
+    public function subWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(subWarehouse::class);
+    }
+    
+    public function legalEntity(): BelongsTo
+    {
+        return $this->belongsTo(LegalEntity::class);
+    }
 
     public function supplier(): BelongsTo
     {

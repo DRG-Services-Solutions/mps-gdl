@@ -29,6 +29,9 @@ class InventoryMovement extends Model
         'movement_date',
         'approved_at',
         'approved_by',
+        'legal_entity_id',
+        'sub_warehouse_id',
+
     ];
 
     protected $casts = [
@@ -50,6 +53,15 @@ class InventoryMovement extends Model
         return $this->belongsTo(ProductUnit::class);
     }
 
+    public function legalEntity(): BelongsTo
+    {
+        return $this->belongsTo(LegalEntity::class);
+    }
+    public function subWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(SubWarehouse::class);
+    }
+
     public function fromLocation()
     {
         return $this->belongsTo(StorageLocation::class, 'from_location_id');
@@ -69,4 +81,6 @@ class InventoryMovement extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    
 }

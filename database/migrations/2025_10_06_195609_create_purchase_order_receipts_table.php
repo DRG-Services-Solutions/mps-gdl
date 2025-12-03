@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('receipt_number')->unique()->comment('Número de recepción único');
             $table->foreignId('purchase_order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('warehouse_id')->constrained('storage_locations')->onDelete('cascade');
             $table->foreignId('received_by')->constrained('users')->onDelete('cascade');
             $table->timestamp('received_at')->comment('Fecha y hora de recepción');
             $table->enum('status', ['pending', 'partial', 'completed', 'with_issues'])->default('pending');

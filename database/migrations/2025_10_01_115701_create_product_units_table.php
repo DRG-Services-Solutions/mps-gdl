@@ -13,10 +13,13 @@ return new class extends Migration
     {
         Schema::create('product_units', function (Blueprint $table) {
             $table->id();
-            /**
-             * Relacion con legal entities
-             */
             $table->foreignId('legal_entity_id')->nullable()->constrained('legal_entities')->onDelete('restrict');
+            $table->foreignId('sub_warehouse_id')
+                  ->nullable()
+                  ->constrained()
+                  ->onDelete('set null');
+            
+            
 
             // Relación con el producto del catálogo
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
@@ -86,7 +89,8 @@ return new class extends Migration
             $table->index('status', 'idx_status');
             $table->index('batch_number', 'idx_batch');
             $table->unique(['epc', 'deleted_at'], 'unique_epc_active');
-            $table->unique(['serial_number', 'deleted_at'], 'unique_serial_active');        
+            $table->unique(['serial_number', 'deleted_at'], 'unique_serial_active');
+            $table->index('sub_warehouse_id');        
         });
     }
 
