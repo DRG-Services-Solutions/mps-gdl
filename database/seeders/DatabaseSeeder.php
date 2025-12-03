@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
                     SupplierSeeder::class,
                     ProductSeeder::class,
                     LegalEntitySeeder::class,
+                    SubWarehouseSeeder::class,
 
                 ]);
         $this->call(UserSeeder::class);
