@@ -130,6 +130,114 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             ->name('print-jobs.cancel');
     });
 
+    Route::prefix('hospitals')->name('hospitals.')->group(function () {
+    // CRUD
+    Route::get('/', [HospitalController::class, 'index'])->name('index');
+    Route::get('/create', [HospitalController::class, 'create'])->name('create');
+    Route::post('/', [HospitalController::class, 'store'])->name('store');
+    Route::get('/{hospital}', [HospitalController::class, 'show'])->name('show');
+    Route::get('/{hospital}/edit', [HospitalController::class, 'edit'])->name('edit');
+    Route::put('/{hospital}', [HospitalController::class, 'update'])->name('update');
+    Route::delete('/{hospital}', [HospitalController::class, 'destroy'])->name('destroy');
+    
+    // Acciones especiales
+    Route::post('/{hospital}/toggle-status', [HospitalController::class, 'toggleStatus'])
+        ->name('toggle-status');
+});
+
+// API para Select2
+Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
+    ->name('api.hospitals.select2');
+
+// ═══════════════════════════════════════════════════════════
+// DOCTORES
+// ═══════════════════════════════════════════════════════════
+
+Route::prefix('doctors')->name('doctors.')->group(function () {
+    // CRUD
+    Route::get('/', [DoctorController::class, 'index'])->name('index');
+    Route::get('/create', [DoctorController::class, 'create'])->name('create');
+    Route::post('/', [DoctorController::class, 'store'])->name('store');
+    Route::get('/{doctor}', [DoctorController::class, 'show'])->name('show');
+    Route::get('/{doctor}/edit', [DoctorController::class, 'edit'])->name('edit');
+    Route::put('/{doctor}', [DoctorController::class, 'update'])->name('update');
+    Route::delete('/{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
+    
+    // Acciones especiales
+    Route::post('/{doctor}/toggle-status', [DoctorController::class, 'toggleStatus'])
+        ->name('toggle-status');
+});
+
+// API para Select2
+Route::get('/api/doctors/select2', [DoctorController::class, 'select2'])
+    ->name('api.doctors.select2');
+
+// ═══════════════════════════════════════════════════════════
+// COTIZACIONES ⭐ PRINCIPAL
+// ═══════════════════════════════════════════════════════════
+
+Route::prefix('quotations')->name('quotations.')->group(function () {
+    // CRUD
+    Route::get('/', [QuotationController::class, 'index'])->name('index');
+    Route::get('/create', [QuotationController::class, 'create'])->name('create');
+    Route::post('/', [QuotationController::class, 'store'])->name('store');
+    Route::get('/{quotation}', [QuotationController::class, 'show'])->name('show');
+    Route::get('/{quotation}/edit', [QuotationController::class, 'edit'])->name('edit');
+    Route::put('/{quotation}', [QuotationController::class, 'update'])->name('update');
+    Route::delete('/{quotation}', [QuotationController::class, 'destroy'])->name('destroy');
+    
+    // ═══════════════════════════════════════════════════════════
+    // GESTIÓN DE PRODUCTOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{quotation}/add-item', [QuotationController::class, 'addItem'])
+        ->name('add-item');
+    Route::delete('/{quotation}/items/{item}', [QuotationController::class, 'removeItem'])
+        ->name('remove-item');
+    
+    // ═══════════════════════════════════════════════════════════
+    // FLUJO DE CIRUGÍA ⭐
+    // ═══════════════════════════════════════════════════════════
+    
+    // 1. Enviar a cirugía
+    Route::post('/{quotation}/send-to-surgery', [QuotationController::class, 'sendToSurgery'])
+        ->name('send-to-surgery');
+    
+    // 2. Registrar retorno
+    Route::get('/{quotation}/return', [QuotationController::class, 'showReturnForm'])
+        ->name('return-form');
+    Route::post('/{quotation}/return', [QuotationController::class, 'registerReturn'])
+        ->name('register-return');
+    
+    // 3. Generar ventas
+    Route::post('/{quotation}/generate-sales', [QuotationController::class, 'generateSales'])
+        ->name('generate-sales');
+});
+
+// ═══════════════════════════════════════════════════════════
+// VENTAS
+// ═══════════════════════════════════════════════════════════
+
+Route::prefix('sales')->name('sales.')->group(function () {
+    // Listado y detalle
+    Route::get('/', [SaleController::class, 'index'])->name('index');
+    Route::get('/{sale}', [SaleController::class, 'show'])->name('show');
+    
+    // Exportación
+    Route::get('/export/csv', [SaleController::class, 'export'])->name('export');
+    
+    // Estadísticas
+    Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
+});
+
+
+
+
+
+
+
+
+
+
     /**
      * RUTAS DE LEGAL ENTITIES
      */
