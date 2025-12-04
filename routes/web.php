@@ -16,6 +16,7 @@ use App\Http\Controllers\PrintJobMonitorController;
 use App\Http\Controllers\ProductLayoutController;
 use App\Http\Controllers\LegalEntityController;
 use App\Http\Controllers\SubWarehouseController;
+use App\Http\Controllers\QuotationController;
 
 // ========================================
 // RUTAS PÚBLICAS

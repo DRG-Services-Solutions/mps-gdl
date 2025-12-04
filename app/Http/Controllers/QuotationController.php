@@ -26,10 +26,7 @@ class QuotationController extends Controller
             $query->where('quotation_number', 'like', "%{$request->search}%");
         }
 
-        // Filtro por estado
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        
 
         // Filtro por hospital
         if ($request->filled('hospital_id')) {
@@ -52,8 +49,8 @@ class QuotationController extends Controller
         $quotations = $query->latest()->paginate(20);
 
         // Datos para filtros
-        $hospitals = Hospital::active()->orderBy('name')->get();
-        $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
+        $hospitals = Hospital::orderBy('name')->get();
+        $legalEntities = LegalEntity::orderBy('name')->get();
 
         return view('quotations.index', compact('quotations', 'hospitals', 'legalEntities'));
     }
@@ -63,9 +60,9 @@ class QuotationController extends Controller
      */
     public function create()
     {
-        $hospitals = Hospital::active()->orderBy('name')->get();
-        $doctors = Doctor::active()->orderBy('full_name')->get();
-        $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
+        $hospitals = Hospital::orderBy('name')->get();
+        $doctors = Doctor::active()->orderBy('last_name')->get();
+        $legalEntities = LegalEntity::orderBy('name')->get();
 
         return view('quotations.create', compact('hospitals', 'doctors', 'legalEntities'));
     }
