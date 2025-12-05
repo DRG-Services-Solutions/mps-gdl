@@ -17,6 +17,7 @@ use App\Http\Controllers\ProductLayoutController;
 use App\Http\Controllers\LegalEntityController;
 use App\Http\Controllers\SubWarehouseController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\HospitalController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -168,6 +169,7 @@ Route::prefix('doctors')->name('doctors.')->group(function () {
     Route::post('/{doctor}/toggle-status', [DoctorController::class, 'toggleStatus'])
         ->name('toggle-status');
 });
+
 
 // API para Select2
 Route::get('/api/doctors/select2', [DoctorController::class, 'select2'])
