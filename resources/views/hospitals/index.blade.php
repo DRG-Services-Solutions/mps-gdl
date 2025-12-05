@@ -109,12 +109,6 @@
                                     Hospital
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Código
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Contacto
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Ubicación
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -142,29 +136,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $hospital->code ?? 'N/A' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if($hospital->contact_person || $hospital->phone)
-                                            <div class="text-sm text-gray-900">{{ $hospital->contact_person ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">
-                                                <i class="fas fa-phone mr-1"></i>{{ $hospital->phone ?? 'N/A' }}
-                                            </div>
-                                        @else
-                                            <span class="text-sm text-gray-400">Sin contacto</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if($hospital->city || $hospital->state)
-                                            <div class="text-sm text-gray-900">
-                                                <i class="fas fa-map-marker-alt mr-1"></i>
-                                                {{ $hospital->city ?? '' }}{{ $hospital->city && $hospital->state ? ', ' : '' }}{{ $hospital->state ?? '' }}
-                                            </div>
-                                        @else
-                                            <span class="text-sm text-gray-400">Sin ubicación</span>
-                                        @endif
-                                    </td>
+                                    
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <form action="{{ route('hospitals.toggle-status', $hospital) }}" method="POST">
                                             @csrf

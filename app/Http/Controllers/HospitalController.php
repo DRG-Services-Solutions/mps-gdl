@@ -53,6 +53,8 @@ class HospitalController extends Controller
             'address' => 'nullable|string',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
+            'rfc' => 'nullable|string',
+            'razon_social' => 'nullable|string',
         ]);
 
         $hospital = Hospital::create($validated);
@@ -100,6 +102,8 @@ class HospitalController extends Controller
             'address' => 'nullable|string',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
+            'rfc' => 'nullable|string',
+            'razon_social' => 'nullable|string',
         ]);
 
         $hospital->update($validated);
