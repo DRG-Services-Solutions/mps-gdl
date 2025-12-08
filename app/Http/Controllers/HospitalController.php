@@ -52,7 +52,6 @@ class HospitalController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'is_active' => 'boolean',
-            'notes' => 'nullable|string',
             'rfc' => 'nullable|string',
             'razon_social' => 'nullable|string',
         ]);
@@ -69,17 +68,8 @@ class HospitalController extends Controller
      */
     public function show(Hospital $hospital)
     {
-        $hospital->load(['quotations' => function ($query) {
-            $query->latest()->limit(10);
-        }, 'doctors']);
 
-        $stats = [
-            'total_quotations' => $hospital->getTotalQuotations(),
-            'total_sales' => $hospital->getTotalSales(),
-            'active_quotations' => $hospital->getActiveQuotations()->count(),
-        ];
-
-        return view('hospitals.show', compact('hospital', 'stats'));
+    return view('hospitals.show', compact('hospital'));    
     }
 
     /**

@@ -48,41 +48,35 @@
                                 @enderror
                             </div>
 
-                            <!-- RFC -->
-                            <div class="md:col-span-2">
+                            <!-- Código -->
+                            <div>
                                 <label for="rfc" class="block text-sm font-medium text-gray-700 mb-1">
-                                    RFC <span class="text-red-500">*</span>
+                                    RFC
                                 </label>
                                 <input type="text" 
                                        id="rfc" 
                                        name="rfc" 
                                        value="{{ old('rfc', $hospital->rfc) }}"
-                                       required
-                                       placeholder="ABCD123456A12"
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('rfc') border-red-500 @enderror">
-                                @error('name')
+                                       placeholder="Ej: HG-001, CLIN-SJ..."
+                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('code') border-red-500 @enderror">
+                                @error('rfc')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
+                                <p class="mt-1 text-xs text-gray-500">Código único para identificar el hospital</p>
                             </div>
 
-                            <!-- Razon Social -->
-                            <div class="md:col-span-2">
-                                <label for="razon_social" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Razon Social <span class="text-red-500">*</span>
+                            <!-- Estado -->
+                            <div>
+                                <label for="is_active" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Estado
                                 </label>
-                                <input type="text" 
-                                       id="razon_social" 
-                                       name="razon_social" 
-                                       value="{{ old('razon_social', $hospital->razon_social) }}"
-                                       required
-                                       placeholder="ABCD123456A12"
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('razon_social') border-red-500 @enderror">
-                                @error('name')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
+                                <select id="is_active" 
+                                        name="is_active" 
+                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                    <option value="1" {{ old('is_active', $hospital->is_active) == 1 ? 'selected' : '' }}>Activo</option>
+                                    <option value="0" {{ old('is_active', $hospital->is_active) == 0 ? 'selected' : '' }}>Inactivo</option>
+                                </select>
                             </div>
-
-                        
                         </div>
                     </div>
 
@@ -93,6 +87,22 @@
                         </h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Persona de Contacto -->
+                            <div>
+                                <label for="contact_person" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Razon Social
+                                </label>
+                                <input type="text" 
+                                       id="razon_social" 
+                                       name="razon_social" 
+                                       value="{{ old('razon_social', $hospital->razon_social) }}"
+                                       placeholder="Ej: Hospital Alegria S.A. de C.V."
+                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('razon_social') border-red-500 @enderror">
+                                @error('razon_social')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
                             <!-- Teléfono -->
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
@@ -147,8 +157,9 @@
                                 @error('address')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
-                            </div>  
+                            </div>
 
+                            
                             
                         </div>
                     </div>
