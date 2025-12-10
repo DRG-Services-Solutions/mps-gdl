@@ -203,20 +203,30 @@
                                         <i class="fas fa-search mr-1"></i>Buscar Producto <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" 
-                                           x-model="searchQuery"
-                                           @input.debounce.300ms="searchProducts"
-                                           @focus="showResults = true"
-                                           placeholder="Escribe para buscar por nombre, código o EPC..."
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
-                                           autocomplete="off">
+                                        x-model="searchQuery"
+                                        @input.debounce.300ms="searchProducts"
+                                        @focus="showResults = true"
+                                        x-ref="searchInput"
+                                        placeholder="Escribe para buscar por nombre, código o EPC..."
+                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
+                                        autocomplete="off">
                                     
                                     <!-- Hidden input for product_unit_id -->
                                     <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
                                     
                                     <!-- Results dropdown -->
                                     <div x-show="showResults && products.length > 0" 
-                                         @click.away="showResults = false"
-                                         class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                        @click.away="showResults = false"
+                                        x-init="$watch('showResults', value => {
+                                            if (value && $refs.searchInput) {
+                                                const rect = $refs.searchInput.getBoundingClientRect();
+                                                $el.style.top = (rect.bottom + window.scrollY) + 'px';
+                                                $el.style.left = rect.left + 'px';
+                                                $el.style.width = rect.width + 'px';
+                                            }
+                                        })"
+                                        class="fixed z-[50] mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
                                         <template x-for="product in products" :key="product.id">
                                             <div @click="selectProduct(product)" 
                                                  class="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0">
@@ -225,6 +235,12 @@
                                                     <span x-text="product.code"></span> - 
                                                     <span x-text="product.epc || product.serial_number || 'N/A'"></span>
                                                 </div>
+                                                <div class="text-xs text-indigo-600 mt-1">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                                    <span x-text="product.sub_warehouse_name"></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span x-text="product.legal_entity"></span>
+                                                </div>                                                
                                             </div>
                                         </template>
                                     </div>
@@ -237,30 +253,46 @@
                                     <!-- Selected product display -->
                                     <div x-show="selectedProduct" class="mt-2 p-2 bg-indigo-50 rounded border border-indigo-200">
                                         <div class="flex items-center justify-between">
-                                            <div>
+                                            <div class="flex-1">
                                                 <div class="text-sm font-medium text-indigo-900" x-text="selectedProduct?.name"></div>
-                                                <div class="text-xs text-indigo-600" x-text="selectedProduct?.code"></div>
+                                                <div class="text-xs text-indigo-600">
+                                                    <span x-text="selectedProduct?.code"></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span class="font-semibold">Disponible: <span x-text="maxQuantity"></span></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span x-text="selectedProduct?.epc || selectedProduct?.serial_number || 'N/A'"></span>
+                                                </div>
                                             </div>
                                             <button type="button" @click="clearSelection" class="text-indigo-600 hover:text-indigo-800">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </div>
+
                                 </div>
                                 
                                 <!-- Quantity -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">
                                         <i class="fas fa-hashtag mr-1"></i>Cantidad <span class="text-red-500">*</span>
+                                        <span x-show="selectedProduct" class="text-xs text-gray-500 font-normal">
+                                            (Disponible: <span x-text="maxQuantity"></span>)
+                                        </span>
                                     </label>
                                     <input type="number" 
-                                           name="quantity" 
-                                           x-model="quantity"
-                                           min="1"
-                                           value="1"
-                                           required
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                        name="quantity" 
+                                        x-model="quantity"
+                                        :max="maxQuantity"
+                                        min="1"
+                                        value="1"
+                                        required
+                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                    <p x-show="quantity > maxQuantity" class="mt-1 text-xs text-red-600">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>
+                                        La cantidad excede el stock disponible
+                                    </p>
                                 </div>
+
                                 
                                 <!-- Billing Mode -->
                                 <div>
@@ -460,6 +492,7 @@
                 showResults: false,
                 loading: false,
                 quantity: 1,
+                maxQuantity: 999, // ← AGREGAR
                 billingMode: 'rental',
                 
                 async searchProducts() {
@@ -487,14 +520,19 @@
                     this.selectedProduct = product;
                     this.selectedProductId = product.id;
                     this.searchQuery = product.name;
+                    this.maxQuantity = product.available_quantity || 1; // ← AGREGAR
+                    this.quantity = Math.min(this.quantity, this.maxQuantity); // ← AGREGAR: Ajustar cantidad si excede
                     this.showResults = false;
                 },
+
                 
                 clearSelection() {
                     this.selectedProduct = null;
                     this.selectedProductId = '';
                     this.searchQuery = '';
                     this.products = [];
+                    this.maxQuantity = 999; // ← AGREGAR
+                    this.quantity = 1; // ← AGREGAR
                 },
                 
                 validateForm(e) {

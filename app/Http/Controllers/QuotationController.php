@@ -197,7 +197,6 @@ class QuotationController extends Controller
      */
     public function addItem(Request $request, Quotation $quotation)
     {
-        // Solo agregar si está en borrador
         if ($quotation->status !== 'draft') {
             return redirect()
                 ->back()
@@ -206,13 +205,24 @@ class QuotationController extends Controller
 
         $validated = $request->validate([
             'product_unit_id' => 'required|exists:product_units,id',
-            'quantity' => 'required|integer|min:1', // ← AGREGADO
+            'quantity' => 'required|integer|min:1', // ← Esta línea existe
             'billing_mode' => 'required|in:rental,consignment',
             'rental_price' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
         ]);
 
-        $productUnit = ProductUnit::with('product')->findOrFail($validated['product_unit_id']); // ← MEJORADO (with product)
+        $productUnit = ProductUnit::findOrFail($validated['product_unit_id']);
+
+        $availableQuantity = $productUnit->quantity ?? 1;
+        if ($validated['quantity'] > $availableQuantity) {
+            return redirect()
+                ->back()
+                ->with('error', "Solo hay {$availableQuantity} unidad(es) disponible(s) de este producto.")
+                ->withInput();
+        }
+
+        $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();
+
 
         // Verificar que no esté ya en la cotización
         $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();

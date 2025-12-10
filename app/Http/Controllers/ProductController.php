@@ -303,34 +303,18 @@ class ProductController extends Controller
 
     public function searchApi(Request $request)
     {
-        $query = ProductUnit::with('product')
+        $query = ProductUnit::with(['product', 'legalEntity', 'subWarehouse'])
             ->where('status', 'available');
         
-        // Búsqueda por texto
         if ($request->filled('q')) {
             $search = $request->q;
             $query->where(function($q) use ($search) {
                 $q->whereHas('product', function($productQuery) use ($search) {
                     $productQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('code', 'like', "%{$search}%")
-                                ->orWhere('description', 'like', "%{$search}%");
+                                ->orWhere('code', 'like', "%{$search}%");
                 })
                 ->orWhere('epc', 'like', "%{$search}%")
                 ->orWhere('serial_number', 'like', "%{$search}%");
-            });
-        }
-        
-        // Filtro por categoría (opcional)
-        if ($request->filled('category_id')) {
-            $query->whereHas('product', function($q) use ($request) {
-                $q->where('category_id', $request->category_id);
-            });
-        }
-        
-        // Filtro por proveedor (opcional)
-        if ($request->filled('supplier_id')) {
-            $query->whereHas('product', function($q) use ($request) {
-                $q->where('supplier_id', $request->supplier_id);
             });
         }
         
@@ -341,10 +325,12 @@ class ProductController extends Controller
                 'id' => $pu->id,
                 'name' => $pu->product->name,
                 'code' => $pu->product->code,
-                'description' => $pu->product->description,
                 'epc' => $pu->epc,
                 'serial_number' => $pu->serial_number,
-                'text' => $pu->product->name . ' (' . $pu->product->code . ') - ' . ($pu->epc ?? $pu->serial_number ?? 'N/A'),
+                'available_quantity' => $pu->quantity ?? 1, // ← AGREGAR ESTA LÍNEA
+                'legal_entity' => $pu->legalEntity->name ?? null,
+                'sub_warehouse_name' => $pu->subWarehouse->name ?? 'N/A',  // ← CAMBIAR A sub_warehouse_name
+                
             ];
         }));
     }
