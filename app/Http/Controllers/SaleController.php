@@ -2,386 +2,159 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
 use App\Models\Quotation;
-use App\Models\QuotationItem;
-use App\Models\Hospital;
-use App\Models\Doctor;
 use App\Models\LegalEntity;
-use App\Models\ProductUnit;
-use App\Models\SubWarehouse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
-class QuotationController extends Controller
+class SaleController extends Controller
 {
     /**
-     * Display a listing of quotations.
+     * Display a listing of sales.
      */
     public function index(Request $request)
     {
-        $query = Quotation::with(['hospital', 'doctor', 'billingLegalEntity']);
+        $query = Sale::with(['quotation.hospital', 'legalEntity', 'productUnit.product']);
 
-        // Búsqueda por número
+        // Búsqueda
         if ($request->filled('search')) {
-            $query->where('quotation_number', 'like', "%{$request->search}%");
+            $query->where('invoice_number', 'like', "%{$request->search}%");
         }
 
-        // Filtro por estado
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filtro por hospital
-        if ($request->filled('hospital_id')) {
-            $query->byHospital($request->hospital_id);
+        // Filtro por tipo
+        if ($request->filled('sale_type')) {
+            $query->where('sale_type', $request->sale_type);
         }
 
         // Filtro por razón social
         if ($request->filled('legal_entity_id')) {
-            $query->byLegalEntity($request->legal_entity_id);
+            $query->where('legal_entity_id', $request->legal_entity_id);
+        }
+
+        // Filtro por estado de facturación
+        if ($request->filled('invoice_status')) {
+            if ($request->invoice_status === 'invoiced') {
+                $query->whereNotNull('invoice_number');
+            } else {
+                $query->whereNull('invoice_number');
+            }
         }
 
         // Filtro por rango de fechas
         if ($request->filled('date_from')) {
-            $query->where('surgery_date', '>=', $request->date_from);
+            $query->where('sale_date', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
-            $query->where('surgery_date', '<=', $request->date_to);
+            $query->where('sale_date', '<=', $request->date_to);
         }
 
-        $quotations = $query->latest()->paginate(20);
+        $sales = $query->latest('sale_date')->paginate(20);
 
         // Datos para filtros
-        $hospitals = Hospital::active()->orderBy('name')->get();
         $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
 
-        return view('quotations.index', compact('quotations', 'hospitals', 'legalEntities'));
+        return view('sales.index', compact('sales', 'legalEntities'));
     }
 
     /**
-     * Show the form for creating a new quotation.
+     * Display the specified sale.
      */
-    public function create()
+    public function show(Sale $sale)
     {
-        $hospitals = Hospital::active()->orderBy('name')->get();
-        $doctors = Doctor::active()->orderBy('full_name')->get();
-        $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
-
-        return view('quotations.create', compact('hospitals', 'doctors', 'legalEntities'));
-    }
-
-    /**
-     * Store a newly created quotation in storage.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'hospital_id' => 'required|exists:hospitals,id',
-            'doctor_id' => 'nullable|exists:doctors,id',
-            'surgery_type' => 'nullable|string|max:255',
-            'surgery_date' => 'nullable|date',
-            'billing_legal_entity_id' => 'required|exists:legal_entities,id',
-            'notes' => 'nullable|string',
-        ]);
-
-        $validated['created_by'] = auth()->id();
-
-        $quotation = Quotation::create($validated);
-
-        return redirect()
-            ->route('quotations.show', $quotation)
-            ->with('success', 'Cotización creada exitosamente. Ahora agrega productos.');
-    }
-
-    /**
-     * Display the specified quotation.
-     */
-    public function show(Quotation $quotation)
-    {
-        $quotation->load([
-            'hospital',
-            'doctor',
-            'billingLegalEntity',
-            'items.productUnit.product',
-            'items.sourceLegalEntity',
-            'items.sourceSubWarehouse',
+        $sale->load([
+            'quotation.hospital',
+            'quotation.doctor',
+            'legalEntity',
+            'productUnit.product',
             'createdBy',
         ]);
 
-        $stats = [
-            'total_items' => $quotation->getTotalItems(),
-            'sent_items' => $quotation->getSentItems(),
-            'returned_items' => $quotation->getReturnedItems(),
-            'missing_items' => $quotation->getMissingItems(),
-        ];
-
-        // Productos disponibles para agregar
-        $availableProducts = ProductUnit::where('status', 'available')
-            ->with(['product', 'legalEntity', 'subWarehouse'])
-            ->get();
-
-        return view('quotations.show', compact('quotation', 'stats', 'availableProducts'));
+        return view('sales.show', compact('sale'));
     }
 
     /**
-     * Show the form for editing the specified quotation.
+     * Show the form for editing the specified sale.
      */
-    public function edit(Quotation $quotation)
+    public function edit(Sale $sale)
     {
-        // Solo editar si está en borrador
-        if ($quotation->status !== 'draft') {
+        // Solo editar si no está facturada
+        if ($sale->invoice_number) {
             return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se pueden editar cotizaciones en borrador.');
+                ->route('sales.show', $sale)
+                ->with('error', 'No se pueden editar ventas ya facturadas.');
         }
 
-        $hospitals = Hospital::active()->orderBy('name')->get();
-        $doctors = Doctor::active()->orderBy('full_name')->get();
-        $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
-
-        return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities'));
+        return view('sales.edit', compact('sale'));
     }
 
     /**
-     * Update the specified quotation in storage.
+     * Update the specified sale in storage.
      */
-    public function update(Request $request, Quotation $quotation)
+    public function update(Request $request, Sale $sale)
     {
-        // Solo editar si está en borrador
-        if ($quotation->status !== 'draft') {
+        // Solo editar si no está facturada
+        if ($sale->invoice_number) {
             return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se pueden editar cotizaciones en borrador.');
+                ->route('sales.show', $sale)
+                ->with('error', 'No se pueden editar ventas ya facturadas.');
         }
 
         $validated = $request->validate([
-            'hospital_id' => 'required|exists:hospitals,id',
-            'doctor_id' => 'nullable|exists:doctors,id',
-            'surgery_type' => 'nullable|string|max:255',
-            'surgery_date' => 'nullable|date',
-            'billing_legal_entity_id' => 'required|exists:legal_entities,id',
+            'sale_price' => 'required|numeric|min:0',
+            'invoice_number' => 'nullable|string|max:100',
+            'invoice_date' => 'nullable|date',
             'notes' => 'nullable|string',
         ]);
 
-        $quotation->update($validated);
+        $sale->update($validated);
 
         return redirect()
-            ->route('quotations.show', $quotation)
-            ->with('success', 'Cotización actualizada exitosamente.');
+            ->route('sales.show', $sale)
+            ->with('success', 'Venta actualizada exitosamente.');
     }
 
     /**
-     * Remove the specified quotation from storage.
+     * Mark sale as invoiced.
      */
-    public function destroy(Quotation $quotation)
+    public function markAsInvoiced(Request $request, Sale $sale)
     {
-        // Solo eliminar si está en borrador
-        if ($quotation->status !== 'draft') {
+        if ($sale->invoice_number) {
             return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se pueden eliminar cotizaciones en borrador.');
-        }
-
-        // Eliminar items primero
-        $quotation->items()->delete();
-        $quotation->delete();
-
-        return redirect()
-            ->route('quotations.index')
-            ->with('success', 'Cotización eliminada exitosamente.');
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // AGREGAR / QUITAR PRODUCTOS
-    // ═══════════════════════════════════════════════════════════
-
-    /**
-     * Add item to quotation.
-     */
-    public function addItem(Request $request, Quotation $quotation)
-    {
-        // Solo agregar si está en borrador
-        if ($quotation->status !== 'draft') {
-            return redirect()
-                ->back()
-                ->with('error', 'Solo se pueden agregar productos en borrador.');
+                ->route('sales.show', $sale)
+                ->with('error', 'Esta venta ya está facturada.');
         }
 
         $validated = $request->validate([
-            'product_unit_id' => 'required|exists:product_units,id',
-            'billing_mode' => 'required|in:rental,consignment',
-            'rental_price' => 'nullable|numeric|min:0',
-            'sale_price' => 'nullable|numeric|min:0',
+            'invoice_number' => 'required|string|max:100|unique:sales,invoice_number',
+            'invoice_date' => 'required|date',
         ]);
 
-        $productUnit = ProductUnit::findOrFail($validated['product_unit_id']);
-
-        // Verificar que no esté ya en la cotización
-        $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();
-        if ($exists) {
-            return redirect()
-                ->back()
-                ->with('error', 'Este producto ya está en la cotización.');
-        }
-
-        QuotationItem::create([
-            'quotation_id' => $quotation->id,
-            'product_unit_id' => $productUnit->id,
-            'product_id' => $productUnit->product_id,
-            'source_legal_entity_id' => $productUnit->legal_entity_id,
-            'source_sub_warehouse_id' => $productUnit->sub_warehouse_id,
-            'billing_mode' => $validated['billing_mode'],
-            'rental_price' => $validated['rental_price'] ?? 0,
-            'sale_price' => $validated['sale_price'] ?? 0,
-            'status' => 'pending',
+        $sale->update([
+            'invoice_number' => $validated['invoice_number'],
+            'invoice_date' => $validated['invoice_date'],
         ]);
 
         return redirect()
-            ->back()
-            ->with('success', 'Producto agregado a la cotización.');
+            ->route('sales.show', $sale)
+            ->with('success', 'Venta marcada como facturada exitosamente.');
     }
 
     /**
-     * Remove item from quotation.
+     * Remove the specified sale from storage.
      */
-    public function removeItem(Quotation $quotation, QuotationItem $item)
+    public function destroy(Sale $sale)
     {
-        // Solo quitar si está en borrador
-        if ($quotation->status !== 'draft') {
+        // Solo eliminar si no está facturada
+        if ($sale->invoice_number) {
             return redirect()
-                ->back()
-                ->with('error', 'Solo se pueden quitar productos en borrador.');
+                ->route('sales.show', $sale)
+                ->with('error', 'No se pueden eliminar ventas ya facturadas.');
         }
 
-        // Verificar que el item pertenece a esta cotización
-        if ($item->quotation_id !== $quotation->id) {
-            abort(403);
-        }
-
-        $item->delete();
+        $sale->delete();
 
         return redirect()
-            ->back()
-            ->with('success', 'Producto eliminado de la cotización.');
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // FLUJO DE CIRUGÍA
-    // ═══════════════════════════════════════════════════════════
-
-    /**
-     * Send quotation to surgery.
-     */
-    public function sendToSurgery(Quotation $quotation)
-    {
-        if ($quotation->status !== 'draft' && $quotation->status !== 'sent') {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Esta cotización ya fue enviada a cirugía.');
-        }
-
-        if ($quotation->items()->count() === 0) {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Debes agregar al menos un producto antes de enviar a cirugía.');
-        }
-
-        try {
-            $quotation->sendToSurgery();
-
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('success', 'Material enviado a cirugía exitosamente.');
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Error al enviar a cirugía: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Show form to register return from surgery.
-     */
-    public function showReturnForm(Quotation $quotation)
-    {
-        if ($quotation->status !== 'in_surgery') {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se puede registrar retorno de cotizaciones en cirugía.');
-        }
-
-        $quotation->load(['items.productUnit.product', 'hospital']);
-
-        return view('quotations.return', compact('quotation'));
-    }
-
-    /**
-     * Register return from surgery.
-     */
-    public function registerReturn(Request $request, Quotation $quotation)
-    {
-        if ($quotation->status !== 'in_surgery') {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se puede registrar retorno de cotizaciones en cirugía.');
-        }
-
-        $validated = $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:quotation_items,id',
-            'items.*.returned' => 'required|boolean',
-        ]);
-
-        try {
-            DB::transaction(function () use ($validated, $quotation) {
-                foreach ($validated['items'] as $itemData) {
-                    $item = QuotationItem::findOrFail($itemData['id']);
-                    
-                    if ($itemData['returned']) {
-                        $item->markAsReturned();
-                    } else {
-                        // No regresó, marcar como usado
-                        $item->update([
-                            'quantity_returned' => 0,
-                            'status' => 'used',
-                        ]);
-                    }
-                }
-
-                $quotation->update(['status' => 'completed']);
-            });
-
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('success', 'Retorno registrado exitosamente. Ahora puedes generar las ventas.');
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', 'Error al registrar retorno: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generate sales from quotation.
-     */
-    public function generateSales(Quotation $quotation)
-    {
-        if ($quotation->status !== 'completed') {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Solo se pueden generar ventas de cotizaciones completadas.');
-        }
-
-        try {
-            $salesCount = $quotation->generateSales();
-
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('success', "{$salesCount} venta(s) generada(s) exitosamente.");
-        } catch (\Exception $e) {
-            return redirect()
-                ->route('quotations.show', $quotation)
-                ->with('error', 'Error al generar ventas: ' . $e->getMessage());
-        }
+            ->route('sales.index')
+            ->with('success', 'Venta eliminada exitosamente.');
     }
 }

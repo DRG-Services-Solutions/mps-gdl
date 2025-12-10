@@ -11,35 +11,16 @@ class Doctor extends Model
     protected $fillable = [
         'first_name',
         'last_name',
-        'full_name',
-        'specialty',
-        'license_number',
-        'phone',
-        'mobile',
-        'email',
-        'primary_hospital_id',
+        'telefono',
         'is_active',
-        'notes',
+        
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
 
-    // ═══════════════════════════════════════════════════════════
-    // BOOT - Generar nombre completo automáticamente
-    // ═══════════════════════════════════════════════════════════
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($doctor) {
-            if (empty($doctor->full_name)) {
-                $doctor->full_name = trim("{$doctor->first_name} {$doctor->last_name}");
-            }
-        });
-    }
+ 
 
     // ═══════════════════════════════════════════════════════════
     // RELACIONES
@@ -79,7 +60,7 @@ class Doctor extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('full_name', 'like', "%{$search}%")
+            $q->where('first_name', 'like', "%{$search}%")
               ->orWhere('first_name', 'like', "%{$search}%")
               ->orWhere('last_name', 'like', "%{$search}%")
               ->orWhere('specialty', 'like', "%{$search}%")
@@ -115,13 +96,5 @@ class Doctor extends Model
         return $this->quotations()->count();
     }
 
-    /**
-     * Obtener nombre con especialidad
-     */
-    public function getNameWithSpecialtyAttribute(): string
-    {
-        return $this->specialty 
-            ? "Dr(a). {$this->full_name} - {$this->specialty}" 
-            : "Dr(a). {$this->full_name}";
-    }
+   
 }

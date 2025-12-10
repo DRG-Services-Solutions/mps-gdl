@@ -30,6 +30,8 @@ return new class extends Migration
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->onDelete('restrict');
+            $table->integer('quantity')->default(1);
+
             
             // ═══════════════════════════════════════════════════════════
             // ORIGEN DEL PRODUCTO

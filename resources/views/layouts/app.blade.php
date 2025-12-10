@@ -98,7 +98,7 @@
                             <div class="text-center md:text-left">
                                 <p class="text-sm text-gray-600">
                                     &copy; {{ date('Y') }} 
-                                    <span class="font-semibold text-blue-600">DRG Services & Solutions</span> 
+                                    <span class="font-semibold text-blue-600">Distribuciones MPS</span> 
                                     - Todos los derechos reservados
                                 </p>
                             </div>
@@ -111,7 +111,7 @@
                                     <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                                     </svg>
-                                    <span class="text-xs text-gray-500">Potenciado por Laravel</span>
+                                    <span class="text-xs text-gray-500">Potenciado por DRG </span>
                                 </div>
                             </div>
                         </div>

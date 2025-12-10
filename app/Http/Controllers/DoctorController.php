@@ -2,21 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Doctor;
 use App\Models\Hospital;
 use Illuminate\Http\Request;
 
-class HospitalController extends Controller
+class DoctorController extends Controller
 {
     /**
-     * Display a listing of hospitals.
+     * Display a listing of doctors.
      */
     public function index(Request $request)
     {
-        $query = Hospital::query();
+        $query = Doctor::with('primaryHospital');
 
         // Búsqueda
         if ($request->filled('search')) {
             $query->search($request->search);
+        }
+
+        // Filtro por especialidad
+        if ($request->filled('specialty')) {
+            $query->bySpecialty($request->specialty);
+        }
+
+        // Filtro por hospital
+        if ($request->filled('hospital_id')) {
+            $query->byHospital($request->hospital_id);
         }
 
         // Filtro de estado
@@ -28,156 +39,156 @@ class HospitalController extends Controller
             }
         }
 
-        $hospitals = $query->orderBy('name')->paginate(20);
+        $doctors = $query->orderBy('first_name')->paginate(20);
 
-        return view('hospitals.index', compact('hospitals'));
+        
+        // Lista de hospitales para filtro
+        $hospitals = Hospital::active()->orderBy('name')->get();
+
+        return view('doctors.index', compact('doctors', 'hospitals'));
     }
 
     /**
-     * Show the form for creating a new hospital.
+     * Show the form for creating a new doctor.
      */
     public function create()
     {
-        return view('hospitals.create');
+        $hospitals = Hospital::active()->orderBy('name')->get();
+        
+        return view('doctors.create', compact('hospitals'));
     }
 
     /**
-     * Store a newly created hospital in storage.
+     * Store a newly created doctor in storage.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:hospitals,code',
-            'contact_person' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'telefono' => 'required|string|max:50',
             'is_active' => 'boolean',
-            'notes' => 'nullable|string',
+
         ]);
 
-        $hospital = Hospital::create($validated);
+        $validated['is_active'] = $validated['is_active'] ?? true;
+
+
+        $doctor = Doctor::create($validated);
 
         return redirect()
-            ->route('hospitals.show', $hospital)
-            ->with('success', 'Hospital creado exitosamente.');
+            ->route('doctors.show', $doctor)
+            ->with('success', 'Doctor creado exitosamente.');
     }
 
     /**
-     * Display the specified hospital.
+     * Display the specified doctor.
      */
-    public function show(Hospital $hospital)
+    public function show(Doctor $doctor)
     {
-        $hospital->load(['quotations' => function ($query) {
+        $doctor->load(['primaryHospital', 'quotations' => function ($query) {
             $query->latest()->limit(10);
-        }, 'doctors']);
+        }]);
 
         $stats = [
-            'total_quotations' => $hospital->getTotalQuotations(),
-            'total_sales' => $hospital->getTotalSales(),
-            'active_quotations' => $hospital->getActiveQuotations()->count(),
+            'total_quotations' => $doctor->getTotalQuotations(),
         ];
 
-        return view('hospitals.show', compact('hospital', 'stats'));
+        return view('doctors.show', compact('doctor', 'stats'));
     }
 
     /**
-     * Show the form for editing the specified hospital.
+     * Show the form for editing the specified doctor.
      */
-    public function edit(Hospital $hospital)
+    public function edit(Doctor $doctor)
     {
-        return view('hospitals.edit', compact('hospital'));
+        $hospitals = Hospital::active()->orderBy('name')->get();
+        
+        return view('doctors.edit', compact('doctor', 'hospitals'));
     }
 
     /**
-     * Update the specified hospital in storage.
+     * Update the specified doctor in storage.
      */
-    public function update(Request $request, Hospital $hospital)
+    public function update(Request $request, Doctor $doctor)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:hospitals,code,' . $hospital->id,
-            'contact_person' => 'nullable|string|max:255',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'specialty' => 'nullable|string|max:100',
+            'license_number' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
+            'mobile' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
+            'primary_hospital_id' => 'nullable|exists:hospitals,id',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
         ]);
 
-        $hospital->update($validated);
+        $doctor->update($validated);
 
         return redirect()
-            ->route('hospitals.show', $hospital)
-            ->with('success', 'Hospital actualizado exitosamente.');
+            ->route('doctors.show', $doctor)
+            ->with('success', 'Doctor actualizado exitosamente.');
     }
 
     /**
-     * Remove the specified hospital from storage.
+     * Remove the specified doctor from storage.
      */
-    public function destroy(Hospital $hospital)
+    public function destroy(Doctor $doctor)
     {
-        // Verificar que no tenga cotizaciones o ventas
-        if ($hospital->quotations()->count() > 0) {
+        // Verificar que no tenga cotizaciones
+        if ($doctor->quotations()->count() > 0) {
             return redirect()
-                ->route('hospitals.show', $hospital)
-                ->with('error', 'No se puede eliminar el hospital porque tiene cotizaciones asociadas.');
+                ->route('doctors.show', $doctor)
+                ->with('error', 'No se puede eliminar el doctor porque tiene cotizaciones asociadas.');
         }
 
-        if ($hospital->sales()->count() > 0) {
-            return redirect()
-                ->route('hospitals.show', $hospital)
-                ->with('error', 'No se puede eliminar el hospital porque tiene ventas asociadas.');
-        }
-
-        $hospital->delete();
+        $doctor->delete();
 
         return redirect()
-            ->route('hospitals.index')
-            ->with('success', 'Hospital eliminado exitosamente.');
+            ->route('doctors.index')
+            ->with('success', 'Doctor eliminado exitosamente.');
     }
 
     /**
      * Toggle active status.
      */
-    public function toggleStatus(Hospital $hospital)
+    public function toggleStatus(Doctor $doctor)
     {
-        $hospital->update([
-            'is_active' => !$hospital->is_active,
+        $doctor->update([
+            'is_active' => !$doctor->is_active,
         ]);
 
-        $status = $hospital->is_active ? 'activado' : 'desactivado';
+        $status = $doctor->is_active ? 'activado' : 'desactivado';
 
         return redirect()
             ->back()
-            ->with('success', "Hospital {$status} exitosamente.");
+            ->with('success', "Doctor {$status} exitosamente.");
     }
 
     /**
-     * Get hospitals for select2 (API).
+     * Get doctors for select2 (API).
      */
     public function select2(Request $request)
     {
-        $query = Hospital::active();
+        $query = Doctor::active();
 
         if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        $hospitals = $query->limit(20)->get();
+        if ($request->filled('hospital_id')) {
+            $query->byHospital($request->hospital_id);
+        }
+
+        $doctors = $query->limit(20)->get();
 
         return response()->json([
-            'results' => $hospitals->map(function ($hospital) {
+            'results' => $doctors->map(function ($doctor) {
                 return [
-                    'id' => $hospital->id,
-                    'text' => $hospital->full_name,
+                    'id' => $doctor->id,
+                    'text' => $doctor->name_with_specialty,
                 ];
             }),
         ]);

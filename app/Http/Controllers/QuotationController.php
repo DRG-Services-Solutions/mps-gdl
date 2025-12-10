@@ -133,7 +133,7 @@ class QuotationController extends Controller
         }
 
         $hospitals = Hospital::active()->orderBy('name')->get();
-        $doctors = Doctor::active()->orderBy('full_name')->get();
+        $doctors = Doctor::active()->orderBy('first_name')->get();
         $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
 
         return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities'));
@@ -206,12 +206,13 @@ class QuotationController extends Controller
 
         $validated = $request->validate([
             'product_unit_id' => 'required|exists:product_units,id',
+            'quantity' => 'required|integer|min:1', // ← AGREGADO
             'billing_mode' => 'required|in:rental,consignment',
             'rental_price' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
         ]);
 
-        $productUnit = ProductUnit::findOrFail($validated['product_unit_id']);
+        $productUnit = ProductUnit::with('product')->findOrFail($validated['product_unit_id']); // ← MEJORADO (with product)
 
         // Verificar que no esté ya en la cotización
         $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();
@@ -225,6 +226,7 @@ class QuotationController extends Controller
             'quotation_id' => $quotation->id,
             'product_unit_id' => $productUnit->id,
             'product_id' => $productUnit->product_id,
+            'quantity' => $validated['quantity'], // ← AGREGADO
             'source_legal_entity_id' => $productUnit->legal_entity_id,
             'source_sub_warehouse_id' => $productUnit->sub_warehouse_id,
             'billing_mode' => $validated['billing_mode'],

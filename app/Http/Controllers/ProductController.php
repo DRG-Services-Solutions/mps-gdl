@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProductUnit;
 use App\Models\Product;
 use App\Models\Supplier; 
 use App\Models\Category;
@@ -299,6 +300,55 @@ class ProductController extends Controller
 
         return view('products.index', compact('products'));
     }
+
+    public function searchApi(Request $request)
+    {
+        $query = ProductUnit::with('product')
+            ->where('status', 'available');
+        
+        // Búsqueda por texto
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('product', function($productQuery) use ($search) {
+                    $productQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%")
+                                ->orWhere('description', 'like', "%{$search}%");
+                })
+                ->orWhere('epc', 'like', "%{$search}%")
+                ->orWhere('serial_number', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filtro por categoría (opcional)
+        if ($request->filled('category_id')) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('category_id', $request->category_id);
+            });
+        }
+        
+        // Filtro por proveedor (opcional)
+        if ($request->filled('supplier_id')) {
+            $query->whereHas('product', function($q) use ($request) {
+                $q->where('supplier_id', $request->supplier_id);
+            });
+        }
+        
+        $products = $query->limit(20)->get();
+        
+        return response()->json($products->map(function($pu) {
+            return [
+                'id' => $pu->id,
+                'name' => $pu->product->name,
+                'code' => $pu->product->code,
+                'description' => $pu->product->description,
+                'epc' => $pu->epc,
+                'serial_number' => $pu->serial_number,
+                'text' => $pu->product->name . ' (' . $pu->product->code . ') - ' . ($pu->epc ?? $pu->serial_number ?? 'N/A'),
+            ];
+        }));
+    }
+
 
     /**
      * Productos que requieren esterilización

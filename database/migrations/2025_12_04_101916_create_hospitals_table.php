@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('rfc')->nullable();
             $table->string('razon_social')->nullable();
 
-            $table->boolean('is_active');
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 

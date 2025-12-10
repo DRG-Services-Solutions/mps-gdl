@@ -15,13 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('first_name', 100);
             $table->string('last_name', 100);
-
+            $table->string('telefono');
             $table->boolean('is_active')->default(true);
-
-
-      
-
-
             $table->timestamps();
         });
     }
