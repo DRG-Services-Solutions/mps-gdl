@@ -12,9 +12,6 @@ class Hospital extends Model
         'phone',
         'email',
         'address',
-        'city',
-        'state',
-        'zip_code',
         'is_active',
         'notes',
     ];
@@ -62,9 +59,7 @@ class Hospital extends Model
     public function scopeSearch($query, $search)
     {
         return $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('code', 'like', "%{$search}%")
-              ->orWhere('contact_person', 'like', "%{$search}%");
+            $q->where('name', 'like', "%{$search}%");
         });
     }
 
@@ -97,17 +92,5 @@ class Hospital extends Model
             ->whereIn('status', ['draft', 'sent', 'in_surgery', 'completed'])
             ->get();
     }
-
-    /**
-     * Obtener nombre completo con código
-     */
-    public function getFullNameAttribute(): string
-    {
-        return $this->code 
-            ? "{$this->name} ({$this->code})" 
-            : $this->name;
-    }
-
-
 
 }

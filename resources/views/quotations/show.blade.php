@@ -74,7 +74,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6" x-data="{ showAddModal: false, selectedProductUnit: null, billingMode: 'rental', rentalPrice: 0, salePrice: 0 }">
+    <div class="py-6" x-data="quotationApp()">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Information Cards -->
@@ -186,18 +186,164 @@
                 </div>
             </div>
             
-            <!-- Products -->
+            <!-- Add Product Form -->
+            @if($quotation->status === 'draft')
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>Agregar Producto
+                        </h3>
+                        
+                        <form action="{{ route('quotations.add-item', $quotation) }}" method="POST" @submit="validateForm">
+                            @csrf
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <!-- Product Search -->
+                                <div class="md:col-span-2 relative">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fas fa-search mr-1"></i>Buscar Producto <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" 
+                                        x-model="searchQuery"
+                                        @input.debounce.300ms="searchProducts"
+                                        @focus="showResults = true"
+                                        x-ref="searchInput"
+                                        placeholder="Escribe para buscar por nombre, código o EPC..."
+                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
+                                        autocomplete="off">
+                                    
+                                    <!-- Hidden input for product_unit_id -->
+                                    <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
+                                    
+                                    <!-- Results dropdown -->
+                                    <div x-show="showResults && products.length > 0" 
+                                        @click.away="showResults = false"
+                                        x-init="$watch('showResults', value => {
+                                            if (value && $refs.searchInput) {
+                                                const rect = $refs.searchInput.getBoundingClientRect();
+                                                $el.style.top = (rect.bottom + window.scrollY) + 'px';
+                                                $el.style.left = rect.left + 'px';
+                                                $el.style.width = rect.width + 'px';
+                                            }
+                                        })"
+                                        class="fixed z-[50] mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+
+                                        <template x-for="product in products" :key="product.id">
+                                            <div @click="selectProduct(product)" 
+                                                 class="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                                                <div class="font-medium text-sm text-gray-900" x-text="product.name"></div>
+                                                <div class="text-xs text-gray-500">
+                                                    <span x-text="product.code"></span> - 
+                                                    <span x-text="product.epc || product.serial_number || 'N/A'"></span>
+                                                </div>
+                                                <div class="text-xs text-indigo-600 mt-1">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                                    <span x-text="product.sub_warehouse_name"></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span x-text="product.legal_entity"></span>
+                                                </div>                                                
+                                            </div>
+                                        </template>
+                                    </div>
+                                    
+                                    <!-- Loading -->
+                                    <div x-show="loading" class="absolute right-3 top-9">
+                                        <i class="fas fa-spinner fa-spin text-indigo-600"></i>
+                                    </div>
+                                    
+                                    <!-- Selected product display -->
+                                    <div x-show="selectedProduct" class="mt-2 p-2 bg-indigo-50 rounded border border-indigo-200">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex-1">
+                                                <div class="text-sm font-medium text-indigo-900" x-text="selectedProduct?.name"></div>
+                                                <div class="text-xs text-indigo-600">
+                                                    <span x-text="selectedProduct?.code"></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span class="font-semibold">Disponible: <span x-text="maxQuantity"></span></span>
+                                                    <span class="mx-1">•</span>
+                                                    <span x-text="selectedProduct?.epc || selectedProduct?.serial_number || 'N/A'"></span>
+                                                </div>
+                                            </div>
+                                            <button type="button" @click="clearSelection" class="text-indigo-600 hover:text-indigo-800">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                
+                                <!-- Quantity -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fas fa-hashtag mr-1"></i>Cantidad <span class="text-red-500">*</span>
+                                        <span x-show="selectedProduct" class="text-xs text-gray-500 font-normal">
+                                            (Disponible: <span x-text="maxQuantity"></span>)
+                                        </span>
+                                    </label>
+                                    <input type="number" 
+                                        name="quantity" 
+                                        x-model="quantity"
+                                        :max="maxQuantity"
+                                        min="1"
+                                        value="1"
+                                        required
+                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                    <p x-show="quantity > maxQuantity" class="mt-1 text-xs text-red-600">
+                                        <i class="fas fa-exclamation-circle mr-1"></i>
+                                        La cantidad excede el stock disponible
+                                    </p>
+                                </div>
+
+                                
+                                <!-- Billing Mode -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fas fa-tag mr-1"></i>Modalidad <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="billing_mode" 
+                                            x-model="billingMode"
+                                            required
+                                            class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                        <option value="rental">Renta</option>
+                                        <option value="consignment">Consignación</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Price -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <i class="fas fa-dollar-sign mr-1"></i>
+                                        <span x-text="billingMode === 'rental' ? 'Precio Renta' : 'Precio Venta'"></span>
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" 
+                                           :name="billingMode === 'rental' ? 'rental_price' : 'sale_price'"
+                                           step="0.01"
+                                           min="0"
+                                           placeholder="0.00"
+                                           required
+                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 flex justify-end">
+                                <button type="submit" 
+                                        :disabled="!selectedProductId"
+                                        :class="selectedProductId ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest transition">
+                                    <i class="fas fa-plus mr-2"></i>Agregar Producto
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endif
+            
+            <!-- Products Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+                <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-list mr-2"></i>Productos
+                        <i class="fas fa-list mr-2"></i>Productos ({{ $quotation->items->count() }})
                     </h3>
-                    @if($quotation->status === 'draft')
-                        <button @click="showAddModal = true" 
-                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                            <i class="fas fa-plus mr-2"></i>Agregar Producto
-                        </button>
-                    @endif
                 </div>
                 
                 <div class="overflow-x-auto">
@@ -206,9 +352,11 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EPC/Serial</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origen</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modalidad</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                 @if($quotation->status === 'draft')
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -217,13 +365,20 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($quotation->items as $item)
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-gray-900">{{ $item->product->name }}</div>
                                         <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $item->productUnit->epc ?? $item->productUnit->serial_number ?? 'N/A' }}
+                                        <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                            {{ $item->productUnit->epc ?? $item->productUnit->serial_number ?? 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 font-semibold text-sm">
+                                            {{ $item->quantity ?? 1 }}
+                                        </span>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">{{ $item->sourceLegalEntity->business_name }}</div>
@@ -240,12 +395,20 @@
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">
+                                    <td class="px-6 py-4 text-sm text-gray-900 text-right font-medium">
                                         @if($item->billing_mode === 'rental')
                                             ${{ number_format($item->rental_price, 2) }}
                                         @else
                                             ${{ number_format($item->sale_price, 2) }}
                                         @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">
+                                        @php
+                                            $price = $item->billing_mode === 'rental' ? $item->rental_price : $item->sale_price;
+                                            $qty = $item->quantity ?? 1;
+                                            $total = $price * $qty;
+                                        @endphp
+                                        ${{ number_format($total, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @php
@@ -275,7 +438,7 @@
                                                 @method('DELETE')
                                                 <button type="submit" 
                                                         onclick="return confirm('¿Eliminar este producto?')"
-                                                        class="text-red-600 hover:text-red-900">
+                                                        class="text-red-600 hover:text-red-900 transition-colors">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </form>
@@ -284,152 +447,102 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                         <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
-                                        <p>No hay productos agregados</p>
+                                        <p class="text-lg font-medium mb-2">No hay productos agregados</p>
                                         @if($quotation->status === 'draft')
-                                            <button @click="showAddModal = true" class="mt-4 inline-block text-indigo-600 hover:text-indigo-900 font-medium">
-                                                <i class="fas fa-plus mr-1"></i>Agregar primer producto
-                                            </button>
+                                            <p class="text-sm">Usa el formulario de arriba para agregar productos a esta cotización</p>
                                         @endif
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
+                        @if($quotation->items->count() > 0)
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-right font-bold text-gray-900">TOTAL:</td>
+                                    <td class="px-6 py-4 text-right font-bold text-indigo-600 text-lg">
+                                        @php
+                                            $grandTotal = $quotation->items->sum(function($item) {
+                                                $price = $item->billing_mode === 'rental' ? $item->rental_price : $item->sale_price;
+                                                return $price * ($item->quantity ?? 1);
+                                            });
+                                        @endphp
+                                        ${{ number_format($grandTotal, 2) }}
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        @endif
                     </table>
                 </div>
             </div>
             
         </div>
-
-        <!-- Modal: Add Product -->
-        <div x-show="showAddModal" 
-             x-cloak
-             class="fixed inset-0 z-50 overflow-y-auto" 
-             aria-labelledby="modal-title" 
-             role="dialog" 
-             aria-modal="true">
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                
-                <!-- Background overlay -->
-                <div x-show="showAddModal" 
-                     x-transition:enter="ease-out duration-300"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     x-transition:leave="ease-in duration-200"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0"
-                     @click="showAddModal = false"
-                     class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
-                     aria-hidden="true"></div>
-
-                <!-- Center modal -->
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <!-- Modal panel -->
-                <div x-show="showAddModal"
-                     x-transition:enter="ease-out duration-300"
-                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                     x-transition:leave="ease-in duration-200"
-                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                     class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    
-                    <form action="{{ route('quotations.add-item', $quotation) }}" method="POST">
-                        @csrf
-                        
-                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                            <div class="sm:flex sm:items-start">
-                                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-                                    <i class="fas fa-plus text-indigo-600"></i>
-                                </div>
-                                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                        Agregar Producto
-                                    </h3>
-                                    <div class="mt-4 space-y-4">
-                                        
-                                        <!-- Product Unit -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                Producto <span class="text-red-500">*</span>
-                                            </label>
-                                            <select name="product_unit_id" 
-                                                    required
-                                                    class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                                <option value="">Seleccionar...</option>
-                                                @foreach($availableProducts as $pu)
-                                                    <option value="{{ $pu->id }}">
-                                                        {{ $pu->product->name }} - {{ $pu->epc ?? $pu->serial_number ?? 'N/A' }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        
-                                        <!-- Billing Mode -->
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                Modalidad <span class="text-red-500">*</span>
-                                            </label>
-                                            <select name="billing_mode" 
-                                                    x-model="billingMode"
-                                                    required
-                                                    class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                                <option value="rental">Renta</option>
-                                                <option value="consignment">Consignación</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <!-- Rental Price -->
-                                        <div x-show="billingMode === 'rental'">
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                Precio de Renta <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="number" 
-                                                   name="rental_price" 
-                                                   step="0.01"
-                                                   min="0"
-                                                   placeholder="0.00"
-                                                   class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                        </div>
-                                        
-                                        <!-- Sale Price -->
-                                        <div x-show="billingMode === 'consignment'">
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                Precio de Venta <span class="text-red-500">*</span>
-                                            </label>
-                                            <input type="number" 
-                                                   name="sale_price" 
-                                                   step="0.01"
-                                                   min="0"
-                                                   placeholder="0.00"
-                                                   class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                        </div>
-                                        
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                            <button type="submit" 
-                                    class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm">
-                                <i class="fas fa-check mr-2"></i>Agregar
-                            </button>
-                            <button type="button" 
-                                    @click="showAddModal = false"
-                                    class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                                <i class="fas fa-times mr-2"></i>Cancelar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
+    @push('scripts')
+    <script>
+        function quotationApp() {
+            return {
+                searchQuery: '',
+                products: [],
+                selectedProduct: null,
+                selectedProductId: '',
+                showResults: false,
+                loading: false,
+                quantity: 1,
+                maxQuantity: 999, // ← AGREGAR
+                billingMode: 'rental',
+                
+                async searchProducts() {
+                    if (this.searchQuery.length < 2) {
+                        this.products = [];
+                        return;
+                    }
+                    
+                    this.loading = true;
+                    
+                    try {
+                        const response = await fetch(`{{ route('products.searchApi') }}?q=${encodeURIComponent(this.searchQuery)}&available=true`);
+                        const data = await response.json();
+                        this.products = data;
+                        this.showResults = true;
+                    } catch (error) {
+                        console.error('Error searching products:', error);
+                        this.products = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                selectProduct(product) {
+                    this.selectedProduct = product;
+                    this.selectedProductId = product.id;
+                    this.searchQuery = product.name;
+                    this.maxQuantity = product.available_quantity || 1; // ← AGREGAR
+                    this.quantity = Math.min(this.quantity, this.maxQuantity); // ← AGREGAR: Ajustar cantidad si excede
+                    this.showResults = false;
+                },
+
+                
+                clearSelection() {
+                    this.selectedProduct = null;
+                    this.selectedProductId = '';
+                    this.searchQuery = '';
+                    this.products = [];
+                    this.maxQuantity = 999; // ← AGREGAR
+                    this.quantity = 1; // ← AGREGAR
+                },
+                
+                validateForm(e) {
+                    if (!this.selectedProductId) {
+                        e.preventDefault();
+                        alert('Por favor selecciona un producto de la lista');
+                    }
+                }
+            }
+        }
+    </script>
+    @endpush
 </x-app-layout>

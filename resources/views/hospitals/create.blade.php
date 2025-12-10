@@ -46,36 +46,42 @@
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
+                            
+                            <div class="md:col-span-2">
 
-                            <!-- Código -->
-                            <div>
-                                <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Código / Identificador
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Razon Social <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" 
-                                       id="code" 
-                                       name="code" 
-                                       value="{{ old('code') }}"
-                                       placeholder="Ej: HG-001, CLIN-SJ..."
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('code') border-red-500 @enderror">
-                                @error('code')
+                                       id="razon_social" 
+                                       name="razon_social" 
+                                       value="{{ old('razon_social') }}"
+                                       required
+                                       placeholder="Hospital del Centro S.A. de C.V. "
+                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('narazon_social') border-red-500 @enderror">
+                                @error('razon_social')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
-                                <p class="mt-1 text-xs text-gray-500">Código único para identificar el hospital</p>
                             </div>
 
-                            <!-- Estado -->
-                            <div>
-                                <label for="is_active" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Estado
+                            <div class="md:col-span-2">
+
+                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                                    RFC <span class="text-red-500">*</span>
                                 </label>
-                                <select id="is_active" 
-                                        name="is_active" 
-                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                    <option value="1" {{ old('is_active', 1) == 1 ? 'selected' : '' }}>Activo</option>
-                                    <option value="0" {{ old('is_active') == 0 ? 'selected' : '' }}>Inactivo</option>
-                                </select>
+                                <input type="text" 
+                                       id="rfc" 
+                                       name="rfc" 
+                                       value="{{ old('rfc') }}"
+                                       required
+                                       placeholder="ABCD123456A11"
+                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('rfc') border-red-500 @enderror">
+                                @error('rfc')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
+
+
                         </div>
                     </div>
 
@@ -86,21 +92,7 @@
                         </h3>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Persona de Contacto -->
-                            <div>
-                                <label for="contact_person" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Persona de Contacto
-                                </label>
-                                <input type="text" 
-                                       id="contact_person" 
-                                       name="contact_person" 
-                                       value="{{ old('contact_person') }}"
-                                       placeholder="Ej: Dr. Juan Pérez, Lic. María García..."
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('contact_person') border-red-500 @enderror">
-                                @error('contact_person')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                            
 
                             <!-- Teléfono -->
                             <div>
@@ -158,55 +150,7 @@
                                 @enderror
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <!-- Ciudad -->
-                                <div>
-                                    <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Ciudad
-                                    </label>
-                                    <input type="text" 
-                                           id="city" 
-                                           name="city" 
-                                           value="{{ old('city') }}"
-                                           placeholder="Ej: Monterrey"
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('city') border-red-500 @enderror">
-                                    @error('city')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Estado -->
-                                <div>
-                                    <label for="state" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Estado
-                                    </label>
-                                    <input type="text" 
-                                           id="state" 
-                                           name="state" 
-                                           value="{{ old('state') }}"
-                                           placeholder="Ej: Nuevo León"
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('state') border-red-500 @enderror">
-                                    @error('state')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Código Postal -->
-                                <div>
-                                    <label for="zip_code" class="block text-sm font-medium text-gray-700 mb-1">
-                                        Código Postal
-                                    </label>
-                                    <input type="text" 
-                                           id="zip_code" 
-                                           name="zip_code" 
-                                           value="{{ old('zip_code') }}"
-                                           placeholder="Ej: 64000"
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('zip_code') border-red-500 @enderror">
-                                    @error('zip_code')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
 

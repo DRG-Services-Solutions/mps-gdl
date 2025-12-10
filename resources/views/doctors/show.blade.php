@@ -3,30 +3,33 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
-                    <i class="fas fa-hospital mr-2 text-indigo-600"></i>
-                    {{ $hospital->name }}
+                    <i class="fas fa-user-md mr-2 text-indigo-600"></i>
+                    {{ $doctor->full_name }}
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $hospital->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                        <i class="fas {{ $hospital->is_active ? 'fa-check-circle' : 'fa-ban' }} mr-1"></i>
-                        {{ $hospital->is_active ? 'Activo' : 'Inactivo' }}
+                    @if($doctor->specialty)
+                        <i class="fas fa-stethoscope mr-1"></i>{{ $doctor->specialty }} •
+                    @endif
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $doctor->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                        <i class="fas {{ $doctor->is_active ? 'fa-check-circle' : 'fa-ban' }} mr-1"></i>
+                        {{ $doctor->is_active ? 'Activo' : 'Inactivo' }}
                     </span>
                 </p>
             </div>
             <div class="flex items-center space-x-3">
-                <form action="{{ route('hospitals.toggle-status', $hospital) }}" method="POST">
+                <form action="{{ route('doctors.toggle-status', $doctor) }}" method="POST">
                     @csrf
                     <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 {{ $hospital->is_active ? 'bg-gray-600' : 'bg-green-600' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:{{ $hospital->is_active ? 'bg-gray-700' : 'bg-green-700' }} transition">
-                        <i class="fas {{ $hospital->is_active ? 'fa-ban' : 'fa-check-circle' }} mr-2"></i>
-                        {{ $hospital->is_active ? 'Desactivar' : 'Activar' }}
+                            class="inline-flex items-center px-4 py-2 {{ $doctor->is_active ? 'bg-gray-600' : 'bg-green-600' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:{{ $doctor->is_active ? 'bg-gray-700' : 'bg-green-700' }} transition">
+                        <i class="fas {{ $doctor->is_active ? 'fa-ban' : 'fa-check-circle' }} mr-2"></i>
+                        {{ $doctor->is_active ? 'Desactivar' : 'Activar' }}
                     </button>
                 </form>
-                <a href="{{ route('hospitals.edit', $hospital) }}" 
+                <a href="{{ route('doctors.edit', $doctor) }}" 
                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                     <i class="fas fa-edit mr-2"></i>Editar
                 </a>
-                <a href="{{ route('hospitals.index') }}" 
+                <a href="{{ route('doctors.index') }}" 
                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
                     <i class="fas fa-arrow-left mr-2"></i>Volver
                 </a>
@@ -37,87 +40,114 @@
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
-            
-            <!-- Hospital Info -->
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-100 rounded-lg p-3">
+                            <i class="fas fa-file-invoice text-indigo-600 text-2xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm text-gray-600">Total Cotizaciones</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['total_quotations'] }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+                            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
+                            <i class="fas fa-stethoscope text-yellow-600 text-2xl"></i>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor Info -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-6 border-b pb-3">
-                        <i class="fas fa-info-circle mr-2 text-indigo-600"></i>Información del Hospital
+                        <i class="fas fa-info-circle mr-2 text-indigo-600"></i>Información del Doctor
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Información General -->
+                        <!-- Información Personal -->
                         <div class="space-y-4">
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Nombre</p>
-                                <p class="text-base text-gray-900">{{ $hospital->name }}</p>
+                                <p class="text-sm font-medium text-gray-500">Nombre Completo</p>
+                                <p class="text-base text-gray-900">{{ $doctor->full_name }}</p>
                             </div>
-                            @if($hospital->code)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Código</p>
-                                    <p class="text-base text-gray-900">{{ $hospital->code }}</p>
-                                </div>
-                            @endif
+                       
                         </div>
 
-                        <!-- Contacto -->
+                        <!-- Hospital y Contacto -->
                         <div class="space-y-4">
-                            @if($hospital->contact_person)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">
-                                        <i class="fas fa-user mr-1"></i>Persona de Contacto
-                                    </p>
-                                    <p class="text-base text-gray-900">{{ $hospital->contact_person }}</p>
-                                </div>
-                            @endif
-                            @if($hospital->phone)
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">
+                                    <i class="fas fa-hospital mr-1"></i>Hospital
+                                </p>
+                             
+                            </div>
+                            @if($doctor->phone)
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">
                                         <i class="fas fa-phone mr-1"></i>Teléfono
                                     </p>
-                                    <p class="text-base text-gray-900">{{ $hospital->phone }}</p>
+                                    <p class="text-base text-gray-900">{{ $doctor->phone }}</p>
                                 </div>
                             @endif
-                            @if($hospital->email)
+                            @if($doctor->email)
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">
                                         <i class="fas fa-envelope mr-1"></i>Email
                                     </p>
                                     <p class="text-base text-gray-900">
-                                        <a href="mailto:{{ $hospital->email }}" class="text-indigo-600 hover:text-indigo-900">
-                                            {{ $hospital->email }}
+                                        <a href="mailto:{{ $doctor->email }}" class="text-indigo-600 hover:text-indigo-900">
+                                            {{ $doctor->email }}
                                         </a>
                                     </p>
                                 </div>
                             @endif
                         </div>
 
-                        <!-- Dirección -->
-                        @if($hospital->address || $hospital->city || $hospital->state)
-                            <div class="md:col-span-2">
-                                <p class="text-sm font-medium text-gray-500 mb-2">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>Dirección
+                        <!-- Información Profesional -->
+                        @if($doctor->license_number || $doctor->specialty_license)
+                            <div class="md:col-span-2 pt-4 border-t">
+                                <p class="text-sm font-medium text-gray-500 mb-3">
+                                    <i class="fas fa-id-card mr-1"></i>Información Profesional
                                 </p>
-                                <div class="text-base text-gray-900">
-                                    @if($hospital->address)
-                                        <p>{{ $hospital->address }}</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    @if($doctor->license_number)
+                                        <div>
+                                            <p class="text-xs text-gray-500">Cédula Profesional</p>
+                                            <p class="text-sm text-gray-900 font-medium">{{ $doctor->license_number }}</p>
+                                        </div>
                                     @endif
-                                    @if($hospital->city || $hospital->state || $hospital->zip_code)
-                                        <p>
-                                            {{ $hospital->city }}{{ $hospital->city && $hospital->state ? ', ' : '' }}{{ $hospital->state }}{{ ($hospital->city || $hospital->state) && $hospital->zip_code ? '. ' : '' }}{{ $hospital->zip_code ? 'CP ' . $hospital->zip_code : '' }}
-                                        </p>
+                                    @if($doctor->specialty_license)
+                                        <div>
+                                            <p class="text-xs text-gray-500">Cédula de Especialidad</p>
+                                            <p class="text-sm text-gray-900 font-medium">{{ $doctor->specialty_license }}</p>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
                         @endif
 
                         <!-- Notas -->
-                        @if($hospital->notes)
-                            <div class="md:col-span-2">
+                        @if($doctor->notes)
+                            <div class="md:col-span-2 pt-4 border-t">
                                 <p class="text-sm font-medium text-gray-500 mb-2">
                                     <i class="fas fa-sticky-note mr-1"></i>Notas
                                 </p>
-                                <p class="text-base text-gray-900">{{ $hospital->notes }}</p>
+                                <p class="text-base text-gray-900">{{ $doctor->notes }}</p>
                             </div>
                         @endif
                     </div>
@@ -130,7 +160,7 @@
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-file-invoice mr-2"></i>Cotizaciones Recientes
                     </h3>
-                    <a href="{{ route('quotations.create') }}?hospital_id={{ $hospital->id }}" 
+                    <a href="{{ route('quotations.create') }}?doctor_id={{ $doctor->id }}" 
                        class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
                         <i class="fas fa-plus mr-2"></i>Nueva Cotización
                     </a>
@@ -141,7 +171,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hospital</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cirugía</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -149,7 +179,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($hospital->quotations as $quotation)
+                            @forelse($doctor->quotations as $quotation)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <a href="{{ route('quotations.show', $quotation) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
@@ -157,7 +187,7 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $quotation->doctor->full_name ?? 'N/A' }}
+                                        {{ $quotation->hospital->name }}
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900">
                                         {{ $quotation->surgery_type ?? 'N/A' }}
@@ -197,7 +227,7 @@
                                     <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                         <i class="fas fa-inbox text-3xl text-gray-300 mb-2"></i>
                                         <p>No hay cotizaciones registradas</p>
-                                        <a href="{{ route('quotations.create') }}?hospital_id={{ $hospital->id }}" class="mt-2 inline-block text-indigo-600 hover:text-indigo-900 font-medium">
+                                        <a href="{{ route('quotations.create') }}?doctor_id={{ $doctor->id }}" class="mt-2 inline-block text-indigo-600 hover:text-indigo-900 font-medium">
                                             <i class="fas fa-plus mr-1"></i>Crear primera cotización
                                         </a>
                                     </td>
@@ -208,24 +238,23 @@
                 </div>
             </div>
 
-            
             <!-- Delete Button -->
-            @if($hospital->quotations()->count() === 0 && $hospital->sales()->count() === 0)
+            @if($doctor->quotations()->count() === 0)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <h3 class="text-lg font-semibold text-red-600 mb-3">
                             <i class="fas fa-exclamation-triangle mr-2"></i>Zona de Peligro
                         </h3>
                         <p class="text-sm text-gray-600 mb-4">
-                            Esta acción es permanente y no se puede deshacer. El hospital no tiene cotizaciones ni ventas asociadas.
+                            Esta acción es permanente y no se puede deshacer. El doctor no tiene cotizaciones asociadas.
                         </p>
-                        <form action="{{ route('hospitals.destroy', $hospital) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este hospital? Esta acción no se puede deshacer.')">
+                        <form action="{{ route('doctors.destroy', $doctor) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este doctor? Esta acción no se puede deshacer.')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" 
                                     class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:ring focus:ring-red-300 transition">
                                 <i class="fas fa-trash mr-2"></i>
-                                Eliminar Hospital
+                                Eliminar Doctor
                             </button>
                         </form>
                     </div>

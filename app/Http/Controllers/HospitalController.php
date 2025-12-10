@@ -48,16 +48,12 @@ class HospitalController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:hospitals,code',
-            'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
             'is_active' => 'boolean',
-            'notes' => 'nullable|string',
+            'rfc' => 'nullable|string',
+            'razon_social' => 'nullable|string',
         ]);
 
         $hospital = Hospital::create($validated);
@@ -72,17 +68,8 @@ class HospitalController extends Controller
      */
     public function show(Hospital $hospital)
     {
-        $hospital->load(['quotations' => function ($query) {
-            $query->latest()->limit(10);
-        }, 'doctors']);
 
-        $stats = [
-            'total_quotations' => $hospital->getTotalQuotations(),
-            'total_sales' => $hospital->getTotalSales(),
-            'active_quotations' => $hospital->getActiveQuotations()->count(),
-        ];
-
-        return view('hospitals.show', compact('hospital', 'stats'));
+    return view('hospitals.show', compact('hospital'));    
     }
 
     /**
@@ -100,16 +87,13 @@ class HospitalController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:hospitals,code,' . $hospital->id,
-            'contact_person' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'zip_code' => 'nullable|string|max:20',
             'is_active' => 'boolean',
             'notes' => 'nullable|string',
+            'rfc' => 'nullable|string',
+            'razon_social' => 'nullable|string',
         ]);
 
         $hospital->update($validated);
@@ -165,7 +149,7 @@ class HospitalController extends Controller
      */
     public function select2(Request $request)
     {
-        $query = Hospital::active();
+        $query = Hospital::all();
 
         if ($request->filled('search')) {
             $query->search($request->search);
@@ -177,7 +161,7 @@ class HospitalController extends Controller
             'results' => $hospitals->map(function ($hospital) {
                 return [
                     'id' => $hospital->id,
-                    'text' => $hospital->full_name,
+                    'text' => $hospital->name,
                 ];
             }),
         ]);

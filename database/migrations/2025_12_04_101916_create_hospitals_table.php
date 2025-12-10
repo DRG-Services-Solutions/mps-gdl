@@ -16,25 +16,22 @@ return new class extends Migration
 
             // Informacion Basica
             $table->string('name', 255);
-            $table->string('code', 50)->unique()->nullable();
 
             //Contacto
-            $table->string('contact_person', 255)->nullable();
             $table->string('phone', 50)->nullable();
             $table->string('email', 255)->nullable();
 
             //Direccion
             $table->text('address')->nullable();
-            $table->string('city', 100)->nullable();
-            $table->string('state', 100)->nullable();
-            $table->string('zip_code', 20)->nullable();
             $table->string('rfc')->nullable();
+            $table->string('razon_social')->nullable();
+
+            $table->boolean('is_active')->default(true);
 
             $table->timestamps();
 
             //Indices
             $table->index('name');
-            $table->index('code');
       
         });
     }

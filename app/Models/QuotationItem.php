@@ -21,6 +21,7 @@ class QuotationItem extends Model
         'status',
         'sent_at',
         'returned_at',
+        'quantity',
     ];
 
     protected $casts = [

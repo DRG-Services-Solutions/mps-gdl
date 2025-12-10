@@ -18,6 +18,8 @@ use App\Http\Controllers\LegalEntityController;
 use App\Http\Controllers\SubWarehouseController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\HospitalController;
+use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\SaleController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -150,6 +152,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 // API para Select2
 Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
     ->name('api.hospitals.select2');
+Route::get('/api/products/search-api', [ProductController::class, 'searchApi'])->name('products.searchApi');
+
 
 // ═══════════════════════════════════════════════════════════
 // DOCTORES

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProductUnit;
 use App\Models\Product;
 use App\Models\Supplier; 
 use App\Models\Category;
@@ -299,6 +300,41 @@ class ProductController extends Controller
 
         return view('products.index', compact('products'));
     }
+
+    public function searchApi(Request $request)
+    {
+        $query = ProductUnit::with(['product', 'legalEntity', 'subWarehouse'])
+            ->where('status', 'available');
+        
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('product', function($productQuery) use ($search) {
+                    $productQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%");
+                })
+                ->orWhere('epc', 'like', "%{$search}%")
+                ->orWhere('serial_number', 'like', "%{$search}%");
+            });
+        }
+        
+        $products = $query->limit(20)->get();
+        
+        return response()->json($products->map(function($pu) {
+            return [
+                'id' => $pu->id,
+                'name' => $pu->product->name,
+                'code' => $pu->product->code,
+                'epc' => $pu->epc,
+                'serial_number' => $pu->serial_number,
+                'available_quantity' => $pu->quantity ?? 1, // ← AGREGAR ESTA LÍNEA
+                'legal_entity' => $pu->legalEntity->name ?? null,
+                'sub_warehouse_name' => $pu->subWarehouse->name ?? 'N/A',  // ← CAMBIAR A sub_warehouse_name
+                
+            ];
+        }));
+    }
+
 
     /**
      * Productos que requieren esterilización
