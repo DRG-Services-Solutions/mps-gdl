@@ -304,7 +304,7 @@
                                             required
                                             class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
                                         <option value="rental">Renta</option>
-                                        <option value="consignment">Consignación</option>
+                                        <option value="sale">Venta</option>
                                     </select>
                                 </div>
                                 
