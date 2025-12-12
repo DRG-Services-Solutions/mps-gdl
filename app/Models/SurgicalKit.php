@@ -25,57 +25,138 @@ class SurgicalKit extends Model
         'is_active' => 'boolean',
     ];
 
-    /**
-     * Items del prearmado
-     */
+    // ═══════════════════════════════════════════════════════════
+    // RELACIONES
+    // ═══════════════════════════════════════════════════════════
+
     public function items(): HasMany
     {
         return $this->hasMany(SurgicalKitItem::class);
     }
 
-    /**
-     * Usuario que creó el prearmado
-     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Scope para prearmados activos
-     */
+    // ═══════════════════════════════════════════════════════════
+    // SCOPES
+    // ═══════════════════════════════════════════════════════════
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * Scope para filtrar por tipo de cirugía
-     */
     public function scopeBySurgeryType($query, $surgeryType)
     {
         return $query->where('surgery_type', $surgeryType);
     }
 
-    /**
-     * Obtener total de productos en el kit
-     */
+    // ═══════════════════════════════════════════════════════════
+    // ATRIBUTOS CALCULADOS
+    // ═══════════════════════════════════════════════════════════
+
     public function getTotalProductsAttribute(): int
     {
         return $this->items()->count();
     }
 
-    /**
-     * Obtener cantidad total de piezas
-     */
     public function getTotalPiecesAttribute(): int
     {
         return $this->items()->sum('quantity');
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // VALIDACIÓN DE STOCK
+    // ═══════════════════════════════════════════════════════════
+
     /**
-     * Generar código automático
+     * Verificar disponibilidad de stock para todos los productos del kit
      */
+    public function checkAvailability(): array
+    {
+        $availability = [];
+        $allAvailable = true;
+
+        foreach ($this->items as $item) {
+            // Contar ProductUnits disponibles de este producto
+            $availableStock = ProductUnit::where('product_id', $item->product_id)
+                ->where('status', 'available')
+                ->sum('quantity');
+
+            $isAvailable = $availableStock >= $item->quantity;
+            $missing = $isAvailable ? 0 : ($item->quantity - $availableStock);
+
+            if (!$isAvailable) {
+                $allAvailable = false;
+            }
+
+            $availability[] = [
+                'product_id' => $item->product_id,
+                'product_name' => $item->product->name,
+                'product_code' => $item->product->code,
+                'required_quantity' => $item->quantity,
+                'available_quantity' => $availableStock,
+                'is_available' => $isAvailable,
+                'missing_quantity' => $missing,
+            ];
+        }
+
+        return [
+            'all_available' => $allAvailable,
+            'items' => $availability,
+            'total_required' => $this->total_pieces,
+            'total_available' => collect($availability)->sum('available_quantity'),
+        ];
+    }
+
+    public function hasCompleteStock(): bool
+    {
+        $check = $this->checkAvailability();
+        return $check['all_available'];
+    }
+
+    public function getMissingProducts(): array
+    {
+        $check = $this->checkAvailability();
+        return collect($check['items'])
+            ->filter(fn($item) => !$item['is_available'])
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Obtener ProductUnits específicos disponibles para este kit
+     */
+    public function getAvailableProductUnits(): array
+    {
+        $productUnits = [];
+
+        foreach ($this->items as $item) {
+            $units = ProductUnit::where('product_id', $item->product_id)
+                ->where('status', 'available')
+                ->with(['product', 'legalEntity', 'subWarehouse'])
+                ->get();
+
+            $totalQuantity = $units->sum('quantity');
+
+            $productUnits[] = [
+                'product' => $item->product,
+                'required_quantity' => $item->quantity,
+                'available_quantity' => $totalQuantity,
+                'units' => $units,
+                'sufficient' => $totalQuantity >= $item->quantity,
+            ];
+        }
+
+        return $productUnits;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // GENERACIÓN DE CÓDIGO
+    // ═══════════════════════════════════════════════════════════
+
     public static function generateCode(): string
     {
         $lastKit = self::withTrashed()->latest('id')->first();
@@ -84,9 +165,6 @@ class SurgicalKit extends Model
         return 'KIT-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
     }
 
-    /**
-     * Boot method
-     */
     protected static function boot()
     {
         parent::boot();

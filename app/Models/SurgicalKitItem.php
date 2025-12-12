@@ -21,17 +21,15 @@ class SurgicalKitItem extends Model
         'quantity' => 'integer',
     ];
 
-    /**
-     * Kit al que pertenece
-     */
+    // ═══════════════════════════════════════════════════════════
+    // RELACIONES
+    // ═══════════════════════════════════════════════════════════
+
     public function surgicalKit(): BelongsTo
     {
         return $this->belongsTo(SurgicalKit::class);
     }
 
-    /**
-     * Producto del catálogo
-     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

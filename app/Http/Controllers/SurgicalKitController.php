@@ -5,19 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\SurgicalKit;
 use App\Models\SurgicalKitItem;
 use App\Models\Product;
+use App\Models\Quotation;
+use App\Models\QuotationItem;
+use App\Models\ProductUnit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SurgicalKitController extends Controller
 {
-    /**
-     * Display a listing of surgical kits.
-     */
+    // ═══════════════════════════════════════════════════════════
+    // CRUD BÁSICO
+    // ═══════════════════════════════════════════════════════════
+
     public function index(Request $request)
     {
         $query = SurgicalKit::with(['items', 'creator']);
 
-        // Búsqueda por nombre o código
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -27,12 +30,10 @@ class SurgicalKitController extends Controller
             });
         }
 
-        // Filtro por tipo de cirugía
         if ($request->filled('surgery_type')) {
             $query->where('surgery_type', $request->surgery_type);
         }
 
-        // Filtro por estado
         if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', true);
@@ -43,7 +44,6 @@ class SurgicalKitController extends Controller
 
         $kits = $query->latest()->paginate(15);
 
-        // Obtener tipos de cirugía únicos para el filtro
         $surgeryTypes = SurgicalKit::select('surgery_type')
             ->distinct()
             ->orderBy('surgery_type')
@@ -52,9 +52,6 @@ class SurgicalKitController extends Controller
         return view('surgical-kits.index', compact('kits', 'surgeryTypes'));
     }
 
-    /**
-     * Show the form for creating a new surgical kit.
-     */
     public function create()
     {
         $products = Product::where('status', 'active')
@@ -64,9 +61,6 @@ class SurgicalKitController extends Controller
         return view('surgical-kits.create', compact('products'));
     }
 
-    /**
-     * Store a newly created surgical kit in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -82,7 +76,6 @@ class SurgicalKitController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
-                // Crear el kit
                 $kit = SurgicalKit::create([
                     'name' => $validated['name'],
                     'surgery_type' => $validated['surgery_type'],
@@ -91,7 +84,6 @@ class SurgicalKitController extends Controller
                     'created_by' => auth()->id(),
                 ]);
 
-                // Agregar productos
                 foreach ($validated['products'] as $productData) {
                     SurgicalKitItem::create([
                         'surgical_kit_id' => $kit->id,
@@ -113,19 +105,14 @@ class SurgicalKitController extends Controller
         }
     }
 
-    /**
-     * Display the specified surgical kit.
-     */
     public function show(SurgicalKit $surgicalKit)
     {
         $surgicalKit->load(['items.product', 'creator']);
+        $availability = $surgicalKit->checkAvailability();
 
-        return view('surgical-kits.show', compact('surgicalKit'));
+        return view('surgical-kits.show', compact('surgicalKit', 'availability'));
     }
 
-    /**
-     * Show the form for editing the specified surgical kit.
-     */
     public function edit(SurgicalKit $surgicalKit)
     {
         $surgicalKit->load('items.product');
@@ -137,9 +124,6 @@ class SurgicalKitController extends Controller
         return view('surgical-kits.edit', compact('surgicalKit', 'products'));
     }
 
-    /**
-     * Update the specified surgical kit in storage.
-     */
     public function update(Request $request, SurgicalKit $surgicalKit)
     {
         $validated = $request->validate([
@@ -155,7 +139,6 @@ class SurgicalKitController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $surgicalKit) {
-                // Actualizar información del kit
                 $surgicalKit->update([
                     'name' => $validated['name'],
                     'surgery_type' => $validated['surgery_type'],
@@ -163,10 +146,8 @@ class SurgicalKitController extends Controller
                     'is_active' => $validated['is_active'] ?? true,
                 ]);
 
-                // Eliminar productos existentes
                 $surgicalKit->items()->delete();
 
-                // Agregar productos nuevos
                 foreach ($validated['products'] as $productData) {
                     SurgicalKitItem::create([
                         'surgical_kit_id' => $surgicalKit->id,
@@ -188,9 +169,6 @@ class SurgicalKitController extends Controller
         }
     }
 
-    /**
-     * Remove the specified surgical kit from storage.
-     */
     public function destroy(SurgicalKit $surgicalKit)
     {
         try {
@@ -206,9 +184,110 @@ class SurgicalKitController extends Controller
         }
     }
 
-    /**
-     * Toggle active status
-     */
+    // ═══════════════════════════════════════════════════════════
+    // VALIDACIÓN DE STOCK
+    // ═══════════════════════════════════════════════════════════
+
+    public function checkStock(SurgicalKit $surgicalKit)
+    {
+        $surgicalKit->load('items.product');
+        $availability = $surgicalKit->checkAvailability();
+
+        return view('surgical-kits.check-stock', compact('surgicalKit', 'availability'));
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // APLICACIÓN A COTIZACIONES
+    // ═══════════════════════════════════════════════════════════
+
+    public function selectQuotation(SurgicalKit $surgicalKit)
+    {
+        $surgicalKit->load('items.product');
+        
+        $quotations = Quotation::where('status', 'draft')
+            ->with(['hospital', 'doctor'])
+            ->latest()
+            ->get();
+
+        $availability = $surgicalKit->checkAvailability();
+
+        return view('surgical-kits.select-quotation', compact('surgicalKit', 'quotations', 'availability'));
+    }
+
+    public function applyToQuotation(Request $request, SurgicalKit $surgicalKit)
+    {
+        $validated = $request->validate([
+            'quotation_id' => 'required|exists:quotations,id',
+            'force' => 'boolean',
+        ]);
+
+        $quotation = Quotation::findOrFail($validated['quotation_id']);
+
+        if ($quotation->status !== 'draft') {
+            return redirect()
+                ->back()
+                ->with('error', 'Solo se pueden aplicar prearmados a cotizaciones en borrador.');
+        }
+
+        $availability = $surgicalKit->checkAvailability();
+
+        if (!$availability['all_available'] && !($validated['force'] ?? false)) {
+            return redirect()
+                ->route('surgical-kits.check-stock', $surgicalKit)
+                ->with('error', 'No hay stock suficiente. Revisa los productos faltantes.')
+                ->with('quotation_id', $validated['quotation_id']);
+        }
+
+        try {
+            DB::transaction(function () use ($surgicalKit, $quotation) {
+                $productUnits = $surgicalKit->getAvailableProductUnits();
+
+                foreach ($productUnits as $productData) {
+                    $requiredQty = $productData['required_quantity'];
+
+                    foreach ($productData['units'] as $unit) {
+                        if ($requiredQty <= 0) break;
+
+                        $qtyToTake = min($unit->quantity, $requiredQty);
+
+                        $exists = $quotation->items()
+                            ->where('product_unit_id', $unit->id)
+                            ->exists();
+
+                        if (!$exists) {
+                            QuotationItem::create([
+                                'quotation_id' => $quotation->id,
+                                'product_unit_id' => $unit->id,
+                                'product_id' => $unit->product_id,
+                                'quantity' => $qtyToTake,
+                                'source_legal_entity_id' => $unit->legal_entity_id,
+                                'source_sub_warehouse_id' => $unit->sub_warehouse_id,
+                                'billing_mode' => 'rental',
+                                'rental_price' => 0,
+                                'sale_price' => 0,
+                                'status' => 'pending',
+                            ]);
+
+                            $requiredQty -= $qtyToTake;
+                        }
+                    }
+                }
+            });
+
+            return redirect()
+                ->route('quotations.show', $quotation)
+                ->with('success', "Prearmado '{$surgicalKit->name}' aplicado exitosamente.");
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Error al aplicar prearmado: ' . $e->getMessage());
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ACCIONES ADICIONALES
+    // ═══════════════════════════════════════════════════════════
+
     public function toggleActive(SurgicalKit $surgicalKit)
     {
         $surgicalKit->update([
@@ -222,21 +301,16 @@ class SurgicalKitController extends Controller
             ->with('success', "Prearmado {$status} exitosamente.");
     }
 
-    /**
-     * Duplicate a surgical kit
-     */
     public function duplicate(SurgicalKit $surgicalKit)
     {
         try {
             DB::transaction(function () use ($surgicalKit) {
-                // Crear copia del kit
                 $newKit = $surgicalKit->replicate();
                 $newKit->name = $surgicalKit->name . ' (Copia)';
-                $newKit->code = null; // Se generará automáticamente
+                $newKit->code = null;
                 $newKit->created_by = auth()->id();
                 $newKit->save();
 
-                // Copiar items
                 foreach ($surgicalKit->items as $item) {
                     SurgicalKitItem::create([
                         'surgical_kit_id' => $newKit->id,

@@ -20,6 +20,7 @@ use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\HospitalController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SurgicalKitController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -236,23 +237,25 @@ Route::prefix('sales')->name('sales.')->group(function () {
     Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
 });
 
-// ========================================
-// Rutas de pre armados de kits quirúrgicos
-// ========================================
-// CRUD básico
-    Route::resource('surgical-kits', SurgicalKitController::class);
+    // CRUD básico
+    Route::get('/', [SurgicalKitController::class, 'index'])->name('index');
+    Route::get('/create', [SurgicalKitController::class, 'create'])->name('create');
+    Route::post('/', [SurgicalKitController::class, 'store'])->name('store');
+    Route::get('/{surgicalKit}', [SurgicalKitController::class, 'show'])->name('show');
+    Route::get('/{surgicalKit}/edit', [SurgicalKitController::class, 'edit'])->name('edit');
+    Route::put('/{surgicalKit}', [SurgicalKitController::class, 'update'])->name('update');
+    Route::delete('/{surgicalKit}', [SurgicalKitController::class, 'destroy'])->name('destroy');
+    
+    // Verificación de stock
+    Route::get('/{surgicalKit}/check-stock', [SurgicalKitController::class, 'checkStock'])->name('check-stock');
+    
+    // Aplicación a cotizaciones
+    Route::get('/{surgicalKit}/select-quotation', [SurgicalKitController::class, 'selectQuotation'])->name('select-quotation');
+    Route::post('/{surgicalKit}/apply-to-quotation', [SurgicalKitController::class, 'applyToQuotation'])->name('apply-to-quotation');
     
     // Acciones adicionales
-    Route::post('surgical-kits/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])
-        ->name('surgical-kits.toggle-active');
-    
-    Route::post('surgical-kits/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])
-        ->name('surgical-kits.duplicate');
-
-
-
-
-
+    Route::post('/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])->name('toggle-active');
+    Route::post('/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])->name('duplicate');
 
 
 
