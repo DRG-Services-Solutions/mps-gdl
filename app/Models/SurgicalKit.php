@@ -80,10 +80,10 @@ class SurgicalKit extends Model
         $allAvailable = true;
 
         foreach ($this->items as $item) {
-            // Contar ProductUnits disponibles de este producto
+            // ✅ CONTAR unidades disponibles (cada ProductUnit = 1 unidad física)
             $availableStock = ProductUnit::where('product_id', $item->product_id)
                 ->where('status', 'available')
-                ->sum('quantity');
+                ->count(); // ✅ COUNT, no SUM
 
             $isAvailable = $availableStock >= $item->quantity;
             $missing = $isAvailable ? 0 : ($item->quantity - $availableStock);
@@ -139,7 +139,8 @@ class SurgicalKit extends Model
                 ->with(['product', 'legalEntity', 'subWarehouse'])
                 ->get();
 
-            $totalQuantity = $units->sum('quantity');
+            // ✅ Cada ProductUnit = 1 unidad física, entonces contamos
+            $totalQuantity = $units->count();
 
             $productUnits[] = [
                 'product' => $item->product,

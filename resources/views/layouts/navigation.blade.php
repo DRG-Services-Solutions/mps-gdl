@@ -129,10 +129,10 @@
 
                 <!-- Cotizaciones Dropdown -->
                 <div class="relative" x-data="{ 
-                    quotationsMenuOpen: {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') ? 'true' : 'false' }}
+                    quotationsMenuOpen: {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') ? 'true' : 'false' }}
                 }">
                     <button @click="quotationsMenuOpen = !quotationsMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
                                 <i class="fa-solid fa-notes-medical fa-fw text-lg"></i>
@@ -171,6 +171,13 @@
                             <span class="truncate">{{ __('Ventas') }}</span>
                         </a>
 
+                        <!-- ⭐ PREARMADOS QUIRÚRGICOS - NUEVO -->
+                        <a href="{{ route('surgical-kits.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-kit-medical fa-fw text-sm"></i>
+                            <span class="truncate">{{ __('Prearmados') }}</span>
+                        </a>
+
                         <a href="{{ route('hospitals.index') }}" 
                         class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-hospital fa-fw text-sm"></i>
@@ -202,6 +209,12 @@
                             <i class="fas fa-dollar-sign fa-fw text-sm"></i>
                             <span>{{ __('Ventas') }}</span>
                         </a>
+                        <!-- ⭐ PREARMADOS EN TOOLTIP -->
+                        <a href="{{ route('surgical-kits.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-kit-medical fa-fw text-sm"></i>
+                            <span>{{ __('Prearmados') }}</span>
+                        </a>
                         <a href="{{ route('hospitals.index') }}" 
                         class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-hospital fa-fw text-sm"></i>
@@ -231,7 +244,7 @@
                             </div>
                             <span class="truncate transition-opacity duration-300" 
                                   :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
-                                {{ __('Inventario') }}
+                                Inventario
                             </span>
                         </div>
                         <div class="flex-shrink-0 transition-all duration-300" 
@@ -254,19 +267,19 @@
                         <a href="{{ route('products.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('products.index') || request()->routeIs('products.create') || request()->routeIs('products.edit') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-box fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Productos') }}</span>
+                            <span class="truncate">Productos</span>
                         </a>
 
                         <a href="{{ route('product-units.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Unidades') }}</span>
+                            <span class="truncate">Unidades</span>
                         </a>
 
                         <a href="{{ route('product_layouts.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Lay Out') }}</span>
+                            <span class="truncate">Lay Out</span>
                         </a>
                     </div>
 
@@ -276,22 +289,22 @@
                          @click.outside="inventoryMenuOpen = false"
                          class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                            {{ __('Inventario') }}
+                            Inventario
                         </div>
                         <a href="{{ route('products.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('products.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-box fa-fw text-sm"></i>
-                            <span>{{ __('Productos') }}</span>
+                            <span>Productos</span>
                         </a>
                         <a href="{{ route('product-units.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span>{{ __('Unidades') }}</span>
+                            <span>Unidades</span>
                         </a>
                         <a href="{{ route('product_layouts.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
-                            <span>{{ __('Lay Out') }}</span>
+                            <span>Lay Out</span>
                         </a>
                     </div>
                 </div>
@@ -311,7 +324,7 @@
                             </div>
                             <span class="truncate transition-opacity duration-300" 
                                   :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
-                                {{ __('Catálogos') }}
+                                Catálogos
                             </span>
                         </div>
                         <div class="flex-shrink-0 transition-all duration-300" 
@@ -334,39 +347,39 @@
                         <a href="{{ route('storage_locations.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('storage_locations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-warehouse fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Ubicaciones') }}</span>
+                            <span class="truncate">Ubicaciones</span>
                         </a>
 
                         <!-- LEGAL ENTITIES -->
                         <a href="{{ route('legal-entities.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('legal-entities.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-briefcase fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Sucursales') }}</span>
+                            <span class="truncate">Sucursales</span>
                         </a>
 
                         <!-- SUB WAREHOUSES -->
                         <a href="{{ route('sub-warehouses.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sub-warehouses.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fa-solid fa-dolly text-sm"></i>
-                            <span class="truncate">{{ __('Sub - Almacenes') }}</span>
+                            <span class="truncate">Sub - Almacenes</span>
                         </a>
 
                         <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-tags fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Categorías') }}</span>
+                            <span class="truncate">Categorías</span>
                         </a>
 
                         <a href="{{ route('subcategories.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('subcategories.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-layer-group fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Subcategorías') }}</span>
+                            <span class="truncate">Subcategorías</span>
                         </a>
 
                         <a href="{{ route('specialties.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-stethoscope fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Especialidades') }}</span>
+                            <span class="truncate">Especialidades</span>
                         </a>
                     </div>
 
@@ -376,35 +389,35 @@
                          @click.outside="catalogsMenuOpen = false"
                          class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                         <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                            {{ __('Catálogos') }}
+                            Catálogos
                         </div>
                         <a href="{{ route('storage_locations.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('storage_locations.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-warehouse fa-fw text-sm"></i>
-                            <span>{{ __('Ubicaciones') }}</span>
+                            <span>Ubicaciones</span>
                         </a>
                         
                         <!-- ✅ RAZONES SOCIALES EN TOOLTIP -->
                         <a href="{{ route('legal-entities.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('legal-entities.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-briefcase fa-fw text-sm"></i>
-                            <span>{{ __('Razones Sociales') }}</span>
+                            <span>Sucursales</span>
                         </a>
                         
                         <a href="{{ route('categories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('categories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-tags fa-fw text-sm"></i>
-                            <span>{{ __('Categorías') }}</span>
+                            <span>Categorías</span>
                         </a>
                         <a href="{{ route('subcategories.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('subcategories.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-layer-group fa-fw text-sm"></i>
-                            <span>{{ __('Subcategorías') }}</span>
+                            <span>Subcategorías</span>
                         </a>
                         <a href="{{ route('specialties.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('specialties.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-stethoscope fa-fw text-sm"></i>
-                            <span>{{ __('Especialidades') }}</span>
+                            <span>Especialidades</span>
                         </a>
                     </div>
                 </div>
@@ -414,7 +427,7 @@
                     <x-slot name="icon">
                         <i class="fa-solid fa-users-cog fa-fw text-lg"></i>
                     </x-slot>
-                    {{ __('Usuarios') }}
+                    Usuarios
                 </x-nav-link>
 
             @endrole

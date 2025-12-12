@@ -54,9 +54,22 @@ class SurgicalKitController extends Controller
 
     public function create()
     {
+        // ✅ SOLO productos que tienen ProductUnits (inventario real)
         $products = Product::where('status', 'active')
+            ->whereHas('productUnits')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function($product) {
+                // ✅ CONTAR unidades disponibles (cada ProductUnit = 1 unidad física)
+                $totalStock = ProductUnit::where('product_id', $product->id)
+                    ->where('status', 'available')
+                    ->count(); // ✅ COUNT, no SUM
+                
+                $product->available_stock = $totalStock;
+                $product->code = $product->code ?? 'N/A';
+                $product->name = $product->name ?? 'Sin nombre';
+                return $product;
+            });
 
         return view('surgical-kits.create', compact('products'));
     }
@@ -69,9 +82,11 @@ class SurgicalKitController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'products' => 'required|array|min:1',
-            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.product_id' => 'required|exists:products,id|distinct',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.notes' => 'nullable|string',
+        ], [
+            'products.*.product_id.distinct' => 'No puedes agregar el mismo producto dos veces.',
         ]);
 
         try {
@@ -117,9 +132,22 @@ class SurgicalKitController extends Controller
     {
         $surgicalKit->load('items.product');
         
+        // ✅ SOLO productos con inventario
         $products = Product::where('status', 'active')
+            ->whereHas('productUnits')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function($product) {
+                // ✅ CONTAR unidades disponibles
+                $totalStock = ProductUnit::where('product_id', $product->id)
+                    ->where('status', 'available')
+                    ->count(); // ✅ COUNT, no SUM
+                
+                $product->available_stock = $totalStock;
+                $product->code = $product->code ?? 'N/A';
+                $product->name = $product->name ?? 'Sin nombre';
+                return $product;
+            });
 
         return view('surgical-kits.edit', compact('surgicalKit', 'products'));
     }
@@ -132,9 +160,11 @@ class SurgicalKitController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'products' => 'required|array|min:1',
-            'products.*.product_id' => 'required|exists:products,id',
+            'products.*.product_id' => 'required|exists:products,id|distinct',
             'products.*.quantity' => 'required|integer|min:1',
             'products.*.notes' => 'nullable|string',
+        ], [
+            'products.*.product_id.distinct' => 'No puedes agregar el mismo producto dos veces.',
         ]);
 
         try {
@@ -248,7 +278,8 @@ class SurgicalKitController extends Controller
                     foreach ($productData['units'] as $unit) {
                         if ($requiredQty <= 0) break;
 
-                        $qtyToTake = min($unit->quantity, $requiredQty);
+                        // Cada ProductUnit = 1 unidad física
+                        $qtyToTake = 1;
 
                         $exists = $quotation->items()
                             ->where('product_unit_id', $unit->id)
