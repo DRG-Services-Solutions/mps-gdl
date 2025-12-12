@@ -4,7 +4,7 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-edit mr-2 text-indigo-600"></i>
-                    {{ __('Editar Cotización') }}
+                    'Editar Cotización'
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">{{ $quotation->quotation_number }}</p>
             </div>
@@ -50,7 +50,7 @@
                                 name="hospital_id" 
                                 required
                                 {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
-                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('hospital_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
+                                class="w-fullfocus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('hospital_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
                             <option value="">Seleccionar hospital...</option>
                             @foreach($hospitals as $hospital)
                                 <option value="{{ $hospital->id }}" {{ old('hospital_id', $quotation->hospital_id) == $hospital->id ? 'selected' : '' }}>
@@ -72,7 +72,7 @@
                         <select id="doctor_id" 
                                 name="doctor_id" 
                                 {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
-                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('doctor_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
+                                class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('doctor_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
                             <option value="">Seleccionar doctor (opcional)...</option>
                             @foreach($doctors as $doctor)
                                 <option value="{{ $doctor->id }}" {{ old('doctor_id', $quotation->doctor_id) == $doctor->id ? 'selected' : '' }}>
@@ -97,7 +97,7 @@
                                value="{{ old('surgery_type', $quotation->surgery_type) }}"
                                {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
                                placeholder="Ej: Artroscopia de rodilla, Reconstrucción de LCA..."
-                               class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('surgery_type') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
+                               class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('surgery_type') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
                         @error('surgery_type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -114,7 +114,7 @@
                                name="surgery_date" 
                                value="{{ old('surgery_date', $quotation->surgery_date?->format('Y-m-d')) }}"
                                {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
-                               class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('surgery_date') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
+                               class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('surgery_date') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
                         @error('surgery_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -130,7 +130,7 @@
                                 name="billing_legal_entity_id" 
                                 required
                                 {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
-                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('billing_legal_entity_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
+                                class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('billing_legal_entity_id') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">
                             <option value="">Seleccionar razón social...</option>
                             @foreach($legalEntities as $entity)
                                 <option value="{{ $entity->id }}" {{ old('billing_legal_entity_id', $quotation->billing_legal_entity_id) == $entity->id ? 'selected' : '' }}>
@@ -154,7 +154,7 @@
                                   rows="4"
                                   {{ $quotation->status !== 'draft' ? 'disabled' : '' }}
                                   placeholder="Información adicional sobre la cirugía..."
-                                  class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('notes') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">{{ old('notes', $quotation->notes) }}</textarea>
+                                  class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('notes') border-red-500 @enderror {{ $quotation->status !== 'draft' ? 'bg-gray-100' : '' }}">{{ old('notes', $quotation->notes) }}</textarea>
                         @error('notes')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror

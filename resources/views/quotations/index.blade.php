@@ -4,14 +4,14 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-file-invoice mr-2 text-indigo-600"></i>
-                    {{ __('Cotizaciones') }}
+                    Remisiones
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">Gestión de cotizaciones para cirugías</p>
+                <p class="text-sm text-gray-600 mt-1">Gestión de remisiones para cirugías</p>
             </div>
             <a href="{{ route('quotations.create') }}" 
                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring focus:ring-indigo-300 disabled:opacity-25 transition">
                 <i class="fas fa-plus mr-2"></i>
-                Nueva Cotización
+                Nueva Remisión
             </a>
         </div>
     </x-slot>
@@ -121,7 +121,7 @@
                                         <div class="text-sm text-gray-900">{{ $quotation->hospital->name }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $quotation->doctor->full_name ?? 'N/A' }}</div>
+                                        <div class="text-sm text-gray-900">{{ $quotation->doctor->first_name }} {{ $quotation->doctor->last_name ?? '' }}</div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm text-gray-900">{{ $quotation->surgery_type ?? 'N/A' }}</div>

@@ -4,7 +4,7 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>
-                    {{ __('Nuevo Doctor') }}
+                    Nuevo Doctor
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">Registrar un nuevo doctor o cirujano</p>
             </div>
@@ -41,7 +41,7 @@
                                        value="{{ old('first_name') }}"
                                        required
                                        placeholder="Ej: Juan Carlos"
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('first_name') border-red-500 @enderror">
+                                       class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('first_name') border-red-500 @enderror">
                                 @error('first_name')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
@@ -58,7 +58,7 @@
                                        value="{{ old('last_name') }}"
                                        required
                                        placeholder="Ej: Pérez García"
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('last_name') border-red-500 @enderror">
+                                       class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('last_name') border-red-500 @enderror">
                                 @error('last_name')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
