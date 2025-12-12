@@ -236,6 +236,19 @@ Route::prefix('sales')->name('sales.')->group(function () {
     Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
 });
 
+// ========================================
+// Rutas de pre armados de kits quirúrgicos
+// ========================================
+// CRUD básico
+    Route::resource('surgical-kits', SurgicalKitController::class);
+    
+    // Acciones adicionales
+    Route::post('surgical-kits/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])
+        ->name('surgical-kits.toggle-active');
+    
+    Route::post('surgical-kits/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])
+        ->name('surgical-kits.duplicate');
+
 
 
 
