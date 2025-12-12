@@ -82,6 +82,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('products.search');
     Route::get('api/products/{product}/details', [PurchaseOrderController::class, 'getProductDetails'])
         ->name('products.details');
+    Route::get('/api/products/search-api', [ProductController::class, 'searchApi'])
+        ->name('products.searchApi');
     
     // Resource de productos
     Route::resource('products', ProductController::class);
@@ -135,158 +137,143 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             ->name('print-jobs.cancel');
     });
 
+    // ========================================
+    // HOSPITALES
+    // ========================================
     Route::prefix('hospitals')->name('hospitals.')->group(function () {
-    // CRUD
-    Route::get('/', [HospitalController::class, 'index'])->name('index');
-    Route::get('/create', [HospitalController::class, 'create'])->name('create');
-    Route::post('/', [HospitalController::class, 'store'])->name('store');
-    Route::get('/{hospital}', [HospitalController::class, 'show'])->name('show');
-    Route::get('/{hospital}/edit', [HospitalController::class, 'edit'])->name('edit');
-    Route::put('/{hospital}', [HospitalController::class, 'update'])->name('update');
-    Route::delete('/{hospital}', [HospitalController::class, 'destroy'])->name('destroy');
-    
-    // Acciones especiales
-    Route::post('/{hospital}/toggle-status', [HospitalController::class, 'toggleStatus'])
-        ->name('toggle-status');
-});
+        // CRUD
+        Route::get('/', [HospitalController::class, 'index'])->name('index');
+        Route::get('/create', [HospitalController::class, 'create'])->name('create');
+        Route::post('/', [HospitalController::class, 'store'])->name('store');
+        Route::get('/{hospital}', [HospitalController::class, 'show'])->name('show');
+        Route::get('/{hospital}/edit', [HospitalController::class, 'edit'])->name('edit');
+        Route::put('/{hospital}', [HospitalController::class, 'update'])->name('update');
+        Route::delete('/{hospital}', [HospitalController::class, 'destroy'])->name('destroy');
+        
+        // Acciones especiales
+        Route::post('/{hospital}/toggle-status', [HospitalController::class, 'toggleStatus'])
+            ->name('toggle-status');
+    });
 
-// API para Select2
-Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
-    ->name('api.hospitals.select2');
-Route::get('/api/products/search-api', [ProductController::class, 'searchApi'])->name('products.searchApi');
+    // API para Select2 de Hospitales
+    Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
+        ->name('api.hospitals.select2');
 
+    // ========================================
+    // DOCTORES
+    // ========================================
+    Route::prefix('doctors')->name('doctors.')->group(function () {
+        // CRUD
+        Route::get('/', [DoctorController::class, 'index'])->name('index');
+        Route::get('/create', [DoctorController::class, 'create'])->name('create');
+        Route::post('/', [DoctorController::class, 'store'])->name('store');
+        Route::get('/{doctor}', [DoctorController::class, 'show'])->name('show');
+        Route::get('/{doctor}/edit', [DoctorController::class, 'edit'])->name('edit');
+        Route::put('/{doctor}', [DoctorController::class, 'update'])->name('update');
+        Route::delete('/{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
+        
+        // Acciones especiales
+        Route::post('/{doctor}/toggle-status', [DoctorController::class, 'toggleStatus'])
+            ->name('toggle-status');
+    });
 
-// ═══════════════════════════════════════════════════════════
-// DOCTORES
-// ═══════════════════════════════════════════════════════════
+    // API para Select2 de Doctores
+    Route::get('/api/doctors/select2', [DoctorController::class, 'select2'])
+        ->name('api.doctors.select2');
 
-Route::prefix('doctors')->name('doctors.')->group(function () {
-    // CRUD
-    Route::get('/', [DoctorController::class, 'index'])->name('index');
-    Route::get('/create', [DoctorController::class, 'create'])->name('create');
-    Route::post('/', [DoctorController::class, 'store'])->name('store');
-    Route::get('/{doctor}', [DoctorController::class, 'show'])->name('show');
-    Route::get('/{doctor}/edit', [DoctorController::class, 'edit'])->name('edit');
-    Route::put('/{doctor}', [DoctorController::class, 'update'])->name('update');
-    Route::delete('/{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
-    
-    // Acciones especiales
-    Route::post('/{doctor}/toggle-status', [DoctorController::class, 'toggleStatus'])
-        ->name('toggle-status');
-});
+    // ========================================
+    // COTIZACIONES ⭐ PRINCIPAL
+    // ========================================
+    Route::prefix('quotations')->name('quotations.')->group(function () {
+        // CRUD
+        Route::get('/', [QuotationController::class, 'index'])->name('index');
+        Route::get('/create', [QuotationController::class, 'create'])->name('create');
+        Route::post('/', [QuotationController::class, 'store'])->name('store');
+        Route::get('/{quotation}', [QuotationController::class, 'show'])->name('show');
+        Route::get('/{quotation}/edit', [QuotationController::class, 'edit'])->name('edit');
+        Route::put('/{quotation}', [QuotationController::class, 'update'])->name('update');
+        Route::delete('/{quotation}', [QuotationController::class, 'destroy'])->name('destroy');
+        
+        // GESTIÓN DE PRODUCTOS
+        Route::post('/{quotation}/add-item', [QuotationController::class, 'addItem'])
+            ->name('add-item');
+        Route::delete('/{quotation}/items/{item}', [QuotationController::class, 'removeItem'])
+            ->name('remove-item');
+        
+        // FLUJO DE CIRUGÍA ⭐
+        // 1. Enviar a cirugía
+        Route::post('/{quotation}/send-to-surgery', [QuotationController::class, 'sendToSurgery'])
+            ->name('send-to-surgery');
+        
+        // 2. Registrar retorno
+        Route::get('/{quotation}/return', [QuotationController::class, 'showReturnForm'])
+            ->name('return-form');
+        Route::post('/{quotation}/return', [QuotationController::class, 'registerReturn'])
+            ->name('register-return');
+        
+        // 3. Generar ventas
+        Route::post('/{quotation}/generate-sales', [QuotationController::class, 'generateSales'])
+            ->name('generate-sales');
+    });
 
+    // ========================================
+    // VENTAS
+    // ========================================
+    Route::prefix('sales')->name('sales.')->group(function () {
+        // Listado y detalle
+        Route::get('/', [SaleController::class, 'index'])->name('index');
+        Route::get('/{sale}', [SaleController::class, 'show'])->name('show');
+        
+        // Exportación
+        Route::get('/export/csv', [SaleController::class, 'export'])->name('export');
+        
+        // Estadísticas
+        Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
+    });
 
-// API para Select2
-Route::get('/api/doctors/select2', [DoctorController::class, 'select2'])
-    ->name('api.doctors.select2');
+    // ========================================
+    // PREARMADOS QUIRÚRGICOS ⭐ NUEVO
+    // ========================================
+    Route::prefix('surgical-kits')->name('surgical-kits.')->group(function () {
+        // CRUD básico
+        Route::get('/', [SurgicalKitController::class, 'index'])->name('index');
+        Route::get('/create', [SurgicalKitController::class, 'create'])->name('create');
+        Route::post('/', [SurgicalKitController::class, 'store'])->name('store');
+        Route::get('/{surgicalKit}', [SurgicalKitController::class, 'show'])->name('show');
+        Route::get('/{surgicalKit}/edit', [SurgicalKitController::class, 'edit'])->name('edit');
+        Route::put('/{surgicalKit}', [SurgicalKitController::class, 'update'])->name('update');
+        Route::delete('/{surgicalKit}', [SurgicalKitController::class, 'destroy'])->name('destroy');
+        
+        // Verificación de stock
+        Route::get('/{surgicalKit}/check-stock', [SurgicalKitController::class, 'checkStock'])
+            ->name('check-stock');
+        
+        // Aplicación a cotizaciones
+        Route::get('/{surgicalKit}/select-quotation', [SurgicalKitController::class, 'selectQuotation'])
+            ->name('select-quotation');
+        Route::post('/{surgicalKit}/apply-to-quotation', [SurgicalKitController::class, 'applyToQuotation'])
+            ->name('apply-to-quotation');
+        
+        // Acciones adicionales
+        Route::post('/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])
+            ->name('toggle-active');
+        Route::post('/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])
+            ->name('duplicate');
+    });
 
-// ═══════════════════════════════════════════════════════════
-// COTIZACIONES ⭐ PRINCIPAL
-// ═══════════════════════════════════════════════════════════
-
-Route::prefix('quotations')->name('quotations.')->group(function () {
-    // CRUD
-    Route::get('/', [QuotationController::class, 'index'])->name('index');
-    Route::get('/create', [QuotationController::class, 'create'])->name('create');
-    Route::post('/', [QuotationController::class, 'store'])->name('store');
-    Route::get('/{quotation}', [QuotationController::class, 'show'])->name('show');
-    Route::get('/{quotation}/edit', [QuotationController::class, 'edit'])->name('edit');
-    Route::put('/{quotation}', [QuotationController::class, 'update'])->name('update');
-    Route::delete('/{quotation}', [QuotationController::class, 'destroy'])->name('destroy');
-    
-    // ═══════════════════════════════════════════════════════════
-    // GESTIÓN DE PRODUCTOS
-    // ═══════════════════════════════════════════════════════════
-    Route::post('/{quotation}/add-item', [QuotationController::class, 'addItem'])
-        ->name('add-item');
-    Route::delete('/{quotation}/items/{item}', [QuotationController::class, 'removeItem'])
-        ->name('remove-item');
-    
-    // ═══════════════════════════════════════════════════════════
-    // FLUJO DE CIRUGÍA ⭐
-    // ═══════════════════════════════════════════════════════════
-    
-    // 1. Enviar a cirugía
-    Route::post('/{quotation}/send-to-surgery', [QuotationController::class, 'sendToSurgery'])
-        ->name('send-to-surgery');
-    
-    // 2. Registrar retorno
-    Route::get('/{quotation}/return', [QuotationController::class, 'showReturnForm'])
-        ->name('return-form');
-    Route::post('/{quotation}/return', [QuotationController::class, 'registerReturn'])
-        ->name('register-return');
-    
-    // 3. Generar ventas
-    Route::post('/{quotation}/generate-sales', [QuotationController::class, 'generateSales'])
-        ->name('generate-sales');
-});
-
-// ═══════════════════════════════════════════════════════════
-// VENTAS
-// ═══════════════════════════════════════════════════════════
-
-Route::prefix('sales')->name('sales.')->group(function () {
-    // Listado y detalle
-    Route::get('/', [SaleController::class, 'index'])->name('index');
-    Route::get('/{sale}', [SaleController::class, 'show'])->name('show');
-    
-    // Exportación
-    Route::get('/export/csv', [SaleController::class, 'export'])->name('export');
-    
-    // Estadísticas
-    Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
-});
-
-    // CRUD básico
-    Route::get('/', [SurgicalKitController::class, 'index'])->name('index');
-    Route::get('/create', [SurgicalKitController::class, 'create'])->name('create');
-    Route::post('/', [SurgicalKitController::class, 'store'])->name('store');
-    Route::get('/{surgicalKit}', [SurgicalKitController::class, 'show'])->name('show');
-    Route::get('/{surgicalKit}/edit', [SurgicalKitController::class, 'edit'])->name('edit');
-    Route::put('/{surgicalKit}', [SurgicalKitController::class, 'update'])->name('update');
-    Route::delete('/{surgicalKit}', [SurgicalKitController::class, 'destroy'])->name('destroy');
-    
-    // Verificación de stock
-    Route::get('/{surgicalKit}/check-stock', [SurgicalKitController::class, 'checkStock'])->name('check-stock');
-    
-    // Aplicación a cotizaciones
-    Route::get('/{surgicalKit}/select-quotation', [SurgicalKitController::class, 'selectQuotation'])->name('select-quotation');
-    Route::post('/{surgicalKit}/apply-to-quotation', [SurgicalKitController::class, 'applyToQuotation'])->name('apply-to-quotation');
-    
-    // Acciones adicionales
-    Route::post('/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])->name('toggle-active');
-    Route::post('/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])->name('duplicate');
-
-
-
-
-
-    /**
-     * RUTAS DE LEGAL ENTITIES
-     */
+    // ========================================
+    // LEGAL ENTITIES (RAZONES SOCIALES)
+    // ========================================
     Route::resource('legal-entities', LegalEntityController::class);
-    
-    // Ruta adicional para cambiar el estado activo/inactivo
     Route::post('legal-entities/{legalEntity}/toggle-status', [LegalEntityController::class, 'toggleStatus'])
         ->name('legal-entities.toggle-status');
 
-    /**
-     * Rutas de sub warehouses
-     */
-    // Sub-Warehouses (Almacenes Virtuales)
+    // ========================================
+    // SUB-WAREHOUSES (ALMACENES VIRTUALES)
+    // ========================================
     Route::resource('sub-warehouses', SubWarehouseController::class);
     Route::patch('sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])
-    ->name('sub-warehouses.toggle-status');
-
-
-   
-
-    // ========================================
-    // HISTORIAL DE RECEPCIONES (FUTURO)
-    // ========================================
-    // Route::get('receipts', [PurchaseOrderController::class, 'receiptsIndex'])->name('receipts.index');
-    // Route::get('purchase-orders/{purchaseOrder}/receipts', [PurchaseOrderController::class, 'receipts'])->name('purchase-orders.receipts');
-    // Route::get('receipts/{receipt}', [PurchaseOrderController::class, 'showReceipt'])->name('receipts.show');
+        ->name('sub-warehouses.toggle-status');
 });
 
 require __DIR__.'/auth.php';
