@@ -17,9 +17,7 @@ class DatabaseSeeder extends Seeder
                     RolesAndPermissionsSeeder::class,
                     ProductCategorySeeder::class,
                     MedicalSpecialtySeeder::class,
-                    SubcategorySeeder::class,
                     SupplierSeeder::class,
-                    ProductSeeder::class,
                     LegalEntitySeeder::class,
                     SubWarehouseSeeder::class,
 
