@@ -77,7 +77,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // ========================================
     // PRODUCTOS
     // ========================================
-    // Rutas API/AJAX para productos (deben ir ANTES del resource)
     Route::get('api/products/search', [PurchaseOrderController::class, 'search'])
         ->name('products.search');
     Route::get('api/products/{product}/details', [PurchaseOrderController::class, 'getProductDetails'])

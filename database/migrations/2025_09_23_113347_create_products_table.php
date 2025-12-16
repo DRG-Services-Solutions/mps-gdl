@@ -16,7 +16,7 @@ return new class extends Migration
             // ==========================================================
           // Migración de products (¡Correcta!)
             $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete(); // almacena los tipos de productos
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
             $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 
             // ==========================================================
             // IDENTIDAD Y CÓDIGOS DEL PRODUCTO (CATÁLOGO)
