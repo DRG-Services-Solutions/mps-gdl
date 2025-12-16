@@ -18,7 +18,7 @@ return new class extends Migration
                   ->nullable()
                   ->constrained()
                   ->onDelete('set null');
-            
+            $table->integer('reserved_quantity')->default(0)->comment('Cantidad reservada para cotizaciones');
             
 
             // Relación con el producto del catálogo

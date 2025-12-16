@@ -29,8 +29,6 @@ class QuotationController extends Controller
             $query->where('quotation_number', 'like', "%{$request->search}%");
         }
 
-        
-
         // Filtro por hospital
         if ($request->filled('hospital_id')) {
             $query->byHospital($request->hospital_id);
@@ -84,7 +82,6 @@ class QuotationController extends Controller
             'billing_legal_entity_id' => 'required|exists:legal_entities,id',
             'notes' => 'nullable|string',
             'surgical_kit_id' => 'nullable|exists:surgical_kits,id', 
-
         ]);
 
         $validated['created_by'] = auth()->id();
@@ -105,7 +102,7 @@ class QuotationController extends Controller
             'hospital',
             'doctor',
             'billingLegalEntity',
-            'items.productUnit.product',
+            'items.productUnit.product.category', // ← Cargamos la categoría
             'items.sourceLegalEntity',
             'items.sourceSubWarehouse',
             'createdBy',
@@ -120,7 +117,7 @@ class QuotationController extends Controller
 
         // Productos disponibles para agregar
         $availableProducts = ProductUnit::where('status', 'available')
-            ->with(['product', 'legalEntity', 'subWarehouse'])
+            ->with(['product.category', 'legalEntity', 'subWarehouse'])
             ->get();
 
         return view('quotations.show', compact('quotation', 'stats', 'availableProducts'));
@@ -143,7 +140,7 @@ class QuotationController extends Controller
         $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
         $surgicalKits = SurgicalKit::where('is_active', true)->orderBy('surgery_type')->get();
 
-        return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities', 'surgicalKits' ));
+        return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities', 'surgicalKits'));
     }
 
     /**
@@ -166,7 +163,6 @@ class QuotationController extends Controller
             'billing_legal_entity_id' => 'required|exists:legal_entities,id',
             'notes' => 'nullable|string',
             'surgical_kit_id' => 'nullable|exists:surgical_kits,id',
-
         ]);
 
         $quotation->update($validated);
@@ -203,6 +199,7 @@ class QuotationController extends Controller
 
     /**
      * Add item to quotation.
+     * NO VALIDAMOS BILLING_MODE AQUÍ - Se valida al retorno según categoría
      */
     public function addItem(Request $request, Quotation $quotation)
     {
@@ -212,26 +209,16 @@ class QuotationController extends Controller
                 ->with('error', 'Solo se pueden agregar productos en borrador.');
         }
 
+        // VALIDACIÓN SIMPLIFICADA - Aceptamos cualquier billing_mode
         $validated = $request->validate([
             'product_unit_id' => 'required|exists:product_units,id',
-            'quantity' => 'required|integer|min:1', // ← Esta línea existe
-            'billing_mode' => 'required|in:rental,consignment',
+            'quantity' => 'required|integer|min:1', 
+            'billing_mode' => 'required|in:rental,sale',
             'rental_price' => 'nullable|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
         ]);
 
-        $productUnit = ProductUnit::findOrFail($validated['product_unit_id']);
-
-        $availableQuantity = $productUnit->quantity ?? 1;
-        if ($validated['quantity'] > $availableQuantity) {
-            return redirect()
-                ->back()
-                ->with('error', "Solo hay {$availableQuantity} unidad(es) disponible(s) de este producto.")
-                ->withInput();
-        }
-
-        $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();
-
+        $productUnit = ProductUnit::with('product.category')->findOrFail($validated['product_unit_id']);
 
         // Verificar que no esté ya en la cotización
         $exists = $quotation->items()->where('product_unit_id', $productUnit->id)->exists();
@@ -241,11 +228,13 @@ class QuotationController extends Controller
                 ->with('error', 'Este producto ya está en la cotización.');
         }
 
+        // CREAR ITEM SIN VALIDAR TIPO DE PRODUCTO
+        // La validación se hará al momento del retorno
         QuotationItem::create([
             'quotation_id' => $quotation->id,
             'product_unit_id' => $productUnit->id,
             'product_id' => $productUnit->product_id,
-            'quantity' => $validated['quantity'], // ← AGREGADO
+            'quantity' => $validated['quantity'],
             'source_legal_entity_id' => $productUnit->legal_entity_id,
             'source_sub_warehouse_id' => $productUnit->sub_warehouse_id,
             'billing_mode' => $validated['billing_mode'],
@@ -255,7 +244,7 @@ class QuotationController extends Controller
         ]);
 
         return redirect()
-            ->back()
+            ->route('quotations.show', $quotation)
             ->with('success', 'Producto agregado a la cotización.');
     }
 
@@ -328,13 +317,14 @@ class QuotationController extends Controller
                 ->with('error', 'Solo se puede registrar retorno de cotizaciones en cirugía.');
         }
 
-        $quotation->load(['items.productUnit.product', 'hospital']);
+        $quotation->load(['items.productUnit.product.category', 'hospital']);
 
         return view('quotations.return', compact('quotation'));
     }
 
     /**
      * Register return from surgery.
+     * ⭐ AQUÍ SE VALIDA EL BILLING_MODE SEGÚN LA CATEGORÍA DEL PRODUCTO
      */
     public function registerReturn(Request $request, Quotation $quotation)
     {
@@ -352,18 +342,52 @@ class QuotationController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $quotation) {
+                $errors = [];
+                
                 foreach ($validated['items'] as $itemData) {
-                    $item = QuotationItem::findOrFail($itemData['id']);
+                    $item = QuotationItem::with('productUnit.product.category')->findOrFail($itemData['id']);
+                    $product = $item->productUnit->product;
+                    $categoryName = $product->category->name ?? '';
+                    
+                    // ═══════════════════════════════════════════════════════════
+                    // VALIDACIÓN ESTRICTA SEGÚN CATEGORÍA
+                    // ═══════════════════════════════════════════════════════════
                     
                     if ($itemData['returned']) {
+                        // ✅ SÍ REGRESÓ
+                        
+                        if ($categoryName === 'Consumibles Quirúrgicos') {
+                            // Consumibles DEBEN ser venta (error si es rental)
+                            if ($item->billing_mode !== 'sale') {
+                                $errors[] = "❌ El producto '{$product->name}' es CONSUMIBLE y debe ser VENTA, pero está marcado como RENTA.";
+                            }
+                        } elseif ($categoryName === 'Instrumental Quirúrgico') {
+                            // Instrumental DEBE ser renta (error si es sale)
+                            if ($item->billing_mode !== 'rental') {
+                                $errors[] = "❌ El producto '{$product->name}' es INSTRUMENTAL y debe ser RENTA, pero está marcado como VENTA.";
+                            }
+                        }
+                        
                         $item->markAsReturned();
+                        
                     } else {
-                        // No regresó, marcar como usado
+                        // ❌ NO REGRESÓ (se quedó en el paciente)
+                        // Independientemente del tipo, DEBE ser venta
+                        
+                        if ($item->billing_mode !== 'sale') {
+                            $errors[] = "❌ El producto '{$product->name}' NO REGRESÓ, por lo tanto debe ser VENTA, pero está marcado como RENTA.";
+                        }
+                        
                         $item->update([
                             'quantity_returned' => 0,
                             'status' => 'used',
                         ]);
                     }
+                }
+                
+                // Si hay errores, lanzar excepción para hacer rollback
+                if (!empty($errors)) {
+                    throw new \Exception("Errores de validación:\n\n" . implode("\n", $errors));
                 }
 
                 $quotation->update(['status' => 'completed']);
@@ -372,10 +396,12 @@ class QuotationController extends Controller
             return redirect()
                 ->route('quotations.show', $quotation)
                 ->with('success', 'Retorno registrado exitosamente. Ahora puedes generar las ventas.');
+                
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->with('error', 'Error al registrar retorno: ' . $e->getMessage());
+                ->withInput()
+                ->with('error', $e->getMessage());
         }
     }
 
@@ -404,78 +430,76 @@ class QuotationController extends Controller
     }
 
     public function applySurgicalKit(Request $request, Quotation $quotation)
-{
-    $validated = $request->validate([
-        'surgical_kit_id' => 'required|exists:surgical_kits,id',
-    ]);
-    
-    if ($quotation->status !== 'draft') {
-        return redirect()
-            ->back()
-            ->with('error', 'Solo se pueden aplicar prearmados a cotizaciones en borrador.');
-    }
-    
-    $surgicalKit = SurgicalKit::findOrFail($validated['surgical_kit_id']);
-    $availability = $surgicalKit->checkAvailability();
-    
-    if (!$availability['all_available']) {
-        return redirect()
-            ->back()
-            ->with('warning', 'Advertencia: Algunos productos del prearmado no tienen stock completo.')
-            ->with('missing_products', $surgicalKit->getMissingProducts());
-    }
-    
-    try {
-        DB::transaction(function () use ($surgicalKit, $quotation) {
-            // Actualizar el surgical_kit_id
-            $quotation->update([
-                'surgical_kit_id' => $surgicalKit->id,
-                'surgery_type' => $surgicalKit->surgery_type,
-            ]);
-            
-            // Aplicar productos del prearmado
-            $productUnits = $surgicalKit->getAvailableProductUnits();
-            
-            foreach ($productUnits as $productData) {
-                $requiredQty = $productData['required_quantity'];
+    {
+        $validated = $request->validate([
+            'surgical_kit_id' => 'required|exists:surgical_kits,id',
+        ]);
+        
+        if ($quotation->status !== 'draft') {
+            return redirect()
+                ->back()
+                ->with('error', 'Solo se pueden aplicar prearmados a cotizaciones en borrador.');
+        }
+        
+        $surgicalKit = SurgicalKit::findOrFail($validated['surgical_kit_id']);
+        $availability = $surgicalKit->checkAvailability();
+        
+        if (!$availability['all_available']) {
+            return redirect()
+                ->back()
+                ->with('warning', 'Advertencia: Algunos productos del prearmado no tienen stock completo.')
+                ->with('missing_products', $surgicalKit->getMissingProducts());
+        }
+        
+        try {
+            DB::transaction(function () use ($surgicalKit, $quotation) {
+                // Actualizar el surgical_kit_id
+                $quotation->update([
+                    'surgical_kit_id' => $surgicalKit->id,
+                    'surgery_type' => $surgicalKit->surgery_type,
+                ]);
                 
-                foreach ($productData['units'] as $unit) {
-                    if ($requiredQty <= 0) break;
+                // Aplicar productos del prearmado
+                $productUnits = $surgicalKit->getAvailableProductUnits();
+                
+                foreach ($productUnits as $productData) {
+                    $requiredQty = $productData['required_quantity'];
                     
-                    // Verificar que no exista ya
-                    $exists = $quotation->items()
-                        ->where('product_unit_id', $unit->id)
-                        ->exists();
-                    
-                    if (!$exists) {
-                        QuotationItem::create([
-                            'quotation_id' => $quotation->id,
-                            'product_unit_id' => $unit->id,
-                            'product_id' => $unit->product_id,
-                            'quantity' => 1, // Cada ProductUnit = 1 unidad
-                            'source_legal_entity_id' => $unit->legal_entity_id,
-                            'source_sub_warehouse_id' => $unit->sub_warehouse_id,
-                            'billing_mode' => 'rental',
-                            'rental_price' => 0,
-                            'sale_price' => 0,
-                            'status' => 'pending',
-                        ]);
+                    foreach ($productData['units'] as $unit) {
+                        if ($requiredQty <= 0) break;
                         
-                        $requiredQty -= 1;
+                        // Verificar que no exista ya
+                        $exists = $quotation->items()
+                            ->where('product_unit_id', $unit->id)
+                            ->exists();
+                        
+                        if (!$exists) {
+                            QuotationItem::create([
+                                'quotation_id' => $quotation->id,
+                                'product_unit_id' => $unit->id,
+                                'product_id' => $unit->product_id,
+                                'quantity' => 1,
+                                'source_legal_entity_id' => $unit->legal_entity_id,
+                                'source_sub_warehouse_id' => $unit->sub_warehouse_id,
+                                'billing_mode' => 'rental', // Por defecto renta, se ajusta al retorno
+                                'rental_price' => 0,
+                                'sale_price' => 0,
+                                'status' => 'pending',
+                            ]);
+                            
+                            $requiredQty -= 1;
+                        }
                     }
                 }
-            }
-        });
-        
-        return redirect()
-            ->route('quotations.edit', $quotation)
-            ->with('success', "Prearmado '{$surgicalKit->name}' aplicado exitosamente.");
-    } catch (\Exception $e) {
-        return redirect()
-            ->back()
-            ->with('error', 'Error al aplicar prearmado: ' . $e->getMessage());
+            });
+            
+            return redirect()
+                ->route('quotations.edit', $quotation)
+                ->with('success', "Prearmado '{$surgicalKit->name}' aplicado exitosamente.");
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Error al aplicar prearmado: ' . $e->getMessage());
+        }
     }
-}
-
-
 }
