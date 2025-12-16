@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\SurgicalKit;
+
 use Illuminate\Support\Facades\DB;
 
 class Quotation extends Model
@@ -14,6 +16,7 @@ class Quotation extends Model
         'hospital_id',
         'doctor_id',
         'surgery_type',
+        'surgical_kit_id',
         'surgery_date',
         'billing_legal_entity_id',
         'status',
@@ -91,6 +94,14 @@ class Quotation extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    /**
+     * Kit quirúrgico asociado a la cotización
+     */
+
+    public function surgicalKit(): BelongsTo
+{
+    return $this->belongsTo(SurgicalKit::class);
+}
 
     // ═══════════════════════════════════════════════════════════
     // SCOPES

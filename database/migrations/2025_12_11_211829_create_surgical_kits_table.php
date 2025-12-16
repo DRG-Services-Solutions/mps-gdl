@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('surgical_kits', function (Blueprint $table) {
@@ -24,13 +21,9 @@ return new class extends Migration
             
             $table->index('surgery_type');
             $table->index('is_active');
-
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('surgical_kits');

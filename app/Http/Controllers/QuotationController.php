@@ -9,6 +9,9 @@ use App\Models\Doctor;
 use App\Models\LegalEntity;
 use App\Models\ProductUnit;
 use App\Models\SubWarehouse;
+use App\Models\SurgicalKit;
+use App\Models\SurgicalKitItem;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -63,8 +66,9 @@ class QuotationController extends Controller
         $hospitals = Hospital::orderBy('name')->get();
         $doctors = Doctor::active()->orderBy('last_name')->get();
         $legalEntities = LegalEntity::orderBy('name')->get();
+        $surgicalKits = SurgicalKit::where('is_active', true)->orderBy('surgery_type')->get();
 
-        return view('quotations.create', compact('hospitals', 'doctors', 'legalEntities'));
+        return view('quotations.create', compact('hospitals', 'doctors', 'legalEntities', 'surgicalKits'));
     }
 
     /**
@@ -79,6 +83,8 @@ class QuotationController extends Controller
             'surgery_date' => 'nullable|date',
             'billing_legal_entity_id' => 'required|exists:legal_entities,id',
             'notes' => 'nullable|string',
+            'surgical_kit_id' => 'nullable|exists:surgical_kits,id', 
+
         ]);
 
         $validated['created_by'] = auth()->id();
@@ -135,8 +141,9 @@ class QuotationController extends Controller
         $hospitals = Hospital::active()->orderBy('name')->get();
         $doctors = Doctor::active()->orderBy('first_name')->get();
         $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
+        $surgicalKits = SurgicalKit::where('is_active', true)->orderBy('surgery_type')->get();
 
-        return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities'));
+        return view('quotations.edit', compact('quotation', 'hospitals', 'doctors', 'legalEntities', 'surgicalKits' ));
     }
 
     /**
@@ -158,6 +165,8 @@ class QuotationController extends Controller
             'surgery_date' => 'nullable|date',
             'billing_legal_entity_id' => 'required|exists:legal_entities,id',
             'notes' => 'nullable|string',
+            'surgical_kit_id' => 'nullable|exists:surgical_kits,id',
+
         ]);
 
         $quotation->update($validated);
@@ -393,4 +402,80 @@ class QuotationController extends Controller
                 ->with('error', 'Error al generar ventas: ' . $e->getMessage());
         }
     }
+
+    public function applySurgicalKit(Request $request, Quotation $quotation)
+{
+    $validated = $request->validate([
+        'surgical_kit_id' => 'required|exists:surgical_kits,id',
+    ]);
+    
+    if ($quotation->status !== 'draft') {
+        return redirect()
+            ->back()
+            ->with('error', 'Solo se pueden aplicar prearmados a cotizaciones en borrador.');
+    }
+    
+    $surgicalKit = SurgicalKit::findOrFail($validated['surgical_kit_id']);
+    $availability = $surgicalKit->checkAvailability();
+    
+    if (!$availability['all_available']) {
+        return redirect()
+            ->back()
+            ->with('warning', 'Advertencia: Algunos productos del prearmado no tienen stock completo.')
+            ->with('missing_products', $surgicalKit->getMissingProducts());
+    }
+    
+    try {
+        DB::transaction(function () use ($surgicalKit, $quotation) {
+            // Actualizar el surgical_kit_id
+            $quotation->update([
+                'surgical_kit_id' => $surgicalKit->id,
+                'surgery_type' => $surgicalKit->surgery_type,
+            ]);
+            
+            // Aplicar productos del prearmado
+            $productUnits = $surgicalKit->getAvailableProductUnits();
+            
+            foreach ($productUnits as $productData) {
+                $requiredQty = $productData['required_quantity'];
+                
+                foreach ($productData['units'] as $unit) {
+                    if ($requiredQty <= 0) break;
+                    
+                    // Verificar que no exista ya
+                    $exists = $quotation->items()
+                        ->where('product_unit_id', $unit->id)
+                        ->exists();
+                    
+                    if (!$exists) {
+                        QuotationItem::create([
+                            'quotation_id' => $quotation->id,
+                            'product_unit_id' => $unit->id,
+                            'product_id' => $unit->product_id,
+                            'quantity' => 1, // Cada ProductUnit = 1 unidad
+                            'source_legal_entity_id' => $unit->legal_entity_id,
+                            'source_sub_warehouse_id' => $unit->sub_warehouse_id,
+                            'billing_mode' => 'rental',
+                            'rental_price' => 0,
+                            'sale_price' => 0,
+                            'status' => 'pending',
+                        ]);
+                        
+                        $requiredQty -= 1;
+                    }
+                }
+            }
+        });
+        
+        return redirect()
+            ->route('quotations.edit', $quotation)
+            ->with('success', "Prearmado '{$surgicalKit->name}' aplicado exitosamente.");
+    } catch (\Exception $e) {
+        return redirect()
+            ->back()
+            ->with('error', 'Error al aplicar prearmado: ' . $e->getMessage());
+    }
+}
+
+
 }

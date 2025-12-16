@@ -188,155 +188,142 @@
             
             <!-- Add Product Form -->
             @if($quotation->status === 'draft')
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="bg-white overflow-visible shadow-sm sm:rounded-xl" x-data="quotationApp()">
+
                     <div class="p-6 border-b border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">
                             <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>Agregar Producto
                         </h3>
-                        
+
                         <form action="{{ route('quotations.add-item', $quotation) }}" method="POST" @submit="validateForm">
                             @csrf
+
                             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                                <!-- Product Search -->
+
+                                <!-- BUSCADOR -->
                                 <div class="md:col-span-2 relative">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">
                                         <i class="fas fa-search mr-1"></i>Buscar Producto <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="text" 
+
+                                    <input type="text"
                                         x-model="searchQuery"
                                         @input.debounce.300ms="searchProducts"
                                         @focus="showResults = true"
-                                        x-ref="searchInput"
-                                        placeholder="Escribe para buscar por nombre, código o EPC..."
+                                        @keydown.escape="showResults = false"
+                                        placeholder="Nombre, código o EPC..."
                                         class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                                         autocomplete="off">
-                                    
-                                    <!-- Hidden input for product_unit_id -->
-                                    <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
-                                    
-                                    <!-- Results dropdown -->
-                                    <div x-show="showResults && products.length > 0" 
-                                        @click.away="showResults = false"
-                                        x-init="$watch('showResults', value => {
-                                            if (value && $refs.searchInput) {
-                                                const rect = $refs.searchInput.getBoundingClientRect();
-                                                $el.style.top = (rect.bottom + window.scrollY) + 'px';
-                                                $el.style.left = rect.left + 'px';
-                                                $el.style.width = rect.width + 'px';
-                                            }
-                                        })"
-                                        class="fixed z-[50] mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
 
-                                        <template x-for="product in products" :key="product.id">
-                                            <div @click="selectProduct(product)" 
-                                                 class="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-100 last:border-b-0">
-                                                <div class="font-medium text-sm text-gray-900" x-text="product.name"></div>
-                                                <div class="text-xs text-gray-500">
-                                                    <span x-text="product.code"></span> - 
-                                                    <span x-text="product.epc || product.serial_number || 'N/A'"></span>
-                                                </div>
-                                                <div class="text-xs text-indigo-600 mt-1">
-                                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                                    <span x-text="product.sub_warehouse_name"></span>
-                                                    <span class="mx-1">•</span>
-                                                    <span x-text="product.legal_entity"></span>
-                                                </div>                                                
-                                            </div>
-                                        </template>
-                                    </div>
-                                    
-                                    <!-- Loading -->
+                                    <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
+
+                                    <!-- LOADING -->
                                     <div x-show="loading" class="absolute right-3 top-9">
                                         <i class="fas fa-spinner fa-spin text-indigo-600"></i>
                                     </div>
-                                    
-                                    <!-- Selected product display -->
-                                    <div x-show="selectedProduct" class="mt-2 p-2 bg-indigo-50 rounded border border-indigo-200">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex-1">
-                                                <div class="text-sm font-medium text-indigo-900" x-text="selectedProduct?.name"></div>
-                                                <div class="text-xs text-indigo-600">
-                                                    <span x-text="selectedProduct?.code"></span>
-                                                    <span class="mx-1">•</span>
-                                                    <span class="font-semibold">Disponible: <span x-text="maxQuantity"></span></span>
-                                                    <span class="mx-1">•</span>
-                                                    <span x-text="selectedProduct?.epc || selectedProduct?.serial_number || 'N/A'"></span>
+
+                                    <!-- DROPDOWN (ÚNICO Y CORRECTO) -->
+                                    <div x-show="showResults && products.length"
+                                        @click.away="showResults = false"
+                                        x-cloak
+                                        class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50">
+
+                                        <template x-for="product in products" :key="product.id">
+                                            <div @click="selectProduct(product)"
+                                                class="px-4 py-2 cursor-pointer hover:bg-indigo-50 border-b last:border-b-0">
+
+                                                <div class="font-medium text-sm" x-text="product.name"></div>
+                                                <div class="text-xs text-gray-500">
+                                                    <span x-text="product.code"></span> —
+                                                    <span x-text="product.epc || product.serial_number || 'N/A'"></span>
+                                                </div>
+
+                                                <div class="text-xs text-indigo-600 mt-1">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                                    <span x-text="product.sub_warehouse_name"></span>
+                                                    •
+                                                    <span x-text="product.legal_entity"></span>
                                                 </div>
                                             </div>
-                                            <button type="button" @click="clearSelection" class="text-indigo-600 hover:text-indigo-800">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
+                                        </template>
                                     </div>
 
-                                </div>
-                                
-                                <!-- Quantity -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        <i class="fas fa-hashtag mr-1"></i>Cantidad <span class="text-red-500">*</span>
-                                        <span x-show="selectedProduct" class="text-xs text-gray-500 font-normal">
-                                            (Disponible: <span x-text="maxQuantity"></span>)
-                                        </span>
-                                    </label>
-                                    <input type="number" 
-                                        name="quantity" 
-                                        x-model="quantity"
-                                        :max="maxQuantity"
-                                        min="1"
-                                        value="1"
-                                        required
-                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                    <p x-show="quantity > maxQuantity" class="mt-1 text-xs text-red-600">
-                                        <i class="fas fa-exclamation-circle mr-1"></i>
-                                        La cantidad excede el stock disponible
-                                    </p>
+                                    <!-- PRODUCTO SELECCIONADO -->
+                                    <div x-show="selectedProduct" class="mt-2 p-3 bg-indigo-50 rounded-lg border">
+                                        <div class="flex justify-between text-xs font-semibold text-indigo-800">
+                                            <span>Producto seleccionado</span>
+                                            <button type="button" @click="clearSelection" class="text-red-600">
+                                                <i class="fas fa-times-circle"></i>
+                                            </button>
+                                        </div>
+                                        <div class="text-sm font-medium" x-text="selectedProduct.name"></div>
+                                        <div class="text-xs text-gray-600">
+                                            Stock: <span x-text="maxQuantity"></span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                
-                                <!-- Billing Mode -->
+                                <!-- CANTIDAD -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        <i class="fas fa-tag mr-1"></i>Modalidad <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="billing_mode" 
+                                    <label class="block text-sm font-medium mb-1">Cantidad</label>
+                                    <input type="number"
+                                        name="quantity"
+                                        x-model.number="quantity"
+                                        min="1"
+                                        :max="maxQuantity"
+                                        class="w-full rounded-lg border-gray-300">
+                                </div>
+
+                                <!-- MODALIDAD -->
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Modalidad</label>
+                                    <select name="billing_mode"
                                             x-model="billingMode"
-                                            required
-                                            class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                            @change="updatePriceField"
+                                            class="w-full rounded-lg border-gray-300">
                                         <option value="rental">Renta</option>
                                         <option value="sale">Venta</option>
                                     </select>
                                 </div>
-                                
-                                <!-- Price -->
+
+                                <!-- PRECIO -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        <i class="fas fa-dollar-sign mr-1"></i>
-                                        <span x-text="billingMode === 'rental' ? 'Precio Renta' : 'Precio Venta'"></span>
-                                        <span class="text-red-500">*</span>
+                                    <label class="block text-sm font-medium mb-1">
+                                        <span x-text="billingMode === 'rental' ? 'Precio renta' : 'Precio venta'"></span>
                                     </label>
-                                    <input type="number" 
-                                           :name="billingMode === 'rental' ? 'rental_price' : 'sale_price'"
-                                           step="0.01"
-                                           min="0"
-                                           placeholder="0.00"
-                                           required
-                                           class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
+                                    <input type="number"
+                                        step="0.01"
+                                        min="0"
+                                        x-model.number="price"
+                                        :name="billingMode === 'rental' ? 'rental_price' : 'sale_price'"
+                                        class="w-full rounded-lg border-gray-300">
                                 </div>
+
+                                <template x-if="billingMode === 'rental'">
+                                    <input type="hidden" name="sale_price" value="0">
+                                </template>
+                                <template x-if="billingMode === 'sale'">
+                                    <input type="hidden" name="rental_price" value="0">
+                                </template>
+
                             </div>
-                            
+
                             <div class="mt-4 flex justify-end">
-                                <button type="submit" 
-                                        :disabled="!selectedProductId"
-                                        :class="selectedProductId ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-400 cursor-not-allowed'"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest transition">
-                                    <i class="fas fa-plus mr-2"></i>Agregar Producto
+                                <button type="submit"
+                                        :disabled="!selectedProductId || quantity > maxQuantity || price <= 0"
+                                        class="px-4 py-2 rounded-lg text-white text-xs font-semibold"
+                                        :class="(!selectedProductId || quantity > maxQuantity || price <= 0)
+                                            ? 'bg-gray-400'
+                                            : 'bg-indigo-600 hover:bg-indigo-700'">
+                                    <i class="fas fa-plus mr-2"></i>Agregar
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             @endif
+
+            
             
             <!-- Products Table -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -351,13 +338,10 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EPC/Serial</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origen</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modalidad</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Unit.</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                                 @if($quotation->status === 'draft')
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                 @endif
@@ -366,13 +350,10 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($quotation->items as $item)
                                 <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $item->product->name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
-                                    </td>
+                                 
                                     <td class="px-6 py-4 text-sm text-gray-900">
                                         <span class="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                                            {{ $item->productUnit->epc ?? $item->productUnit->serial_number ?? 'N/A' }}
+                                            {{ $item->productUnit->product->name ?? 'N/A' }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-center">
@@ -384,17 +365,7 @@
                                         <div class="text-sm text-gray-900">{{ $item->sourceLegalEntity->business_name }}</div>
                                         <div class="text-xs text-gray-500">{{ $item->sourceSubWarehouse->name ?? 'N/A' }}</div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @if($item->billing_mode === 'rental')
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                <i class="fas fa-sync mr-1"></i>RENTA
-                                            </span>
-                                        @else
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                                                <i class="fas fa-handshake mr-1"></i>CONSIGNACIÓN
-                                            </span>
-                                        @endif
-                                    </td>
+                                    
                                     <td class="px-6 py-4 text-sm text-gray-900 text-right font-medium">
                                         @if($item->billing_mode === 'rental')
                                             ${{ number_format($item->rental_price, 2) }}
@@ -410,27 +381,7 @@
                                         @endphp
                                         ${{ number_format($total, 2) }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @php
-                                            $itemStatusClasses = [
-                                                'pending' => 'bg-gray-100 text-gray-800',
-                                                'sent' => 'bg-yellow-100 text-yellow-800',
-                                                'returned' => 'bg-green-100 text-green-800',
-                                                'used' => 'bg-red-100 text-red-800',
-                                                'invoiced' => 'bg-indigo-100 text-indigo-800',
-                                            ];
-                                            $itemStatusLabels = [
-                                                'pending' => 'Pendiente',
-                                                'sent' => 'Enviado',
-                                                'returned' => 'Retornado',
-                                                'used' => 'Usado',
-                                                'invoiced' => 'Facturado',
-                                            ];
-                                        @endphp
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $itemStatusClasses[$item->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                            {{ $itemStatusLabels[$item->status] ?? $item->status }}
-                                        </span>
-                                    </td>
+                                    
                                     @if($quotation->status === 'draft')
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <form action="{{ route('quotations.remove-item', [$quotation, $item]) }}" method="POST" class="inline">
@@ -460,7 +411,7 @@
                         @if($quotation->items->count() > 0)
                             <tfoot class="bg-gray-50">
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-right font-bold text-gray-900">TOTAL:</td>
+                                    <td colspan="5" class="px-6 py-4 text-right font-bold text-gray-900">TOTAL:</td>
                                     <td class="px-6 py-4 text-right font-bold text-indigo-600 text-lg">
                                         @php
                                             $grandTotal = $quotation->items->sum(function($item) {
@@ -470,7 +421,7 @@
                                         @endphp
                                         ${{ number_format($grandTotal, 2) }}
                                     </td>
-                                    <td colspan="2"></td>
+                                  
                                 </tr>
                             </tfoot>
                         @endif
@@ -479,70 +430,142 @@
             </div>
             
         </div>
+
+        
     </div>
 
     @push('scripts')
     <script>
-        function quotationApp() {
-            return {
-                searchQuery: '',
-                products: [],
-                selectedProduct: null,
-                selectedProductId: '',
-                showResults: false,
-                loading: false,
-                quantity: 1,
-                maxQuantity: 999, // ← AGREGAR
-                billingMode: 'rental',
-                
-                async searchProducts() {
-                    if (this.searchQuery.length < 2) {
-                        this.products = [];
-                        return;
-                    }
-                    
-                    this.loading = true;
-                    
-                    try {
-                        const response = await fetch(`{{ route('products.searchApi') }}?q=${encodeURIComponent(this.searchQuery)}&available=true`);
-                        const data = await response.json();
-                        this.products = data;
-                        this.showResults = true;
-                    } catch (error) {
-                        console.error('Error searching products:', error);
-                        this.products = [];
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-                
-                selectProduct(product) {
-                    this.selectedProduct = product;
-                    this.selectedProductId = product.id;
-                    this.searchQuery = product.name;
-                    this.maxQuantity = product.available_quantity || 1; // ← AGREGAR
-                    this.quantity = Math.min(this.quantity, this.maxQuantity); // ← AGREGAR: Ajustar cantidad si excede
-                    this.showResults = false;
-                },
+    function quotationApp() {
+        return {
+            searchQuery: '',
+            products: [],
+            selectedProduct: null,
+            selectedProductId: '',
+            showResults: false,
+            loading: false,
+            quantity: 1,
+            maxQuantity: 999,
+            billingMode: 'rental',
+            price: 0, // AÑADIDO: Propiedad para almacenar y modelar el precio
 
-                
-                clearSelection() {
-                    this.selectedProduct = null;
-                    this.selectedProductId = '';
-                    this.searchQuery = '';
-                    this.products = [];
-                    this.maxQuantity = 999; // ← AGREGAR
-                    this.quantity = 1; // ← AGREGAR
-                },
-                
-                validateForm(e) {
-                    if (!this.selectedProductId) {
-                        e.preventDefault();
-                        alert('Por favor selecciona un producto de la lista');
+            // Inicialización (llamada al inicio si se usa x-init)
+            init() {
+                this.updatePriceField();
+            },
+
+            // Lógica para actualizar el campo de precio según la modalidad
+            updatePriceField() {
+                if (this.selectedProduct) {
+                    if (this.billingMode === 'rental') {
+                        // Usar el precio de renta si está disponible, sino 0
+                        this.price = this.selectedProduct.rental_price || 0; 
+                    } else { // 'sale'
+                        // Usar el precio de venta si está disponible, sino 0
+                        this.price = this.selectedProduct.sale_price || 0;
                     }
+                } else {
+                    this.price = 0;
+                }
+            },
+            
+            async searchProducts() {
+                if (this.searchQuery.length < 2) {
+                    this.products = [];
+                    return;
+                }
+                
+                this.loading = true;
+                
+                try {
+                    // Nota: Asegúrate que esta ruta es accesible y devuelve un array de productos
+                    const response = await fetch(`{{ route('products.searchApi') }}?q=${encodeURIComponent(this.searchQuery)}&available=true`);
+                    const data = await response.json();
+                    this.products = data;
+                    this.showResults = true;
+                    
+                    this.$nextTick(() => {
+                    });
+                } catch (error) {
+                    console.error('Error searching products:', error);
+                    this.products = [];
+                } finally {
+                    this.loading = false;
+                }
+            },
+            
+            positionDropdown() {
+                // ... (Tu función de posicionamiento actual, funciona bien si tienes el x-ref="dropdown"
+                // en un elemento con posición absoluta o fija globalmente)
+                if (!this.$refs.searchInput || !this.$refs.dropdown) return;
+                // Si el dropdown es un elemento hijo posicionado de forma absoluta dentro de un relativo (como en el Blade que mostraste),
+                // esta función no es necesaria y debería eliminarse para evitar conflictos de posicionamiento.
+                // La dejaré comentada por ahora, ya que la estructura Blade original usa 'absolute' para el dropdown.
+                
+                /*
+                const input = this.$refs.searchInput;
+                const dropdown = this.$refs.dropdown;
+                const rect = input.getBoundingClientRect();
+                
+                dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+                dropdown.style.left = rect.left + 'px';
+                dropdown.style.width = rect.width + 'px';
+                */
+            },
+            
+            selectProduct(product) {
+                this.selectedProduct = product;
+                this.selectedProductId = product.id;
+                this.searchQuery = product.name;
+                this.maxQuantity = product.available_quantity || 1; 
+                this.quantity = 1; // Reseteamos la cantidad a 1 al seleccionar
+                this.showResults = false;
+
+                // LLAMADA CLAVE: Actualizar el campo de precio basado en la modalidad
+                this.updatePriceField();
+                
+                this.$nextTick(() => this.$refs.searchInput.focus()); 
+            },
+            
+            clearSelection() {
+                this.selectedProduct = null;
+                this.selectedProductId = '';
+                this.searchQuery = '';
+                this.products = [];
+                this.maxQuantity = 999;
+                this.quantity = 1;
+                this.price = 0; // También limpiar el precio
+            },
+            
+            validateForm(e) {
+                if (!this.selectedProductId) {
+                    e.preventDefault();
+                    alert('Por favor selecciona un producto de la lista');
+                    return false;
+                }
+                if (this.quantity > this.maxQuantity) {
+                    e.preventDefault();
+                    alert('La cantidad excede el stock disponible.');
+                    return false;
                 }
             }
         }
-    </script>
+    }
+    
+    // Si estás usando la función externa `positionDropdown`, ya no es necesaria si el dropdown es 'absolute'
+    // dentro de un contenedor 'relative'.
+    /*
+    window.addEventListener('scroll', () => {
+        const app = window.Alpine ? Alpine.raw(document.querySelector('[x-data]').__x : null;
+        if (app && app.showResults) {
+             // app.positionDropdown(); // Comentado, ya que el código HTML es 'relative'/'absolute'
+        }
+    });
+    */
+</script>
+    
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     @endpush
 </x-app-layout>
