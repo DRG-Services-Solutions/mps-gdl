@@ -35,6 +35,7 @@ class ProductUnit extends Model
         'updated_by',
         'legal_entity_id',
         'sub_warehouse_id',
+        'reserved_quantity',
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class ProductUnit extends Model
         'acquisition_cost' => 'decimal:2',
         'sterilization_cycles' => 'integer',
         'max_sterilization_cycles' => 'integer',
+        'reserved_quantity' => 'integer',
     ];
 
     // ==================== RELACIONES ====================
@@ -83,7 +85,6 @@ class ProductUnit extends Model
     /**
      * Obtener entidad legal de cada producto asignada 
      */
-
     public function legalEntity(): BelongsTo
     {
         return $this->belongsTo(LegalEntity::class);
@@ -105,11 +106,31 @@ class ProductUnit extends Model
         return $this->belongsTo(PurchaseOrder::class);
     }
 
+    // ==================== ATRIBUTOS CALCULADOS ====================
+    
+    /**
+     * Cada ProductUnit representa UNA unidad física individual
+     * Este atributo indica si está disponible (1) o reservada (0)
+     */
+    public function getAvailableQuantityAttribute(): int
+    {
+        return $this->status === 'available' && $this->reserved_quantity == 0 ? 1 : 0;
+    }
+
+    /**
+     * Alias para mantener compatibilidad
+     */
+    public function getQuantityAttribute(): int
+    {
+        return 1; // Cada ProductUnit siempre representa 1 unidad física
+    }
+
     // ==================== SCOPES ====================
     
     public function scopeAvailable($query)
     {
-        return $query->where('status', 'available');
+        return $query->where('status', 'available')
+                     ->where('reserved_quantity', 0);
     }
 
     public function scopeInUse($query)
@@ -159,7 +180,9 @@ class ProductUnit extends Model
      */
     public function isAvailable(): bool
     {
-        return $this->status === 'available' && !$this->isExpired();
+        return $this->status === 'available' 
+            && $this->reserved_quantity == 0 
+            && !$this->isExpired();
     }
 
     /**

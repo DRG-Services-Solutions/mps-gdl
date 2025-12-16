@@ -187,141 +187,142 @@
             </div>
             
             <!-- Add Product Form -->
-            @if($quotation->status === 'draft')
-                <div class="bg-white overflow-visible shadow-sm sm:rounded-xl" x-data="quotationApp()">
+                @if($quotation->status === 'draft')
+                    <div class="bg-white overflow-visible shadow-sm sm:rounded-xl" x-data="quotationApp()">
 
-                    <div class="p-6 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>Agregar Producto
-                        </h3>
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>Agregar Producto
+                            </h3>
 
-                        <form action="{{ route('quotations.add-item', $quotation) }}" method="POST" @submit="validateForm">
-                            @csrf
+                            <form action="{{ route('quotations.add-item', $quotation) }}"
+                                method="POST">
+                                @csrf
 
-                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
 
-                                <!-- BUSCADOR -->
-                                <div class="md:col-span-2 relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                                        <i class="fas fa-search mr-1"></i>Buscar Producto <span class="text-red-500">*</span>
-                                    </label>
+                                    <!-- BUSCADOR -->
+                                    <div class="md:col-span-2 relative">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                                            <i class="fas fa-search mr-1"></i>Buscar Producto <span class="text-red-500">*</span>
+                                        </label>
 
-                                    <input type="text"
-                                        x-model="searchQuery"
-                                        @input.debounce.300ms="searchProducts"
-                                        @focus="showResults = true"
-                                        @keydown.escape="showResults = false"
-                                        placeholder="Nombre, código o EPC..."
-                                        class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
-                                        autocomplete="off">
+                                        <input type="text"
+                                            x-model="searchQuery"
+                                            @input.debounce.300ms="searchProducts"
+                                            @focus="showResults = true"
+                                            @keydown.escape="showResults = false"
+                                            placeholder="Nombre, código o EPC..."
+                                            class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
+                                            autocomplete="off">
 
-                                    <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
+                                        <input type="hidden" name="product_unit_id" x-model="selectedProductId" required>
 
-                                    <!-- LOADING -->
-                                    <div x-show="loading" class="absolute right-3 top-9">
-                                        <i class="fas fa-spinner fa-spin text-indigo-600"></i>
-                                    </div>
+                                        <!-- LOADING -->
+                                        <div x-show="loading" class="absolute right-3 top-9">
+                                            <i class="fas fa-spinner fa-spin text-indigo-600"></i>
+                                        </div>
 
-                                    <!-- DROPDOWN (ÚNICO Y CORRECTO) -->
-                                    <div x-show="showResults && products.length"
-                                        @click.away="showResults = false"
-                                        x-cloak
-                                        class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50">
+                                        <!-- DROPDOWN -->
+                                        <div x-show="showResults && products.length"
+                                            @click.away="showResults = false"
+                                            x-cloak
+                                            class="absolute mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-2xl max-h-60 overflow-y-auto z-50">
 
-                                        <template x-for="product in products" :key="product.id">
-                                            <div @click="selectProduct(product)"
-                                                class="px-4 py-2 cursor-pointer hover:bg-indigo-50 border-b last:border-b-0">
+                                            <template x-for="product in products" :key="product.id">
+                                                <div @click="selectProduct(product)"
+                                                    class="px-4 py-2 cursor-pointer hover:bg-indigo-50 border-b last:border-b-0">
 
-                                                <div class="font-medium text-sm" x-text="product.name"></div>
-                                                <div class="text-xs text-gray-500">
-                                                    <span x-text="product.code"></span> —
-                                                    <span x-text="product.epc || product.serial_number || 'N/A'"></span>
+                                                    <div class="font-medium text-sm" x-text="product.name"></div>
+                                                    <div class="text-xs text-gray-500">
+                                                        <span x-text="product.code"></span> —
+                                                        <span x-text="product.epc || product.serial_number || 'N/A'"></span>
+                                                    </div>
+
+                                                    <div class="text-xs text-indigo-600 mt-1">
+                                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                                        <span x-text="product.sub_warehouse_name"></span>
+                                                        •
+                                                        <span x-text="product.legal_entity"></span>
+                                                    </div>
                                                 </div>
+                                            </template>
+                                        </div>
 
-                                                <div class="text-xs text-indigo-600 mt-1">
-                                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                                    <span x-text="product.sub_warehouse_name"></span>
-                                                    •
-                                                    <span x-text="product.legal_entity"></span>
-                                                </div>
+                                        <!-- PRODUCTO SELECCIONADO -->
+                                        <div x-show="selectedProduct" class="mt-2 p-3 bg-indigo-50 rounded-lg border">
+                                            <div class="flex justify-between text-xs font-semibold text-indigo-800">
+                                                <span>Producto seleccionado</span>
+                                                <button type="button" @click="clearSelection" class="text-red-600">
+                                                    <i class="fas fa-times-circle"></i>
+                                                </button>
                                             </div>
-                                        </template>
-                                    </div>
-
-                                    <!-- PRODUCTO SELECCIONADO -->
-                                    <div x-show="selectedProduct" class="mt-2 p-3 bg-indigo-50 rounded-lg border">
-                                        <div class="flex justify-between text-xs font-semibold text-indigo-800">
-                                            <span>Producto seleccionado</span>
-                                            <button type="button" @click="clearSelection" class="text-red-600">
-                                                <i class="fas fa-times-circle"></i>
-                                            </button>
-                                        </div>
-                                        <div class="text-sm font-medium" x-text="selectedProduct.name"></div>
-                                        <div class="text-xs text-gray-600">
-                                            Stock: <span x-text="maxQuantity"></span>
+                                            <div class="text-sm font-medium" x-text="selectedProduct.name"></div>
+                                            <div class="text-xs text-gray-600">
+                                                Stock: <span x-text="maxQuantity"></span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <!-- CANTIDAD -->
-                                <div>
-                                    <label class="block text-sm font-medium mb-1">Cantidad</label>
-                                    <input type="number"
-                                        name="quantity"
-                                        x-model.number="quantity"
-                                        min="1"
-                                        :max="maxQuantity"
-                                        class="w-full rounded-lg border-gray-300">
-                                </div>
-
-                                <!-- MODALIDAD -->
-                                <div>
-                                    <label class="block text-sm font-medium mb-1">Modalidad</label>
-                                    <select name="billing_mode"
-                                            x-model="billingMode"
-                                            @change="updatePriceField"
+                                    <!-- CANTIDAD -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Cantidad</label>
+                                        <input type="number"
+                                            name="quantity"
+                                            x-model.number="quantity"
+                                            min="1"
+                                            :max="maxQuantity"
                                             class="w-full rounded-lg border-gray-300">
-                                        <option value="rental">Renta</option>
-                                        <option value="sale">Venta</option>
-                                    </select>
+                                    </div>
+
+                                    <!-- MODALIDAD -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">Modalidad</label>
+                                        <select name="billing_mode"
+                                                x-model="billingMode"
+                                                @change="updatePriceField"
+                                                class="w-full rounded-lg border-gray-300">
+                                            <option value="rental">Renta</option>
+                                            <option value="sale">Venta</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- PRECIO -->
+                                    <div>
+                                        <label class="block text-sm font-medium mb-1">
+                                            <span x-text="billingMode === 'rental' ? 'Precio renta' : 'Precio venta'"></span>
+                                        </label>
+                                        <input type="number"
+                                            step="0.01"
+                                            min="0"
+                                            x-model.number="price"
+                                            class="w-full rounded-lg border-gray-300">
+                                        
+                                        <!-- Campos hidden que se envían al backend -->
+                                        <input type="hidden" 
+                                            x-bind:name="billingMode === 'rental' ? 'rental_price' : 'sale_price'" 
+                                            x-bind:value="price">
+                                        <input type="hidden" 
+                                            x-bind:name="billingMode === 'rental' ? 'sale_price' : 'rental_price'" 
+                                            value="0">
+                                    </div>
+
                                 </div>
 
-                                <!-- PRECIO -->
-                                <div>
-                                    <label class="block text-sm font-medium mb-1">
-                                        <span x-text="billingMode === 'rental' ? 'Precio renta' : 'Precio venta'"></span>
-                                    </label>
-                                    <input type="number"
-                                        step="0.01"
-                                        min="0"
-                                        x-model.number="price"
-                                        :name="billingMode === 'rental' ? 'rental_price' : 'sale_price'"
-                                        class="w-full rounded-lg border-gray-300">
+                                <div class="mt-4 flex justify-end">
+                                    <button type="submit"
+                                            :disabled="!selectedProductId || quantity > maxQuantity || price <= 0"
+                                            class="px-4 py-2 rounded-lg text-white text-xs font-semibold transition-colors"
+                                            :class="(!selectedProductId || quantity > maxQuantity || price <= 0)
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-indigo-600 hover:bg-indigo-700'">
+                                        <i class="fas fa-plus mr-2"></i>Agregar
+                                    </button>
                                 </div>
-
-                                <template x-if="billingMode === 'rental'">
-                                    <input type="hidden" name="sale_price" value="0">
-                                </template>
-                                <template x-if="billingMode === 'sale'">
-                                    <input type="hidden" name="rental_price" value="0">
-                                </template>
-
-                            </div>
-
-                            <div class="mt-4 flex justify-end">
-                                <button type="submit"
-                                        :disabled="!selectedProductId || quantity > maxQuantity || price <= 0"
-                                        class="px-4 py-2 rounded-lg text-white text-xs font-semibold"
-                                        :class="(!selectedProductId || quantity > maxQuantity || price <= 0)
-                                            ? 'bg-gray-400'
-                                            : 'bg-indigo-600 hover:bg-indigo-700'">
-                                    <i class="fas fa-plus mr-2"></i>Agregar
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
-                </div>
-            @endif
+                @endif
 
             
             
@@ -435,137 +436,78 @@
     </div>
 
     @push('scripts')
-    <script>
-    function quotationApp() {
-        return {
-            searchQuery: '',
-            products: [],
-            selectedProduct: null,
-            selectedProductId: '',
-            showResults: false,
-            loading: false,
-            quantity: 1,
-            maxQuantity: 999,
-            billingMode: 'rental',
-            price: 0, // AÑADIDO: Propiedad para almacenar y modelar el precio
+        <script>
+        function quotationApp() {
+            return {
+                searchQuery: '',
+                products: [],
+                selectedProduct: null,
+                selectedProductId: '',
+                showResults: false,
+                loading: false,
+                quantity: 1,
+                maxQuantity: 999,
+                billingMode: 'rental',
+                price: 0,
 
-            // Inicialización (llamada al inicio si se usa x-init)
-            init() {
-                this.updatePriceField();
-            },
-
-            // Lógica para actualizar el campo de precio según la modalidad
-            updatePriceField() {
-                if (this.selectedProduct) {
-                    if (this.billingMode === 'rental') {
-                        // Usar el precio de renta si está disponible, sino 0
-                        this.price = this.selectedProduct.rental_price || 0; 
-                    } else { // 'sale'
-                        // Usar el precio de venta si está disponible, sino 0
-                        this.price = this.selectedProduct.sale_price || 0;
+                updatePriceField() {
+                    if (this.selectedProduct) {
+                        if (this.billingMode === 'rental') {
+                            this.price = parseFloat(this.selectedProduct.rental_price) || 0;
+                        } else { // 'sale'
+                            this.price = parseFloat(this.selectedProduct.sale_price) || 0;
+                        }
+                    } else {
+                        this.price = 0;
                     }
-                } else {
-                    this.price = 0;
-                }
-            },
-            
-            async searchProducts() {
-                if (this.searchQuery.length < 2) {
-                    this.products = [];
-                    return;
-                }
+                },
                 
-                this.loading = true;
-                
-                try {
-                    // Nota: Asegúrate que esta ruta es accesible y devuelve un array de productos
-                    const response = await fetch(`{{ route('products.searchApi') }}?q=${encodeURIComponent(this.searchQuery)}&available=true`);
-                    const data = await response.json();
-                    this.products = data;
-                    this.showResults = true;
+                async searchProducts() {
+                    if (this.searchQuery.length < 2) {
+                        this.products = [];
+                        return;
+                    }
                     
-                    this.$nextTick(() => {
-                    });
-                } catch (error) {
-                    console.error('Error searching products:', error);
+                    this.loading = true;
+                    
+                    try {
+                        const response = await fetch(`{{ route('products.searchApi') }}?q=${encodeURIComponent(this.searchQuery)}&available=true`);
+                        const data = await response.json();
+                        this.products = data;
+                        this.showResults = true;
+                    } catch (error) {
+                        console.error('Error searching products:', error);
+                        this.products = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                selectProduct(product) {
+                    this.selectedProduct = product;
+                    this.selectedProductId = product.id;
+                    this.searchQuery = product.name;
+                    this.maxQuantity = product.available_quantity || product.quantity || 1;
+                    this.quantity = 1;
+                    this.showResults = false;
+                    this.updatePriceField();
+                },
+                
+                clearSelection() {
+                    this.selectedProduct = null;
+                    this.selectedProductId = '';
+                    this.searchQuery = '';
                     this.products = [];
-                } finally {
-                    this.loading = false;
-                }
-            },
-            
-            positionDropdown() {
-                // ... (Tu función de posicionamiento actual, funciona bien si tienes el x-ref="dropdown"
-                // en un elemento con posición absoluta o fija globalmente)
-                if (!this.$refs.searchInput || !this.$refs.dropdown) return;
-                // Si el dropdown es un elemento hijo posicionado de forma absoluta dentro de un relativo (como en el Blade que mostraste),
-                // esta función no es necesaria y debería eliminarse para evitar conflictos de posicionamiento.
-                // La dejaré comentada por ahora, ya que la estructura Blade original usa 'absolute' para el dropdown.
-                
-                /*
-                const input = this.$refs.searchInput;
-                const dropdown = this.$refs.dropdown;
-                const rect = input.getBoundingClientRect();
-                
-                dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
-                dropdown.style.left = rect.left + 'px';
-                dropdown.style.width = rect.width + 'px';
-                */
-            },
-            
-            selectProduct(product) {
-                this.selectedProduct = product;
-                this.selectedProductId = product.id;
-                this.searchQuery = product.name;
-                this.maxQuantity = product.available_quantity || 1; 
-                this.quantity = 1; // Reseteamos la cantidad a 1 al seleccionar
-                this.showResults = false;
-
-                // LLAMADA CLAVE: Actualizar el campo de precio basado en la modalidad
-                this.updatePriceField();
-                
-                this.$nextTick(() => this.$refs.searchInput.focus()); 
-            },
-            
-            clearSelection() {
-                this.selectedProduct = null;
-                this.selectedProductId = '';
-                this.searchQuery = '';
-                this.products = [];
-                this.maxQuantity = 999;
-                this.quantity = 1;
-                this.price = 0; // También limpiar el precio
-            },
-            
-            validateForm(e) {
-                if (!this.selectedProductId) {
-                    e.preventDefault();
-                    alert('Por favor selecciona un producto de la lista');
-                    return false;
-                }
-                if (this.quantity > this.maxQuantity) {
-                    e.preventDefault();
-                    alert('La cantidad excede el stock disponible.');
-                    return false;
+                    this.maxQuantity = 999;
+                    this.quantity = 1;
+                    this.price = 0;
                 }
             }
         }
-    }
-    
-    // Si estás usando la función externa `positionDropdown`, ya no es necesaria si el dropdown es 'absolute'
-    // dentro de un contenedor 'relative'.
-    /*
-    window.addEventListener('scroll', () => {
-        const app = window.Alpine ? Alpine.raw(document.querySelector('[x-data]').__x : null;
-        if (app && app.showResults) {
-             // app.positionDropdown(); // Comentado, ya que el código HTML es 'relative'/'absolute'
-        }
-    });
-    */
-</script>
-    
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
+        </script>
+
+        <style>
+            [x-cloak] { display: none !important; }
+        </style>
     @endpush
 </x-app-layout>

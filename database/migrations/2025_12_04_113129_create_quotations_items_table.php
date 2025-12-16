@@ -18,7 +18,8 @@ return new class extends Migration
             // COTIZACIÓN
             // ═══════════════════════════════════════════════════════════
             $table->foreignId('quotation_id')
-                ->constrained('quotations');
+                ->constrained('quotations')
+                ->onDelete('cascade');
             
             // ═══════════════════════════════════════════════════════════
             // PRODUCTO ESPECÍFICO
@@ -30,8 +31,9 @@ return new class extends Migration
             $table->foreignId('product_id')
                 ->constrained('products')
                 ->onDelete('restrict');
-            $table->integer('quantity')->default(1);
-
+            
+            $table->integer('quantity')->default(1)
+                ->comment('Cantidad de unidades físicas de este producto');
             
             // ═══════════════════════════════════════════════════════════
             // ORIGEN DEL PRODUCTO
@@ -48,26 +50,36 @@ return new class extends Migration
             // ═══════════════════════════════════════════════════════════
             // MODALIDAD DE COBRO ⭐ CRÍTICO
             // ═══════════════════════════════════════════════════════════
-            $table->enum('billing_mode', ['rental', 'consignment']);
+            $table->enum('billing_mode', ['rental', 'sale'])->default('rental');
             /*
              * rental (RENTA):
-             *   - Se cobra SIEMPRE, regrese o no
+             *   - Se cobra por el uso, típicamente para instrumental
+             *   - El producto regresa y se puede reutilizar
              *   
-             * consignment (CONSIGNACIÓN):
-             *   - Se cobra SOLO si NO regresa
+             * sale (VENTA):
+             *   - Se cobra como venta definitiva
+             *   - Para consumibles o productos que no regresan
+             *   
+             * VALIDACIÓN ESTRICTA (se aplica AL RETORNO):
+             * - Consumibles Quirúrgicos → FORZOSAMENTE sale
+             * - Instrumental Quirúrgico → FORZOSAMENTE rental
+             * - No regresó → SIEMPRE sale (independiente del tipo)
              */
             
             // ═══════════════════════════════════════════════════════════
             // PRECIOS
             // ═══════════════════════════════════════════════════════════
-            $table->decimal('rental_price', 10, 2)->nullable();
-            $table->decimal('sale_price', 10, 2)->nullable();
+            $table->decimal('rental_price', 10, 2)->default(0);
+            $table->decimal('sale_price', 10, 2)->default(0);
             
             // ═══════════════════════════════════════════════════════════
             // CONTROL DE ENVÍO/RETORNO
             // ═══════════════════════════════════════════════════════════
-            $table->integer('quantity_sent')->default(1);
-            $table->integer('quantity_returned')->default(0);
+            $table->integer('quantity_sent')->default(0)
+                ->comment('Cantidad enviada a cirugía');
+            
+            $table->integer('quantity_returned')->default(0)
+                ->comment('Cantidad que regresó de cirugía');
             
             // ═══════════════════════════════════════════════════════════
             // ESTADO
@@ -93,9 +105,10 @@ return new class extends Migration
             // ═══════════════════════════════════════════════════════════
             $table->index('quotation_id');
             $table->index('product_unit_id');
+            $table->index('product_id');
             $table->index('billing_mode');
             $table->index('status');
-            
+            $table->index(['quotation_id', 'status']);
         });
     }
 
