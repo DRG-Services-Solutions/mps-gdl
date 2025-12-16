@@ -58,6 +58,19 @@
                 -ms-overflow-style: none;
                 scrollbar-width: none;
             }
+
+            .phpdebugbar,
+            .phpdebugbar *,
+            .phpdebugbar-tooltip,
+            span.phpdebugbar-tooltip {
+                z-index: 50 !important;
+            }
+
+            /* Dropdown siempre visible */
+            [x-ref="dropdown"] {
+                z-index: 999999 !important;
+            }
+
         </style>
     </head>
     <body class="font-sans antialiased">

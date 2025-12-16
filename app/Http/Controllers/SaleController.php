@@ -51,7 +51,7 @@ class SaleController extends Controller
         $sales = $query->latest('sale_date')->paginate(20);
 
         // Datos para filtros
-        $legalEntities = LegalEntity::where('is_active', true)->orderBy('business_name')->get();
+        $legalEntities = LegalEntity::where('is_active', true)->orderBy('name')->get();
 
         return view('sales.index', compact('sales', 'legalEntities'));
     }
