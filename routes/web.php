@@ -6,7 +6,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MedicalSpecialtyController;
-use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\ProductUnitController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SupplierController;
@@ -21,7 +20,7 @@ use App\Http\Controllers\HospitalController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SurgicalKitController;
-
+use App\Http\Controllers\ProductImportController;
 // ========================================
 // RUTAS PÚBLICAS
 // ========================================
@@ -51,6 +50,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+
+    // ========================================
+    // IMPORTACIÓN DE PRODUCTOS
+    // ========================================
+    Route::get('products/import', [ProductImportController::class, 'showImportForm'])
+        ->name('products.import.form');
+
+    Route::get('products/import/template', [ProductImportController::class, 'downloadTemplate'])
+        ->name('products.import.template');
+
+    Route::post('products/import/preview', [ProductImportController::class, 'preview'])
+        ->name('products.import.preview');
+
+    Route::post('products/import', [ProductImportController::class, 'import'])
+        ->name('products.import');
     
     // ========================================
     // GESTIÓN DE USUARIOS
@@ -63,7 +78,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // CATÁLOGOS BÁSICOS
     // ========================================
     Route::resource('categories', CategoryController::class);
-    Route::resource('subcategories', SubcategoryController::class);
     Route::resource('specialties', MedicalSpecialtyController::class);
     Route::resource('storage_locations', StorageLocationController::class);
 

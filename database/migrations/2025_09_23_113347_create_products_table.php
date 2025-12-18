@@ -11,6 +11,14 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             
+            //===================
+            //  BRANDS
+
+            $table->foreignId('brand_id')
+                  ->nullable()
+                  ->constrained('brands')
+                  ->nullOnDelete();
+            
             // ==========================================================
             // CLAVES FORÁNEAS (CLASIFICACIÓN)
             // ==========================================================

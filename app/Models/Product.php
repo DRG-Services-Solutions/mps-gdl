@@ -29,6 +29,7 @@ class Product extends Model
         'subcategory_id',
         'supplier_id',
         'name',
+        'brand_id',
         'code',
         'description',
         'requires_sterilization',
@@ -53,6 +54,11 @@ class Product extends Model
 
     // ==================== RELACIONES ====================
     
+    
+    public function brand() 
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
     public function category() 
     {
         return $this->belongsTo(Category::class, 'category_id');
