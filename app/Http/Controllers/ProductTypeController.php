@@ -13,7 +13,7 @@ class ProductTypeController extends Controller
     public function index()
     {
         $productTypes = ProductType::with('products')->get();
-        return response()->json($productTypes);
+        return view('product_types.index', compact('productTypes'));
     }
 
     /**
