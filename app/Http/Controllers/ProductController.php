@@ -426,7 +426,6 @@ class ProductController extends Controller
                 'Descripción',
                 'Proveedor',
                 'Categoría',
-                'Subcategoría',
                 'Especialidad',
                 'Tipo Tracking',
                 'Requiere Esterilización',
