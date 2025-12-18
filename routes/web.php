@@ -21,6 +21,8 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SurgicalKitController;
 use App\Http\Controllers\ProductImportController;
+use App\Http\Controllers\ProductTypeController;
+
 // ========================================
 // RUTAS PÚBLICAS
 // ========================================
@@ -50,6 +52,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    // ========================================
+    // Tipos de Productos
+    // ========================================
+    Route::resource('product_types', \App\Http\Controllers\ProductTypeController::class);
 
 
     // ========================================

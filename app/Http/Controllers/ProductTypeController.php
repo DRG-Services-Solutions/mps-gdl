@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductType;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductTypeController extends Controller
 {
@@ -21,7 +22,7 @@ class ProductTypeController extends Controller
      */
     public function create()
     {
-        //
+        return view('product_types.create');
     }
 
     /**
@@ -29,7 +30,12 @@ class ProductTypeController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|unique:product_types,name|max:255',
+            'description' => 'nullable|string',
+        ]);
+        ProductType::create($validated);
+        return redirect()->route('product_types.index')->with('success', 'Tipo de Producto Creado Exitosamente.');
     }
 
     /**
@@ -37,7 +43,7 @@ class ProductTypeController extends Controller
      */
     public function show(ProductType $productType)
     {
-        //
+        return view('product_types.show', compact('productType'));
     }
 
     /**
@@ -45,7 +51,7 @@ class ProductTypeController extends Controller
      */
     public function edit(ProductType $productType)
     {
-        //
+        return view('product_types.edit', compact('productType'));
     }
 
     /**
@@ -53,7 +59,13 @@ class ProductTypeController extends Controller
      */
     public function update(Request $request, ProductType $productType)
     {
-        //
+        $validated = $request->validate([
+        'name' => ['required',Rule::unique('product_types')->ignore($productType->id),'max:255'],  
+        'description' => 'nullable|string',
+        ]);
+
+        $productType->update($validated);
+        return redirect()->route('product_types.index')->with('success', 'Tipo de Producto Actualizado Exitosamente.');
     }
 
     /**
@@ -61,6 +73,11 @@ class ProductTypeController extends Controller
      */
     public function destroy(ProductType $productType)
     {
-        //
+        if ($productType->products()->count() > 0) {
+            return redirect()->route('product_types.index')->with('error', 'No se puede eliminar el Tipo de Producto porque tiene productos asociados.');
+        }
+        
+        $productType->delete();
+        return redirect()->route('product_types.index')->with('success', 'Tipo de Producto Eliminado Exitosamente.');
     }
 }
