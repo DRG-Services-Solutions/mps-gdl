@@ -123,7 +123,7 @@
                                     <i class="fas fa-tags text-gray-400 mr-2"></i>
                                     {{ __('Categoría') }}
                                 </label>
-                                <select name="category_id" id="category_id" x-model="selectedCategory" @change="$nextTick(() => { document.getElementById('subcategory_id').value = '' })"
+                                <select name="category_id" id="category_id"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('category_id') border-red-500 @enderror">
                                     <option value="">{{ __('-- Seleccione una categoría --') }}</option>
                                     @foreach($categories as $category)
@@ -135,28 +135,7 @@
                                 @error('category_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
                             
-                            {{-- Subcategoría --}}
-                            <div>
-                                <label for="subcategory_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-layer-group text-gray-400 mr-2"></i>
-                                    {{ __('Subcategoría') }}
-                                </label>
-                                <select name="subcategory_id" id="subcategory_id" 
-                                        :disabled="!selectedCategory || filteredSubcategories.length === 0"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed @error('subcategory_id') border-red-500 @enderror">
-                                    <option value="">{{ __('-- Seleccione subcategoría --') }}</option>
-                                    <template x-for="subcategory in filteredSubcategories" :key="subcategory.id">
-                                        <option :value="subcategory.id" 
-                                                :selected="subcategory.id == {{ old('subcategory_id', $product->subcategory_id ?? 'null') }}"
-                                                x-text="subcategory.name"></option>
-                                    </template>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500" x-show="!selectedCategory">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('Primero seleccione una categoría') }}
-                                </p>
-                                @error('subcategory_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
+                            
 
                             {{-- Especialidad Médica --}}
                             <div>
@@ -398,13 +377,6 @@
         function productForm(allSubcategories, initialCategoryId) {
             return {
                 selectedCategory: initialCategoryId || '{{ old("category_id") }}',
-                
-                get filteredSubcategories() {
-                    if (!this.selectedCategory) {
-                        return [];
-                    }
-                    return allSubcategories.filter(sub => sub.category_id == this.selectedCategory);
-                }
             }
         }
     </script>

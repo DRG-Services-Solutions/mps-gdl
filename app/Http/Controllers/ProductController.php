@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\Supplier; 
 use App\Models\Category;
 use App\Models\MedicalSpecialty;
-use App\Models\Subcategory;  
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +23,6 @@ class ProductController extends Controller
     $query = Product::with([
         'supplier', 
         'category',
-        'subcategory', 
         'specialty', 
     ]);
     
@@ -86,9 +84,8 @@ class ProductController extends Controller
         $suppliers = Supplier::orderBy('name')->get(); 
         $categories = Category::orderBy('name')->get(); // Agregado orderBy
         $specialties = MedicalSpecialty::orderBy('name')->get();
-        $subcategories = Subcategory::all(); 
         
-        return view('products.create', compact('suppliers', 'categories', 'specialties', 'subcategories'));
+        return view('products.create', compact('suppliers', 'categories', 'specialties'));
     }
 
     // ==========================================================
@@ -101,7 +98,6 @@ class ProductController extends Controller
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
-            'subcategory_id' => 'nullable|exists:subcategories,id',
             'specialty_id' => 'nullable|exists:medical_specialties,id',
             
             // Información básica del catálogo
@@ -151,8 +147,8 @@ class ProductController extends Controller
         $product->load([
             'supplier', 
             'category', 
-            'subcategory', 
-            'specialty', // Cambiado de medicalSpecialty a specialty
+             
+            'specialty', 
         ]);
         
         return view('products.show', compact('product'));
@@ -166,9 +162,8 @@ class ProductController extends Controller
         $suppliers = Supplier::orderBy('name')->get();
         $categories = Category::orderBy('name')->get(); 
         $specialties = MedicalSpecialty::orderBy('name')->get();
-        $subcategories = Subcategory::all();
 
-        return view('products.edit', compact('product', 'suppliers', 'categories', 'specialties', 'subcategories'));
+        return view('products.edit', compact('product', 'suppliers', 'categories', 'specialties'));
     }
 
     // ==========================================================
@@ -180,7 +175,6 @@ class ProductController extends Controller
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id',
             'category_id' => 'nullable|exists:product_categories,id', 
-            'subcategory_id' => 'nullable|exists:subcategories,id',
             'specialty_id' => 'nullable|exists:medical_specialties,id',
             
             // Información básica
@@ -261,7 +255,7 @@ class ProductController extends Controller
      */
     public function search(Request $request): View
     {
-        $query = Product::with(['supplier', 'category', 'subcategory', 'specialty']);
+        $query = Product::with(['supplier', 'category', 'specialty']);
 
         // Búsqueda por nombre o código
         if ($request->filled('search')) {
@@ -412,7 +406,7 @@ class ProductController extends Controller
      */
     public function exportCsv()
     {
-        $products = Product::with(['supplier', 'category', 'subcategory', 'specialty'])->get();
+        $products = Product::with(['supplier', 'category', 'specialty'])->get();
         
         $filename = 'catalogo_productos_' . now()->format('Y-m-d_His') . '.csv';
         
@@ -453,7 +447,6 @@ class ProductController extends Controller
                     $product->description,
                     $product->supplier?->name ?? 'N/A',
                     $product->category?->name ?? 'N/A',
-                    $product->subcategory?->name ?? 'N/A',
                     $product->specialty?->name ?? 'N/A',
                     $product->tracking_type,
                     $product->requires_sterilization ? 'Sí' : 'No',

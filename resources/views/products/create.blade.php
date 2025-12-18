@@ -4,21 +4,21 @@
             <div class="flex items-center space-x-4">
                 <a href="{{ route('products.index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-200">
                     <i class="fas fa-arrow-left mr-2"></i>
-                    <span class="text-sm font-medium">{{ __('Volver a productos') }}</span>
+                    <span class="text-sm font-medium">Volver a productos</span>
                 </a>
                 <div class="border-l border-gray-300 pl-4">
                     <h2 class="text-2xl font-bold text-gray-900 leading-tight">
-                        {{ __('Agregar Producto al Catálogo') }}
+                        Agregar Producto al Catálogo
                     </h2>
                     <p class="mt-1 text-sm text-gray-600">
-                        {{ __('Cree la ficha maestra del producto. Las unidades físicas se registrarán al recibir inventario.') }}
+                        Cree la ficha maestra del producto.
                     </p>
                 </div>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="productForm({{ json_encode($subcategories) }})" x-init="applyCategoryRules()">
+    <div class="py-8">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             
             {{-- Alerta informativa --}}
@@ -44,7 +44,7 @@
                         <div class="flex items-start">
                             <i class="fas fa-exclamation-circle text-red-600 mr-3 mt-0.5"></i>
                             <div class="flex-1">
-                                <h3 class="text-sm font-semibold text-red-800">{{ __('Por favor corrija los siguientes errores:') }}</h3>
+                                <h3 class="text-sm font-semibold text-red-800">Por favor corrija los siguientes errores:</h3>
                                 <ul class="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
                                     @foreach ($errors->all() as $error)
                                         <li>{{ $error }}</li>
@@ -62,7 +62,7 @@
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-id-card text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Información Básica del Producto') }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Información Básica del Producto</h3>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -70,12 +70,12 @@
                             <div>
                                 <label for="name" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-tag text-gray-400 mr-2"></i>
-                                    {{ __('Nombre del Producto') }}
+                                    Nombre del Producto
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('name') border-red-500 @enderror"
-                                       placeholder="{{ __('Ej: Bisturí Quirúrgico N°15') }}">
+                                       placeholder="Ej: Bisturí Quirúrgico N°15">
                                 @error('name')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
@@ -83,12 +83,12 @@
                             <div>
                                 <label for="code" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-barcode text-gray-400 mr-2"></i>
-                                    {{ __('Código del Catálogo') }}
+                                    Código del Producto
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="text" name="code" id="code" value="{{ old('code') }}" required
                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('code') border-red-500 @enderror"
-                                       placeholder="{{ __('Ej: PROD-001') }}">
+                                       placeholder="'Ej: AR-001'">
                                 @error('code')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
@@ -96,7 +96,7 @@
                             <div>
                                 <label for="status" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-toggle-on text-gray-400 mr-2"></i>
-                                    {{ __('Estado en Catálogo') }}
+                                    Estado en Catálogo
                                 </label>
                                 <select name="status" id="status"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
@@ -170,30 +170,7 @@
                                 </select>
                             </div>
 
-                            {{-- Subcategoría --}}
-                            <div>
-                                <label for="subcategory_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-layer-group text-gray-400 mr-2"></i>
-                                    {{ __('Subcategoría') }}
-                                </label>
-                                <select name="subcategory_id" id="subcategory_id" 
-                                        x-model="selectedSubcategory"
-                                        :disabled="!selectedCategory || filteredSubcategories.length === 0"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                                    <option value="">{{ __('-- Seleccione --') }}</option>
-                                    <template x-for="subcategory in filteredSubcategories" :key="subcategory.id">
-                                        <option :value="subcategory.id" x-text="subcategory.name"></option>
-                                    </template>
-                                </select>
-                                <p class="mt-1 text-xs text-gray-500" x-show="!selectedCategory">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('Primero seleccione una categoría') }}
-                                </p>
-                                <p class="mt-1 text-xs text-gray-500" x-show="selectedCategory && filteredSubcategories.length === 0">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('No hay subcategorías disponibles para esta categoría') }}
-                                </p>
-                            </div>
+                            
 
                             {{-- Especialidad Médica --}}
                             <div>
@@ -353,7 +330,7 @@
                             <div>
                                 <label for="minimum_stock" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-box text-gray-400 mr-2"></i>
-                                    {{ __('Stock Mínimo Deseado') }}
+                                    Stock Mínimo Deseado
                                 </label>
                                 <input type="number" name="minimum_stock" id="minimum_stock" min="0"
                                        value="{{ old('minimum_stock', 0) }}"
@@ -361,7 +338,7 @@
                                        placeholder="0">
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('Cantidad mínima para generar alertas de reorden') }}
+                                    Cantidad mínima para generar alertas de reorden
                                 </p>
                                 @error('minimum_stock')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
@@ -370,7 +347,7 @@
                             <div>
                                 <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    {{ __('Precio Unitario') }}
+                                    Precio Unitario
                                 </label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-medium">
@@ -383,7 +360,7 @@
                                 </div>
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('Precio de referencia del producto') }}
+                                    Precio de referencia del producto
                                 </p>
                                 @error('list_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
@@ -395,12 +372,12 @@
                         <a href="{{ route('products.index') }}" 
                         class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                             <i class="fas fa-times mr-2"></i>
-                            {{ __('Cancelar') }}
+                            Cancelar
                         </a>
                         <button type="submit"
                                 class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-lg font-medium text-sm text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:-translate-y-0.5">
                             <i class="fas fa-save mr-2"></i>
-                            {{ __('Guardar en Catálogo') }}
+                            Guardar en Catálogo
                         </button>
                     </div>
                 </form>
@@ -414,17 +391,8 @@
         return {
             // Estado inicial
             selectedCategory: '{{ old("category_id") ?? "" }}',
-            selectedSubcategory: '{{ old("subcategory_id") ?? "" }}',
             
-            // Computed: Filtra subcategorías por categoría seleccionada
-            get filteredSubcategories() {
-                if (!this.selectedCategory) {
-                    return [];
-                }
-                return allSubcategories.filter(sub => {
-                    return String(sub.category_id) === String(this.selectedCategory);
-                });
-            },
+            
 
             // Método que se ejecuta al cambiar la categoría
             onCategoryChange() {

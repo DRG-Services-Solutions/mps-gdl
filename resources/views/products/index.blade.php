@@ -4,10 +4,10 @@
             <div class="flex items-center space-x-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900 leading-tight">
-                        {{ __('Catálogo de Productos') }}
+                        Catálogo de Productos
                     </h2>
                     <p class="mt-1 text-sm text-gray-600">
-                        {{ __('Fichas maestras de productos quirúrgicos y consumibles') }}
+                        Fichas maestras de productos quirúrgicos y consumibles
                     </p>
                 </div>
             </div>
@@ -26,15 +26,20 @@
                                 <i class="fas fa-book text-indigo-600 text-2xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ __('Catálogo Maestro') }}</h3>
-                                <p class="text-sm text-gray-600">{{ $products->total() }} {{ __('productos registrados') }}</p>
+                                <h3 class="text-lg font-semibold text-gray-900">Catálogo Maestro</h3>
+                                <p class="text-sm text-gray-600">{{ $products->total() }} productos registrados</p>
                             </div>
                         </div>
                         
                         <a href="{{ route('products.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
                             <i class="fas fa-plus mr-2"></i>
-                            {{ __('Agregar al Catálogo') }}
+                            'Agregar al Catálogo
+                        </a>
+                        <a href="{{ route('products.import.form') }}" 
+                           class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                            <i class="fas fa-file-upload mr-2"></i>
+                            Importar Productos
                         </a>
                     </div>
                 </div>
@@ -51,7 +56,7 @@
                                 <input type="text" 
                                        name="search" 
                                        value="{{ request('search') }}"
-                                       placeholder="{{ __('Buscar por nombre o código...') }}"
+                                       placeholder="Buscar por nombre o código..."
                                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent sm:text-sm transition-all duration-200">
                             </div>
                             
@@ -60,7 +65,7 @@
                                         @click="showFilters = !showFilters"
                                         class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                                     <i class="fas fa-filter mr-2"></i>
-                                    {{ __('Filtros') }}
+                                    Filtros
                                     <span x-show="showFilters">
                                         <i class="fas fa-chevron-up ml-2"></i>
                                     </span>
