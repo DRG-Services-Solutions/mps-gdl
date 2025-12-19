@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\ProductType;
 use App\Models\MedicalSpecialty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,7 @@ class ProductImportController extends Controller
     }
 
     /**
-     * Descargar template de Excel
+     * Descargar template de Excel ACTUALIZADO
      */
     public function downloadTemplate()
     {
@@ -38,17 +39,15 @@ class ProductImportController extends Controller
             'name',
             'tracking_type',
             'supplier_name',
+            'product_type_name',
             'category_name',
-            'subcategory_name',
             'specialty_name',
-            'layout_name',
-            'sku',
+            'brand_name',
             'list_price',
             'requires_sterilization',
             'requires_refrigeration',
             'requires_temperature',
             'status',
-            'brand_name',
         ];
 
         // Escribir encabezados
@@ -60,50 +59,46 @@ class ProductImportController extends Controller
             'fill' => ['fillType' => 'solid', 'startColor' => ['rgb' => '4F46E5']],
             'alignment' => ['horizontal' => 'center'],
         ];
-        $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
 
         // Agregar filas de ejemplo
         $examples = [
             [
-                'PROD-001',                              // code*
-                'Bisturí Quirúrgico N°15',              // name*
+                '16310199',                              // code*
+                'Bloque de iliaco tricortical 20-27mm', // name*
                 'rfid',                                  // tracking_type* (code/rfid/serial)
-                'Medtronic',                             // supplier_name
-                'Consumibles Quirúrgicos',               // category_name
-                '',                                      // subcategory_name (vacío)
-                '',                                      // specialty_name (vacío)
-                '',                                      // layout_name (vacío)
-                '',                                      // sku (vacío)
-                150.50,                                  // list_price
-                0,                                       // requires_sterilization (0/1)
+                'Biograft',                              // supplier_name
+                'Consumible',                            // product_type_name (Consumible/Instrumental)
+                'OSTEOSINTESIS',                         // category_name
+                'TRAUMATOLOGIA',                         // specialty_name
+                'BIOGRAFT',                              // brand_name
+                1500.50,                                 // list_price
+                1,                                       // requires_sterilization (0/1)
                 0,                                       // requires_refrigeration (0/1)
                 0,                                       // requires_temperature (0/1)
-                'active',                                // status (active/inactive/discontinued)
-                'Stryker',                               // brand_name
+                'active',                                // status
             ],
             [
-                'PROD-002',
+                'KELLY-14',
                 'Pinza Kelly Recta 14cm',
                 'serial',
-                'Johnson & Johnson',
-                'Instrumental Quirúrgico',
-                '',
-                '',
-                '',
-                '',
+                'Aesculap',
+                'Instrumental',
+                'INSTRUMENTAL GENERAL',
+                'CIRUGIA GENERAL',
+                'Aesculap',
                 450.00,
                 1,
                 0,
                 0,
                 'active',
-                'Aesculap',
             ],
         ];
 
         $sheet->fromArray($examples, null, 'A2');
 
         // Ajustar ancho de columnas
-        foreach (range('A', 'O') as $col) {
+        foreach (range('A', 'M') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -112,47 +107,52 @@ class ProductImportController extends Controller
         $instructionsSheet->setTitle('Instrucciones');
         
         $instructions = [
-            ['INSTRUCCIONES DE IMPORTACIÓN DE PRODUCTOS'],
+            ['INSTRUCCIONES DE IMPORTACIÓN DE PRODUCTOS - ACTUALIZADO'],
             [''],
-            ['CAMPOS OBLIGATORIOS (marcados con *):'],
-            ['- code: Código único del producto (ej: PROD-001)'],
-            ['- name: Nombre descriptivo del producto'],
-            ['- tracking_type: Tipo de rastreo (code/rfid/serial)'],
+            ['CAMPOS OBLIGATORIOS:'],
+            ['- code: Código único (ej: 16310199, KELLY-14)'],
+            ['- name: Nombre del producto'],
+            ['- tracking_type: code, rfid o serial'],
             [''],
-            ['VALORES PERMITIDOS:'],
+            ['PRODUCT_TYPE_NAME (Tipo de Producto):'],
+            ['  - Consumible: Productos de un solo uso'],
+            ['  - Instrumental: Herramientas quirúrgicas reutilizables'],
             [''],
-            ['tracking_type:'],
-            ['  - code: Control numérico sin identificadores individuales'],
-            ['  - rfid: Cada unidad tendrá etiqueta RFID'],
-            ['  - serial: Instrumental con número de serie de fábrica'],
+            ['CATEGORY_NAME (Categoría Anatómica):'],
+            ['  Ejemplos: OSTEOSINTESIS, CADERA, RODILLA, ARTROSCOPIA, etc.'],
+            ['  (Usa los nombres exactos de tu sistema)'],
             [''],
-            ['category_name:'],
-            ['  - Consumibles Quirúrgicos'],
-            ['  - Instrumental Quirúrgico'],
+            ['SPECIALTY_NAME (Especialidad Médica):'],
+            ['  Ejemplos: TRAUMATOLOGIA, CIRUGIA GENERAL, ORTOPEDIA, etc.'],
             [''],
-            ['status:'],
+            ['TRACKING_TYPE:'],
+            ['  - code: Control numérico'],
+            ['  - rfid: Etiquetas RFID'],
+            ['  - serial: Número de serie de fábrica'],
+            [''],
+            ['STATUS:'],
             ['  - active (por defecto)'],
             ['  - inactive'],
             ['  - discontinued'],
             [''],
-            ['requires_sterilization / requires_refrigeration / requires_temperature:'],
-            ['  - 0 = No'],
-            ['  - 1 = Sí'],
+            ['CAMPOS BOOLEANOS (0 o 1):'],
+            ['  requires_sterilization: ¿Requiere esterilización?'],
+            ['  requires_refrigeration: ¿Requiere refrigeración?'],
+            ['  requires_temperature: ¿Requiere control de temperatura?'],
             [''],
-            ['NOTAS IMPORTANTES:'],
-            ['- Si supplier_name no existe, se creará automáticamente'],
-            ['- Si brand_name no existe, se creará automáticamente'],
-            ['- Los campos vacíos se llenarán con valores por defecto'],
-            ['- El código (code) debe ser único en el sistema'],
-            ['- layout_name, subcategory_name, specialty_name pueden quedar vacíos'],
+            ['IMPORTANTE:'],
+            ['- Suppliers y Brands se crean automáticamente si no existen'],
+            ['- Categories y Specialties deben existir previamente'],
+            ['- El código debe ser único'],
+            ['- Todos los campos son opcionales excepto: code, name, tracking_type'],
         ];
 
         $instructionsSheet->fromArray($instructions, null, 'A1');
-        $instructionsSheet->getColumnDimension('A')->setWidth(80);
+        $instructionsSheet->getColumnDimension('A')->setWidth(90);
         $instructionsSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
         // Descargar archivo
-        $filename = 'template_importacion_productos_' . now()->format('Y-m-d') . '.xlsx';
+        $filename = 'template_productos_' . now()->format('d-m-Y') . '.xlsx';
         
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
@@ -164,7 +164,7 @@ class ProductImportController extends Controller
     }
 
     /**
-     * Preview de importación (validar sin guardar)
+     * Preview de importación
      */
     public function preview(Request $request)
     {
@@ -189,13 +189,16 @@ class ProductImportController extends Controller
             // Mapeo de columnas
             $columnMap = $this->getColumnMapping($header);
 
+            // Guardar info de debug
+            session(['import_debug_headers' => $header]);
+            session(['import_debug_mapping' => $columnMap]);
+
             // Validar y procesar filas
             $validRows = [];
             $invalidRows = [];
-            $rowNumber = 2; // Empezar en 2 porque la 1 es encabezado
+            $rowNumber = 2;
 
             foreach ($rows as $row) {
-                // Saltar filas vacías
                 if ($this->isEmptyRow($row)) {
                     continue;
                 }
@@ -208,6 +211,23 @@ class ProductImportController extends Controller
                         'row' => $rowNumber,
                         'data' => $data,
                         'processed' => $validation['processed'],
+                        'relations' => [
+                            'category_name' => $validation['processed']['category_id'] 
+                                ? Category::find($validation['processed']['category_id'])?->name 
+                                : null,
+                            'supplier_name' => $validation['processed']['supplier_id']
+                                ? Supplier::find($validation['processed']['supplier_id'])?->name
+                                : null,
+                            'brand_name' => $validation['processed']['brand_id']
+                                ? Brand::find($validation['processed']['brand_id'])?->name
+                                : null,
+                            'product_type_name' => $validation['processed']['product_type_id']
+                                ? ProductType::find($validation['processed']['product_type_id'])?->name
+                                : null,
+                            'specialty_name' => $validation['processed']['specialty_id']
+                                ? MedicalSpecialty::find($validation['processed']['specialty_id'])?->name
+                                : null,
+                        ],
                     ];
                 } else {
                     $invalidRows[] = [
@@ -220,6 +240,12 @@ class ProductImportController extends Controller
                 $rowNumber++;
             }
 
+            // Guardar en sesión
+            session([
+                'import_preview_valid' => $validRows,
+                'import_preview_invalid' => $invalidRows,
+            ]);
+
             return view('products.import-preview', compact('validRows', 'invalidRows'));
 
         } catch (\Exception $e) {
@@ -228,7 +254,52 @@ class ProductImportController extends Controller
     }
 
     /**
-     * Importar productos (guardar en BD)
+     * Confirmar importación desde preview
+     */
+    public function confirmImport(Request $request)
+    {
+        if (!session()->has('import_preview_valid')) {
+            return redirect()
+                ->route('products.import.form')
+                ->with('error', 'No hay datos para importar. Por favor suba el archivo nuevamente.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $validRows = session('import_preview_valid', []);
+            $imported = 0;
+            $errors = [];
+
+            foreach ($validRows as $row) {
+                try {
+                    $this->createProduct($row['processed']);
+                    $imported++;
+                } catch (\Exception $e) {
+                    $errors[] = "Fila {$row['row']}: " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            // Limpiar sesión
+            session()->forget(['import_preview_valid', 'import_preview_invalid']);
+
+            $message = "Importación completada: {$imported} productos importados";
+            
+            return redirect()
+                ->route('products.index')
+                ->with('success', $message)
+                ->with('import_errors', $errors);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error en la importación: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Importar productos directamente
      */
     public function import(Request $request)
     {
@@ -244,15 +315,11 @@ class ProductImportController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray();
 
-            // Quitar encabezado
             $header = array_shift($rows);
-            
-            // Normalizar encabezados
             $header = array_map(function($h) {
                 return strtolower(trim($h));
             }, $header);
 
-            // Mapeo de columnas
             $columnMap = $this->getColumnMapping($header);
 
             $imported = 0;
@@ -261,7 +328,6 @@ class ProductImportController extends Controller
             $rowNumber = 2;
 
             foreach ($rows as $row) {
-                // Saltar filas vacías
                 if ($this->isEmptyRow($row)) {
                     continue;
                 }
@@ -304,33 +370,40 @@ class ProductImportController extends Controller
     }
 
     /**
-     * Obtener mapeo de columnas
+     * Obtener mapeo de columnas ACTUALIZADO
      */
     private function getColumnMapping($header)
     {
         $map = [];
         
         $expectedColumns = [
-            'code' => ['code', 'codigo', 'sku'],
-            'name' => ['name', 'nombre', 'product_name'],
-            'tracking_type' => ['tracking_type', 'tipo_rastreo', 'rastreo'],
+            'code' => ['code', 'codigo', 'sku', 'clave'],
+            'name' => ['name', 'nombre', 'product_name', 'producto'],
+            'tracking_type' => ['tracking_type', 'tipo_rastreo', 'rastreo', 'tipo de rastreo'],
             'supplier_name' => ['supplier_name', 'proveedor', 'supplier'],
+            'product_type_name' => ['product_type_name', 'tipo_producto', 'tipo producto', 'product type', 'tipo'],
             'category_name' => ['category_name', 'categoria', 'category'],
-            'brand_name' => ['brand_name', 'marca', 'brand', 'categoria 1 (marca)'],
+            'specialty_name' => ['specialty_name', 'especialidad', 'specialty'],
+            'brand_name' => ['brand_name', 'marca', 'brand'],
             'list_price' => ['list_price', 'precio', 'price', 'costo'],
             'requires_sterilization' => ['requires_sterilization', 'esterilizacion', 'sterilization'],
             'requires_refrigeration' => ['requires_refrigeration', 'refrigeracion', 'refrigeration'],
-            'requires_temperature' => ['requires_temperature', 'temperatura', 'temperature'],
+            'requires_temperature' => ['requires_temperature', 'temperatura', 'temperature', 'control temperatura'],
             'status' => ['status', 'estado', 'state'],
         ];
 
         foreach ($header as $index => $columnName) {
             $normalized = strtolower(trim($columnName));
+            $normalized = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $normalized);
             
             foreach ($expectedColumns as $field => $aliases) {
-                if (in_array($normalized, $aliases)) {
-                    $map[$field] = $index;
-                    break;
+                foreach ($aliases as $alias) {
+                    $normalizedAlias = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $alias);
+                    
+                    if ($normalized === $normalizedAlias || strpos($normalized, $normalizedAlias) !== false) {
+                        $map[$field] = $index;
+                        break 2;
+                    }
                 }
             }
         }
@@ -363,7 +436,7 @@ class ProductImportController extends Controller
     }
 
     /**
-     * Validar fila
+     * Validar fila ACTUALIZADO
      */
     private function validateRow($data, $rowNumber)
     {
@@ -388,7 +461,7 @@ class ProductImportController extends Controller
 
         // Validar tracking_type (obligatorio)
         $validTrackingTypes = ['code', 'rfid', 'serial'];
-        $trackingType = strtolower($data['tracking_type'] ?? '');
+        $trackingType = strtolower(trim($data['tracking_type'] ?? ''));
         
         if (empty($trackingType)) {
             $errors[] = 'El tipo de rastreo es obligatorio';
@@ -423,31 +496,65 @@ class ProductImportController extends Controller
             $processed['brand_id'] = null;
         }
 
-        // Procesar category
+        // ⭐ PROCESAR PRODUCT_TYPE (Consumible/Instrumental)
+        if (!empty($data['product_type_name'])) {
+            $productTypeName = trim($data['product_type_name']);
+            
+            $productType = ProductType::whereRaw('LOWER(name) = ?', [strtolower($productTypeName)])->first();
+            
+            if (!$productType) {
+                $productType = ProductType::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($productTypeName) . '%'])->first();
+            }
+            
+            if ($productType) {
+                $processed['product_type_id'] = $productType->id;
+            } else {
+                $availableTypes = ProductType::pluck('name')->implode(', ');
+                $errors[] = "Tipo de producto '{$productTypeName}' no encontrado. Disponibles: {$availableTypes}";
+            }
+        } else {
+            $processed['product_type_id'] = null;
+        }
+
+        // Procesar category (buscar por nombre)
         if (!empty($data['category_name'])) {
             $categoryName = trim($data['category_name']);
             
-            // Mapeo de nombres del Excel a nombres del sistema
-            $categoryMap = [
-                'consumible' => 'Consumibles Quirúrgicos',
-                'consumibles' => 'Consumibles Quirúrgicos',
-                'consumibles quirurgicos' => 'Consumibles Quirúrgicos',
-                'instrumental' => 'Instrumental Quirúrgico',
-                'instrumental quirurgico' => 'Instrumental Quirúrgico',
-            ];
+            $category = Category::whereRaw('LOWER(name) = ?', [strtolower($categoryName)])->first();
             
-            $normalizedName = strtolower($categoryName);
-            $systemCategoryName = $categoryMap[$normalizedName] ?? $categoryName;
-            
-            $category = Category::where('name', $systemCategoryName)->first();
+            if (!$category) {
+                $category = Category::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($categoryName) . '%'])->first();
+            }
             
             if ($category) {
                 $processed['category_id'] = $category->id;
             } else {
-                $errors[] = "Categoría '{$categoryName}' no encontrada. Use: Consumibles Quirúrgicos o Instrumental Quirúrgico";
+                $availableCategories = Category::orderBy('name')->pluck('name')->take(10)->implode(', ');
+                $totalCategories = Category::count();
+                $moreText = $totalCategories > 10 ? " (y " . ($totalCategories - 10) . " más)" : "";
+                
+                $errors[] = "Categoría '{$categoryName}' no encontrada. Algunas disponibles: {$availableCategories}{$moreText}";
             }
         } else {
             $processed['category_id'] = null;
+        }
+
+        // Procesar specialty (buscar por nombre)
+        if (!empty($data['specialty_name'])) {
+            $specialtyName = trim($data['specialty_name']);
+            
+            $specialty = MedicalSpecialty::whereRaw('LOWER(name) = ?', [strtolower($specialtyName)])->first();
+            
+            if (!$specialty) {
+                $specialty = MedicalSpecialty::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($specialtyName) . '%'])->first();
+            }
+            
+            if ($specialty) {
+                $processed['specialty_id'] = $specialty->id;
+            }
+            // Si no se encuentra, dejarlo null (no es crítico)
+        } else {
+            $processed['specialty_id'] = null;
         }
 
         // Procesar campos numéricos
@@ -464,8 +571,7 @@ class ProductImportController extends Controller
         $status = strtolower($data['status'] ?? 'active');
         $processed['status'] = in_array($status, $validStatuses) ? $status : 'active';
 
-        // Campos que quedan vacíos
-        $processed['specialty_id'] = null;
+        // Campo description (vacío por ahora)
         $processed['description'] = null;
 
         return [

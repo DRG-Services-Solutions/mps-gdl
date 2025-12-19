@@ -81,6 +81,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Código</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tracking</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca</th>
@@ -101,14 +102,24 @@
                                                 {{ strtoupper($row['processed']['tracking_type']) }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">
-                                            {{ $row['data']['category_name'] ?? 'N/A' }}
+                                        <td class="px-4 py-3 text-sm">
+                                            @if($row['relations']['product_type_name'])
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                    {{ $row['relations']['product_type_name'] === 'Consumible' ? 'bg-orange-100 text-orange-800' : 'bg-teal-100 text-teal-800' }}">
+                                                    {{ $row['relations']['product_type_name'] }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">N/A</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-600">
-                                            {{ $row['data']['supplier_name'] ?? 'N/A' }}
+                                            {{ $row['relations']['category_name'] ?? 'N/A' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-600">
-                                            {{ $row['data']['brand_name'] ?? 'N/A' }}
+                                            {{ $row['relations']['supplier_name'] ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">
+                                            {{ $row['relations']['brand_name'] ?? 'N/A' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
                                             ${{ number_format($row['processed']['list_price'], 2) }}
@@ -123,6 +134,60 @@
 
             {{-- Filas con Errores --}}
             @if(count($invalidRows) > 0)
+                {{-- Panel de Debug: Mostrar mapeo de columnas --}}
+                @if(session('import_debug_headers'))
+                    <div class="bg-yellow-50 rounded-xl shadow-sm border border-yellow-200 overflow-hidden mb-6">
+                        <div class="bg-yellow-100 px-6 py-3 border-b border-yellow-200">
+                            <button type="button" 
+                                    onclick="document.getElementById('debug-panel').classList.toggle('hidden')"
+                                    class="flex items-center text-sm font-semibold text-gray-900 cursor-pointer hover:text-yellow-800">
+                                <i class="fas fa-bug text-yellow-600 mr-2"></i>
+                                <span>🔍 Debug: Columnas Detectadas (click para ver)</span>
+                            </button>
+                        </div>
+                        <div id="debug-panel" class="hidden px-6 py-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-2">Encabezados en tu Excel:</h4>
+                                    <ul class="text-xs text-gray-600 space-y-1">
+                                        @foreach(session('import_debug_headers') as $index => $header)
+                                            <li><strong>Columna {{ $index }}:</strong> "{{ $header }}"</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-700 mb-2">Columnas Reconocidas:</h4>
+                                    <ul class="text-xs text-gray-600 space-y-1">
+                                        @php
+                                            $mapping = session('import_debug_mapping', []);
+                                            $fields = ['code', 'name', 'tracking_type', 'supplier_name', 'category_name', 'brand_name', 'list_price'];
+                                        @endphp
+                                        @foreach($fields as $field)
+                                            <li>
+                                                <strong>{{ $field }}:</strong> 
+                                                @if(isset($mapping[$field]))
+                                                    <span class="text-green-600">✓ Columna {{ $mapping[$field] }}</span>
+                                                @else
+                                                    <span class="text-red-600">✗ No detectada</span>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                                <p class="text-xs text-blue-700">
+                                    <strong>💡 Tip:</strong> Si alguna columna no se detectó, verifica que el nombre del encabezado sea similar a: 
+                                    <code class="bg-white px-1">code</code>, 
+                                    <code class="bg-white px-1">name</code>, 
+                                    <code class="bg-white px-1">tracking_type</code>, 
+                                    <code class="bg-white px-1">category_name</code>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden mb-6">
                     <div class="bg-red-50 px-6 py-4 border-b border-red-200">
                         <h3 class="text-lg font-semibold text-gray-900 flex items-center">
@@ -181,9 +246,8 @@
                             <i class="fas fa-info-circle mr-1"></i>
                             Los proveedores y marcas se crearán automáticamente si no existen
                         </p>
-                        <form action="{{ route('products.import') }}" method="POST" class="inline" onsubmit="return confirm('¿Confirmar importación de {{ count($validRows) }} productos?')">
+                        <form action="{{ route('products.import.confirm') }}" method="POST" class="inline" onsubmit="return confirm('¿Confirmar importación de {{ count($validRows) }} productos?')">
                             @csrf
-                            <input type="hidden" name="confirmed" value="1">
                             <button type="submit"
                                     class="inline-flex items-center px-6 py-3 bg-green-600 border border-transparent rounded-lg font-medium text-sm text-white shadow-sm hover:bg-green-700 transition-all duration-200">
                                 <i class="fas fa-check mr-2"></i>
