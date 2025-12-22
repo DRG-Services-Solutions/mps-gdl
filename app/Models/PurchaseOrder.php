@@ -48,7 +48,7 @@ class PurchaseOrder extends Model
 
     public function subWarehouse(): BelongsTo
     {
-        return $this->belongsTo(subWarehouse::class);
+        return $this->belongsTo(SubWarehouse::class);
     }
     
     public function legalEntity(): BelongsTo

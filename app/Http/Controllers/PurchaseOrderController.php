@@ -13,7 +13,7 @@ use App\Services\PurchaseOrderService;
 use App\Models\InventoryMovement;
 use App\Models\ProductUnit;
 use App\Models\LegalEntity;
-use App\Models\SubWarehouse;
+use App\Models\SubWareHouse;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
