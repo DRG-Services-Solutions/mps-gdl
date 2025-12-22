@@ -21,6 +21,8 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SurgicalKitController;
 use App\Http\Controllers\ProductImportController;
+use App\Http\Controllers\ProductTypeController;
+
 // ========================================
 // RUTAS PÚBLICAS
 // ========================================
@@ -51,12 +53,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
+    // ========================================
+    // Tipos de Productos
+    // ========================================
+    Route::resource('product_types', \App\Http\Controllers\ProductTypeController::class);
+
 
     // ========================================
     // IMPORTACIÓN DE PRODUCTOS
     // ========================================
     Route::get('products/import', [ProductImportController::class, 'showImportForm'])
-        ->name('products.import.form');
+    ->name('products.import.form');
 
     Route::get('products/import/template', [ProductImportController::class, 'downloadTemplate'])
         ->name('products.import.template');
@@ -66,7 +73,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     Route::post('products/import', [ProductImportController::class, 'import'])
         ->name('products.import');
-    
+
+    Route::post('products/import/confirm', [ProductImportController::class, 'confirmImport'])
+    ->name('products.import.confirm');
+        
     // ========================================
     // GESTIÓN DE USUARIOS
     // ========================================

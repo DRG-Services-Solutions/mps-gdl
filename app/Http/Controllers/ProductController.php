@@ -7,10 +7,12 @@ use App\Models\Product;
 use App\Models\Supplier; 
 use App\Models\Category;
 use App\Models\MedicalSpecialty;
+use App\Models\ProductType;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
+
 
 class ProductController extends Controller
 {
@@ -82,10 +84,12 @@ class ProductController extends Controller
     public function create(): View
     {
         $suppliers = Supplier::orderBy('name')->get(); 
-        $categories = Category::orderBy('name')->get(); // Agregado orderBy
+        $categories = Category::orderBy('name')->get();
         $specialties = MedicalSpecialty::orderBy('name')->get();
+        $product_types = ProductType::orderBy('name')->get();
         
-        return view('products.create', compact('suppliers', 'categories', 'specialties'));
+        
+        return view('products.create', compact('suppliers', 'categories', 'specialties', 'product_types'));
     }
 
     // ==========================================================
@@ -93,12 +97,14 @@ class ProductController extends Controller
     // ==========================================================
     public function store(Request $request): RedirectResponse
     {
+        
         $validated = $request->validate([
             
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
             'specialty_id' => 'nullable|exists:medical_specialties,id',
+            'product_type_id' => 'nullable|exists:product_types,id',
             
             // Información básica del catálogo
             'name' => 'required|string|max:255',
@@ -426,7 +432,6 @@ class ProductController extends Controller
                 'Descripción',
                 'Proveedor',
                 'Categoría',
-                'Subcategoría',
                 'Especialidad',
                 'Tipo Tracking',
                 'Requiere Esterilización',

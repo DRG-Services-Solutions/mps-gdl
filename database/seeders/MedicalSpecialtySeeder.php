@@ -10,6 +10,7 @@ class MedicalSpecialtySeeder extends Seeder
 {
     public function run(): void
     {
+        /**
         $specialties = [
             [
                 'name' => 'Artroscopia de mano',
@@ -33,5 +34,6 @@ class MedicalSpecialtySeeder extends Seeder
         }
 
         DB::table('medical_specialties')->insert($specialties);
+         */
     }
 }

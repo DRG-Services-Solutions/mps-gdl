@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Category;
 use App\Models\MedicalSpecialty;      
-use App\Models\Subcategory;           
 use App\Models\Supplier;              
 use App\Models\InventoryMovement;     
 use App\Models\ProductUnit;           
@@ -26,7 +25,7 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'specialty_id', 
-        'subcategory_id',
+        'product_type_id',
         'supplier_id',
         'name',
         'brand_id',
@@ -39,7 +38,6 @@ class Product extends Model
         'status',
         'list_price',
         'requires_temperature',
-
     ];
 
     protected $casts = [
@@ -54,6 +52,11 @@ class Product extends Model
 
     // ==================== RELACIONES ====================
     
+
+    public function productType() 
+    {
+        return $this->belongsTo(ProductType::class, 'product_type_id');
+    }
     
     public function brand() 
     {
@@ -69,10 +72,7 @@ class Product extends Model
         return $this->belongsTo(MedicalSpecialty::class, 'specialty_id');
     }
 
-    public function subcategory()
-    {
-        return $this->belongsTo(Subcategory::class, 'subcategory_id');
-    }
+   
     
     public function supplier() 
     {

@@ -188,6 +188,23 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            {{-- Tipo de Producto --}}
+                            <div>
+                                <label for="product_type_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-brands fa-dropbox text-gray-400 mr-2"></i>
+                                    {{ __('Tipo de Producto') }}
+                                </label>
+                                <select name="product_type_id" id="product_type_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">{{ __('-- Seleccione --') }}</option>
+                                    @foreach($product_types as $type)
+                                        <option value="{{ $type->id }}" {{ old('product_type_id') == $type->id ? 'selected' : '' }}>
+                                            {{ $type->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 
