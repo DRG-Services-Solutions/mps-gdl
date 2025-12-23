@@ -8,24 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('surgical_kits', function (Blueprint $table) {
+        Schema::create('surgical_checklists', function (Blueprint $table) {
             $table->id();
-            $table->string('code', 50)->unique()->comment('Código único del prearmado');
-            $table->string('name')->comment('Nombre del prearmado');
-            $table->string('surgery_type')->comment('Tipo de cirugía asociada');
-            $table->text('description')->nullable()->comment('Descripción del prearmado');
-            $table->boolean('is_active')->default(true)->comment('Si el prearmado está activo');
-            $table->foreignId('created_by')->nullable()->constrained('users')->comment('Usuario que creó el prearmado');
+            $table->string('code')->unique()->comment('Código único del check list');
+            $table->string('name')->comment('Nombre descriptivo');
+            $table->string('surgery_type')->comment('Tipo de cirugía');
+            $table->text('description')->nullable();
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
-            $table->softDeletes();
             
+            // Índices
+            $table->index('code');
             $table->index('surgery_type');
-            $table->index('is_active');
+            $table->index('status');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('surgical_kits');
+        Schema::dropIfExists('surgical_checklists');
     }
 };
