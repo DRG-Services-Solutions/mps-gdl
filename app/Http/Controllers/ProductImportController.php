@@ -369,38 +369,38 @@ class ProductImportController extends Controller
         }
     }
 
-    /**
-     * Obtener mapeo de columnas ACTUALIZADO
-     */
     private function getColumnMapping($header)
     {
         $map = [];
-        
+
         $expectedColumns = [
             'code' => ['code', 'codigo', 'sku', 'clave'],
-            'name' => ['name', 'nombre', 'product_name', 'producto'],
-            'tracking_type' => ['tracking_type', 'tipo_rastreo', 'rastreo', 'tipo de rastreo'],
+            'name' => ['name', 'nombre', 'product name', 'producto'],
+            'tracking_type' => ['tracking_type', 'tipo rastreo', 'rastreo'],
             'supplier_name' => ['supplier_name', 'proveedor', 'supplier'],
-            'product_type_name' => ['product_type_name', 'tipo_producto', 'tipo producto', 'product type', 'tipo'],
+            'product_type_name' => ['product_type_name', 'product type', 'tipo producto'],
             'category_name' => ['category_name', 'categoria', 'category'],
             'specialty_name' => ['specialty_name', 'especialidad', 'specialty'],
             'brand_name' => ['brand_name', 'marca', 'brand'],
             'list_price' => ['list_price', 'precio', 'price', 'costo'],
-            'requires_sterilization' => ['requires_sterilization', 'esterilizacion', 'sterilization'],
-            'requires_refrigeration' => ['requires_refrigeration', 'refrigeracion', 'refrigeration'],
-            'requires_temperature' => ['requires_temperature', 'temperatura', 'temperature', 'control temperatura'],
-            'status' => ['status', 'estado', 'state'],
+            'requires_sterilization' => ['requires sterilization', 'esterilizacion'],
+            'requires_refrigeration' => ['requires refrigeration', 'refrigeracion'],
+            'requires_temperature' => ['requires temperature', 'temperatura'],
+            'status' => ['status', 'estado'],
         ];
 
         foreach ($header as $index => $columnName) {
             $normalized = strtolower(trim($columnName));
-            $normalized = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $normalized);
-            
+            $normalized = str_replace(['á','é','í','ó','ú','ñ'], ['a','e','i','o','u','n'], $normalized);
+            $normalized = str_replace(['_', '-'], ' ', $normalized);
+
             foreach ($expectedColumns as $field => $aliases) {
                 foreach ($aliases as $alias) {
-                    $normalizedAlias = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $alias);
-                    
-                    if ($normalized === $normalizedAlias || strpos($normalized, $normalizedAlias) !== false) {
+                    $normalizedAlias = strtolower($alias);
+                    $normalizedAlias = str_replace(['á','é','í','ó','ú','ñ'], ['a','e','i','o','u','n'], $normalizedAlias);
+                    $normalizedAlias = str_replace(['_', '-'], ' ', $normalizedAlias);
+
+                    if ($normalized === $normalizedAlias) {
                         $map[$field] = $index;
                         break 2;
                     }
@@ -410,6 +410,7 @@ class ProductImportController extends Controller
 
         return $map;
     }
+
 
     /**
      * Mapear datos de fila
@@ -496,25 +497,22 @@ class ProductImportController extends Controller
             $processed['brand_id'] = null;
         }
 
-        // ⭐ PROCESAR PRODUCT_TYPE (Consumible/Instrumental)
-        if (!empty($data['product_type_name'])) {
+        if (empty($data['product_type_name'])) {
+            $errors[] = 'El tipo de producto es obligatorio (Consumible / Instrumental)';
+        } else {
             $productTypeName = trim($data['product_type_name']);
-            
-            $productType = ProductType::whereRaw('LOWER(name) = ?', [strtolower($productTypeName)])->first();
-            
-            if (!$productType) {
-                $productType = ProductType::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($productTypeName) . '%'])->first();
-            }
-            
+
+            $productType = ProductType::whereRaw('LOWER(name) = ?', [strtolower($productTypeName)])
+                ->orWhereRaw('LOWER(name) LIKE ?', ['%' . strtolower($productTypeName) . '%'])
+                ->first();
+
             if ($productType) {
                 $processed['product_type_id'] = $productType->id;
             } else {
-                $availableTypes = ProductType::pluck('name')->implode(', ');
-                $errors[] = "Tipo de producto '{$productTypeName}' no encontrado. Disponibles: {$availableTypes}";
+                $errors[] = "Tipo de producto '{$productTypeName}' no encontrado";
             }
-        } else {
-            $processed['product_type_id'] = null;
         }
+
 
         // Procesar category (buscar por nombre)
         if (!empty($data['category_name'])) {
