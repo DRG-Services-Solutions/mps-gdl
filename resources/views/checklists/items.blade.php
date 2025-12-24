@@ -44,7 +44,7 @@
                                 <option value="">Selecciona un producto...</option>
                                 @foreach($products as $product)
                                     <option value="{{ $product->id }}">
-                                        {{ $product->code }} - {{ $product->commercial_name }}
+                                        {{ $product->code }} - {{ $product->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -136,7 +136,7 @@
                                             <i class="fas fa-box text-indigo-600"></i>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $item->product->commercial_name }}</div>
+                                            <div class="text-sm font-semibold text-gray-900">{{ $item->product->name }}</div>
                                             <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
                                         </div>
                                     </div>

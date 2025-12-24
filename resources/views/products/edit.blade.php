@@ -18,7 +18,6 @@
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="productForm({{ json_encode($subcategories) }}, {{ $product->category_id ?? 'null' }})">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 
