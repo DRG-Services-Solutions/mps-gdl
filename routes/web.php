@@ -22,6 +22,13 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SurgicalKitController;
 use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\ProductTypeController;
+use App\Http\Controllers\SurgicalChecklistController;
+use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\PreAssembledPackageController;
+use App\Http\Controllers\ScheduledSurgeryController;
+use App\Http\Controllers\SurgeryPreparationController;
+use App\Http\Controllers\InvoiceController;
+
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -52,6 +59,160 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+    // ====================================================================
+    // MÓDULO 1: SURGICAL CHECKLISTS (Plantillas de Check Lists)
+    // ====================================================================
+    Route::prefix('checklists')->name('checklists.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [SurgicalChecklistController::class, 'index'])->name('index');
+        Route::get('/create', [SurgicalChecklistController::class, 'create'])->name('create');
+        Route::post('/', [SurgicalChecklistController::class, 'store'])->name('store');
+        Route::get('/{checklist}', [SurgicalChecklistController::class, 'show'])->name('show');
+        Route::get('/{checklist}/edit', [SurgicalChecklistController::class, 'edit'])->name('edit');
+        Route::put('/{checklist}', [SurgicalChecklistController::class, 'update'])->name('update');
+        Route::delete('/{checklist}', [SurgicalChecklistController::class, 'destroy'])->name('destroy');
+
+        // Gestión de items
+        Route::get('/{checklist}/items', [SurgicalChecklistController::class, 'items'])->name('items');
+        
+        // Duplicar check list
+        Route::post('/{checklist}/duplicate', [SurgicalChecklistController::class, 'duplicate'])->name('duplicate');
+    });
+
+    // ====================================================================
+    // MÓDULO 2: CHECKLIST ITEMS (Items y Condicionales)
+    // ====================================================================
+    Route::prefix('checklist-items')->name('checklist-items.')->group(function () {
+        
+        // Agregar item a un check list
+        Route::post('/checklists/{checklist}', [ChecklistItemController::class, 'store'])->name('store');
+        
+        // Actualizar item
+        Route::put('/{item}', [ChecklistItemController::class, 'update'])->name('update');
+        
+        // Eliminar item
+        Route::delete('/{item}', [ChecklistItemController::class, 'destroy'])->name('destroy');
+        
+        // Reordenar items
+        Route::post('/checklists/{checklist}/reorder', [ChecklistItemController::class, 'reorder'])->name('reorder');
+        
+        // ---- CONDICIONALES ----
+        
+        // Agregar condicional a un item
+        Route::post('/{item}/conditionals', [ChecklistItemController::class, 'addConditional'])->name('conditionals.add');
+        
+        // Eliminar condicional
+        Route::delete('/conditionals/{conditional}', [ChecklistItemController::class, 'removeConditional'])->name('conditionals.remove');
+    });
+
+    // ====================================================================
+    // MÓDULO 3: PRE-ASSEMBLED PACKAGES (Paquetes Pre-Armados)
+    // ====================================================================
+    Route::prefix('pre-assembled')->name('pre-assembled.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [PreAssembledPackageController::class, 'index'])->name('index');
+        Route::get('/create', [PreAssembledPackageController::class, 'create'])->name('create');
+        Route::post('/', [PreAssembledPackageController::class, 'store'])->name('store');
+        Route::get('/{preAssembled}', [PreAssembledPackageController::class, 'show'])->name('show');
+        Route::get('/{preAssembled}/edit', [PreAssembledPackageController::class, 'edit'])->name('edit');
+        Route::put('/{preAssembled}', [PreAssembledPackageController::class, 'update'])->name('update');
+        Route::delete('/{preAssembled}', [PreAssembledPackageController::class, 'destroy'])->name('destroy');
+
+        // Gestión de contenido del paquete
+        Route::post('/{preAssembled}/add-product', [PreAssembledPackageController::class, 'addProduct'])->name('add-product');
+        Route::post('/{preAssembled}/remove-product', [PreAssembledPackageController::class, 'removeProduct'])->name('remove-product');
+        Route::post('/{preAssembled}/bulk-scan', [PreAssembledPackageController::class, 'bulkScan'])->name('bulk-scan');
+        
+        // Cambiar estado
+        Route::post('/{preAssembled}/update-status', [PreAssembledPackageController::class, 'updateStatus'])->name('update-status');
+    });
+
+    // ====================================================================
+    // MÓDULO 4: SCHEDULED SURGERIES (Cirugías Programadas)
+    // ====================================================================
+    Route::prefix('surgeries')->name('surgeries.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [ScheduledSurgeryController::class, 'index'])->name('index');
+        Route::get('/create', [ScheduledSurgeryController::class, 'create'])->name('create');
+        Route::post('/', [ScheduledSurgeryController::class, 'store'])->name('store');
+        Route::get('/{surgery}', [ScheduledSurgeryController::class, 'show'])->name('show');
+        Route::get('/{surgery}/edit', [ScheduledSurgeryController::class, 'edit'])->name('edit');
+        Route::put('/{surgery}', [ScheduledSurgeryController::class, 'update'])->name('update');
+        
+        // Cancelar cirugía
+        Route::post('/{surgery}/cancel', [ScheduledSurgeryController::class, 'cancel'])->name('cancel');
+        
+        // Ver check list aplicado
+        Route::get('/{surgery}/checklist', [ScheduledSurgeryController::class, 'viewChecklist'])->name('checklist');
+
+        // ---- PREPARACIONES (FLUJO COMPLETO) ----
+        Route::prefix('{surgery}/preparations')->name('preparations.')->group(function () {
+            
+            // 1. Iniciar preparación
+            Route::post('/start', [SurgeryPreparationController::class, 'start'])->name('start');
+            
+            // 2. Seleccionar paquete pre-armado
+            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage');
+            Route::post('/assign-package', [SurgeryPreparationController::class, 'assignPackage'])->name('assignPackage');
+            
+            // 3. Ver comparación (Check List vs Pre-Armado)
+            Route::get('/compare', [SurgeryPreparationController::class, 'compare'])->name('compare');
+            
+            // 4. Surtir faltantes (Picking)
+            Route::get('/picking', [SurgeryPreparationController::class, 'picking'])->name('picking');
+            Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('addPickedProduct');
+            
+            // 5. Verificar y completar
+            Route::post('/verify', [SurgeryPreparationController::class, 'verify'])->name('verify');
+            
+            // 6. Resumen
+            Route::get('/summary', [SurgeryPreparationController::class, 'summary'])->name('summary');
+        });
+    });
+
+    // ====================================================================
+    // MÓDULO 5: INVOICES (Remisiones)
+    // ====================================================================
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        
+        // Listado
+        Route::get('/', [InvoiceController::class, 'index'])->name('index');
+        
+        // Crear desde cirugía
+        Route::get('/create-from-surgery/{surgery}', [InvoiceController::class, 'createFromSurgery'])->name('createFromSurgery');
+        Route::post('/store-from-surgery/{surgery}', [InvoiceController::class, 'store'])->name('store');
+        
+        // Ver remisión
+        Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+        
+        // Acciones sobre remisión
+        Route::post('/{invoice}/issue', [InvoiceController::class, 'issue'])->name('issue');
+        Route::post('/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('cancel');
+        Route::post('/{invoice}/mark-as-paid', [InvoiceController::class, 'markAsPaid'])->name('markAsPaid');
+        
+        // Generar PDF
+        Route::get('/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('pdf');
+        Route::get('/{invoice}/preview-pdf', [InvoiceController::class, 'previewPdf'])->name('previewPdf');
+    });
+
+      Route::get('/dashboard', function () {
+        // Datos del dashboard
+        $upcomingSurgeries = \App\Models\ScheduledSurgery::upcoming()->limit(5)->get();
+        $availablePackages = \App\Models\PreAssembledPackage::available()->count();
+        $activeChecklists = \App\Models\SurgicalChecklist::active()->count();
+        $pendingInvoices = \App\Models\Invoice::where('status', 'draft')->count();
+
+        return view('dashboard', compact(
+            'upcomingSurgeries',
+            'availablePackages',
+            'activeChecklists',
+            'pendingInvoices'
+        ));
+    })->name('dashboard');
 
     // ========================================
     // Tipos de Productos
