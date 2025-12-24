@@ -136,8 +136,8 @@ class SurgicalChecklistController extends Controller
             'items.conditionals.legalEntity'
         ]);
 
-        $products = Product::select('id', 'code', 'commercial_name')
-            ->orderBy('commercial_name')
+        $products = Product::select('id', 'code', 'name')
+            ->orderBy('name')
             ->get();
 
         return view('checklists.items', compact('checklist', 'products'));
