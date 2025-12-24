@@ -212,19 +212,19 @@ class ProductImportController extends Controller
                         'data' => $data,
                         'processed' => $validation['processed'],
                         'relations' => [
-                            'category_name' => $validation['processed']['category_id'] 
+                            'category_name' => ($validation['processed']['category_id'] ?? null)
                                 ? Category::find($validation['processed']['category_id'])?->name 
                                 : null,
-                            'supplier_name' => $validation['processed']['supplier_id']
+                            'supplier_name' => ($validation['processed']['supplier_id'] ?? null)
                                 ? Supplier::find($validation['processed']['supplier_id'])?->name
                                 : null,
-                            'brand_name' => $validation['processed']['brand_id']
+                            'brand_name' => ($validation['processed']['brand_id'] ?? null)
                                 ? Brand::find($validation['processed']['brand_id'])?->name
                                 : null,
-                            'product_type_name' => $validation['processed']['product_type_id']
+                            'product_type_name' => ($validation['processed']['product_type_id'] ?? null)
                                 ? ProductType::find($validation['processed']['product_type_id'])?->name
                                 : null,
-                            'specialty_name' => $validation['processed']['specialty_id']
+                            'specialty_name' => ($validation['processed']['specialty_id'] ?? null)
                                 ? MedicalSpecialty::find($validation['processed']['specialty_id'])?->name
                                 : null,
                         ],
