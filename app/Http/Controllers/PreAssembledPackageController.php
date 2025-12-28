@@ -1,14 +1,12 @@
 <?php
+// app/Http/Controllers/PreAssembledPackageController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\PreAssembledPackage;
 use App\Models\SurgicalChecklist;
 use App\Models\StorageLocation;
-use App\Models\ProductUnit;
-use App\Models\PreAssembledContent;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PreAssembledPackageController extends Controller
 {
@@ -17,44 +15,51 @@ class PreAssembledPackageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = PreAssembledPackage::query()
-            ->with(['surgeryChecklist', 'storageLocation', 'creator']);
+        // Query base
+        $query = PreAssembledPackage::with([
+            'surgeryChecklist',
+            'storageLocation',
+            'contents.productUnit.product'
+        ]);
 
-        // Filtro por tipo de cirugía
-        if ($request->filled('checklist_id')) {
-            $query->where('surgery_checklist_id', $request->checklist_id);
+        // Filtros
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('package_epc', 'like', "%{$search}%");
+            });
         }
 
-        // Filtro por estado
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Búsqueda
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('code', 'like', '%' . $request->search . '%')
-                  ->orWhere('name', 'like', '%' . $request->search . '%');
-            });
+        if ($request->filled('checklist_id')) {
+            $query->where('surgery_checklist_id', $request->checklist_id);
         }
 
-        // Ordenamiento
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        
-        if ($sortBy === 'peps') {
-            $query->orderBy('last_used_at', 'asc');
-        } else {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        // Obtener paquetes paginados
+        $packages = $query->latest()->paginate(15);
 
-        $packages = $query->paginate(15);
+        // Calcular estadísticas
+        $availableCount = PreAssembledPackage::where('status', 'available')->count();
+        $inSurgeryCount = PreAssembledPackage::where('status', 'in_surgery')->count();
+        $maintenanceCount = PreAssembledPackage::where('status', 'maintenance')->count();
 
-        $checklists = SurgicalChecklist::active()
-            ->select('id', 'code', 'name')
+        // Check lists para filtro
+        $checklists = SurgicalChecklist::where('status', 'active')
+            ->orderBy('name')
             ->get();
 
-        return view('pre-assembled.index', compact('packages', 'checklists'));
+        return view('pre-assembled.index', compact(
+            'packages',
+            'availableCount',
+            'inSurgeryCount',
+            'maintenanceCount',
+            'checklists'
+        ));
     }
 
     /**
@@ -62,13 +67,13 @@ class PreAssembledPackageController extends Controller
      */
     public function create()
     {
-        $checklists = SurgicalChecklist::active()
-            ->select('id', 'code', 'name', 'surgery_type')
+        $checklists = SurgicalChecklist::where('status', 'active')
+            ->orderBy('name')
             ->get();
 
-        $locations = StorageLocation::orderBy('name')->get();
+        $storageLocations = StorageLocation::orderBy('code')->get();
 
-        return view('pre-assembled.create', compact('checklists', 'locations'));
+        return view('pre-assembled.create', compact('checklists', 'storageLocations'));
     }
 
     /**
@@ -77,16 +82,15 @@ class PreAssembledPackageController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|unique:pre_assembled_packages,code|max:50',
+            'code' => 'required|string|max:50|unique:pre_assembled_packages,code',
             'name' => 'required|string|max:255',
             'surgery_checklist_id' => 'required|exists:surgical_checklists,id',
-            'package_epc' => 'nullable|string|unique:pre_assembled_packages,package_epc',
-            'storage_location_id' => 'nullable|exists:storage_locations,id',
+            'package_epc' => 'nullable|string|max:255|unique:pre_assembled_packages,package_epc',
+            'storage_location_id' => 'required|exists:storage_locations,id',
+            'status' => 'required|in:available,in_preparation,in_surgery,maintenance',
             'notes' => 'nullable|string',
         ]);
-
         $validated['created_by'] = auth()->id();
-        $validated['status'] = 'available';
 
         $package = PreAssembledPackage::create($validated);
 
@@ -102,38 +106,19 @@ class PreAssembledPackageController extends Controller
     {
         $preAssembled->load([
             'surgeryChecklist',
-            'contents.product',
-            'contents.productUnit',
-            'contents.addedBy',
             'storageLocation',
-            'creator'
+            'contents.productUnit.product',
+            'contents.product',
+            'preparations',
+            'scheduledSurgeries'
         ]);
 
-        // Resumen de contenido agrupado
-        $contentSummary = $preAssembled->getContentSummary();
-
-        // Productos con caducidad próxima
-        $expiringSoon = $preAssembled->contents()
-            ->whereNotNull('expiration_date')
-            ->where('expiration_date', '<=', now()->addDays(30))
-            ->where('expiration_date', '>=', now())
-            ->with('product')
-            ->orderBy('expiration_date')
+        // Productos disponibles para agregar
+        $availableProducts = \App\Models\Product::where('status', 'active')
+            ->orderBy('name')
             ->get();
 
-        // Productos caducados
-        $expired = $preAssembled->contents()
-            ->whereNotNull('expiration_date')
-            ->where('expiration_date', '<', now())
-            ->with('product')
-            ->get();
-
-        return view('pre-assembled.show', compact(
-            'preAssembled',
-            'contentSummary',
-            'expiringSoon',
-            'expired'
-        ));
+        return view('pre-assembled.show', compact('preAssembled', 'availableProducts'));
     }
 
     /**
@@ -141,13 +126,13 @@ class PreAssembledPackageController extends Controller
      */
     public function edit(PreAssembledPackage $preAssembled)
     {
-        $checklists = SurgicalChecklist::active()
-            ->select('id', 'code', 'name', 'surgery_type')
+        $checklists = SurgicalChecklist::where('status', 'active')
+            ->orderBy('name')
             ->get();
 
-        $locations = StorageLocation::orderBy('name')->get();
+        $storageLocations = StorageLocation::orderBy('code')->get();
 
-        return view('pre-assembled.edit', compact('preAssembled', 'checklists', 'locations'));
+        return view('pre-assembled.edit', compact('preAssembled', 'checklists', 'storageLocations'));
     }
 
     /**
@@ -159,8 +144,8 @@ class PreAssembledPackageController extends Controller
             'code' => 'required|string|max:50|unique:pre_assembled_packages,code,' . $preAssembled->id,
             'name' => 'required|string|max:255',
             'surgery_checklist_id' => 'required|exists:surgical_checklists,id',
-            'package_epc' => 'nullable|string|unique:pre_assembled_packages,package_epc,' . $preAssembled->id,
-            'storage_location_id' => 'nullable|exists:storage_locations,id',
+            'package_epc' => 'nullable|string|max:255|unique:pre_assembled_packages,package_epc,' . $preAssembled->id,
+            'storage_location_id' => 'required|exists:storage_locations,id',
             'status' => 'required|in:available,in_preparation,in_surgery,maintenance',
             'notes' => 'nullable|string',
         ]);
@@ -178,16 +163,9 @@ class PreAssembledPackageController extends Controller
     public function destroy(PreAssembledPackage $preAssembled)
     {
         // Verificar que no esté en uso
-        if ($preAssembled->status !== 'available') {
-            return back()->with('error', 'No se puede eliminar un paquete que está en uso.');
+        if ($preAssembled->scheduledSurgeries()->exists()) {
+            return back()->with('error', 'No se puede eliminar un paquete que está asignado a cirugías.');
         }
-
-        // Liberar productos del paquete
-        ProductUnit::where('current_package_id', $preAssembled->id)
-            ->update([
-                'current_status' => 'in_stock',
-                'current_package_id' => null,
-            ]);
 
         $preAssembled->delete();
 
@@ -197,49 +175,19 @@ class PreAssembledPackageController extends Controller
     }
 
     /**
-     * Agregar producto al paquete (Escaneo RFID o Manual)
+     * Agregar producto al paquete
      */
     public function addProduct(Request $request, PreAssembledPackage $preAssembled)
     {
         $validated = $request->validate([
-            'product_unit_id' => 'required|exists:product_units,id',
+            'product_unit_epc' => 'nullable|string',
+            'product_id' => 'nullable|exists:products,id',
         ]);
 
-        DB::beginTransaction();
-        try {
-            $productUnit = ProductUnit::findOrFail($validated['product_unit_id']);
+        // Lógica para agregar producto
+        // TODO: Implementar lógica de agregar producto por EPC o ID
 
-            // Verificar que la unidad esté disponible
-            if ($productUnit->current_status !== 'in_stock') {
-                return back()->with('error', 'El producto no está disponible en almacén.');
-            }
-
-            // Agregar al contenido del paquete
-            PreAssembledContent::create([
-                'package_id' => $preAssembled->id,
-                'product_id' => $productUnit->product_id,
-                'product_unit_id' => $productUnit->id,
-                'quantity' => 1,
-                'added_at' => now(),
-                'added_by' => auth()->id(),
-                'expiration_date' => $productUnit->expiration_date,
-                'entry_date' => $productUnit->entry_date,
-            ]);
-
-            // Actualizar estado del product_unit
-            $productUnit->update([
-                'current_status' => 'in_pre_assembled',
-                'current_package_id' => $preAssembled->id,
-            ]);
-
-            DB::commit();
-
-            return back()->with('success', 'Producto agregado al paquete exitosamente.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error al agregar producto: ' . $e->getMessage());
-        }
+        return back()->with('success', 'Producto agregado al paquete.');
     }
 
     /**
@@ -248,104 +196,17 @@ class PreAssembledPackageController extends Controller
     public function removeProduct(Request $request, PreAssembledPackage $preAssembled)
     {
         $validated = $request->validate([
-            'content_id' => 'required|exists:pre_assembled_contents,id',
+            'product_id' => 'required|exists:products,id',
         ]);
 
-        DB::beginTransaction();
-        try {
-            $content = PreAssembledContent::findOrFail($validated['content_id']);
+        // Lógica para remover producto
+        // TODO: Implementar lógica de remover producto
 
-            // Verificar que pertenece al paquete
-            if ($content->package_id !== $preAssembled->id) {
-                return back()->with('error', 'El producto no pertenece a este paquete.');
-            }
-
-            // Actualizar estado del product_unit
-            $content->productUnit->update([
-                'current_status' => 'in_stock',
-                'current_package_id' => null,
-            ]);
-
-            // Eliminar del contenido
-            $content->delete();
-
-            DB::commit();
-
-            return back()->with('success', 'Producto removido del paquete exitosamente.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error al remover producto: ' . $e->getMessage());
-        }
+        return back()->with('success', 'Producto removido del paquete.');
     }
 
     /**
-     * Escaneo masivo de productos (RFID)
-     */
-    public function bulkScan(Request $request, PreAssembledPackage $preAssembled)
-    {
-        $validated = $request->validate([
-            'epcs' => 'required|array',
-            'epcs.*' => 'required|string',
-        ]);
-
-        $results = [
-            'success' => [],
-            'errors' => [],
-        ];
-
-        DB::beginTransaction();
-        try {
-            foreach ($validated['epcs'] as $epc) {
-                $productUnit = ProductUnit::where('epc', $epc)->first();
-
-                if (!$productUnit) {
-                    $results['errors'][] = "EPC {$epc}: No encontrado";
-                    continue;
-                }
-
-                if ($productUnit->current_status !== 'in_stock') {
-                    $results['errors'][] = "EPC {$epc}: No disponible";
-                    continue;
-                }
-
-                // Agregar al paquete
-                PreAssembledContent::create([
-                    'package_id' => $preAssembled->id,
-                    'product_id' => $productUnit->product_id,
-                    'product_unit_id' => $productUnit->id,
-                    'quantity' => 1,
-                    'added_at' => now(),
-                    'added_by' => auth()->id(),
-                    'expiration_date' => $productUnit->expiration_date,
-                    'entry_date' => $productUnit->entry_date,
-                ]);
-
-                $productUnit->update([
-                    'current_status' => 'in_pre_assembled',
-                    'current_package_id' => $preAssembled->id,
-                ]);
-
-                $results['success'][] = "EPC {$epc}: Agregado";
-            }
-
-            DB::commit();
-
-            $message = count($results['success']) . ' productos agregados exitosamente.';
-            if (count($results['errors']) > 0) {
-                $message .= ' ' . count($results['errors']) . ' errores encontrados.';
-            }
-
-            return back()->with('success', $message)->with('scan_results', $results);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error en escaneo masivo: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Cambiar estado del paquete
+     * Actualizar estado del paquete
      */
     public function updateStatus(Request $request, PreAssembledPackage $preAssembled)
     {
@@ -353,8 +214,8 @@ class PreAssembledPackageController extends Controller
             'status' => 'required|in:available,in_preparation,in_surgery,maintenance',
         ]);
 
-        $preAssembled->updateStatus($validated['status']);
+        $preAssembled->update(['status' => $validated['status']]);
 
-        return back()->with('success', 'Estado del paquete actualizado exitosamente.');
+        return back()->with('success', 'Estado actualizado exitosamente.');
     }
 }

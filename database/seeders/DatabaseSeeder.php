@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
                     SupplierSeeder::class,
                     LegalEntitySeeder::class,
                     SubWarehouseSeeder::class,
+                    StorageLocationSeeder::class,
 
                 ]);
         $this->call(UserSeeder::class);

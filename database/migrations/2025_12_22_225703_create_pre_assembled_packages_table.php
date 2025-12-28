@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('package_epc')->unique()->nullable()->comment('EPC del contenedor/caja del paquete');
             
             // Estados
-            $table->enum('status', ['disponible', 'en_preparacion', 'en_cirugia', 'mantenimiento'])->default('disponible')->comment('Estado del paquete');
+            $table->enum('status', ['available', 'in_preparation', 'in_surgery', 'maintenance'])->default('available')->comment('Estado del paquete');
             
             // Ubicación física
             $table->foreignId('storage_location_id')->nullable()->constrained('storage_locations')->comment('Ubicación en área de pre-armados');
