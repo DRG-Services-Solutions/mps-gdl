@@ -1,0 +1,33 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\ProductType;
+
+class CategorySeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $productType = [
+            [
+                'name' => 'Consumible',
+                'description' => 'Productos que se consumen rápidamente',
+            ],
+            [
+                'name' => 'Instrumental',
+                'description' => 'Productos de tipo instrumental quirurgico',
+            ],
+        ];
+
+        foreach ($productType as $type)
+        {
+            ProductType::create($type);
+            $this->command->info("✅ Tipo de Producto:  {$type['name']} creado exitosamente");
+        }
+    }
+}
