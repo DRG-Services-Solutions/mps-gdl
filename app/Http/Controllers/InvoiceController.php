@@ -225,4 +225,19 @@ class InvoiceController extends Controller
 
         return $pdf->stream();
     }
+
+    public function pdf(Invoice $invoice)
+    {
+        // Cargar relaciones necesarias
+        $invoice->load([
+            'hospital',
+            'surgery.checklist',
+            'surgery.doctor',
+            'items.product',
+            'creator'
+        ]);
+
+        // Retornar vista optimizada para impresión
+        return view('invoices.pdf', compact('invoice'));
+    }
 }

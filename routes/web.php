@@ -197,6 +197,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         // Generar PDF
         Route::get('/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('pdf');
         Route::get('/{invoice}/preview-pdf', [InvoiceController::class, 'previewPdf'])->name('previewPdf');
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+
     });
 
       Route::get('/dashboard', function () {
