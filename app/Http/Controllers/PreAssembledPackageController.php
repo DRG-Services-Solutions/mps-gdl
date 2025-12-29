@@ -118,7 +118,7 @@ class PreAssembledPackageController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('pre-assembled.show', compact('preAssembled', 'availableProducts'));
+        return view('pre-assembled.show', ['package' => $preAssembled, 'availableProducts' => $availableProducts]);
     }
 
     /**

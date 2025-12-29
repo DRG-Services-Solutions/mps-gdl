@@ -10,8 +10,10 @@ return new class extends Migration
     {
         Schema::create('surgery_preparations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('scheduled_surgery_id')->constrained('scheduled_surgeries')->onDelete('cascade')->comment('Cirugía a preparar');
-            
+            $table->foreignId('surgery_id')
+                ->constrained('scheduled_surgeries')
+                ->onDelete('cascade');
+
             // Pre-Armado seleccionado
             $table->foreignId('pre_assembled_package_id')->nullable()->constrained('pre_assembled_packages')->comment('Paquete pre-armado utilizado');
             
@@ -36,7 +38,6 @@ return new class extends Migration
             $table->timestamps();
             
             // Índices
-            $table->index('scheduled_surgery_id');
             $table->index('pre_assembled_package_id');
             $table->index('status');
         });

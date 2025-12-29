@@ -68,6 +68,18 @@ class PreAssembledPackage extends Model
         return $this->hasMany(SurgeryPreparation::class, 'pre_assembled_package_id');
     }
 
+    public function scheduledSurgeries()
+    {
+        return $this->hasManyThrough(
+            ScheduledSurgery::class,
+            SurgeryPreparation::class,
+            'pre_assembled_package_id', // FK en surgery_preparations
+            'id',                        // FK en scheduled_surgeries
+            'id',                        // PK en pre_assembled_packages
+            'surgery_id'                 // FK en surgery_preparations
+        );
+    }
+
     /**
      * SCOPES
      */
