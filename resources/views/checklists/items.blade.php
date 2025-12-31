@@ -1,4 +1,5 @@
 <x-app-layout>
+    
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
@@ -20,7 +21,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- Agregar Producto -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-white rounded-lg shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-plus-circle mr-2 text-purple-600"></i>
@@ -38,15 +39,18 @@
                                 Producto <span class="text-red-500">*</span>
                             </label>
                             <select name="product_id" 
-                                    id="product_id"
+                                    id="product_search"
                                     class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 @error('product_id') border-red-500 @enderror"
                                     required>
                                 <option value="">Selecciona un producto...</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}">
+                               @foreach($products as $product)
+                                    <option value="{{ $product->id }}"
+                                            data-code="{{ $product->code }}"
+                                            data-name="{{ $product->name }}">
                                         {{ $product->code }} - {{ $product->name }}
                                     </option>
                                 @endforeach
+
                             </select>
                             @error('product_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -97,7 +101,7 @@
             </div>
 
             <!-- Lista de Items -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div class="bg-white rounded-lg shadow-sm ">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-list mr-2 text-indigo-600"></i>
@@ -226,17 +230,219 @@
             </div>
         </div>
     </div>
+@push('styles')
+<style>
+    /* ========================================
+       TOM SELECT - Estilos Profesionales
+       ======================================== */
+    
+    /* WRAPPER - Contenedor principal */
+    .ts-wrapper {
+        position: relative !important;
+    }
+    
+    /* CONTROL - Input de búsqueda */
+    .ts-control {
+        min-height: 42px !important;
+        padding: 0.5rem 0.75rem !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.5rem !important;
+        background-color: white !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5rem !important;
+        transition: all 0.15s ease !important;
+    }
+    
+    .ts-control:hover {
+        border-color: #9ca3af !important;
+    }
+    
+    .ts-control.focus {
+        border-color: #9333ea !important;
+        box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Input dentro del control */
+    .ts-control input {
+        color: #111827 !important;
+        font-size: 0.875rem !important;
+    }
+    
+    .ts-control input::placeholder {
+        color: #9ca3af !important;
+    }
+    
+    /* Item seleccionado */
+    .ts-control .item {
+        color: #111827 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* DROPDOWN - Menú de opciones */
+    .ts-dropdown {
+        position: absolute !important;
+        z-index: 10000 !important;
+        margin-top: 0.25rem !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        background-color: white !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+                    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* OPCIONES del dropdown */
+    .ts-dropdown .option {
+        padding: 0.75rem 1rem !important;
+        cursor: pointer !important;
+        border-bottom: 1px solid #f3f4f6 !important;
+        transition: background-color 0.15s ease !important;
+    }
+    
+    .ts-dropdown .option:last-child {
+        border-bottom: none !important;
+    }
+    
+    /* Opción al pasar el mouse */
+    .ts-dropdown .option.active {
+        background-color: #f9fafb !important;
+        color: #111827 !important;
+    }
+    
+    /* Opción seleccionada */
+    .ts-dropdown .option.selected {
+        background-color: #9333ea !important;
+        color: white !important;
+    }
+    
+    .ts-dropdown .option.selected.active {
+        background-color: #7e22ce !important;
+    }
+    
+    /* Mensaje de "No hay resultados" */
+    .ts-dropdown .no-results {
+        padding: 1rem !important;
+        color: #6b7280 !important;
+        text-align: center !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Eliminar flechas nativas */
+    .ts-wrapper.single .ts-control::after {
+        border-color: #6b7280 transparent transparent transparent !important;
+        border-width: 5px 5px 0 5px !important;
+        margin-top: -3px !important;
+    }
+    
+    .ts-wrapper.single.dropdown-active .ts-control::after {
+        border-color: transparent transparent #6b7280 transparent !important;
+        border-width: 0 5px 5px 5px !important;
+        margin-top: -2px !important;
+    }
+    
+    /* Ocultar spinner de carga si aparece */
+    .ts-wrapper .spinner {
+        display: none !important;
+    }
+</style>
+@endpush
 
-    @push('scripts')
-    <script>
-        // Placeholder para modal de condicionales (implementar con Alpine.js o modal component)
-        function openConditionalsModal(itemId) {
-            alert('Modal de condicionales para item: ' + itemId + '\n\nEsta funcionalidad se implementará con un componente modal completo.');
-            // TODO: Implementar modal de condicionales
-        }
+@push('scripts')
+<script>
+    // ========================================
+    // TOM SELECT - Búsqueda de Productos
+    // ========================================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        new TomSelect('#product_search', {
+            valueField: 'value',
+            labelField: 'text',
+            searchField: ['code', 'name'],
 
-        // Placeholder para drag & drop de reordenamiento
-        // TODO: Implementar con SortableJS cuando sea necesario
-    </script>
-    @endpush
+            render: {
+                option: function(data, escape) {
+                    return `
+                        <div>
+                            <div style="font-weight:600">
+                                ${escape(data.code)}
+                            </div>
+                            <div style="font-size:0.875rem;color:#6b7280">
+                                ${escape(data.name)}
+                            </div>
+                        </div>
+                    `;
+                },
+                item: function(data, escape) {
+                    return `${escape(data.code)} - ${escape(data.name)}`;
+                }
+            },
+
+            onInitialize() {
+                this.options = Object.values(this.options).map(opt => {
+                    opt.code = opt.$option.dataset.code;
+                    opt.name = opt.$option.dataset.name;
+                    return opt;
+                });
+            }
+        });
+
+        new TomSelect('#product_search', {
+
+            
+            // Búsqueda
+            searchField: ['code', 'name'],
+            
+            // Placeholder
+            placeholder: 'Selecciona un producto...',
+            
+            // Opciones
+            allowEmptyOption: true,
+            maxOptions: 100,
+            
+            // Comportamiento
+            hidePlaceholder: false,
+            openOnFocus: true,
+            
+            // Renderizado del dropdown
+            render: {
+                option: function(data, escape) {
+                    return `
+                        <div>
+                                <div style="font-weight: 600; color: #111827; margin-bottom: 2px;">
+                                    ${escape(data.code)}
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280;">
+                                    ${escape(data.name)}
+                                </div>
+                        </div>
+                    `;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.code)} - ${escape(data.name)}</div>`;
+                },
+                no_results: function() {
+                    return '<div class="no-results">No se encontraron productos</div>';
+                }
+            },
+            
+            // Cargar opciones
+            onInitialize: function() {
+                console.log('Tom Select inicializado correctamente');
+            }
+        });
+        
+    });
+
+    // ========================================
+    // Modal de Condicionales
+    // ========================================
+    function openConditionalsModal(itemId) {
+        alert('Modal de condicionales para item: ' + itemId + '\n\nEsta funcionalidad se implementará con un componente modal completo.');
+    }
+</script>
+@endpush
+
 </x-app-layout>

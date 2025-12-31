@@ -16,6 +16,9 @@
             integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
             crossorigin="anonymous" 
             referrerpolicy="no-referrer" />
+        <!-- Tom Select -->
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -72,6 +75,9 @@
             }
 
         </style>
+
+        @stack('styles')
+
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-pattern" x-data="{ mobileMenuOpen: false, desktopSidebarOpen: true }">
@@ -159,5 +165,7 @@
                 </div>
             </div>
         </div>
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
     </body>
 </html>
