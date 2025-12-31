@@ -106,11 +106,11 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-list mr-2 text-indigo-600"></i>
-                        Productos del Check List ({{ $checklist->items->count() }})
+                        Productos del Check List ({{ $items->total() }})
                     </h3>
                 </div>
                 
-                @if($checklist->items->count() > 0)
+                @if($items->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -124,7 +124,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200" id="sortable-items">
-                            @foreach($checklist->items->sortBy('order') as $item)
+                            @foreach($items as $item)
                             <tr class="hover:bg-gray-50 transition-colors" data-item-id="{{ $item->id }}">
                                
                                 <td class="px-6 py-4">
@@ -194,6 +194,13 @@
                         </tbody>
                     </table>
                 </div>
+                 {{-- ===== PAGINACIÓN ===== --}}
+                @if($items->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    {{ $items->links() }}
+                </div>
+                @endif
+                {{-- ===== FIN PAGINACIÓN ===== --}}
                 @else
                 <div class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center justify-center text-gray-400">
@@ -341,6 +348,8 @@
     .ts-wrapper .spinner {
         display: none !important;
     }
+
+    
 </style>
 @endpush
 

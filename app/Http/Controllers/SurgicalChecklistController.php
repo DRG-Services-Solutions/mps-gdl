@@ -131,16 +131,21 @@ class SurgicalChecklistController extends Controller
      */
     public function items(SurgicalChecklist $checklist)
     {
-        $checklist->load([
-            'items.product',
-            'items.conditionals.legalEntity'
-        ]);
+        // Paginar los items (20 por página)
+        $items = $checklist->items()
+            ->with([
+                'product',
+                'conditionals.legalEntity'
+            ])
+            ->orderBy('order')
+            ->paginate(20);
 
+        // Productos para el select
         $products = Product::select('id', 'code', 'name')
             ->orderBy('name')
             ->get();
 
-        return view('checklists.items', compact('checklist', 'products'));
+        return view('checklists.items', compact('checklist', 'items', 'products'));
     }
 
     /**
