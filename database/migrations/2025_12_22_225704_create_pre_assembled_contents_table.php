@@ -11,6 +11,9 @@ return new class extends Migration
         Schema::create('pre_assembled_contents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('package_id')->constrained('pre_assembled_packages')->onDelete('cascade')->comment('ID del paquete pre-armado');
+            $table->enum('status', ['active', 'used', 'damaged'])
+                  ->default('active');
+
 
             $table->foreignId('product_id')->constrained('products')->comment('ID del producto');
 

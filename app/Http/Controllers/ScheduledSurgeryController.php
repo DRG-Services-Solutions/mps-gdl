@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 use App\Models\ScheduledSurgery;
 use App\Models\SurgicalChecklist;
 use App\Models\LegalEntity;
+use App\Models\Hospital;
+use App\Models\Doctor;
 use Illuminate\Http\Request;
 
 class ScheduledSurgeryController extends Controller
@@ -15,55 +17,59 @@ class ScheduledSurgeryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ScheduledSurgery::query()
-            ->with(['checklist', 'hospital', 'doctor', 'scheduler']);
+        // Query base
+        $query = ScheduledSurgery::with([
+            'checklist',
+            'hospital',
+            'doctor',
+            'preparation'
+        ]);
 
-        // Filtro por fecha
-        if ($request->filled('date_from')) {
-            $query->where('surgery_date', '>=', $request->date_from);
+        // Filtros
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                ->orWhere('patient_name', 'like', "%{$search}%");
+            });
         }
 
-        if ($request->filled('date_to')) {
-            $query->where('surgery_date', '<=', $request->date_to);
-        }
-
-        // Filtro por hospital
-        if ($request->filled('hospital_id')) {
-            $query->where('hospital_id', $request->hospital_id);
-        }
-
-        // Filtro por doctor
-        if ($request->filled('doctor_id')) {
-            $query->where('doctor_id', $request->doctor_id);
-        }
-
-        // Filtro por estado
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Búsqueda
-        if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('code', 'like', '%' . $request->search . '%')
-                  ->orWhere('patient_name', 'like', '%' . $request->search . '%');
-            });
+        if ($request->filled('hospital_id')) {
+            $query->where('hospital_id', $request->hospital_id);
         }
 
+        if ($request->filled('date_from')) {
+            $query->whereDate('surgery_date', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('surgery_date', '<=', $request->date_to);
+        }
+
+        // Obtener cirugías paginadas
         $surgeries = $query->latest('surgery_date')->paginate(15);
 
-        // Para filtros
-        $hospitals = LegalEntity::where('type', 'hospital')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
-            ->get();
+        $scheduledCount = ScheduledSurgery::where('status', 'scheduled')->count();
+        $inPreparationCount = ScheduledSurgery::where('status', 'in_preparation')->count();
+        $readyCount = ScheduledSurgery::where('status', 'ready')->count();
+        $inSurgeryCount = ScheduledSurgery::where('status', 'in_surgery')->count();
 
-        $doctors = LegalEntity::where('type', 'doctor')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
-            ->get();
+        // Datos para filtros
+        $hospitals = \App\Models\LegalEntity::orderBy('name')->get();
 
-        return view('surgeries.index', compact('surgeries', 'hospitals', 'doctors'));
+
+        return view('surgeries.index', compact(
+            'surgeries',
+            'scheduledCount',
+            'inPreparationCount',
+            'readyCount',
+            'inSurgeryCount',
+            'hospitals'
+        ));
     }
 
     /**
@@ -75,15 +81,9 @@ class ScheduledSurgeryController extends Controller
             ->select('id', 'code', 'name', 'surgery_type')
             ->get();
 
-        $hospitals = LegalEntity::where('type', 'hospital')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
-            ->get();
+        $hospitals = Hospital::orderBy('name')->get();
 
-        $doctors = LegalEntity::where('type', 'doctor')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
-            ->get();
+        $doctors = Doctor::orderBy('first_name')->get();
 
         return view('surgeries.create', compact('checklists', 'hospitals', 'doctors'));
     }
@@ -148,14 +148,14 @@ class ScheduledSurgeryController extends Controller
             ->select('id', 'code', 'name', 'surgery_type')
             ->get();
 
-        $hospitals = LegalEntity::where('type', 'hospital')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
+        $hospitals = LegalEntity::where( 'hospital')
+            ->select('id', 'name')
+            ->orderBy('name')
             ->get();
 
-        $doctors = LegalEntity::where('type', 'doctor')
-            ->select('id', 'business_name')
-            ->orderBy('business_name')
+        $doctors = LegalEntity::where( 'doctor')
+            ->select('id', 'name')
+            ->orderBy('name')
             ->get();
 
         return view('surgeries.edit', compact('surgery', 'checklists', 'hospitals', 'doctors'));

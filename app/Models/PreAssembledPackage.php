@@ -188,24 +188,28 @@ class PreAssembledPackage extends Model
     }
 
     // Calcular porcentaje de completitud respecto a un check list
-    public function getCompletenessPercentage($checklistId)
+    public function getCompletenessPercentage()
     {
-        $checklist = SurgicalChecklist::find($checklistId);
-        if (!$checklist) return 0;
-
-        $totalItems = $checklist->items->count();
-        if ($totalItems === 0) return 0;
-
-        $completeItems = 0;
-        foreach ($checklist->items as $item) {
-            $availableQty = $this->contents()
-                ->where('product_id', $item->product_id)
-                ->count();
-            
-            if ($availableQty >= $item->quantity) {
-                $completeItems++;
-            }
+        if (!$this->surgeryChecklist) {
+            return 0;
         }
+
+        $totalItems = $this->surgeryChecklist->items->count();
+        
+        if ($totalItems === 0) {
+            return 0;
+        }
+
+        // Contar cuántos productos únicos del check list están en el paquete
+        $checklistProductIds = $this->surgeryChecklist->items->pluck('product_id')->unique();
+        
+        $availableProductIds = $this->contents()
+            ->where('status', 'active')
+            ->pluck('product_id')
+            ->unique();
+        
+        // Contar cuántos productos del check list están disponibles
+        $completeItems = $checklistProductIds->intersect($availableProductIds)->count();
 
         return round(($completeItems / $totalItems) * 100, 2);
     }
