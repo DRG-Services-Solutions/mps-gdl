@@ -140,7 +140,11 @@
                                         <option value="">Selecciona el doctor...</option>
                                         @foreach($doctors as $doctor)
                                             <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                                                {{ $doctor->name }}
+                                                @if($doctor->middle_name)
+                                                    Dr. {{ $doctor->first_name }} {{ $doctor->middle_name }} {{ $doctor->last_name }}
+                                                @else
+                                                Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}
+                                                @endif
                                             </option>
                                         @endforeach
                                     </select>
