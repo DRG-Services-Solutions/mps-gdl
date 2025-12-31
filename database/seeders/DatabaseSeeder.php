@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
                     SubWarehouseSeeder::class,
                     StorageLocationSeeder::class,
                     ProductTypeSeeder::class,
+                    DoctorSeeder::class,
 
                 ]);
         $this->call(UserSeeder::class);
