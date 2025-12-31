@@ -17,7 +17,7 @@
             crossorigin="anonymous" 
             referrerpolicy="no-referrer" />
         <!-- Tom Select -->
-        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
 
 
         <!-- Scripts -->

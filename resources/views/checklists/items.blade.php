@@ -35,22 +35,23 @@
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <!-- Producto -->
                         <div class="md:col-span-2">
-                            <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="product_search" class="block text-sm font-medium text-gray-700 mb-2">
                                 Producto <span class="text-red-500">*</span>
                             </label>
-                            <select name="product_id" 
-                                    id="product_search"
-                                    class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 @error('product_id') border-red-500 @enderror"
-                                    required>
+                            <select id="product_search" name="product_id">
                                 <option value="">Selecciona un producto...</option>
-                               @foreach($products as $product)
-                                    <option value="{{ $product->id }}"
-                                            data-code="{{ $product->code }}"
-                                            data-name="{{ $product->name }}">
-                                        {{ $product->code }} - {{ $product->name }}
-                                    </option>
-                                @endforeach
 
+                                @foreach ($products as $product)
+                                    @if($product->code && $product->name)
+                                        <option
+                                            value="{{ $product->id }}"
+                                            data-code="{{ $product->code }}"
+                                            data-name="{{ $product->name }}"
+                                        >
+                                            {{ $product->code }} - {{ $product->name }}
+                                        </option>
+                                    @endif
+                                @endforeach
                             </select>
                             @error('product_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -114,10 +115,7 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <i class="fas fa-sort mr-1"></i>
-                                    Orden
-                                </th>
+                                
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Obligatorio</th>
@@ -128,12 +126,7 @@
                         <tbody class="bg-white divide-y divide-gray-200" id="sortable-items">
                             @foreach($checklist->items->sortBy('order') as $item)
                             <tr class="hover:bg-gray-50 transition-colors" data-item-id="{{ $item->id }}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fas fa-grip-vertical text-gray-400 cursor-move"></i>
-                                        <span class="text-sm text-gray-500">#{{ $item->order }}</span>
-                                    </div>
-                                </td>
+                               
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -230,6 +223,7 @@
             </div>
         </div>
     </div>
+
 @push('styles')
 <style>
     /* ========================================
@@ -352,97 +346,65 @@
 
 @push('scripts')
 <script>
-    // ========================================
-    // TOM SELECT - Búsqueda de Productos
-    // ========================================
-    
-    document.addEventListener('DOMContentLoaded', function() {
-        new TomSelect('#product_search', {
-            valueField: 'value',
-            labelField: 'text',
-            searchField: ['code', 'name'],
+document.addEventListener('DOMContentLoaded', function () {
 
-            render: {
-                option: function(data, escape) {
-                    return `
-                        <div>
-                            <div style="font-weight:600">
-                                ${escape(data.code)}
-                            </div>
-                            <div style="font-size:0.875rem;color:#6b7280">
-                                ${escape(data.name)}
-                            </div>
-                        </div>
-                    `;
-                },
-                item: function(data, escape) {
-                    return `${escape(data.code)} - ${escape(data.name)}`;
-                }
-            },
+new TomSelect('#product_search', {
+    placeholder: 'Selecciona un producto...',
+    allowEmptyOption: true,
+    items: [],
 
-            onInitialize() {
-                this.options = Object.values(this.options).map(opt => {
-                    opt.code = opt.$option.dataset.code;
-                    opt.name = opt.$option.dataset.name;
-                    return opt;
-                });
+    shouldLoad: function(query) {
+        return query.length > 0;
+    },
+
+    render: {
+        option: function (data, escape) {
+            if (!data.code || !data.name) return '';
+            return `
+                <div>
+                    <div style="font-weight:600">${escape(data.code)}</div>
+                    <div style="font-size:0.875rem;color:#6b7280">
+                        ${escape(data.name)}
+                    </div>
+                </div>
+            `;
+        },
+        item: function (data, escape) {
+            if (!data.code || !data.name) return '';
+            return `
+                <div>${escape(data.code)} - ${escape(data.name)}</div>
+            `;
+        }
+    },
+
+    onInitialize() {
+        // 🔥 elimina opciones inválidas
+        Object.keys(this.options).forEach(key => {
+            const opt = this.options[key];
+            if (!opt.code || !opt.name) {
+                delete this.options[key];
             }
         });
-
-        new TomSelect('#product_search', {
-
-            
-            // Búsqueda
-            searchField: ['code', 'name'],
-            
-            // Placeholder
-            placeholder: 'Selecciona un producto...',
-            
-            // Opciones
-            allowEmptyOption: true,
-            maxOptions: 100,
-            
-            // Comportamiento
-            hidePlaceholder: false,
-            openOnFocus: true,
-            
-            // Renderizado del dropdown
-            render: {
-                option: function(data, escape) {
-                    return `
-                        <div>
-                                <div style="font-weight: 600; color: #111827; margin-bottom: 2px;">
-                                    ${escape(data.code)}
-                                </div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">
-                                    ${escape(data.name)}
-                                </div>
-                        </div>
-                    `;
-                },
-                item: function(data, escape) {
-                    return `<div>${escape(data.code)} - ${escape(data.name)}</div>`;
-                },
-                no_results: function() {
-                    return '<div class="no-results">No se encontraron productos</div>';
-                }
-            },
-            
-            // Cargar opciones
-            onInitialize: function() {
-                console.log('Tom Select inicializado correctamente');
-            }
-        });
-        
-    });
-
-    // ========================================
-    // Modal de Condicionales
-    // ========================================
-    function openConditionalsModal(itemId) {
-        alert('Modal de condicionales para item: ' + itemId + '\n\nEsta funcionalidad se implementará con un componente modal completo.');
+        this.refreshOptions(false);
     }
+});
+
+
+
+});
+
+// ========================================
+// Modal de Condicionales
+// ========================================
+function openConditionalsModal(itemId) {
+    alert(
+        'Modal de condicionales para item: ' + itemId +
+        '\n\nEsta funcionalidad se implementará con un componente modal completo.'
+    );
+}
 </script>
 @endpush
+
+
 
 </x-app-layout>
