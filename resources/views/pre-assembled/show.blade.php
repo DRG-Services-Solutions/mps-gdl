@@ -212,6 +212,8 @@
                     </h3>
                 </div>
                 
+                
+                
                 @if($package->contents->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -248,8 +250,10 @@
                                         @foreach($items as $item)
                                             @if($item->productUnit)
                                                 <div class="text-xs font-mono text-gray-600">
-                                                    {{ substr($item->productUnit->epc, 0, 20) }}...
+                                                    {{ ($item->productUnit->epc) }}
                                                 </div>
+                                            @else
+                                                <div class="text-xs text-gray-400">Sin EPC</div>
                                             @endif
                                         @endforeach
                                     </div>
@@ -261,8 +265,8 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @php
-                                        $hasExpired = $items->contains(fn($item) => $item->isExpired());
-                                        $nearExpiry = $items->contains(fn($item) => $item->isExpiringSoon(30));
+                                        $hasExpired = $items->contains(fn($item) => $item->productUnit && $item->isExpired());
+                                        $nearExpiry = $items->contains(fn($item) => $item->productUnit && $item->isExpiringSoon(30));
                                     @endphp
                                     @if($hasExpired)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -283,9 +287,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium">
                                     <form action="{{ route('pre-assembled.remove-product', $package) }}" 
-                                          method="POST" 
-                                          class="inline"
-                                          onsubmit="return confirm('¿Remover este producto del paquete?')">
+                                        method="POST" 
+                                        class="inline"
+                                        onsubmit="return confirm('¿Remover este producto del paquete?')">
                                         @csrf
                                         <input type="hidden" name="product_id" value="{{ $productId }}">
                                         <button type="submit" 

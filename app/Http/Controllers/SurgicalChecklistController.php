@@ -137,7 +137,7 @@ class SurgicalChecklistController extends Controller
                 'product',
                 'conditionals.legalEntity'
             ])
-            ->orderBy('order')
+            ->orderBy('created_at', 'desc')
             ->paginate(20);
 
         // Productos para el select

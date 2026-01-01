@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\PackageContent;
 
 class PreAssembledPackage extends Model
 {
@@ -41,7 +42,7 @@ class PreAssembledPackage extends Model
     // Contenido actual del paquete
     public function contents()
     {
-        return $this->hasMany(PreAssembledContent::class, 'package_id');
+        return $this->hasMany(PackageContent::class, 'pre_assembled_package_id');
     }
 
     // Ubicación física
@@ -172,8 +173,10 @@ class PreAssembledPackage extends Model
     public function hasExpiredProducts()
     {
         return $this->contents()
-            ->whereNotNull('expiration_date')
-            ->where('expiration_date', '<', now())
+            ->whereHas('productUnit', function($q) {
+                $q->whereNotNull('expiration_date')
+                ->where('expiration_date', '<', now());
+            })
             ->exists();
     }
 
@@ -204,7 +207,6 @@ class PreAssembledPackage extends Model
         $checklistProductIds = $this->surgeryChecklist->items->pluck('product_id')->unique();
         
         $availableProductIds = $this->contents()
-            ->where('status', 'active')
             ->pluck('product_id')
             ->unique();
         
