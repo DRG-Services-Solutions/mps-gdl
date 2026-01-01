@@ -171,26 +171,6 @@
                                    autofocus>
                         </div>
 
-                        <div class="flex items-center justify-center text-gray-400">
-                            <span class="text-sm font-medium">O</span>
-                        </div>
-
-                        <!-- Seleccionar Producto -->
-                        <div class="md:col-span-1">
-                            <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                Seleccionar Producto
-                            </label>
-                            <select name="product_id" 
-                                    id="product_id"
-                                    class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500">
-                                <option value="">Selecciona...</option>
-                                @foreach($availableProducts as $product)
-                                    <option value="{{ $product->id }}">
-                                        {{ $product->code }} - {{ $product->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
                     </div>
 
                     <div class="mt-4 flex items-center justify-end">
