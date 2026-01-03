@@ -15,8 +15,11 @@ class HospitalController extends Controller
      */
     public function index()
     {
-        $hospitals = Hospital::with('modalities')->get();
-        return view('hospitals.index', compact('hospitals'));
+        $hospitals = Hospital::with(['configs.modality', 'configs.legalEntity'])
+                ->latest()
+                ->paginate(10);
+
+        return view('hospitals.index', compact('hospitals'));    
     }
 
     /**
