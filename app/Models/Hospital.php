@@ -17,6 +17,20 @@ class Hospital extends Model
         'is_active' => 'boolean',
     ];
 
+
+    // Relaciones pivote
+    public function configs()
+    {
+        return $this->hasMany(HospitalModalityConfig::class);
+    }
+
+    public function modalities()
+    {
+        return $this->belongsToMany(Modality::class, 'hospital_modality_configs')
+                            ->withPivot('legal_entity_id')
+                            ->withTimestamps();    
+    }
+
     /**
      * RELACIONES
      */

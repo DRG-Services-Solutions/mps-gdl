@@ -324,26 +324,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     });
 
     // ========================================
-    // HOSPITALES
+    // HOSPITALES ruta tipo recurso
     // ========================================
-    Route::prefix('hospitals')->name('hospitals.')->group(function () {
-        // CRUD
-        Route::get('/', [HospitalController::class, 'index'])->name('index');
-        Route::get('/create', [HospitalController::class, 'create'])->name('create');
-        Route::post('/', [HospitalController::class, 'store'])->name('store');
-        Route::get('/{hospital}', [HospitalController::class, 'show'])->name('show');
-        Route::get('/{hospital}/edit', [HospitalController::class, 'edit'])->name('edit');
-        Route::put('/{hospital}', [HospitalController::class, 'update'])->name('update');
-        Route::delete('/{hospital}', [HospitalController::class, 'destroy'])->name('destroy');
-        
-        // Acciones especiales
-        Route::post('/{hospital}/toggle-status', [HospitalController::class, 'toggleStatus'])
-            ->name('toggle-status');
+    Route::prefix('hospitals')->group(function () {
+       Route::resource('hospitals', HospitalController::class);
     });
 
-    // API para Select2 de Hospitales
-    Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
-        ->name('api.hospitals.select2');
+   
 
     // ========================================
     // DOCTORES

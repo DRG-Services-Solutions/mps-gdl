@@ -3,167 +3,113 @@
 namespace App\Http\Controllers;
 
 use App\Models\Hospital;
+use App\Models\Modality;
+use App\Models\LegalEntity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HospitalController extends Controller
 {
     /**
-     * Display a listing of hospitals.
+     * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
-        $query = Hospital::query();
-
-        // Búsqueda
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        // Filtro de estado
-        if ($request->filled('status')) {
-            if ($request->status === 'active') {
-                $query->active();
-            } elseif ($request->status === 'inactive') {
-                $query->where('is_active', false);
-            }
-        }
-
-        $hospitals = $query->orderBy('name')->paginate(20);
-
+        $hospitals = Hospital::with('modalities')->get();
         return view('hospitals.index', compact('hospitals'));
     }
 
     /**
-     * Show the form for creating a new hospital.
+     * Show the form for creating a new resource.
      */
     public function create()
     {
-        return view('hospitals.create');
+        $modalities = Modality::all();
+        $legalEntities = LegalEntity::all();
+        return view('hospitals.create', compact('modalities', 'legalEntities'));
     }
 
     /**
-     * Store a newly created hospital in storage.
+     * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean',
-            'rfc' => 'nullable|string',
-            'razon_social' => 'nullable|string',
+            'name' => 'required|string|max:200',
+            'rfc' => 'required|string',
+            'configs' => 'required|array',  //Las modalidades deben de provenir de un array desde la UI
         ]);
 
-        $hospital = Hospital::create($validated);
+        DB::transaction(function () use ($validated) {
+            //Creacion de hospital con los datos validados
+            $hospital = Hospital::create($validated);
 
-        return redirect()
-            ->route('hospitals.show', $hospital)
-            ->with('success', 'Hospital creado exitosamente.');
+            $syncData = [];
+            foreach ($validated['configs'] as $modalityId => $data) {
+                if (isset($data['selected'])) { // validamos que el checkbox este marcado
+                    $syncData[$modalityId] = [
+                        'legal_entity_id' => $data['legal_entity_id'],
+                    ];
+                }
+            }
+            $hospital->modalities()->attach($syncData);
+        });
+        return redirect()->route('hospitals.index')->with('success', 'Hospital configurado correctamente.');
     }
 
     /**
-     * Display the specified hospital.
+     * Display the specified resource.
      */
-    public function show(Hospital $hospital)
+    public function show(string $id)
     {
-
-    return view('hospitals.show', compact('hospital'));    
+        //
     }
 
     /**
-     * Show the form for editing the specified hospital.
+     * Show the form for editing the specified resource.
      */
     public function edit(Hospital $hospital)
     {
-        return view('hospitals.edit', compact('hospital'));
+        // Cargamos las relaciones para que estén disponibles en la vista
+        $hospital->load('configs'); 
+        $modalities = Modality::all();
+        $legalEntities = LegalEntity::all();
+        
+        return view('hospitals.edit', compact('hospital', 'modalities', 'legalEntities'));
     }
-
     /**
-     * Update the specified hospital in storage.
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, Hospital $hospital)
+    public function update(Request $request, string $id)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'address' => 'nullable|string',
-            'is_active' => 'boolean',
-            'notes' => 'nullable|string',
-            'rfc' => 'nullable|string',
-            'razon_social' => 'nullable|string',
+            'name' => 'required|string|max:200',
+            'rfc' => 'required|string',
+            'configs' => 'required|array',  //Las modalidades deben de provenir de un array desde la UI
         ]);
 
-        $hospital->update($validated);
+        $hospital = Hospital::findOrFail($id);
+        DB::transaction(function () use ($request, $hospital) {
+            $hospital->update($request->only('name', 'rfc', 'is_active'));
 
-        return redirect()
-            ->route('hospitals.show', $hospital)
-            ->with('success', 'Hospital actualizado exitosamente.');
+            $syncData = [];
+            foreach ($request->configs as $modalityId => $data) {
+                if (isset($data['selected'])) {
+                    $syncData[$modalityId] = [
+                        'legal_entity_id' => $data['legal_entity_id'],
+                    ];
+                }
+            }
+            $hospital->modalities()->sync($syncData);
+        });
+        return redirect()->route('hospitals.index')->with('success', 'Hospital actualizado correctamente.');
     }
 
     /**
-     * Remove the specified hospital from storage.
+     * Remove the specified resource from storage.
      */
-    public function destroy(Hospital $hospital)
+    public function destroy(string $id)
     {
-        // Verificar que no tenga cotizaciones o ventas
-        if ($hospital->quotations()->count() > 0) {
-            return redirect()
-                ->route('hospitals.show', $hospital)
-                ->with('error', 'No se puede eliminar el hospital porque tiene cotizaciones asociadas.');
-        }
-
-        if ($hospital->sales()->count() > 0) {
-            return redirect()
-                ->route('hospitals.show', $hospital)
-                ->with('error', 'No se puede eliminar el hospital porque tiene ventas asociadas.');
-        }
-
-        $hospital->delete();
-
-        return redirect()
-            ->route('hospitals.index')
-            ->with('success', 'Hospital eliminado exitosamente.');
-    }
-
-    /**
-     * Toggle active status.
-     */
-    public function toggleStatus(Hospital $hospital)
-    {
-        $hospital->update([
-            'is_active' => !$hospital->is_active,
-        ]);
-
-        $status = $hospital->is_active ? 'activado' : 'desactivado';
-
-        return redirect()
-            ->back()
-            ->with('success', "Hospital {$status} exitosamente.");
-    }
-
-    /**
-     * Get hospitals for select2 (API).
-     */
-    public function select2(Request $request)
-    {
-        $query = Hospital::all();
-
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        $hospitals = $query->limit(20)->get();
-
-        return response()->json([
-            'results' => $hospitals->map(function ($hospital) {
-                return [
-                    'id' => $hospital->id,
-                    'text' => $hospital->name,
-                ];
-            }),
-        ]);
+        //
     }
 }
