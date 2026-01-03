@@ -86,24 +86,36 @@ class HospitalController extends Controller
             'name' => 'required|string|max:200',
             'rfc' => 'required|string',
             'configs' => 'required|array',  //Las modalidades deben de provenir de un array desde la UI
-        ]);
+            'configs.*.legal_entity_id' => 'required_with:configs.*.selected|nullable|exists:legal_entities,id',
+                ], [
+            'configs.*.legal_entity_id.required_with' => 'Debes seleccionar una Razon Social para las modalidades activas.',
+            'configs.*.legal_entity_id.exists' => 'La Razon Socual no es válida.',
+    ]);        
 
         $hospital = Hospital::findOrFail($id);
+        try {
         DB::transaction(function () use ($request, $hospital) {
             $hospital->update($request->only('name', 'rfc', 'is_active'));
 
             $syncData = [];
-            foreach ($request->configs as $modalityId => $data) {
-                if (isset($data['selected'])) {
-                    $syncData[$modalityId] = [
-                        'legal_entity_id' => $data['legal_entity_id'],
-                    ];
+            if ($request->has('configs')) {
+                foreach ($request->configs as $modalityId => $data) {
+                    if (isset($data['selected'])) {
+                        $syncData[$modalityId] = [
+                            'legal_entity_id' => $data['legal_entity_id']
+                        ];
+                    }
                 }
             }
             $hospital->modalities()->sync($syncData);
         });
-        return redirect()->route('hospitals.index')->with('success', 'Hospital actualizado correctamente.');
+            return redirect()->route('hospitals.index')->with('success', 'Hospital actualizado correctamente.');    
+            
+        } catch (\Exception $e) {
+        return back()->withInput()->with('error', 'Ocurrió un error al guardar: ' . $e->getMessage());
+        }
     }
+        
 
     /**
      * Remove the specified resource from storage.

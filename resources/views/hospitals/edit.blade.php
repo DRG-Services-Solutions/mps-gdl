@@ -97,7 +97,7 @@
                                             @endforeach
                                         </select>
                                         @error("configs.{$modality->id}.legal_entity_id")
-                                            <p class="text-red-500 text-xs mt-1 italic">Debes asignar una entidad si activas esta modalidad.</p>
+                                            <p class="text-red-500 text-xs mt-1 italic">Debes asignar una Razon Social.</p>
                                         @enderror
                                     </div>
                                 </div>
