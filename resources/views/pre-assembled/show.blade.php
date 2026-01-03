@@ -156,31 +156,39 @@
                 <form action="{{ route('pre-assembled.add-product', $package) }}" method="POST" class="p-6">
                     @csrf
                     
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <!-- Escanear EPC -->
-                        <div class="md:col-span-2">
-                            <label for="product_unit_epc" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-barcode mr-1"></i>
-                                Escanear EPC del Producto
+                    <div class="flex items-end gap-4">
+                        <!-- Campo de búsqueda -->
+                        <div class="flex-1">
+                            <label for="search_input" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-search mr-1"></i>
+                                Buscar Producto
                             </label>
                             <input type="text" 
-                                   name="product_unit_epc" 
-                                   id="product_unit_epc" 
-                                   placeholder="Escanea o ingresa el EPC..."
-                                   class="w-full font-mono rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
-                                   autofocus>
+                                name="search_input" 
+                                id="search_input" 
+                                placeholder="Escanea EPC, ingresa código o serial..."
+                                class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500 @error('search_input') border-red-500 @enderror"
+                                autofocus
+                                required>
+                            @error('search_input')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-xs text-gray-500">
+                                💡 Puedes buscar por: EPC (24 caracteres), Código del producto (ej: 0-102), o Serial (ej: SN-12345)
+                            </p>
                         </div>
 
-                    </div>
-
-                    <div class="mt-4 flex items-center justify-end">
-                        <button type="submit" 
-                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
-                            <i class="fas fa-plus mr-1"></i>
-                            Agregar al Paquete
-                        </button>
+                        <!-- Botón -->
+                        <div class="flex-shrink-0">
+                            <button type="submit" 
+                                    class="px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                                <i class="fas fa-plus mr-1"></i>
+                                Agregar
+                            </button>
+                        </div>
                     </div>
                 </form>
+
             </div>
 
             <!-- Contenido del Paquete -->

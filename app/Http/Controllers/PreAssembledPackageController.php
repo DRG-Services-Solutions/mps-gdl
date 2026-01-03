@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\PackageContent;
 use App\Models\ProductUnit;
 use Illuminate\Http\Request;
+use App\Helpers\ProductSearchHelper;
 
 class PreAssembledPackageController extends Controller
 {
@@ -185,133 +186,99 @@ class PreAssembledPackageController extends Controller
      */
  public function addProduct(Request $request, PreAssembledPackage $preAssembled)
 {
-    // LOG 1: Inicio
-    \Log::info('===== INICIO addProduct =====', [
+    \Log::info('[PACKAGE] ===== INICIO addProduct =====', [
         'package_id' => $preAssembled->id,
         'package_name' => $preAssembled->name,
-        'request_data' => $request->all(),
     ]);
 
+    // Validar input
     $validated = $request->validate([
-        'product_unit_epc' => 'nullable|string',
-        'product_id' => 'nullable|exists:products,id',
+        'search_input' => 'required|string|max:255',
     ]);
 
-    // LOG 2: Después de validación
-    \Log::info('Validación OK', [
-        'validated' => $validated,
-        'tiene_epc' => !empty($validated['product_unit_epc']),
-        'tiene_product_id' => !empty($validated['product_id']),
+    $input = trim($validated['search_input']);
+
+    \Log::info('[PACKAGE] Input recibido', [
+        'input' => $input,
+        'length' => strlen($input),
     ]);
 
-    if (empty($validated['product_unit_epc']) && empty($validated['product_id'])) {
-        \Log::warning('Error: Ambos campos vacíos');
-        return back()->with('error', 'Debes escanear un EPC o seleccionar un producto.');
+    // PASO 1: Identificar tipo de búsqueda
+    $type = ProductSearchHelper::identifySearchType($input);
+
+    // PASO 2: Buscar el ProductUnit
+    $productUnit = ProductSearchHelper::searchProductUnit($input, $type);
+
+    // PASO 3: Validar que se encontró
+    if (!$productUnit) {
+        \Log::warning('[PACKAGE] ❌ No se encontró producto', [
+            'input' => $input,
+            'type' => $type,
+        ]);
+
+        return back()->with('error', 'No se encontró ningún producto disponible con: ' . $input);
     }
 
-    $productId = null;
-    $productUnitId = null;
-
-    // CASO 1: Usuario escaneó EPC
-    if (!empty($validated['product_unit_epc'])) {
-        \Log::info('RAMA: Usuario escaneó EPC', [
-            'epc' => $validated['product_unit_epc']
-        ]);
-
-        $productUnit = ProductUnit::where('epc', $validated['product_unit_epc'])->first();
-        
-        // LOG 3: Resultado de búsqueda
-        \Log::info('Búsqueda ProductUnit', [
-            'epc_buscado' => $validated['product_unit_epc'],
-            'encontrado' => $productUnit ? 'SÍ' : 'NO',
-            'product_unit_id' => $productUnit->id ?? null,
-            'status' => $productUnit->status ?? null,
-        ]);
-
-        if (!$productUnit) {
-            \Log::error('ProductUnit NO encontrado con EPC', [
-                'epc' => $validated['product_unit_epc']
-            ]);
-            return back()->with('error', 'No se encontró ningún producto con ese EPC.');
-        }
-
-        if (!$productUnit->isAvailable()) {
-            \Log::warning('ProductUnit NO disponible', [
-                'product_unit_id' => $productUnit->id,
-                'status' => $productUnit->status,
-                'status_label' => $productUnit->status_label,
-            ]);
-            return back()->with('error', 'Este producto no está disponible (Estado: ' . $productUnit->status_label . ')');
-        }
-
-        $productId = $productUnit->product_id;
-        $productUnitId = $productUnit->id;
-
-        // LOG 4: Antes de cambiar estado
-        \Log::info('Cambiando estado ProductUnit a reserved', [
+    // PASO 4: Validar disponibilidad
+    if (!$productUnit->isAvailable()) {
+        \Log::warning('[PACKAGE] ⚠️ ProductUnit no disponible', [
             'product_unit_id' => $productUnit->id,
-            'status_anterior' => $productUnit->status,
+            'status' => $productUnit->status,
         ]);
 
-        $productUnit->update(['status' => 'reserved']);
+        return back()->with('error', 'Este producto no está disponible (Estado: ' . $productUnit->status_label . ')');
+    }
 
-        // LOG 5: Después de cambiar estado
-        \Log::info('Estado cambiado', [
+    // PASO 5: Validar que no esté ya en el paquete
+    $alreadyInPackage = PackageContent::where('pre_assembled_package_id', $preAssembled->id)
+        ->where('product_unit_id', $productUnit->id)
+        ->exists();
+
+    if ($alreadyInPackage) {
+        \Log::warning('[PACKAGE] ⚠️ ProductUnit ya está en el paquete', [
             'product_unit_id' => $productUnit->id,
-            'status_nuevo' => $productUnit->fresh()->status,
-        ]);
-    }
-    // CASO 2: Usuario seleccionó del dropdown
-    else {
-        \Log::info('RAMA: Usuario seleccionó del dropdown', [
-            'product_id' => $validated['product_id']
         ]);
 
-        $productId = $validated['product_id'];
-        $productUnitId = null;
+        return back()->with('error', 'Este producto ya está en el paquete.');
     }
 
-    // LOG 6: Antes de crear PackageContent
-    \Log::info('Creando PackageContent', [
-        'pre_assembled_package_id' => $preAssembled->id,
-        'product_id' => $productId,
-        'product_unit_id' => $productUnitId,
-        'quantity' => 1,
+    // PASO 6: Crear el PackageContent
+    \Log::info('[PACKAGE] ✅ Creando PackageContent', [
+        'package_id' => $preAssembled->id,
+        'product_id' => $productUnit->product_id,
+        'product_unit_id' => $productUnit->id,
     ]);
 
     try {
-        $packageContent = PackageContent::create([
+        PackageContent::create([
             'pre_assembled_package_id' => $preAssembled->id,
-            'product_id' => $productId,
-            'product_unit_id' => $productUnitId,
+            'product_id' => $productUnit->product_id,
+            'product_unit_id' => $productUnit->id,
             'quantity' => 1,
             'added_at' => now(),
         ]);
 
-        // LOG 7: Después de crear
-        \Log::info('PackageContent CREADO exitosamente', [
-            'package_content_id' => $packageContent->id,
-            'total_items_en_paquete' => PackageContent::where('pre_assembled_package_id', $preAssembled->id)->count(),
+        // PASO 7: Cambiar estado del ProductUnit
+        $productUnit->update(['status' => 'reserved']);
+
+        \Log::info('[PACKAGE] ✅ Producto agregado exitosamente', [
+            'product_unit_id' => $productUnit->id,
+            'product_name' => $productUnit->product->name,
+            'search_type' => $type,
         ]);
 
+        \Log::info('[PACKAGE] ===== FIN addProduct - ÉXITO =====');
+
+        return back()->with('success', 'Producto agregado al paquete correctamente.');
+
     } catch (\Exception $e) {
-        // LOG 8: Error al crear
-        \Log::error('ERROR al crear PackageContent', [
-            'error_message' => $e->getMessage(),
-            'error_trace' => $e->getTraceAsString(),
-            'datos_intentados' => [
-                'pre_assembled_package_id' => $preAssembled->id,
-                'product_id' => $productId,
-                'product_unit_id' => $productUnitId,
-            ]
+        \Log::error('[PACKAGE] ❌ Error al crear PackageContent', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
         ]);
 
         return back()->with('error', 'Error al agregar producto: ' . $e->getMessage());
     }
-
-    \Log::info('===== FIN addProduct - ÉXITO =====');
-
-    return back()->with('success', 'Producto agregado al paquete correctamente.');
 }
 
     /**
