@@ -9,11 +9,8 @@ class Hospital extends Model
 {
     protected $fillable = [
         'name',
-        'phone',
-        'email',
-        'address',
+        'rfc',
         'is_active',
-        'notes',
     ];
 
     protected $casts = [
@@ -27,6 +24,11 @@ class Hospital extends Model
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class);
+    }
+
+    public function legalEntity()
+    {
+        return $this->belongsTo(LegalEntity::class);
     }
 
     /**
