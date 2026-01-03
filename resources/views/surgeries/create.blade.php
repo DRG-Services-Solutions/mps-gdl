@@ -119,7 +119,7 @@
                                         <option value="">Selecciona el hospital...</option>
                                         @foreach($hospitals as $hospital)
                                             <option value="{{ $hospital->id }}" {{ old('hospital_id') == $hospital->id ? 'selected' : '' }}>
-                                                {{ $hospital->business_name }}
+                                                {{ $hospital->name }}
                                             </option>
                                         @endforeach
                                     </select>
