@@ -78,7 +78,7 @@
                                             </div>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-sm font-bold text-indigo-700">{{ $config->legalEntity->business_name }}</p>
+                                            <p class="text-sm font-bold text-indigo-700">{{ $config->legalEntity->name }}</p>
                                             <p class="text-xs text-gray-500 font-mono">{{ $config->legalEntity->rfc }}</p>
                                         </div>
                                     </div>
@@ -92,7 +92,8 @@
                         </div>
                     </div>
                 </div>
-
+                <!-- Sidebar de Contacto y Notas -->
+                <!--
                 <div class="space-y-6">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
                         <div class="p-6">
@@ -115,6 +116,8 @@
                             </div>
                         </div>
                     </div>
+
+                -->
 
                     @if($hospital->notes)
                     <div class="bg-yellow-50 overflow-hidden shadow-sm sm:rounded-lg border border-yellow-100">

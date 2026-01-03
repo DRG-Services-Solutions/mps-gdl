@@ -63,11 +63,11 @@ class HospitalController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Hospital $hospital)
     {
     $hospital->load(['configs.modality', 'configs.legalEntity']);
     return view('hospitals.show', compact('hospital'));    
-}
+    }
 
     /**
      * Show the form for editing the specified resource.
