@@ -23,6 +23,74 @@
                     @csrf
                     @method('PUT')
 
+                    <form method="POST" action="{{ route('hospitals.update', $hospital) }}" class="p-6 space-y-8">
+
+
+                    {{-- Sistema de Alertas --}}
+                    @if ($errors->any() || session('error') || session('success'))
+                        <div class="alert-container space-y-3">
+                            {{-- Errores de validación --}}
+                            @if ($errors->any())
+                                <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-md animate-shake">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                                        </div>
+                                        <div class="ml-3 flex-1">
+                                            <h3 class="text-sm font-bold text-red-800 mb-2">
+                                                <i class="fas fa-triangle-exclamation mr-1"></i>
+                                                Se encontraron los siguientes errores:
+                                            </h3>
+                                            <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                                                @foreach ($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                        <button type="button" onclick="this.parentElement.parentElement.remove()" 
+                                                class="flex-shrink-0 ml-4 text-red-400 hover:text-red-600 transition">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Error general del sistema --}}
+                            @if (session('error'))
+                                <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 shadow-md">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-exclamation-circle text-red-500 text-xl mr-3"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                                        </div>
+                                        <button type="button" onclick="this.parentElement.parentElement.remove()" 
+                                                class="text-red-400 hover:text-red-600 transition">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Mensaje de éxito (aunque redirige, por si acaso) --}}
+                            @if (session('success'))
+                                <div class="bg-green-50 border-l-4 border-green-500 rounded-lg p-4 shadow-md">
+                                    <div class="flex items-start">
+                                        <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                                        </div>
+                                        <button type="button" onclick="this.parentElement.parentElement.remove()" 
+                                                class="text-green-400 hover:text-green-600 transition">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    
+
                     <section>
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2 flex items-center">
                             <i class="fas fa-hospital mr-2 text-indigo-600"></i> Información del Hospital
@@ -64,18 +132,30 @@
                         <div class="space-y-4">
                             @foreach($modalities as $modality)
                                 @php
-                                    // Sincronización de datos actuales
-                                    $currentConfig = $hospital->configs->where('modality_id', $modality->id)->first();
-                                    $isSelected = old("configs.{$modality->id}.selected", $currentConfig ? true : false);
+                                    $currentConfig = $hospital->configs->where('modality->id', $modality->id)->first();
+                                    
+                                    // Verificar si hay input antiguo
+                                    $hasOldInput = old('configs') !== null;
+                                    
+                                    if ($hasOldInput) {
+                                        // Si hay old input, usar exactamente lo que el usuario envió
+                                        $isSelected = isset(old('configs')[$modality->id]['selected']);
+                                        $currentEntityId = old("configs.{$modality->id}.legal_entity_id");
+                                    } else {
+                                        // Primera carga: usar valores de BD
+                                        $isSelected = $currentConfig ? true : false;
+                                        $currentEntityId = $currentConfig ? $currentConfig->legal_entity_id : null;
+                                    }
                                 @endphp
 
                                 <div class="flex flex-col md:flex-row md:items-center justify-between p-4 bg-white rounded-lg shadow-sm border border-gray-200 gap-4 transition-all hover:border-indigo-300">
                                     <div class="flex items-center w-full md:w-1/3">
                                         <input type="checkbox" 
-                                               name="configs[{{ $modality->id }}][selected]" 
-                                               id="mod_{{ $modality->id }}"
-                                               class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                               {{ $isSelected ? 'checked' : '' }}>
+                                            name="configs[{{ $modality->id }}][selected]" 
+                                            id="mod_{{ $modality->id }}"
+                                            class="modality-checkbox h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                            {{ $isSelected ? 'checked' : '' }}
+                                            value="1">
                                         <label for="mod_{{ $modality->id }}" class="ml-3 font-bold text-gray-800">
                                             {{ $modality->name }}
                                         </label>
@@ -83,21 +163,19 @@
 
                                     <div class="w-full md:w-2/3">
                                         <label class="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Entidad Fiscal Asignada</label>
-                                        <select name="configs[{{ $modality->id }}][legal_entity_id]" 
-                                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg text-sm">
+                                        <select id="select_{{ $modality->id }}" 
+                                                name="configs[{{ $modality->id }}][legal_entity_id]" 
+                                                class="entity-select w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg text-sm">
                                             <option value="">-- Seleccionar Empresa Facturadora --</option>
                                             @foreach($legalEntities as $entity)
-                                                @php
-                                                    $currentEntityId = $currentConfig ? $currentConfig->legal_entity_id : null;
-                                                @endphp
                                                 <option value="{{ $entity->id }}" 
-                                                    {{ old("configs.{$modality->id}.legal_entity_id", $currentEntityId) == $entity->id ? 'selected' : '' }}>
+                                                    {{ $currentEntityId == $entity->id ? 'selected' : '' }}>
                                                     {{ $entity->name }} ({{ $entity->rfc }})
                                                 </option>
                                             @endforeach
                                         </select>
                                         @error("configs.{$modality->id}.legal_entity_id")
-                                            <p class="text-red-500 text-xs mt-1 italic">Debes asignar una Razon Social.</p>
+                                            <p class="text-red-500 text-xs mt-1 italic">{{ $message }}</p>
                                         @enderror
                                     </div>
                                 </div>
@@ -119,4 +197,103 @@
             </div>
         </div>
     </div>
+    @push ('scripts')
+        <script>
+    console.log("Script cargado correctamente");
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+        const checkboxes = document.querySelectorAll('.modality-checkbox');
+
+        /**
+         * Actualiza el estado (habilitado/deshabilitado) del select
+         */
+        function updateSelectState(checkbox) {
+            const modalityId = checkbox.id.split('_')[1];
+            const selectElement = document.getElementById('select_' + modalityId);
+
+            if (selectElement) {
+                if (checkbox.checked) {
+                    selectElement.disabled = false;
+                    selectElement.classList.remove('bg-gray-100', 'cursor-not-allowed', 'opacity-50');
+                    selectElement.classList.add('bg-white');
+                } else {
+                    selectElement.disabled = true;
+                    selectElement.value = ""; // Limpiar el valor
+                    selectElement.classList.add('bg-gray-100', 'cursor-not-allowed', 'opacity-50');
+                    selectElement.classList.remove('bg-white');
+                }
+            }
+        }
+
+        /**
+         * INICIALIZACIÓN: Deshabilitar todos los selects que NO tengan checkbox marcado
+         */
+        checkboxes.forEach(cb => {
+            updateSelectState(cb);
+        });
+
+        /**
+         * Listener para cambios en los checkboxes
+         */
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function () { 
+                updateSelectState(this);
+            });
+        });
+
+        /**
+         * Validación antes del envío del formulario
+         */
+        form.addEventListener('submit', function (e) {
+            let hasError = false;
+            let errorMessages = [];
+
+            // Verificar si al menos uno está marcado
+            const isAnyChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+            if (!isAnyChecked) {
+                hasError = true;
+                errorMessages.push('Debe seleccionar al menos una modalidad (Seguro o Particular).');
+            } else {
+                // Validar que los checkboxes marcados tengan un valor en el select
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        const modalityId = cb.id.split('_')[1];
+                        const selectElement = document.getElementById('select_' + modalityId);
+                        
+                        if (selectElement && !selectElement.value) {
+                            hasError = true;
+                            const modalityName = cb.nextElementSibling.textContent.trim();
+                            errorMessages.push(`La modalidad "${modalityName}" requiere asignar una Entidad Fiscal.`);
+                        }
+                    }
+                });
+            }
+
+            // Si hay errores, prevenir el envío
+            if (hasError) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Feedback visual
+                const configSection = document.querySelector('.bg-indigo-50');
+                configSection.classList.add('ring-2', 'ring-red-500', 'ring-offset-2');
+                
+                // Mostrar mensajes de error
+                alert('¡Atención!\n\n' + errorMessages.join('\n'));
+
+                // Scroll hacia la sección
+                configSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Quitar el borde rojo después de 3 segundos
+                setTimeout(() => {
+                    configSection.classList.remove('ring-2', 'ring-red-500', 'ring-offset-2');
+                }, 3000);
+
+                return false; // Seguridad extra
+            }
+        });
+    });
+</script>
+    @endpush 
 </x-app-layout>
