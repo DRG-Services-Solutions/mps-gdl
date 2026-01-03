@@ -11,9 +11,7 @@ return new class extends Migration
         Schema::create('surgical_checklists', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique()->comment('Código único del check list');
-            $table->string('name')->comment('Nombre descriptivo');
             $table->string('surgery_type')->comment('Tipo de cirugía');
-            $table->text('description')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
             

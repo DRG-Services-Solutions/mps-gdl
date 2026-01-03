@@ -19,8 +19,6 @@ class ChecklistItemController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
-            'is_mandatory' => 'required|boolean',
-            'order' => 'nullable|integer',
             'notes' => 'nullable|string',
         ]);
 

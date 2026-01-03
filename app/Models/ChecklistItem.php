@@ -13,15 +13,11 @@ class ChecklistItem extends Model
         'checklist_id',
         'product_id',
         'quantity',
-        'is_mandatory',
-        'order',
         'notes',
     ];
 
     protected $casts = [
-        'is_mandatory' => 'boolean',
         'quantity' => 'integer',
-        'order' => 'integer',
     ];
 
     /**
