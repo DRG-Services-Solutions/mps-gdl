@@ -39,7 +39,7 @@ class ChecklistItem extends Model
     // Condicionales de este item
     public function conditionals()
     {
-        return $this->hasMany(ChecklistConditional::class, 'checklist_item_id');
+        return $this->hasMany(ChecklistConditional::class);
     }
 
     /**
