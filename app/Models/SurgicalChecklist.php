@@ -12,9 +12,7 @@ class SurgicalChecklist extends Model
 
     protected $fillable = [
         'code',
-        'name',
         'surgery_type',
-        'description',
         'status',
     ];
 
@@ -30,7 +28,7 @@ class SurgicalChecklist extends Model
     public function items()
     {
         return $this->hasMany(ChecklistItem::class, 'checklist_id')
-            ->orderBy('order');
+            ->orderBy('created_at', 'desc');
     }
 
     // Paquetes pre-armados de este tipo
@@ -73,7 +71,7 @@ class SurgicalChecklist extends Model
             'code' => $this->generateSurgeryCode(),
             'checklist_id' => $this->id,
             'hospital_id' => $legalEntityId,
-            'doctor_id' => $legalEntityId, // Ajustar según tu lógica
+            'doctor_id' => $legalEntityId,
             'payment_mode' => $paymentMode,
             'surgery_date' => $surgeryDate,
             'scheduled_by' => $userId,

@@ -59,15 +59,15 @@
                     </div>
                 </div>
 
-                <!-- Card: Items Obligatorios -->
-                <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+                <!-- Card: Productos Únicos -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Obligatorios</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $checklist->items->where('is_mandatory', true)->count() }}</p>
+                            <p class="text-sm font-medium text-gray-600">Productos Únicos</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $checklist->items->unique('product_id')->count() }}</p>
                         </div>
-                        <div class="bg-red-100 rounded-full p-3">
-                            <i class="fas fa-exclamation-circle text-2xl text-red-600"></i>
+                        <div class="bg-indigo-100 rounded-full p-3">
+                            <i class="fas fa-boxes text-2xl text-indigo-600"></i>
                         </div>
                     </div>
                 </div>
@@ -106,18 +106,7 @@
                             <dt class="text-sm font-medium text-gray-500 mb-1">Código</dt>
                             <dd class="text-sm text-gray-900 font-semibold">{{ $checklist->code }}</dd>
                         </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Nombre</dt>
-                            <dd class="text-sm text-gray-900 font-semibold">{{ $checklist->name }}</dd>
-                        </div>
-                        <div class="md:col-span-2">
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Descripción</dt>
-                            <dd class="text-sm text-gray-900">{{ $checklist->description ?: 'Sin descripción' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Creado</dt>
-                            <dd class="text-sm text-gray-900">{{ $checklist->created_at->format('d/m/Y H:i') }}</dd>
-                        </div>
+                 
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Última actualización</dt>
                             <dd class="text-sm text-gray-900">{{ $checklist->updated_at->format('d/m/Y H:i') }}</dd>

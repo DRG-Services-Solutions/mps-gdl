@@ -75,19 +75,7 @@
                             @enderror
                         </div>
 
-                        <!-- Obligatorio -->
-                        <div>
-                            <label for="is_mandatory" class="block text-sm font-medium text-gray-700 mb-2">
-                                ¿Obligatorio? <span class="text-red-500">*</span>
-                            </label>
-                            <select name="is_mandatory" 
-                                    id="is_mandatory"
-                                    class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                    required>
-                                <option value="1">Sí</option>
-                                <option value="0">No</option>
-                            </select>
-                        </div>
+                        
 
                         <!-- Botón -->
                         <div class="flex items-end">
@@ -118,7 +106,6 @@
                                 
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Obligatorio</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Condicionales</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
@@ -153,20 +140,7 @@
                                         <input type="hidden" name="is_mandatory" value="{{ $item->is_mandatory }}">
                                     </form>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    <form action="{{ route('checklist-items.update', $item) }}" 
-                                          method="POST" 
-                                          onchange="this.submit()">
-                                        @csrf
-                                        @method('PUT')
-                                        <input type="hidden" name="quantity" value="{{ $item->quantity }}">
-                                        <select name="is_mandatory" 
-                                                class="text-xs rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                            <option value="1" {{ $item->is_mandatory ? 'selected' : '' }}>Sí</option>
-                                            <option value="0" {{ !$item->is_mandatory ? 'selected' : '' }}>No</option>
-                                        </select>
-                                    </form>
-                                </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <button type="button" 
                                             onclick="openConditionalsModal({{ $item->id }})"
@@ -212,29 +186,14 @@
                 @endif
             </div>
 
-            <!-- Información -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-info-circle text-blue-600 text-xl"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h4 class="text-sm font-semibold text-blue-900 mb-2">Sobre los Condicionales</h4>
-                        <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                            <li>Los condicionales permiten ajustar cantidades por hospital, doctor o modalidad</li>
-                            <li>Puedes hacer un producto obligatorio solo para ciertos hospitales</li>
-                            <li>El multiplicador aumenta la cantidad base (ej: 1.5 = +50%)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 
 @push('styles')
 <style>
     /* ========================================
-       TOM SELECT - Estilos Profesionales
+       TOM SELECT
        ======================================== */
     
     /* WRAPPER - Contenedor principal */

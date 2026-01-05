@@ -54,45 +54,13 @@
                                         Tipo de Cirugía <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" 
-                                           name="surgery_type" 
+                                           name ="surgery_type" 
                                            id="surgery_type" 
                                            value="{{ old('surgery_type') }}"
                                            placeholder="Ej: Ortopedia, Cardiovascular"
                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('surgery_type') border-red-500 @enderror"
                                            required>
                                     @error('surgery_type')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Nombre -->
-                                <div class="md:col-span-2">
-                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Nombre del Check List <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="name" 
-                                           id="name" 
-                                           value="{{ old('name') }}"
-                                           placeholder="Ej: Check List Cirugía de Cadera"
-                                           class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('name') border-red-500 @enderror"
-                                           required>
-                                    @error('name')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Descripción -->
-                                <div class="md:col-span-2">
-                                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Descripción
-                                    </label>
-                                    <textarea name="description" 
-                                              id="description" 
-                                              rows="3"
-                                              placeholder="Descripción opcional del check list..."
-                                              class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
-                                    @error('description')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>

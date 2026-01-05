@@ -53,9 +53,7 @@ class SurgicalChecklistController extends Controller
     {
         $validated = $request->validate([
             'code' => 'required|string|unique:surgical_checklists,code|max:50',
-            'name' => 'required|string|max:255',
             'surgery_type' => 'required|string|max:100',
-            'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
 
