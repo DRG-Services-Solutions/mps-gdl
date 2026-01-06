@@ -1,8 +1,6 @@
 <?php
-// app/Http/Controllers/SurgeryPreparationController.php
 
 namespace App\Http\Controllers;
-
 use App\Models\ScheduledSurgery;
 use App\Models\SurgeryPreparation;
 use App\Models\SurgeryPreparationItem;
@@ -195,6 +193,7 @@ class SurgeryPreparationController extends Controller
             'preparation.items.storageLocation',
             'preparation.items.units.productUnit'
         ]);
+        
 
         $preparation = $surgery->preparation;
 

@@ -160,23 +160,16 @@ class ScheduledSurgery extends Model
     // Obtener items del check list con condicionales aplicados
     public function getChecklistItemsWithConditionals()
     {
-        return $this->checklist->items->map(function($item) {
-            $evaluation = $item->evaluateConditionals(
-                $this->hospital_id, 
-                $this->payment_mode
-            );
+        return $this->checklist->items()->with('conditionals', 'product')->get()
+            ->map(function($item) {
+                $evaluation = $item->evaluateConditionals($this);
 
-            return [
-                'item' => $item,
-                'product' => $item->product,
-                'base_quantity' => $item->quantity,
-                'adjusted_quantity' => $evaluation['quantity'],
-                'is_mandatory' => $evaluation['status'] === 'required',
-                'is_excluded' => $evaluation['status'] === 'excluded',
-                'multiplier' => $evaluation['multiplier'],
-            ];
-        })->filter(function($item) {
-            return !$item['is_excluded'];
-        });
+                $item->evaluation = (object) $evaluation; 
+                
+                return $item;
+            })
+            ->filter(function($item) {
+                return $item->evaluation->status !== 'excluded';
+            });
     }
 }

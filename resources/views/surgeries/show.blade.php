@@ -1,4 +1,3 @@
-{{-- resources/views/surgeries/show.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -127,7 +126,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Hospital</dt>
                                 <dd class="mt-1 text-sm text-gray-900 font-semibold">
                                     <i class="fas fa-hospital text-gray-400 mr-1"></i>
-                                    {{ $surgery->hospital->business_name }}
+                                    {{ $surgery->hospital->name }}
                                 </dd>
                             </div>
                             <div>
@@ -152,15 +151,7 @@
                 </div>
                 <div class="p-6">
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Check List</dt>
-                            <dd class="text-sm text-gray-900 font-semibold">
-                                <a href="{{ route('checklists.show', $surgery->checklist) }}" 
-                                   class="text-indigo-600 hover:text-indigo-800">
-                                    {{ $surgery->checklist->name }}
-                                </a>
-                            </dd>
-                        </div>
+                       
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Tipo de Cirugía</dt>
                             <dd class="text-sm text-gray-900">{{ $surgery->checklist->surgery_type }}</dd>
@@ -173,6 +164,7 @@
                             <dt class="text-sm font-medium text-gray-500 mb-1">Agendado Por</dt>
                             <dd class="text-sm text-gray-900">{{ $surgery->scheduler->name }}</dd>
                         </div>
+                        
                         @if($surgery->surgery_notes)
                         <div class="md:col-span-2">
                             <dt class="text-sm font-medium text-gray-500 mb-1">Notas</dt>
@@ -229,11 +221,7 @@
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
                                         {{ $evaluation['quantity'] }}
                                     </span>
-                                    @if($evaluation['multiplier'] != 1)
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            Base: {{ $item->quantity }} × {{ $evaluation['multiplier'] }}
-                                        </div>
-                                    @endif
+                                   
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @if($evaluation['status'] === 'required' || $item->is_mandatory)

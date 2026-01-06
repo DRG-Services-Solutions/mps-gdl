@@ -8,6 +8,8 @@ use App\Models\SurgicalChecklist;
 use App\Models\LegalEntity;
 use App\Models\Hospital;
 use App\Models\Doctor;
+use App\Models\ProductUnit;
+use App\Models\SurgicalKit;
 use Illuminate\Http\Request;
 
 class ScheduledSurgeryController extends Controller
@@ -121,7 +123,6 @@ class ScheduledSurgeryController extends Controller
     {
         $surgery->load([
             'checklist.items.product',
-            'hospital',
             'doctor',
             'scheduler',
             'preparation.preAssembledPackage',
@@ -129,8 +130,8 @@ class ScheduledSurgeryController extends Controller
             'invoice'
         ]);
 
-        // Obtener check list con condicionales aplicados
         $checklistItems = $surgery->getChecklistItemsWithConditionals();
+     
 
         return view('surgeries.show', compact('surgery', 'checklistItems'));
     }

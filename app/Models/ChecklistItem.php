@@ -47,42 +47,37 @@ class ChecklistItem extends Model
      */
     
     // Evaluar condicionales para hospital/doctor/modalidad específicos
-    public function evaluateConditionals($legalEntityId, $paymentMode)
+    public function evaluateConditionals($params)
     {
-        $conditionals = $this->conditionals()
-            ->where(function($q) use ($legalEntityId, $paymentMode) {
-                $q->where('legal_entity_id', $legalEntityId)
-                  ->orWhere('payment_mode', $paymentMode);
-            })->get();
+        $hospitalId = $params['hospital_id'] ?? $params->hospital_id ?? null;
+        $doctorId = $params['doctor_id'] ?? $params->doctor_id ?? null;
+        $modalityId = $params['modality_id'] ?? $params->modality_id ?? null;
+        $legalEntityId = $params['legal_entity_id'] ?? $params->legal_entity_id ?? null;
 
-        $quantityMultiplier = 1.0;
-        $conditionResult = $this->is_mandatory ? 'required' : 'optional';
+        $matchingConditionals = $this->conditionals->filter(function ($c) use ($hospitalId, $doctorId, $modalityId, $legalEntityId) {
+            return ($c->hospital_id == $hospitalId || $c->doctor_id == $doctorId || 
+                    $c->modality_id == $modalityId || $c->legal_entity_id == $legalEntityId);
+        });
 
-        foreach ($conditionals as $conditional) {
-            // Si se excluye, retornar inmediatamente
-            if ($conditional->condition_type === 'excluded') {
-                return [
-                    'status' => 'excluded',
-                    'quantity' => 0,
-                    'multiplier' => 0
-                ];
+        $finalQuantity = $this->quantity;
+        $status = 'optional';
+
+        foreach ($matchingConditionals as $conditional) {
+            if ($conditional->quantity_override !== null) {
+                $finalQuantity = $conditional->quantity_override;
+            } elseif ($conditional->is_additional_product) {
+                $finalQuantity += $conditional->additional_quantity;
             }
 
-            // Si se vuelve obligatorio
-            if ($conditional->condition_type === 'required') {
-                $conditionResult = 'required';
-            }
-
-            // Aplicar multiplicador de cantidad
-            if ($conditional->quantity_multiplier > $quantityMultiplier) {
-                $quantityMultiplier = $conditional->quantity_multiplier;
+            if (isset($conditional->condition_type) && $conditional->condition_type === 'excluded') {
+                return ['status' => 'excluded', 'quantity' => 0];
             }
         }
 
         return [
-            'status' => $conditionResult,
-            'quantity' => ceil($this->quantity * $quantityMultiplier),
-            'multiplier' => $quantityMultiplier
+            'status' => $status,
+            'quantity' => $finalQuantity,
+            'is_modified' => $finalQuantity != $this->quantity
         ];
     }
 
