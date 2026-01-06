@@ -10,6 +10,7 @@ use App\Models\Hospital;
 use App\Models\Doctor;
 use App\Models\ProductUnit;
 use App\Models\SurgicalKit;
+
 use Illuminate\Http\Request;
 
 class ScheduledSurgeryController extends Controller
@@ -22,9 +23,13 @@ class ScheduledSurgeryController extends Controller
         // Query base
         $query = ScheduledSurgery::with([
             'checklist',
+            'checklist',
             'hospital',
             'doctor',
-            'preparation'
+            'preparation',
+            'hospitalModalityConfig.hospital',     
+            'hospitalModalityConfig.modality',      
+            'hospitalModalityConfig.legalEntity',   
         ]);
 
         // Filtros
@@ -93,26 +98,99 @@ class ScheduledSurgeryController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+ * Store a newly created resource in storage.
+ */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'checklist_id' => 'required|exists:surgical_checklists,id',
-            'hospital_id' => 'required|exists:hospitals,id',
-            'doctor_id' => 'required|exists:doctors,id',
-            'surgery_date' => 'required|date|after:now',
-            'patient_name' => 'nullable|string|max:255',
-            'surgery_notes' => 'nullable|string',
+        \Log::info('[SURGERY] ===== INICIO CREAR CIRUGÍA =====', [
+            'request_all' => $request->all(),
+            'user_id' => auth()->id(),
         ]);
 
-        $validated['code'] = ScheduledSurgery::generateCode();
-        $validated['scheduled_by'] = auth()->id();
-        $validated['status'] = 'scheduled';
+        try {
+            // PASO 1: Validación
+            \Log::info('[SURGERY] Iniciando validación...');
+            
+            $validated = $request->validate([
+                'checklist_id' => 'required|exists:surgical_checklists,id',
+                'patient_name' => 'required|string|max:255',
+                'hospital_modality_config_id' => 'required|exists:hospital_modality_configs,id',
+                'doctor_id' => 'required|exists:doctors,id',
+                'surgery_date' => 'required|date|after_or_equal:today',
+                'surgery_time' => 'required',
+                'surgery_notes' => 'nullable|string',
+            ]);
 
-        $surgery = ScheduledSurgery::create($validated);
+            \Log::info('[SURGERY] ✅ Validación exitosa', [
+                'validated_data' => $validated,
+            ]);
 
-        return redirect()
-            ->route('surgeries.show', $surgery)
-            ->with('success', 'Cirugía agendada exitosamente.');
+            // PASO 2: Combinar fecha y hora
+            $surgeryDatetime = $validated['surgery_date'] . ' ' . $validated['surgery_time'];
+            
+            \Log::info('[SURGERY] Fecha y hora combinadas', [
+                'surgery_datetime' => $surgeryDatetime,
+            ]);
+
+            // PASO 3: Generar código
+            $code = ScheduledSurgery::generateCode();
+            
+            \Log::info('[SURGERY] Código generado', [
+                'code' => $code,
+            ]);
+
+            // PASO 4: Preparar datos
+            $surgeryData = [
+                'code' => $code,
+                'checklist_id' => $validated['checklist_id'],  // ← Sin "surgery_"
+                'patient_name' => $validated['patient_name'],
+                'hospital_modality_config_id' => $validated['hospital_modality_config_id'],
+                'doctor_id' => $validated['doctor_id'],
+                'surgery_datetime' => $surgeryDatetime,
+                'surgery_notes' => $validated['surgery_notes'] ?? null,
+                'status' => 'scheduled',
+                'scheduled_by' => auth()->id(),
+                'created_by' => auth()->id(),
+            ];
+
+            \Log::info('[SURGERY] Datos preparados para crear', [
+                'surgery_data' => $surgeryData,
+            ]);
+
+            // PASO 5: Crear cirugía
+            $surgery = ScheduledSurgery::create($surgeryData);
+
+            \Log::info('[SURGERY] ✅ Cirugía creada exitosamente', [
+                'surgery_id' => $surgery->id,
+                'surgery_code' => $surgery->code,
+                'config_id' => $surgery->hospital_modality_config_id,
+            ]);
+
+            \Log::info('[SURGERY] ===== FIN CREAR CIRUGÍA - ÉXITO =====');
+
+            return redirect()
+                ->route('surgeries.show', $surgery)
+                ->with('success', 'Cirugía agendada exitosamente.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('[SURGERY] ❌ Error de validación', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage(),
+            ]);
+
+            throw $e;
+
+        } catch (\Exception $e) {
+            \Log::error('[SURGERY] ❌ Error inesperado al crear cirugía', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Error al crear la cirugía: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -145,17 +223,13 @@ class ScheduledSurgeryController extends Controller
         }
 
         $checklists = SurgicalChecklist::active()
-            ->select('id', 'code', 'name', 'surgery_type')
+            ->select('id', 'code', 'surgery_type')
             ->get();
 
-        $hospitals = LegalEntity::where( 'hospital')
-            ->select('id', 'name')
-            ->orderBy('name')
+        $hospitals = Hospital::orderBy('name')
             ->get();
 
-        $doctors = LegalEntity::where( 'doctor')
-            ->select('id', 'name')
-            ->orderBy('name')
+        $doctors = Doctor::orderBy('first_name')
             ->get();
 
         return view('surgeries.edit', compact('surgery', 'checklists', 'hospitals', 'doctors'));
@@ -170,17 +244,38 @@ class ScheduledSurgeryController extends Controller
             return back()->with('error', 'No se puede editar una cirugía en este estado.');
         }
 
+        \Log::info('[SURGERY] ===== EDITAR CIRUGÍA =====', [
+            'surgery_id' => $surgery->id,
+            'request_data' => $request->all(),
+        ]);
+
         $validated = $request->validate([
             'checklist_id' => 'required|exists:surgical_checklists,id',
-            'hospital_id' => 'required|exists:legal_entities,id',
-            'doctor_id' => 'required|exists:legal_entities,id',
-            'payment_mode' => 'required|in:particular,aseguradora',
-            'surgery_date' => 'required|date',
-            'patient_name' => 'nullable|string|max:255',
+            'patient_name' => 'required|string|max:255',
+            'hospital_modality_config_id' => 'required|exists:hospital_modality_configs,id',
+            'doctor_id' => 'required|exists:doctors,id',
+            'surgery_date' => 'required|date|after_or_equal:today',
+            'surgery_time' => 'required',
             'surgery_notes' => 'nullable|string',
         ]);
 
-        $surgery->update($validated);
+        // Combinar fecha y hora
+        $surgeryDatetime = $validated['surgery_date'] . ' ' . $validated['surgery_time'];
+
+        // Actualizar cirugía
+        $surgery->update([
+            'surgery_checklist_id' => $validated['checklist_id'],
+            'patient_name' => $validated['patient_name'],
+            'hospital_modality_config_id' => $validated['hospital_modality_config_id'],
+            'doctor_id' => $validated['doctor_id'],
+            'surgery_datetime' => $surgeryDatetime,
+            'surgery_notes' => $validated['surgery_notes'],
+            'updated_by' => auth()->id(),
+        ]);
+
+        \Log::info('[SURGERY] ✅ Cirugía actualizada', [
+            'surgery_id' => $surgery->id,
+        ]);
 
         return redirect()
             ->route('surgeries.show', $surgery)

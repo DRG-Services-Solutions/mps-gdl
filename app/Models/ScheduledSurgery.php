@@ -12,20 +12,21 @@ class ScheduledSurgery extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'code',
-        'checklist_id',
-        'hospital_id',
-        'doctor_id',
-        'payment_mode',
-        'surgery_date',
-        'patient_name',
-        'surgery_notes',
-        'status',
-        'scheduled_by',
-    ];
+    'code',
+    'checklist_id',
+    'hospital_modality_config_id', 
+    'doctor_id',
+    'surgery_datetime',              
+    'patient_name',
+    'surgery_notes',
+    'status',
+    'scheduled_by',
+    'created_by',                    
+    'updated_by',                    
+];
 
     protected $casts = [
-        'surgery_date' => 'datetime',
+        'surgery_datetime' => 'datetime',  
     ];
 
     /**
@@ -38,11 +39,7 @@ class ScheduledSurgery extends Model
         return $this->belongsTo(SurgicalChecklist::class, 'checklist_id');
     }
 
-    // Hospital
-    public function hospital()
-    {
-        return $this->belongsTo(Hospital::class, 'hospital_id');
-    }
+   
 
     // Doctor
     public function doctor()
@@ -82,18 +79,17 @@ class ScheduledSurgery extends Model
     // Cirugías programadas (futuras)
     public function scopeUpcoming(Builder $query)
     {
-        return $query->where('surgery_date', '>=', now())
+        return $query->where('surgery_datetime', '>=', now()) 
             ->where('status', 'scheduled')
-            ->orderBy('surgery_date', 'asc');
+            ->orderBy('surgery_datetime', 'asc');  
     }
 
     // Cirugías de hoy
     public function scopeToday(Builder $query)
     {
-        return $query->whereDate('surgery_date', today());
+        return $query->whereDate('surgery_datetime', today());
     }
 
-    // Por hospital
     public function scopeForHospital(Builder $query, $hospitalId)
     {
         return $query->where('hospital_id', $hospitalId);
@@ -108,7 +104,7 @@ class ScheduledSurgery extends Model
     // Por rango de fechas
     public function scopeDateRange(Builder $query, $startDate, $endDate)
     {
-        return $query->whereBetween('surgery_date', [$startDate, $endDate]);
+        return $query->whereBetween('surgery_datetime', [$startDate, $endDate]);
     }
 
     /**
@@ -172,4 +168,41 @@ class ScheduledSurgery extends Model
                 return $item->evaluation->status !== 'excluded';
             });
     }
+
+    //Configuraciones de hospitales
+    public function hospitalModalityConfig()
+    {
+        return $this->belongsTo(HospitalModalityConfig::class);
+    }
+    public function hospital()
+    {
+        return $this->hasOneThrough(
+            Hospital::class,
+            HospitalModalityConfig::class,
+            'id',                           // FK en hospital_modality_configs
+            'id',                           // FK en hospitals
+            'hospital_modality_config_id',  // Local key en scheduled_surgeries
+            'hospital_id'                   // FK en hospital_modality_configs
+        );
+    }
+
+    public function modality()
+    {
+        return $this->hasOneThrough(
+            Modality::class,
+            HospitalModalityConfig::class,
+            'id',                           // FK en hospital_modality_configs
+            'id',                           // FK en modalities
+            'hospital_modality_config_id',  // Local key en scheduled_surgeries
+            'modality_id'                   // FK en hospital_modality_configs
+        );
+    }
+
+
+    public function surgeryChecklist()
+    {
+        return $this->belongsTo(SurgicalChecklist::class);
+    }
+
+
 }

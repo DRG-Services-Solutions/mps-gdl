@@ -27,7 +27,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $surgeries->total() }}</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $surgeries->count() }}</p>
                         </div>
                         <div class="bg-indigo-100 rounded-full p-3">
                             <i class="fas fa-calendar-alt text-2xl text-indigo-600"></i>
@@ -133,7 +133,7 @@
                                 <option value="">Todos</option>
                                 @foreach($hospitals as $hospital)
                                     <option value="{{ $hospital->id }}" {{ request('hospital_id') == $hospital->id ? 'selected' : '' }}>
-                                        {{ $hospital->business_name }}
+                                        {{ $hospital->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -220,22 +220,49 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $surgery->patient_name }}</div>
+                                <div class="text-sm font-medium text-gray-900">{{ $surgery->patient_name }}</div>
                                     <div class="text-xs text-gray-500">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $surgery->payment_mode === 'particular' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                            {{ $surgery->payment_mode === 'particular' ? 'Particular' : 'Aseguradora' }}
-                                        </span>
+                                        @if($surgery->hospitalModalityConfig && $surgery->hospitalModalityConfig->modality)
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-{{ $surgery->hospitalModalityConfig->modality->name === 'Particular' ? 'user' : 'shield-alt' }} mr-1"></i>
+                                                {{ $surgery->hospitalModalityConfig->modality->name }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                                Sin modalidad
+                                            </span>
+                                        @endif
                                     </div>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900">
-                                        <i class="fas fa-hospital text-gray-400 mr-1"></i>
-                                        {{ $surgery->hospital->business_name }}
-                                    </div>
-                                    <div class="text-xs text-gray-500">
-                                        <i class="fas fa-user-md text-gray-400 mr-1"></i>
-                                        {{ $surgery->doctor->name }}
-                                    </div>
+                                <<td class="px-6 py-4">
+                                    @if($surgery->hospitalModalityConfig && $surgery->hospitalModalityConfig->hospital)
+                                        <div class="text-sm text-gray-900">
+                                            <i class="fas fa-hospital text-gray-400 mr-1"></i>
+                                            {{ $surgery->hospitalModalityConfig->hospital->name }}
+                                        </div>
+                                    @else
+                                        <div class="text-sm text-gray-500 italic">
+                                            <i class="fas fa-hospital text-gray-400 mr-1"></i>
+                                            Sin hospital asignado
+                                        </div>
+                                    @endif
+                                    
+                                    @if($surgery->doctor)
+                                        <div class="text-xs text-gray-500">
+                                            <i class="fas fa-user-md text-gray-400 mr-1"></i>
+                                            @if($surgery->doctor->middle_name)
+                                                Dr. {{ $surgery->doctor->first_name }} {{ $surgery->doctor->middle_name }} {{ $surgery->doctor->last_name }}
+                                            @else
+                                                Dr. {{ $surgery->doctor->first_name }} {{ $surgery->doctor->last_name }}
+                                            @endif
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-500 italic">
+                                            <i class="fas fa-user-md text-gray-400 mr-1"></i>
+                                            Sin doctor asignado
+                                        </div>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="text-sm font-medium text-gray-900">

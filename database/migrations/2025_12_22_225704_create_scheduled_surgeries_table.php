@@ -19,10 +19,12 @@ return new class extends Migration
             $table->foreignId('hospital_id')->constrained('hospitals')->comment('Hospital donde se realizará');
 
             $table->foreignId('doctor_id')->constrained('doctors')->comment('Doctor que operará');
+            $table->foreignId('hospital_modality_config_id')->nullable()->after('checklist_id')->constrained('hospital_modality_configs');
+            
 
             
             
-            $table->dateTime('surgery_date')->comment('Fecha y hora de la cirugía');
+            $table->dateTime('surgery_datetime')->comment('Fecha y hora de la cirugía');
             $table->string('patient_name')->nullable()->comment('Nombre del paciente (opcional)');
             $table->text('surgery_notes')->nullable();
             

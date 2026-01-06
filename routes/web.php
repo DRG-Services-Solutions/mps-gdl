@@ -60,6 +60,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
+
+    //RUTA PARA CARGAR CONFIGURACIONES DE HOSPITALES
+Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'getConfigs'])->name('api.hospitals.configs');
+
+
     // ====================================================================
     // MÓDULO 1: SURGICAL CHECKLISTS (Plantillas de Check Lists)
     // ====================================================================
@@ -173,6 +178,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
             Route::get('/summary', [SurgeryPreparationController::class, 'summary'])->name('summary');
         });
     });
+
+    
 
     // ====================================================================
     // MÓDULO 5: INVOICES (Remisiones)

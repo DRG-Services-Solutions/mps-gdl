@@ -188,6 +188,22 @@ class HospitalController extends Controller
                 ->withErrors(['error' => 'Ocurrió un error al guardar. Por favor, intente nuevamente.']);
         }
     }
+
+    public function getConfigs(Hospital $hospital)
+    {
+        $configs = $hospital->configs()
+            ->with(['modality', 'legalEntity'])
+            ->get();
+        
+        \Log::info('[SURGERY] Configuraciones cargadas', [
+            'hospital_id' => $hospital->id,
+            'hospital_name' => $hospital->name,
+            'configs_count' => $configs->count(),
+        ]);
+        
+        return response()->json($configs);
+    }
+
         
 
     /**
