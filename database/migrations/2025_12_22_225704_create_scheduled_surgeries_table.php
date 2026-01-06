@@ -16,11 +16,11 @@ return new class extends Migration
             $table->foreignId('checklist_id')->constrained('surgical_checklists')->comment('Check list a utilizar');
             
             // Información de la cirugía
-            $table->foreignId('hospital_id')->constrained('legal_entities')->comment('Hospital donde se realizará');
+            $table->foreignId('hospital_id')->constrained('hospitals')->comment('Hospital donde se realizará');
 
-            $table->foreignId('doctor_id')->constrained('legal_entities')->comment('Doctor que operará');
+            $table->foreignId('doctor_id')->constrained('doctors')->comment('Doctor que operará');
 
-            $table->enum('payment_mode', ['particular', 'aseguradora'])->comment('Modalidad de pago');
+            
             
             $table->dateTime('surgery_date')->comment('Fecha y hora de la cirugía');
             $table->string('patient_name')->nullable()->comment('Nombre del paciente (opcional)');
