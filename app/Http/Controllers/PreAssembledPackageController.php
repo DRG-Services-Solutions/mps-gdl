@@ -50,7 +50,7 @@ class PreAssembledPackageController extends Controller
         $maintenanceCount = PreAssembledPackage::where('status', 'maintenance')->count();
 
         $checklists = SurgicalChecklist::where('status', 'active')
-            ->orderBy('name')
+            ->orderBy('surgery_type')
             ->get();
 
         return view('pre-assembled.index', compact(
@@ -69,7 +69,7 @@ class PreAssembledPackageController extends Controller
     public function create()
     {
         $checklists = SurgicalChecklist::where('status', 'active')
-            ->orderBy('name')
+            ->orderBy('surgery_type')
             ->get();
 
         $storageLocations = StorageLocation::orderBy('code')->get();
@@ -211,7 +211,7 @@ class PreAssembledPackageController extends Controller
 
     // PASO 3: Validar que se encontró
     if (!$productUnit) {
-        \Log::warning('[PACKAGE] ❌ No se encontró producto', [
+        \Log::warning('[PACKAGE]  No se encontró producto', [
             'input' => $input,
             'type' => $type,
         ]);
@@ -221,7 +221,7 @@ class PreAssembledPackageController extends Controller
 
     // PASO 4: Validar disponibilidad
     if (!$productUnit->isAvailable()) {
-        \Log::warning('[PACKAGE] ⚠️ ProductUnit no disponible', [
+        \Log::warning('[PACKAGE]  ProductUnit no disponible', [
             'product_unit_id' => $productUnit->id,
             'status' => $productUnit->status,
         ]);

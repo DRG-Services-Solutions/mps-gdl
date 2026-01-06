@@ -59,10 +59,11 @@ class ScheduledSurgery extends Model
     // Preparación de la cirugía
     public function preparation()
     {
-        return $this->hasOne(SurgeryPreparation::class, 'scheduled_surgery_id');
+        return $this->hasOne(SurgeryPreparation::class);
     }
 
-    // Remisión asociada
+    // Remisión asociaada
+
     public function invoice()
     {
         return $this->hasOne(Invoice::class, 'scheduled_surgery_id');

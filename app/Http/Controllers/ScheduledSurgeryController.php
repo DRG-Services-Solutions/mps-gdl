@@ -78,7 +78,7 @@ class ScheduledSurgeryController extends Controller
     public function create()
     {
         $checklists = SurgicalChecklist::active()
-            ->select('id', 'code', 'name', 'surgery_type')
+            ->select('id', 'code', 'surgery_type')
             ->get();
 
         $hospitals = Hospital::orderBy('name')->get();

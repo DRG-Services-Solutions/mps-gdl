@@ -78,7 +78,7 @@
                                         <option value="">Selecciona un check list...</option>
                                         @foreach($checklists as $checklist)
                                             <option value="{{ $checklist->id }}" {{ old('surgery_checklist_id') == $checklist->id ? 'selected' : '' }}>
-                                                {{ $checklist->name }} ({{ $checklist->code }})
+                                                {{ $checklist->surgery_type }} ({{ $checklist->code }})
                                             </option>
                                         @endforeach
                                     </select>
@@ -146,7 +146,7 @@
                                 <!-- Notas -->
                                 <div class="md:col-span-2">
                                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Notas
+                                        Notas Adicionales
                                     </label>
                                     <textarea name="notes" 
                                               id="notes" 
