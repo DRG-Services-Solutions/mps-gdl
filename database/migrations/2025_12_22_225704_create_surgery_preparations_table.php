@@ -14,6 +14,7 @@ return new class extends Migration
 
             // Pre-Armado seleccionado
             $table->foreignId('pre_assembled_package_id')->nullable()->constrained('pre_assembled_packages')->comment('Paquete pre-armado utilizado');
+            $table->foreignId('scheduled_surgery_id')->constrained('scheduled_surgeries')->comment('Cirugía programada asociada');
             
             // Estados de preparación
             $table->enum('status', [

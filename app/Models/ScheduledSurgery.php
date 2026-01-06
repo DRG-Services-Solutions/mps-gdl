@@ -41,13 +41,13 @@ class ScheduledSurgery extends Model
     // Hospital
     public function hospital()
     {
-        return $this->belongsTo(LegalEntity::class, 'hospital_id');
+        return $this->belongsTo(Hospital::class, 'hospital_id');
     }
 
     // Doctor
     public function doctor()
     {
-        return $this->belongsTo(LegalEntity::class, 'doctor_id');
+        return $this->belongsTo(Doctor::class, 'doctor_id');
     }
 
     // Usuario que agendó

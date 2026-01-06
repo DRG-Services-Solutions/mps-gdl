@@ -97,9 +97,8 @@ class ScheduledSurgeryController extends Controller
     {
         $validated = $request->validate([
             'checklist_id' => 'required|exists:surgical_checklists,id',
-            'hospital_id' => 'required|exists:legal_entities,id',
-            'doctor_id' => 'required|exists:legal_entities,id',
-            'payment_mode' => 'required|in:particular,aseguradora',
+            'hospital_id' => 'required|exists:hospitals,id',
+            'doctor_id' => 'required|exists:doctors,id',
             'surgery_date' => 'required|date|after:now',
             'patient_name' => 'nullable|string|max:255',
             'surgery_notes' => 'nullable|string',

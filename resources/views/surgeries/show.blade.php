@@ -133,7 +133,7 @@
                                 <dt class="text-sm font-medium text-gray-500">Doctor</dt>
                                 <dd class="mt-1 text-sm text-gray-900 font-semibold">
                                     <i class="fas fa-user-md text-gray-400 mr-1"></i>
-                                    {{ $surgery->doctor->name }}
+                                    {{ $surgery->doctor->first_name }} {{ $surgery->doctor->last_name }}
                                 </dd>
                             </div>
                         </dl>
