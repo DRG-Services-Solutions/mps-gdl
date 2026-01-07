@@ -50,16 +50,15 @@ class ScheduledSurgeryController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('surgery_date', '>=', $request->date_from);
+            $query->whereDate('surgery_datetime', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('surgery_date', '<=', $request->date_to);
+            $query->whereDate('surgery_datetime', '<=', $request->date_to);
         }
 
         // Obtener cirugías paginadas
-        $surgeries = $query->latest('surgery_date')->paginate(15);
-
+        $surgeries = $query->latest('surgery_datetime')->paginate(15);
         $scheduledCount = ScheduledSurgery::where('status', 'scheduled')->count();
         $inPreparationCount = ScheduledSurgery::where('status', 'in_preparation')->count();
         $readyCount = ScheduledSurgery::where('status', 'ready')->count();

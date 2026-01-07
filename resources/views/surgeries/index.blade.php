@@ -235,7 +235,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <<td class="px-6 py-4">
+                                <td class="px-6 py-4">
                                     @if($surgery->hospitalModalityConfig && $surgery->hospitalModalityConfig->hospital)
                                         <div class="text-sm text-gray-900">
                                             <i class="fas fa-hospital text-gray-400 mr-1"></i>
@@ -265,11 +265,9 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="text-sm font-medium text-gray-900">
-                                        {{ $surgery->surgery_datetime->format('H:i') }} Hrs
-                                    </div>
+                                    
                                     <div class="text-xs text-gray-500">
-                                        {{ $surgery->surgery_datetime->format('H:i') }} hrs
+                                        {{ $surgery->surgery_datetime->format('H:i') }} Hrs
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -291,11 +289,17 @@
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
                                     @if($surgery->status === 'scheduled')
-                                        <a href="{{ route('surgeries.preparations.start', $surgery) }}" 
-                                           class="text-green-600 hover:text-green-900"
-                                           title="Iniciar preparación">
+                                    <form action="{{ route('surgeries.preparations.start', $surgery) }}" 
+                                        method="POST" 
+                                        class="inline"
+                                        onsubmit="return confirm('¿Iniciar la preparación de esta cirugía?')">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="text-green-600 hover:text-green-900 transition-colors"
+                                                title="Iniciar preparación">
                                             <i class="fas fa-play-circle"></i>
-                                        </a>
+                                        </button>
+                                    </form>
                                     @elseif($surgery->status === 'in_preparation')
                                         <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
                                            class="text-purple-600 hover:text-purple-900"
