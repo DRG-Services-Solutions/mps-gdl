@@ -7,6 +7,8 @@ use App\Models\SurgeryPreparationItem;
 use App\Models\SurgeryPreparationUnit;
 use App\Models\PreAssembledPackage;
 use App\Models\ProductUnit;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,6 +25,8 @@ class SurgeryPreparationController extends Controller
                 ->route('surgeries.preparations.selectPackage', $surgery)
                 ->with('info', 'Esta cirugía ya tiene una preparación iniciada.');
         }
+        
+        
 
         // Crear preparación
         $preparation = SurgeryPreparation::create([
@@ -52,7 +56,7 @@ class SurgeryPreparationController extends Controller
         }
 
         // Obtener paquetes disponibles del mismo tipo de cirugía
-        $packages = PreAssembledPackage::available()
+        $availablePackages = PreAssembledPackage::available()
             ->forSurgeryType($surgery->checklist_id)
             ->with(['contents.product', 'storageLocation'])
             ->get()
@@ -67,7 +71,7 @@ class SurgeryPreparationController extends Controller
             })
             ->sortByDesc('completeness');
 
-        return view('surgeries.preparations.select-package', compact('surgery', 'packages'));
+        return view('surgeries.preparations.select-package', compact('surgery', 'availablePackages'));
     }
 
     /**

@@ -33,7 +33,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Fecha de Cirugía</p>
-                        <p class="text-lg font-semibold">{{ $surgery->surgery_date->format('d/m/Y H:i') }}</p>
+                        <p class="text-lg font-semibold">{{ $surgery->surgery_datetime->format('d/m/Y H:i') }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Modalidad</p>

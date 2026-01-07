@@ -18,6 +18,7 @@ class SurgeryPreparation extends Model
         'prepared_by',
         'verified_by',
         'notes',
+        'surgery_id',
     ];
 
     protected $casts = [

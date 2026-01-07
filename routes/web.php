@@ -169,7 +169,7 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
             
             // 4. Surtir faltantes (Picking)
             Route::get('/picking', [SurgeryPreparationController::class, 'picking'])->name('picking');
-            Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('addPickedProduct');
+            Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('add-picked-product');
             
             // 5. Verificar y completar
             Route::post('/verify', [SurgeryPreparationController::class, 'verify'])->name('verify');

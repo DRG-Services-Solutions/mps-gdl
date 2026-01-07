@@ -159,7 +159,6 @@ class ScheduledSurgeryController extends Controller
             $config = \App\Models\HospitalModalityConfig::find($validated['hospital_modality_config_id']);
             if ($config) {
                 $surgeryData['hospital_id'] = $config->hospital_id;
-
             }
 
 
