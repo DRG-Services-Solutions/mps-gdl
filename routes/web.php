@@ -210,13 +210,11 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
 
       Route::get('/dashboard', function () {
         // Datos del dashboard
-        $upcomingSurgeries = \App\Models\ScheduledSurgery::upcoming()->limit(5)->get();
         $availablePackages = \App\Models\PreAssembledPackage::available()->count();
         $activeChecklists = \App\Models\SurgicalChecklist::active()->count();
         $pendingInvoices = \App\Models\Invoice::where('status', 'draft')->count();
 
         return view('dashboard', compact(
-            'upcomingSurgeries',
             'availablePackages',
             'activeChecklists',
             'pendingInvoices'
