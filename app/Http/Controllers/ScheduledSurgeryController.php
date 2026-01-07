@@ -151,12 +151,18 @@ class ScheduledSurgeryController extends Controller
                 'surgery_notes' => $validated['surgery_notes'] ?? null,
                 'status' => 'scheduled',
                 'scheduled_by' => auth()->id(),
-                'created_by' => auth()->id(),
+                
             ];
 
             \Log::info('[SURGERY] Datos preparados para crear', [
                 'surgery_data' => $surgeryData,
             ]);
+            $config = \App\Models\HospitalModalityConfig::find($validated['hospital_modality_config_id']);
+            if ($config) {
+                $surgeryData['hospital_id'] = $config->hospital_id;
+
+            }
+
 
             // PASO 5: Crear cirugía
             $surgery = ScheduledSurgery::create($surgeryData);
@@ -270,7 +276,7 @@ class ScheduledSurgeryController extends Controller
             'doctor_id' => $validated['doctor_id'],
             'surgery_datetime' => $surgeryDatetime,
             'surgery_notes' => $validated['surgery_notes'],
-            'updated_by' => auth()->id(),
+            
         ]);
 
         \Log::info('[SURGERY] ✅ Cirugía actualizada', [

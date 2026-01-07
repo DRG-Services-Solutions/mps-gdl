@@ -77,8 +77,8 @@
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-indigo-100">Programada para</p>
-                        <p class="text-2xl font-bold">{{ $surgery->surgery_date->format('d/m/Y') }}</p>
-                        <p class="text-lg">{{ $surgery->surgery_date->format('H:i') }} hrs</p>
+                        <p class="text-2xl font-bold">{{ $surgery->surgery_datetime->format('d/m/Y') }}</p>
+                        <p class="text-lg">{{ $surgery->surgery_datetimea->format('H:i') }} hrs</p>
                     </div>
                 </div>
             </div>

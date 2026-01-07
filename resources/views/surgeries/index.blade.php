@@ -266,10 +266,10 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="text-sm font-medium text-gray-900">
-                                        {{ $surgery->surgery_date->format('d/m/Y') }}
+                                        {{ $surgery->surgery_datetime->format('H:i') }} Hrs
                                     </div>
                                     <div class="text-xs text-gray-500">
-                                        {{ $surgery->surgery_date->format('H:i') }} hrs
+                                        {{ $surgery->surgery_datetime->format('H:i') }} hrs
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">

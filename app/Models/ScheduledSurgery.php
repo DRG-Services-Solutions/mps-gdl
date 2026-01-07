@@ -21,8 +21,7 @@ class ScheduledSurgery extends Model
     'surgery_notes',
     'status',
     'scheduled_by',
-    'created_by',                    
-    'updated_by',                    
+    'hospital_id',
 ];
 
     protected $casts = [
