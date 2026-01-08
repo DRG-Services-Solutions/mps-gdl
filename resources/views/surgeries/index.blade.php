@@ -288,50 +288,64 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
+                                    {{-- CASO 1: Cirugía agendada pero sin iniciar preparación --}}
                                     @if($surgery->status === 'scheduled')
-                                    <form action="{{ route('surgeries.preparations.start', $surgery) }}" 
-                                        method="POST" 
-                                        class="inline"
-                                        onsubmit="return confirm('¿Iniciar la preparación de esta cirugía?')">
-                                        @csrf
-                                        <button type="submit" 
-                                                class="text-green-600 hover:text-green-900 transition-colors"
-                                                title="Iniciar preparación">
-                                            <i class="fas fa-play-circle"></i>
-                                        </button>
-                                    </form>
+                                        <form action="{{ route('surgeries.preparations.start', $surgery) }}" 
+                                            method="POST" 
+                                            class="inline"
+                                            onsubmit="return confirm('¿Iniciar la preparación de esta cirugía?')">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="text-green-600 hover:text-green-900 transition-colors"
+                                                    title="Iniciar preparación">
+                                                <i class="fas fa-play-circle text-lg"></i>
+                                            </button>
+                                        </form>
+
+                                    {{-- CASO 2: Ya está en preparación --}}
                                     @elseif($surgery->status === 'in_preparation')
-                                        <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
-                                           class="text-purple-600 hover:text-purple-900"
-                                           title="Continuar preparación">
-                                            <i class="fas fa-tasks"></i>
-                                        </a>
+                                        @if($surgery->preparation && !$surgery->preparation->pre_assembled_package_id)
+                                            {{-- Si inició preparación pero NO ha elegido paquete, lo mandamos a la selección --}}
+                                            <a href="{{ route('surgeries.preparations.selectPackage', $surgery) }}" 
+                                            class="text-blue-600 hover:text-blue-900"
+                                            title="Asignar Pre Armado">
+                                                <i class="fas fa-box-open text-lg"></i>
+                                            </a>
+                                        @else
+                                            {{-- Si ya tiene paquete, lo mandamos a la tabla de comparación/surtido --}}
+                                            <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
+                                            class="text-purple-600 hover:text-purple-900"
+                                            title="Continuar Surtido/Comparación">
+                                                <i class="fas fa-clipboard-check text-lg"></i>
+                                            </a>
+                                        @endif
                                     @endif
                                     
+                                    {{-- Acciones estándar siempre visibles --}}
                                     <a href="{{ route('surgeries.show', $surgery) }}" 
-                                       class="text-indigo-600 hover:text-indigo-900"
-                                       title="Ver detalle">
-                                        <i class="fas fa-eye"></i>
+                                    class="text-indigo-600 hover:text-indigo-900"
+                                    title="Ver detalle">
+                                        <i class="fas fa-eye text-lg"></i>
                                     </a>
                                     
                                     @if($surgery->canBeEdited())
                                         <a href="{{ route('surgeries.edit', $surgery) }}" 
-                                           class="text-blue-600 hover:text-blue-900"
-                                           title="Editar">
-                                            <i class="fas fa-edit"></i>
+                                        class="text-blue-600 hover:text-blue-900"
+                                        title="Editar">
+                                            <i class="fas fa-edit text-lg"></i>
                                         </a>
                                     @endif
                                     
                                     @if($surgery->canBeCancelled())
                                         <form action="{{ route('surgeries.cancel', $surgery) }}" 
-                                              method="POST" 
-                                              class="inline"
-                                              onsubmit="return confirm('¿Cancelar esta cirugía?')">
+                                            method="POST" 
+                                            class="inline"
+                                            onsubmit="return confirm('¿Cancelar esta cirugía?')">
                                             @csrf
                                             <button type="submit" 
                                                     class="text-red-600 hover:text-red-900"
                                                     title="Cancelar">
-                                                <i class="fas fa-ban"></i>
+                                                <i class="fas fa-ban text-lg"></i>
                                             </button>
                                         </form>
                                     @endif
