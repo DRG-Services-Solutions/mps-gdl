@@ -5,7 +5,7 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-box-open mr-2 text-purple-600"></i>
-                    {{ __('Seleccionar Paquete Pre-Armado') }}
+                   Seleccionar Paquete Pre-Armado
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">{{ $surgery->code }} - {{ $surgery->patient_name }}</p>
             </div>
@@ -25,11 +25,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <p class="text-sm text-indigo-100">Check List</p>
-                        <p class="text-lg font-semibold">{{ $surgery->checklist->name }}</p>
+                        <p class="text-lg font-semibold">{{ $surgery->checklist->surgery_type }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Hospital</p>
-                        <p class="text-lg font-semibold">{{ $surgery->hospital->business_name }}</p>
+                        <p class="text-lg font-semibold">{{ $surgery->hospital->name }}</p>
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Fecha de Cirugía</p>
@@ -37,7 +37,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Modalidad</p>
-                        <p class="text-lg font-semibold">{{ $surgery->payment_mode === 'particular' ? 'Particular' : 'Aseguradora' }}</p>
+                        <p class="text-lg font-semibold">{{ $surgery->modality->name }}</p>
                     </div>
                 </div>
             </div>
@@ -209,7 +209,7 @@
                             No hay paquetes pre-armados disponibles para este tipo de cirugía. 
                             Deberás preparar desde cero o crear un nuevo paquete.
                         </p>
-                        <form action="{{ route('surgeries.preparations.assign-package', $surgery) }}" method="POST">
+                        <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
                             @csrf
                             <input type="hidden" name="package_id" value="">
                             <button type="submit" 

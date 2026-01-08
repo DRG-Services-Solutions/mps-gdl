@@ -145,32 +145,51 @@
                                     <div class="flex items-center">
                                         <div class="ml-4">
                                             <div class="text-sm font-semibold text-gray-900">{{ $item->product->name }}</div>
-                                            <div class="text-xs text-gray-500">SKU: {{ $item->product->sku ?? $item->product->code }}</div>
-                                            @if($item->is_mandatory)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase mt-1">
-                                                    CRÍTICO
+                                            <div class="flex items-center gap-2 mt-1">
+                                                <span class="text-xs text-gray-500 font-mono bg-gray-100 px-1 rounded">
+                                                    {{ $item->product->sku ?? $item->product->code }}
                                                 </span>
+                                                @if($item->is_mandatory)
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-red-100 text-red-700 uppercase">
+                                                        CRÍTICO
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            {{-- NUEVO: Ubicación para surtido --}}
+                                            @if($item->quantity_missing > 0)
+                                                <div class="text-[11px] text-orange-700 mt-2 font-medium">
+                                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                                    Ubicar en: <span class="font-bold">{{ $item->storageLocation->code ?? 'Sin asignar' }}</span>
+                                                </div>
                                             @endif
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-center font-bold text-gray-700">{{ $item->quantity_required }}</td>
-                                <td class="px-6 py-4 text-center text-blue-600 font-medium">{{ $item->quantity_in_package }}</td>
-                                <td class="px-6 py-4 text-center text-indigo-600 font-medium">{{ $item->quantity_picked }}</td>
+                                <td class="px-6 py-4 text-center font-bold text-gray-700 bg-gray-50/30">{{ $item->quantity_required }}</td>
+                                <td class="px-6 py-4 text-center text-blue-600 font-medium italic">{{ $item->quantity_in_package }}</td>
+                                <td class="px-6 py-4 text-center text-indigo-600 font-bold">{{ $item->quantity_picked }}</td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="{{ $item->quantity_missing > 0 ? 'text-red-600 font-bold' : 'text-gray-400' }}">
+                                    <span class="px-2 py-1 rounded {{ $item->quantity_missing > 0 ? 'bg-red-50 text-red-700 font-black ring-1 ring-red-200' : 'text-gray-300' }}">
                                         {{ $item->quantity_missing }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @php
-                                        $config = [
-                                            'complete'   => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'icon' => 'check-double', 'label' => 'Completo'],
-                                            'in_package' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'icon' => 'box', 'label' => 'En Paquete'],
-                                            'pending'    => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'icon' => 'exclamation-circle', 'label' => 'Pendiente'],
-                                        ][$item->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'icon' => 'clock', 'label' => 'Pendiente'];
+                                        $totalFound = $item->quantity_in_package + $item->quantity_picked;
+                                        $statusLabel = $item->status;
+                                        
+                                        // Lógica visual dinámica
+                                        if ($totalFound > 0 && $totalFound < $item->quantity_required) {
+                                            $config = ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'icon' => 'hourglass-half', 'label' => 'Incompleto'];
+                                        } else {
+                                            $config = [
+                                                'complete'   => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'icon' => 'check-double', 'label' => 'Completo'],
+                                                'in_package' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'icon' => 'box', 'label' => 'En Paquete'],
+                                                'pending'    => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'icon' => 'times-circle', 'label' => 'Faltante'],
+                                            ][$item->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'icon' => 'clock', 'label' => 'Pendiente'];
+                                        }
                                     @endphp
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $config['bg'] }} {{ $config['text'] }}">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $config['bg'] }} {{ $config['text'] }} shadow-sm">
                                         <i class="fas fa-{{ $config['icon'] }} mr-1.5"></i>
                                         {{ $config['label'] }}
                                     </span>
