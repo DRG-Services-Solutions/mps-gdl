@@ -135,7 +135,7 @@ class PreAssembledPackageController extends Controller
     public function edit(PreAssembledPackage $preAssembled)
     {
         $checklists = SurgicalChecklist::where('status', 'active')
-            ->orderBy('name')
+            ->orderBy('code')
             ->get();
 
         $storageLocations = StorageLocation::orderBy('code')->get();

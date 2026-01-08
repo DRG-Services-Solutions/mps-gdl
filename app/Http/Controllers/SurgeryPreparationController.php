@@ -90,6 +90,7 @@ class SurgeryPreparationController extends Controller
         }
 
         $package = PreAssembledPackage::findOrFail($validated['package_id']);
+        ;
 
         // Verificar que el paquete esté disponible
         if ($package->status !== 'available') {
@@ -129,47 +130,45 @@ class SurgeryPreparationController extends Controller
      */
     private function performComparison($surgery, $preparation, $package)
     {
-        // Obtener items del check list con condicionales aplicados
         $checklistItems = $surgery->getChecklistItemsWithConditionals();
+        
+        $packageContentsQty = $package->contents->groupBy('product_id')
+                                ->map(fn($group) => $group->count());
 
         foreach ($checklistItems as $itemData) {
-            $item = $itemData['item'];
-            $requiredQty = $itemData['adjusted_quantity'];
+            $item = $itemData['item'] ?? null;
+            if (!$item || !$item->product) {
+                continue; 
+            }
 
-            // Contar cuántos hay en el paquete
-            $availableQty = $package->contents()
-                ->where('product_id', $item->product_id)
-                ->count();
+            $requiredQty = $itemData['adjusted_quantity'] ?? 0;
+            
+            $availableQty = $packageContentsQty->get($item->product_id, 0);
 
-            // Calcular faltante
             $missingQty = max(0, $requiredQty - $availableQty);
 
-            // Obtener ubicación del producto en almacén
             $storageLocation = $item->product->productUnits()
                 ->where('current_status', 'in_stock')
                 ->whereNotNull('storage_location_id')
-                ->with('storageLocation')
                 ->first()
                 ?->storageLocation;
 
-            // Crear item de preparación
             $prepItem = SurgeryPreparationItem::create([
                 'preparation_id' => $preparation->id,
                 'product_id' => $item->product_id,
                 'quantity_required' => $requiredQty,
-                'is_mandatory' => $itemData['is_mandatory'],
+                'is_mandatory' => $itemData['is_mandatory'] ?? true,
                 'quantity_in_package' => $availableQty,
                 'quantity_missing' => $missingQty,
                 'quantity_picked' => 0,
-                'status' => $missingQty === 0 ? 'in_package' : 'pending',
+                'status' => ($missingQty === 0) ? 'in_package' : 'pending',
                 'storage_location_id' => $storageLocation?->id,
             ]);
 
-            // Si hay productos en el paquete, crear registros de unidades
             if ($availableQty > 0) {
                 $unitsInPackage = $package->contents()
                     ->where('product_id', $item->product_id)
-                    ->take($requiredQty) // Solo los que se necesitan
+                    ->take($requiredQty) 
                     ->get();
 
                 foreach ($unitsInPackage as $content) {
