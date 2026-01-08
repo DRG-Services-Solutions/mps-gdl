@@ -91,7 +91,7 @@
                             <i class="fas fa-box text-blue-600 mr-1"></i>
                             Selecciona cada producto
                         </p>
-                        <form action="{{ route('surgeries.preparations.assign-package', $surgery) }}" method="POST">
+                        <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
                             @csrf
                             <input type="hidden" name="package_id" value="">
                             <button type="submit" 
@@ -182,7 +182,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <form action="{{ route('surgeries.preparations.assign-package', $surgery) }}" method="POST">
+                                    <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="package_id" value="{{ $package->id }}">
                                         <button type="submit" 

@@ -388,4 +388,24 @@ class SurgeryPreparationController extends Controller
 
         return view('surgeries.preparations.summary', compact('surgery'));
     }
+
+    public function store(Request $request, PreparationService $service)
+    {
+        // 1. Validar que vengan los IDs necesarios
+        $request->validate([
+            'scheduled_surgery_id' => 'required|exists:scheduled_surgeries,id',
+            'pre_assembled_package_id' => 'required|exists:pre_assembled_packages,id',
+        ]);
+
+        // 2. Llamar al servicio para hacer toda la magia de unión
+        $preparation = $service->createPreparation(
+            $request->scheduled_surgery_id,
+            $request->pre_assembled_package_id,
+            auth()->id()
+        );
+
+        // 3. Redirigir a la vista de comparación que ya tendrá datos
+        return redirect()->route('preparations.compare', $preparation->id)
+                        ->with('success', 'Hoja de trabajo generada correctamente');
+    }
 }

@@ -10,11 +10,21 @@
                 <p class="text-sm text-gray-600 mt-1">{{ $surgery->code }} - {{ $surgery->patient_name }}</p>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('surgeries.preparations.picking', $surgery) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                    <i class="fas fa-arrow-right mr-2"></i>
-                    Continuar al Surtido
-                </a>
+                @if(!$preparation->isComplete())
+                    <a href="{{ route('surgeries.preparations.picking', $surgery) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                        <i class="fas fa-barcode mr-2"></i>
+                        Ir a Surtir Faltantes
+                    </a>
+                @else
+                    <form action="{{ route('surgeries.preparations.verify', $surgery) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
+                            <i class="fas fa-check-double mr-2"></i>
+                            Verificar y Finalizar
+                        </button>
+                    </form>
+                @endif
                 <a href="{{ route('surgeries.show', $surgery) }}" 
                    class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                     <i class="fas fa-arrow-left mr-2"></i>
@@ -27,9 +37,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
-            <!-- Resumen de Preparación -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Total Items -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -42,7 +50,6 @@
                     </div>
                 </div>
 
-                <!-- Completos -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -55,7 +62,6 @@
                     </div>
                 </div>
 
-                <!-- En Paquete -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -68,12 +74,11 @@
                     </div>
                 </div>
 
-                <!-- Faltantes -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-red-500">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-gray-600">Faltantes</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $preparation->items->where('status', 'missing')->count() }}</p>
+                            <p class="text-sm font-medium text-gray-600">Pendientes</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $preparation->items->where('status', 'pending')->count() }}</p>
                         </div>
                         <div class="bg-red-100 rounded-full p-3">
                             <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
@@ -82,67 +87,39 @@
                 </div>
             </div>
 
-            <!-- Barra de Progreso General -->
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-sm font-semibold text-gray-900">Progreso de Preparación</h3>
+                    <h3 class="text-sm font-semibold text-gray-900">Progreso del Surtido</h3>
                     <span class="text-sm font-bold text-purple-600">{{ number_format($preparation->getCompletenessPercentage(), 1) }}%</span>
                 </div>
-                <div class="w-full bg-gray-200 rounded-full h-4">
-                    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 h-4 rounded-full transition-all duration-500" 
+                <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 h-4 rounded-full transition-all duration-700 shadow-inner" 
                          style="width: {{ $preparation->getCompletenessPercentage() }}%"></div>
                 </div>
             </div>
 
-            <!-- Paquete Asignado -->
-            @if($preparation->preAssembledPackage)
-            <div class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="bg-green-500 rounded-full p-3 mr-4">
-                            <i class="fas fa-box-open text-white text-2xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-semibold text-green-900">Paquete Pre-Armado Asignado</h4>
-                            <p class="text-sm text-green-700">{{ $preparation->preAssembledPackage->name }} ({{ $preparation->preAssembledPackage->code }})</p>
-                        </div>
-                    </div>
-                    <a href="{{ route('pre-assembled.show', $preparation->preAssembledPackage) }}" 
-                       class="text-green-700 hover:text-green-900"
-                       target="_blank">
-                        <i class="fas fa-external-link-alt"></i>
-                    </a>
-                </div>
-            </div>
-            @endif
-
-            <!-- Tabs: Completos / Faltantes -->
             <div class="bg-white rounded-lg shadow-sm overflow-hidden" x-data="{ tab: 'all' }">
-                <div class="border-b border-gray-200">
+                <div class="border-b border-gray-200 bg-gray-50/50">
                     <nav class="flex -mb-px">
                         <button @click="tab = 'all'" 
-                                :class="{ 'border-indigo-500 text-indigo-600': tab === 'all', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'all' }"
-                                class="w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
-                            <i class="fas fa-list mr-2"></i>
-                            Todos ({{ $preparation->items->count() }})
+                                :class="{ 'border-indigo-500 text-indigo-600 bg-white': tab === 'all', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'all' }"
+                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                            Todos
                         </button>
-                        <button @click="tab = 'complete'" 
-                                :class="{ 'border-green-500 text-green-600': tab === 'complete', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'complete' }"
-                                class="w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            Completos ({{ $preparation->items->where('status', 'complete')->count() }})
+                        <button @click="tab = 'pending'" 
+                                :class="{ 'border-red-500 text-red-600 bg-white': tab === 'pending', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'pending' }"
+                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                            Pendientes ({{ $preparation->items->where('status', 'pending')->count() }})
                         </button>
                         <button @click="tab = 'in_package'" 
-                                :class="{ 'border-blue-500 text-blue-600': tab === 'in_package', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'in_package' }"
-                                class="w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
-                            <i class="fas fa-box mr-2"></i>
-                            En Paquete ({{ $preparation->items->where('status', 'in_package')->count() }})
+                                :class="{ 'border-blue-500 text-blue-600 bg-white': tab === 'in_package', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'in_package' }"
+                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                            En Paquete
                         </button>
-                        <button @click="tab = 'missing'" 
-                                :class="{ 'border-red-500 text-red-600': tab === 'missing', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': tab !== 'missing' }"
-                                class="w-1/4 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>
-                            Faltantes ({{ $preparation->items->where('status', 'missing')->count() }})
+                        <button @click="tab = 'complete'" 
+                                :class="{ 'border-green-500 text-green-600 bg-white': tab === 'complete', 'border-transparent text-gray-500 hover:text-gray-700': tab !== 'complete' }"
+                                class="flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm transition-all">
+                            Surtidos
                         </button>
                     </nav>
                 </div>
@@ -154,73 +131,47 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Requerido</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">En Paquete</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Surtido</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Faltante</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ubicación</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($preparation->items as $item)
-                            <tr class="hover:bg-gray-50" 
-                                x-show="tab === 'all' || tab === '{{ $item->status }}'">
+                            <tr class="hover:bg-gray-50 transition-colors" 
+                                x-show="tab === 'all' || tab === '{{ $item->status }}'"
+                                x-transition>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box text-indigo-600"></i>
-                                        </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-semibold text-gray-900">{{ $item->product->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
+                                            <div class="text-xs text-gray-500">SKU: {{ $item->product->sku ?? $item->product->code }}</div>
                                             @if($item->is_mandatory)
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-1">
-                                                    <i class="fas fa-exclamation-circle mr-1"></i>
-                                                    Obligatorio
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase mt-1">
+                                                    CRÍTICO
                                                 </span>
                                             @endif
                                         </div>
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 text-center font-bold text-gray-700">{{ $item->quantity_required }}</td>
+                                <td class="px-6 py-4 text-center text-blue-600 font-medium">{{ $item->quantity_in_package }}</td>
+                                <td class="px-6 py-4 text-center text-indigo-600 font-medium">{{ $item->quantity_picked }}</td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-800">
-                                        {{ $item->quantity_required }}
+                                    <span class="{{ $item->quantity_missing > 0 ? 'text-red-600 font-bold' : 'text-gray-400' }}">
+                                        {{ $item->quantity_missing }}
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                        {{ $item->quantity_in_package }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($item->quantity_missing > 0)
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                                            {{ $item->quantity_missing }}
-                                        </span>
-                                    @else
-                                        <span class="text-xs text-gray-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($item->storageLocation)
-                                        <span class="inline-flex items-center text-sm text-gray-700">
-                                            <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
-                                            {{ $item->storageLocation->code }}
-                                        </span>
-                                    @else
-                                        <span class="text-xs text-gray-400">—</span>
-                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     @php
-                                        $statusConfig = [
-                                            'complete' => ['color' => 'green', 'label' => 'Completo', 'icon' => 'check-circle'],
-                                            'in_package' => ['color' => 'blue', 'label' => 'En Paquete', 'icon' => 'box'],
-                                            'missing' => ['color' => 'red', 'label' => 'Faltante', 'icon' => 'exclamation-triangle'],
-                                            'pending' => ['color' => 'yellow', 'label' => 'Pendiente', 'icon' => 'clock'],
-                                        ];
-                                        $config = $statusConfig[$item->status] ?? ['color' => 'gray', 'label' => $item->status, 'icon' => 'circle'];
+                                        $config = [
+                                            'complete'   => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'icon' => 'check-double', 'label' => 'Completo'],
+                                            'in_package' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'icon' => 'box', 'label' => 'En Paquete'],
+                                            'pending'    => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'icon' => 'exclamation-circle', 'label' => 'Pendiente'],
+                                        ][$item->status] ?? ['bg' => 'bg-gray-100', 'text' => 'text-gray-800', 'icon' => 'clock', 'label' => 'Pendiente'];
                                     @endphp
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $config['color'] }}-100 text-{{ $config['color'] }}-800">
-                                        <i class="fas fa-{{ $config['icon'] }} mr-1"></i>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold {{ $config['bg'] }} {{ $config['text'] }}">
+                                        <i class="fas fa-{{ $config['icon'] }} mr-1.5"></i>
                                         {{ $config['label'] }}
                                     </span>
                                 </td>
@@ -231,19 +182,21 @@
                 </div>
             </div>
 
-            <!-- Información Adicional -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                    <i class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-5 flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-100 rounded-lg text-purple-600 mr-4">
+                        <i class="fas fa-hospital-alt text-xl"></i>
+                    </div>
                     <div>
-                        <h4 class="text-sm font-semibold text-blue-900 mb-2">Siguiente Paso</h4>
-                        <p class="text-sm text-blue-800">
-                            Revisa la comparación y continúa al módulo de surtido para completar los productos faltantes.
-                            Los productos marcados como "En Paquete" ya están disponibles en el paquete pre-armado seleccionado.
-                        </p>
+                        <h4 class="text-sm font-bold text-gray-900">Ubicación de Paquete Físico</h4>
+                        <p class="text-xs text-gray-500 italic">El paquete debe ser trasladado a la mesa de preparación principal.</p>
                     </div>
                 </div>
+                <div class="text-right font-mono text-lg font-bold text-gray-700">
+                    {{ $preparation->preAssembledPackage->storageLocation->code ?? 'N/A' }}
+                </div>
             </div>
+
         </div>
     </div>
 </x-app-layout>

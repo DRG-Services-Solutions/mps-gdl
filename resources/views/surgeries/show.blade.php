@@ -10,11 +10,12 @@
             </div>
             <div class="flex items-center space-x-3">
                 @if($surgery->status === 'scheduled')
-                    <a href="{{ route('surgeries.preparations.start', $surgery) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                        <i class="fas fa-play-circle mr-2"></i>
-                        Iniciar Preparación
-                    </a>
+                    <form action="{{ route('surgeries.preparations.start', $surgery) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">
+                            <i class="fas fa-play mr-2"></i> Iniciar Preparación
+                        </button>
+                    </form>
                 @elseif($surgery->status === 'in_preparation')
                     <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
                        class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
