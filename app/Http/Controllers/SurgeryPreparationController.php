@@ -6,7 +6,9 @@ use App\Models\SurgeryPreparation;
 use App\Models\SurgeryPreparationItem;
 use App\Models\SurgeryPreparationUnit;
 use App\Models\PreAssembledPackage;
+use App\Models\PreAssembledContent;
 use App\Models\ProductUnit;
+use App\Models\PackageContent;
 use Illuminate\Support\Facades\Log;
 use App\Services\PreparationService;
 
@@ -63,7 +65,6 @@ class SurgeryPreparationController extends Controller
             ->with(['contents.product', 'storageLocation'])
             ->get()
             ->map(function($package) use ($surgery) {
-                // Calcular porcentaje de completitud
                 $package->completeness = $package->getCompletenessPercentage($surgery->checklist_id);
                 
                 // Verificar productos caducados
@@ -161,9 +162,6 @@ class SurgeryPreparationController extends Controller
             'preparation.items.units.productUnit'
         ]);
 
-        
-        
-
         $preparation = $surgery->preparation;
 
         if (!$preparation) {
@@ -171,6 +169,7 @@ class SurgeryPreparationController extends Controller
                 ->route('surgeries.show', $surgery)
                 ->with('error', 'No hay preparación para esta cirugía.');
         }
+        $product = PackageContent::GroupByPackage($preparation->pre_assembled_package_id)->get();
 
         // Agrupar items por estado
         $itemsComplete = $preparation->items()->where('status', 'in_package')->get();
@@ -180,7 +179,8 @@ class SurgeryPreparationController extends Controller
             'surgery',
             'preparation',
             'itemsComplete',
-            'itemsPending'
+            'itemsPending',
+            'product'
         ));
     }
 

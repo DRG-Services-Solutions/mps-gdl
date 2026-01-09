@@ -10,6 +10,7 @@
                     <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-indigo-600">{{ $surgery->code }}</span> 
                     <span class="mx-2">|</span> 
                     <i class="fas fa-user-injured mr-1"></i> {{ $surgery->patient_name }}
+                    <!-- TEST: {{  $product->count() }} -->
                 </p>
             </div>
             <div class="flex items-center space-x-3">
@@ -42,7 +43,7 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Tipos de Producto</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Productos diferentes</p>
                             <p class="text-3xl font-black text-gray-900 mt-1">{{ $preparation->items->count() }}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3 text-gray-400">
@@ -54,7 +55,7 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Piezas Totales</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cantidad de Piezas Totales</p>
                             <p class="text-3xl font-black text-indigo-600 mt-1">
                                 {{ $preparation->items->sum('quantity_required') }}
                             </p>
@@ -68,9 +69,10 @@
                 <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Piezas en Paquete</p>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Piezas en Pre-Armado</p>
                             <p class="text-3xl font-black text-blue-600 mt-1">
-                                {{ $preparation->items->sum('quantity_in_package') }}
+                                {{  $product->count() }}
+                                
                                
                             </p>
                         </div>

@@ -84,6 +84,16 @@ class PreAssembledPackage extends Model
     /**
      * SCOPES
      */
+
+    // Cantidad de productos por epc y codigo en el paquete
+    public function scopeWithProductUnitCounts(Builder $query)
+    {
+        return $query->withCount(['productUnits as product_unit_counts' => function (Builder $q) {
+            $q->select('epc', 'code')
+              ->selectRaw('COUNT(*) as quantity')
+              ->groupBy('epc', 'code');
+        }]);
+    }
     
     // Solo paquetes disponibles
     public function scopeAvailable(Builder $query)

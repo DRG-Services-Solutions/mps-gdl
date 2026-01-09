@@ -71,6 +71,22 @@ class PackageContent extends Model
     }
 
     /**
+     * Scopes
+     */
+
+    //Scope para agrupar unidades y productos por ID de Preassembled Package
+    public function scopeGroupByPackage($query)
+    {
+        return $query->select('pre_assembled_package_id', 'product_id', 'product_unit_id')
+                     ->groupBy('pre_assembled_package_id', 'product_id', 'product_unit_id');
+    }
+
+    public function scopeWithProductAndUnit($query)
+    {
+        return $query->with(['product', 'productUnit']);
+    }
+
+    /**
      * Eventos del modelo
      */
     protected static function boot()
