@@ -4,9 +4,9 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-box-open mr-2 text-green-600"></i>
-                    {{ $package->name }}
+                    {{ $preAssembled->name }}
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">{{ $package->code }}</p>
+                <p class="text-sm text-gray-600 mt-1">{{ $preAssembled->code }}</p>
             </div>
             <div class="flex items-center space-x-3">
                 <button onclick="openBulkScanModal()" 
@@ -14,7 +14,7 @@
                     <i class="fas fa-barcode mr-2"></i>
                     Escaneo Masivo
                 </button>
-                <a href="{{ route('pre-assembled.edit', $package) }}" 
+                <a href="{{ route('pre-assembled.edit', $preAssembled) }}" 
                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                     <i class="fas fa-edit mr-2"></i>
                     Editar
@@ -38,19 +38,11 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Estado</p>
-                            @php
-                                $statusConfig = [
-                                    'available' => ['color' => 'green', 'label' => 'Disponible'],
-                                    'in_preparation' => ['color' => 'yellow', 'label' => 'En Preparación'],
-                                    'in_surgery' => ['color' => 'orange', 'label' => 'En Cirugía'],
-                                    'maintenance' => ['color' => 'red', 'label' => 'Mantenimiento'],
-                                ];
-                                $config = $statusConfig[$package->status] ?? ['color' => 'gray', 'label' => $package->status];
-                            @endphp
-                            <p class="text-xl font-bold text-{{ $config['color'] }}-600 mt-2">{{ $config['label'] }}</p>
+                   
+                            <p class="text-xl font-bold text-600 mt-2"></p>
                         </div>
-                        <div class="bg-{{ $config['color'] }}-100 rounded-full p-3">
-                            <i class="fas fa-circle text-2xl text-{{ $config['color'] }}-600"></i>
+                        <div class="bg-100 rounded-full p-3">
+                            <i class="fas fa-circle text-2xl text-600"></i>
                         </div>
                     </div>
                 </div>
@@ -60,7 +52,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total Items</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $package->contents->count() }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $preAssembled->contents->count() }}</p>
                         </div>
                         <div class="bg-blue-100 rounded-full p-3">
                             <i class="fas fa-cubes text-2xl text-blue-600"></i>
@@ -73,7 +65,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Completitud</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($package->getCompletenessPercentage(), 1) }}%</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($preAssembled->getCompletenessPercentage(), 1) }}%</p>
                         </div>
                         <div class="bg-purple-100 rounded-full p-3">
                             <i class="fas fa-chart-pie text-2xl text-purple-600"></i>
@@ -86,7 +78,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Veces Usado</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $package->times_used }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $preAssembled->times_used }}</p>
                         </div>
                         <div class="bg-indigo-100 rounded-full p-3">
                             <i class="fas fa-sync-alt text-2xl text-indigo-600"></i>
@@ -107,37 +99,37 @@
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Código</dt>
-                            <dd class="text-sm text-gray-900 font-semibold">{{ $package->code }}</dd>
+                            <dd class="text-sm text-gray-900 font-semibold">{{ $preAssembled->code }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-gray-500 mb-1">Nombre</dt>
-                            <dd class="text-sm text-gray-900 font-semibold">{{ $package->name }}</dd>
+                            <dt class="text-sm font-medium text-gray-500 mb-1">Nombre Pre Armado</dt>
+                            <dd class="text-sm text-gray-900 font-semibold">{{ $preAssembled->name }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Check List Base</dt>
                             <dd class="text-sm text-gray-900">
-                                <a href="{{ route('checklists.show', $package->surgeryChecklist) }}" 
+                                <a href="{{ route('checklists.show', $preAssembled->surgeryChecklist) }}" 
                                    class="text-indigo-600 hover:text-indigo-800 font-medium">
-                                    {{ $package->surgeryChecklist->name }}
+                                    {{ $preAssembled->surgeryChecklist->surgery_type }}
                                 </a>
                             </dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">EPC Contenedor</dt>
-                            <dd class="text-sm text-gray-900 font-mono">{{ $package->package_epc ?: 'No asignado' }}</dd>
+                            <dd class="text-sm text-gray-900 font-mono">{{ $preAssembled->package_epc ?: 'No asignado' }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Ubicación</dt>
-                            <dd class="text-sm text-gray-900">{{ $package->storageLocation->code }} - {{ $package->storageLocation->name }}</dd>
+                            <dd class="text-sm text-gray-900">{{ $preAssembled->storageLocation->name }}</dd>
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-gray-500 mb-1">Último Uso</dt>
-                            <dd class="text-sm text-gray-900">{{ $package->last_used_at ? $package->last_used_at->format('d/m/Y H:i') : 'Nunca' }}</dd>
+                            <dd class="text-sm text-gray-900">{{ $preAssembled->last_used_at ? $preAssembled->last_used_at->format('d/m/Y H:i') : 'Nunca' }}</dd>
                         </div>
-                        @if($package->notes)
+                        @if($preAssembled->notes)
                         <div class="md:col-span-2">
                             <dt class="text-sm font-medium text-gray-500 mb-1">Notas</dt>
-                            <dd class="text-sm text-gray-900">{{ $package->notes }}</dd>
+                            <dd class="text-sm text-gray-900">{{ $preAssembled->notes }}</dd>
                         </div>
                         @endif
                     </dl>
@@ -153,7 +145,7 @@
                     </h3>
                 </div>
                 
-                <form action="{{ route('pre-assembled.add-product', $package) }}" method="POST" class="p-6">
+                <form action="{{ route('pre-assembled.add-product', $preAssembled) }}" method="POST" class="p-6">
                     @csrf
                     
                     <div class="flex items-end gap-4">
@@ -196,13 +188,13 @@
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-box mr-2 text-green-600"></i>
-                        Contenido del Paquete ({{ $package->contents->count() }} items)
+                        Contenido del Paquete ({{ $preAssembled->contents->count() }} items)
                     </h3>
                 </div>
                 
                 
                 
-                @if($package->contents->count() > 0)
+                @if($preAssembled->contents->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -216,7 +208,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($package->contents->groupBy('product_id') as $productId => $items)
+                            @foreach($preAssembled->contents->groupBy('product_id') as $productId => $items)
                             @php
                                 $firstItem = $items->first();
                                 $product = $firstItem->product;
@@ -274,7 +266,7 @@
                                     {{ $firstItem->added_at->format('d/m/Y') }}
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium">
-                                    <form action="{{ route('pre-assembled.remove-product', $package) }}" 
+                                    <form action="{{ route('pre-assembled.remove-product', $preAssembled) }}" 
                                         method="POST" 
                                         class="inline"
                                         onsubmit="return confirm('¿Remover este producto del paquete?')">
@@ -305,7 +297,7 @@
 
             <!-- Acciones -->
             <div class="flex items-center justify-end space-x-3">
-                <form action="{{ route('pre-assembled.update-status', $package) }}" 
+                <form action="{{ route('pre-assembled.update-status', $preAssembled) }}" 
                       method="POST">
                     @csrf
                     <select name="status" 
@@ -319,7 +311,7 @@
                     </select>
                 </form>
                 
-                <form action="{{ route('pre-assembled.destroy', $package) }}" 
+                <form action="{{ route('pre-assembled.destroy', $preAssembled) }}" 
                       method="POST" 
                       onsubmit="return confirm('¿Estás seguro de eliminar este paquete? Esta acción no se puede deshacer.')">
                     @csrf

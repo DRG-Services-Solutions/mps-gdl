@@ -105,29 +105,21 @@ class PreAssembledPackageController extends Controller
      * Display the specified resource.
      */
     public function show(PreAssembledPackage $preAssembled)
-{
-    // FORZAR recarga fresca de contents
-    $preAssembled->load([
-        'surgeryChecklist',
-        'storageLocation',
-        'contents.product',
-        'contents.productUnit',
-        'preparations',
-        'scheduledSurgeries'
-    ]);
+    {
+        $preAssembled->load([
+            'surgeryChecklist',
+            'storageLocation',
+            'contents.product',
+            'contents.productUnit',
+        ]);
 
-    // Optimizado: solo columnas necesarias
-    $availableProducts = Product::select('id', 'code', 'name')
-        ->where('status', 'active')
-        ->orderBy('name')
-        ->get();
+        $availableProducts = Product::select('id', 'code', 'name')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
-    return view('pre-assembled.show', [
-        'package' => $preAssembled,
-        'preAssembled' => $preAssembled,
-        'availableProducts' => $availableProducts
-    ]);
-}
+        return view('pre-assembled.show', compact('preAssembled', 'availableProducts'));
+    }
 
     /**
      * Show the form for editing the specified resource.
