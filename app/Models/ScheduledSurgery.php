@@ -55,7 +55,7 @@ class ScheduledSurgery extends Model
     // Preparación de la cirugía
     public function preparation()
     {
-        return $this->hasOne(SurgeryPreparation::class);
+        return $this->hasOne(SurgeryPreparation::class, 'scheduled_surgery_id');    
     }
 
     // Remisión asociaada
@@ -155,17 +155,53 @@ class ScheduledSurgery extends Model
     // Obtener items del check list con condicionales aplicados
     public function getChecklistItemsWithConditionals()
     {
-        return $this->checklist->items()->with('conditionals', 'product')->get()
-            ->map(function($item) {
-                $evaluation = $item->evaluateConditionals($this);
+        $results = [];
+        // 1. Cargamos los items base del checklist
+        $baseItems = $this->checklist->items()->with('product')->get();
 
-                $item->evaluation = (object) $evaluation; 
-                
-                return $item;
+        foreach ($baseItems as $item) {
+            // 2. Buscamos si este item específico tiene una regla para ESTA cirugía
+            $conditional = ChecklistConditional::where('checklist_item_id', $item->id)
+                ->forDoctor($this->doctor_id)
+                ->forHospital($this->hospital_id)
+                ->forModality($this->modality_id)
+                ->first();
+
+            // 3. Determinamos la cantidad final
+            $finalQuantity = $conditional 
+                ? $conditional->getEffectiveQuantity($item->quantity) 
+                : $item->quantity;
+
+            // Si la cantidad final es > 0, lo agregamos a la lista de preparación
+            if ($finalQuantity > 0) {
+                $results[] = [
+                    'item' => $item,
+                    'adjusted_quantity' => $finalQuantity,
+                    'is_mandatory' => $item->is_mandatory, // O la lógica que prefieras
+                    'source' => $conditional ? 'conditional' : 'base'
+                ];
+            }
+        }
+
+        // 4. (Opcional) Agregar productos adicionales que no están en el checklist base 
+        // pero sí en los condicionales para este doctor/hospital
+        $extraProducts = ChecklistConditional::additionalProducts()
+            ->whereHas('checklistItem', function($q) {
+                $q->where('checklist_id', $this->checklist_id);
             })
-            ->filter(function($item) {
-                return $item->evaluation->status !== 'excluded';
-            });
+            ->forDoctor($this->doctor_id)
+            ->get();
+
+        foreach ($extraProducts as $extra) {
+            $results[] = [
+                'item' => $extra->checklistItem,
+                'adjusted_quantity' => $extra->additional_quantity,
+                'is_mandatory' => false,
+                'source' => 'extra'
+            ];
+        }
+
+        return $results;
     }
 
     //Configuraciones de hospitales

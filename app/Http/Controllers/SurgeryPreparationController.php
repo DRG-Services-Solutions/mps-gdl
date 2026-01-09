@@ -7,6 +7,8 @@ use App\Models\SurgeryPreparationItem;
 use App\Models\SurgeryPreparationUnit;
 use App\Models\PreAssembledPackage;
 use App\Models\ProductUnit;
+use Illuminate\Support\Facades\Log;
+use App\Services\PreparationService;
 
 
 use Illuminate\Http\Request;
@@ -79,49 +81,43 @@ class SurgeryPreparationController extends Controller
      */
     public function assignPackage(Request $request, ScheduledSurgery $surgery)
     {
-        $validated = $request->validate([
-            'package_id' => 'required|exists:pre_assembled_packages,id',
-        ]);
+        Log::info("[PREPARACIÓN] Iniciando asignación de paquete", ['surgery_id' => $surgery->id, 'package_id' => $request->package_id]);
 
-        $preparation = $surgery->preparation;
-        
-        if (!$preparation) {
-            return back()->with('error', 'No hay preparación iniciada.');
-        }
-
-        $package = PreAssembledPackage::findOrFail($validated['package_id']);
-        ;
-
-        // Verificar que el paquete esté disponible
-        if ($package->status !== 'available') {
-            return back()->with('error', 'El paquete seleccionado no está disponible.');
-        }
+        // 1. Crear el padre PRIMERO (Fuera de la transacción de los ítems)
+        $preparation = SurgeryPreparation::updateOrCreate(
+            ['scheduled_surgery_id' => $surgery->id],
+            [
+                'pre_assembled_package_id' => $request->package_id,
+                'status' => 'picking',
+                'prepared_by' => auth()->id(),
+                'started_at' => now(),
+            ]
+        );
 
         DB::beginTransaction();
         try {
-            // Asignar paquete
-            $preparation->update([
-                'pre_assembled_package_id' => $package->id,
-                'status' => 'comparing',
-                'started_at' => now(),
-                'prepared_by' => auth()->id(),
-            ]);
+            $package = null;
+            if ($request->filled('package_id')) {
+                $package = PreAssembledPackage::findOrFail($request->package_id);
+                $package->updateStatus('in_preparation');
+            }
 
-            // Cambiar estado del paquete
-            $package->updateStatus('in_preparation');
+            // Limpiar ítems viejos si existen
+            $preparation->items()->delete();
 
-            // COMPARACIÓN: Check List vs Pre-Armado
+            // Ejecutar comparación
             $this->performComparison($surgery, $preparation, $package);
 
             DB::commit();
+            Log::info("[PREPARACIÓN] Éxito en asignación. Redirigiendo...");
 
-            return redirect()
-                ->route('surgeries.preparations.compare', $surgery)
-                ->with('success', 'Paquete asignado y comparación realizada.');
+            // REDIRECCIÓN EXPLÍCITA
+            return redirect()->route('surgeries.preparations.picking', $surgery);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Error al asignar paquete: ' . $e->getMessage());
+            Log::error("[PREPARACIÓN] Error en asignación", ['msg' => $e->getMessage()]);
+            return back()->with('error', 'Error al asignar: ' . $e->getMessage());
         }
     }
 
@@ -130,58 +126,26 @@ class SurgeryPreparationController extends Controller
      */
     private function performComparison($surgery, $preparation, $package)
     {
-        $checklistItems = $surgery->getChecklistItemsWithConditionals();
-        
-        $packageContentsQty = $package->contents->groupBy('product_id')
-                                ->map(fn($group) => $group->count());
+        $neededItems = $surgery->getChecklistItemsWithConditionals();
+        $packageContents = $package ? $package->contents->pluck('quantity', 'product_id') : collect();
 
-        foreach ($checklistItems as $itemData) {
-            $item = $itemData['item'] ?? null;
-            if (!$item || !$item->product) {
-                continue; 
-            }
-
-            $requiredQty = $itemData['adjusted_quantity'] ?? 0;
+        foreach ($neededItems as $data) {
+            $checklistItem = $data['item'];
+            $productId = $checklistItem->product_id;
+            $requiredQty = $data['adjusted_quantity'] ?? $checklistItem->quantity;
             
-            $availableQty = $packageContentsQty->get($item->product_id, 0);
+            $inPackageQty = $packageContents->get($productId, 0);
+            $missingQty = max(0, $requiredQty - $inPackageQty);
 
-            $missingQty = max(0, $requiredQty - $availableQty);
-
-            $storageLocation = $item->product->productUnits()
-                ->where('current_status', 'in_stock')
-                ->whereNotNull('storage_location_id')
-                ->first()
-                ?->storageLocation;
-
-            $prepItem = SurgeryPreparationItem::create([
-                'preparation_id' => $preparation->id,
-                'product_id' => $item->product_id,
-                'quantity_required' => $requiredQty,
-                'is_mandatory' => $itemData['is_mandatory'] ?? true,
-                'quantity_in_package' => $availableQty,
-                'quantity_missing' => $missingQty,
-                'quantity_picked' => 0,
-                'status' => ($missingQty === 0) ? 'in_package' : 'pending',
-                'storage_location_id' => $storageLocation?->id,
+            $preparation->items()->create([
+                'product_id'          => $productId,
+                'quantity_required'   => $requiredQty,
+                'quantity_in_package' => $inPackageQty,
+                'quantity_picked'     => 0,
+                'quantity_missing'    => $missingQty,
+                'is_mandatory'        => $data['is_mandatory'] ?? true,
+                'status'              => $missingQty <= 0 ? 'in_package' : 'pending',
             ]);
-
-            if ($availableQty > 0) {
-                $unitsInPackage = $package->contents()
-                    ->where('product_id', $item->product_id)
-                    ->take($requiredQty) 
-                    ->get();
-
-                foreach ($unitsInPackage as $content) {
-                    SurgeryPreparationUnit::create([
-                        'preparation_item_id' => $prepItem->id,
-                        'product_unit_id' => $content->product_unit_id,
-                        'source_type' => 'pre_assembled',
-                        'source_package_id' => $package->id,
-                        'assigned_at' => now(),
-                        'assigned_by' => auth()->id(),
-                    ]);
-                }
-            }
         }
     }
 
@@ -196,6 +160,8 @@ class SurgeryPreparationController extends Controller
             'preparation.items.storageLocation',
             'preparation.items.units.productUnit'
         ]);
+
+        
         
 
         $preparation = $surgery->preparation;
@@ -390,20 +356,17 @@ class SurgeryPreparationController extends Controller
 
     public function store(Request $request, PreparationService $service)
     {
-        // 1. Validar que vengan los IDs necesarios
         $request->validate([
             'scheduled_surgery_id' => 'required|exists:scheduled_surgeries,id',
             'pre_assembled_package_id' => 'required|exists:pre_assembled_packages,id',
         ]);
 
-        // 2. Llamar al servicio para hacer toda la magia de unión
         $preparation = $service->createPreparation(
             $request->scheduled_surgery_id,
             $request->pre_assembled_package_id,
             auth()->id()
         );
 
-        // 3. Redirigir a la vista de comparación que ya tendrá datos
         return redirect()->route('preparations.compare', $preparation->id)
                         ->with('success', 'Hoja de trabajo generada correctamente');
     }

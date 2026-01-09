@@ -1,48 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
-                    <i class="fas fa-procedures mr-2 text-indigo-600"></i>
-                    Cirugía {{ $surgery->code }}
-                </h2>
-                <p class="text-sm text-gray-600 mt-1">{{ $surgery->checklist->name }}</p>
+                <div class="flex items-center gap-3">
+                    <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
+                        {{ $surgery->code }}
+                    </span>
+                    <h2 class="font-bold text-2xl text-gray-800 leading-tight">
+                        {{ $surgery->checklist->name }}
+                    </h2>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">
+                    <i class="far fa-clock mr-1"></i> Creada el {{ $surgery->created_at->format('d/m/Y H:i') }}
+                </p>
             </div>
-            <div class="flex items-center space-x-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('surgeries.index') }}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver
+                </a>
+
                 @if($surgery->status === 'scheduled')
                     <form action="{{ route('surgeries.preparations.start', $surgery) }}" method="POST">
                         @csrf
-                        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded">
-                            <i class="fas fa-play mr-2"></i> Iniciar Preparación
+                        <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all transform hover:scale-105">
+                            <i class="fas fa-play-circle mr-2 text-lg"></i> INICIAR PREPARACIÓN
                         </button>
                     </form>
-                @elseif($surgery->status === 'in_preparation')
-                    <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                        <i class="fas fa-tasks mr-2"></i>
-                        Continuar Preparación
-                    </a>
-                @elseif($surgery->status === 'ready' && !$surgery->invoice)
-                    <a href="{{ route('invoices.create-from-surgery', $surgery) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                        <i class="fas fa-file-invoice mr-2"></i>
-                        Generar Remisión
-                    </a>
                 @endif
                 
+                {{-- Otras acciones como Editar en un botón más discreto --}}
                 @if($surgery->canBeEdited())
-                    <a href="{{ route('surgeries.edit', $surgery) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                        <i class="fas fa-edit mr-2"></i>
-                        Editar
+                    <a href="{{ route('surgeries.edit', $surgery) }}" class="p-2 text-gray-400 hover:text-blue-600 transition">
+                        <i class="fas fa-edit"></i>
                     </a>
                 @endif
-                
-                <a href="{{ route('surgeries.index') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Volver
-                </a>
             </div>
         </div>
     </x-slot>
@@ -85,60 +76,41 @@
             </div>
 
             <!-- Información del Paciente y Hospital -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Paciente -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            <i class="fas fa-user mr-2 text-indigo-600"></i>
-                            Información del Paciente
-                        </h3>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mr-3">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-700">Paciente</h4>
                     </div>
-                    <div class="p-6">
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Nombre del Paciente</dt>
-                                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ $surgery->patient_name }}</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Modalidad de Pago</dt>
-                                <dd class="mt-1">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $surgery->payment_mode === 'particular' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
-                                        <i class="fas fa-{{ $surgery->payment_mode === 'particular' ? 'user' : 'shield-alt' }} mr-1"></i>
-                                        {{ $surgery->payment_mode === 'particular' ? 'Particular' : 'Aseguradora' }}
-                                    </span>
-                                </dd>
-                            </div>
-                        </dl>
-                    </div>
+                    <p class="text-lg font-semibold text-gray-900">{{ $surgery->patient_name }}</p>
+                    <span class="inline-block mt-2 px-2 py-1 text-[10px] uppercase font-bold rounded">
+                        Modalidad: {{ $surgery->modality->name }}
+                    </span>
+                    
                 </div>
 
-                <!-- Hospital y Doctor -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            <i class="fas fa-hospital mr-2 text-indigo-600"></i>
-                            Hospital y Doctor
-                        </h3>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 mr-3">
+                            <i class="fas fa-hospital-user"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-700">Equipo Médico</h4>
                     </div>
-                    <div class="p-6">
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Hospital</dt>
-                                <dd class="mt-1 text-sm text-gray-900 font-semibold">
-                                    <i class="fas fa-hospital text-gray-400 mr-1"></i>
-                                    {{ $surgery->hospital->name }}
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-500">Doctor</dt>
-                                <dd class="mt-1 text-sm text-gray-900 font-semibold">
-                                    <i class="fas fa-user-md text-gray-400 mr-1"></i>
-                                    {{ $surgery->doctor->first_name }} {{ $surgery->doctor->last_name }}
-                                </dd>
-                            </div>
-                        </dl>
+                    <p class="text-sm font-medium text-gray-900"><span class="text-gray-500 font-normal ">Dr.</span><span class="capitalize"> {{ $surgery->doctor->first_name }} {{ $surgery->doctor->last_name }}</span></p>
+                    <p class="text-sm text-gray-600 mt-1 capitalize"><i class="fas fa-hospital mr-1 text-gray-400"></i> {{ Str::title( $surgery->hospital->name) }}</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-gray-600 mr-3">
+                            <i class="far fa-calendar-alt"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-700">Programación</h4>
                     </div>
+                    <p class="text-xl font-bold text-gray-900">{{ $surgery->surgery_datetime->format('d M, Y') }}</p>
+                    <p class="text-lg text-indigo-600 font-medium">{{ $surgery->surgery_datetime->format('H:i') }} <span class="text-xs text-gray-500">hrs</span></p>
                 </div>
             </div>
 
@@ -177,83 +149,79 @@
             </div>
 
             <!-- Productos del Check List con Condicionales -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-box mr-2 text-indigo-600"></i>
-                        Productos Requeridos
-                    </h3>
-                    <p class="text-sm text-gray-600 mt-1">Check list aplicado con condicionales según hospital, doctor y modalidad</p>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-boxes mr-2 text-indigo-600"></i>
+                            Material Quirúrgico Requerido
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Basado en protocolos de {{ $surgery->hospital->name }}</p>
+                    </div>
+                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md">
+                        {{ count($checklistItems) }} ÍTEMS EN TOTAL
+                    </span>
                 </div>
-                
-                @php
-                    $checklistItems = $surgery->getChecklistItemsWithConditionals();
-                @endphp
-                
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Obligatorio</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aplicado</th>
+                        <thead>
+                            <tr class="bg-white">
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción del Producto</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Cant.</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo de Requisito</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Estado</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($checklistItems as $item)
-                            @php
-                                $evaluation = $item->evaluateConditionals($surgery->hospital_id, $surgery->payment_mode);
-                            @endphp
-                            @if($evaluation['status'] !== 'excluded')
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box text-indigo-600"></i>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            @forelse($checklistItems as $data)
+                                @php
+                                    $item = $data['item']; 
+                                    $qty = $data['adjusted_quantity'];
+                                    $isConditional = ($data['source'] === 'conditional' || $data['source'] === 'extra');
+                                @endphp
+                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-9 w-9 {{ $isConditional ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600' }} rounded-lg flex items-center justify-center border {{ $isConditional ? 'border-purple-100' : 'border-blue-100' }}">
+                                                <i class="fas {{ $isConditional ? 'fa-hand-holding-medical' : 'fa-box' }} text-sm"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-bold text-gray-900">{{ $item->product->name }}</div>
+                                                <div class="text-[11px] text-gray-400 font-mono tracking-tighter">REF: {{ $item->product->sku ?? 'SIN SKU' }}</div>
+                                            </div>
                                         </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $item->product->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-black text-gray-700 border border-gray-200">
+                                            {{ $qty }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        @if($isConditional)
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase">
+                                                <i class="fas fa-filter mr-1"></i> Condicional
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase">
+                                                <i class="fas fa-check-double mr-1"></i> Estándar
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        {{-- Badge de estado visual --}}
+                                        <div class="flex justify-center">
+                                            <div class="h-2 w-2 rounded-full bg-gray-300 animate-pulse"></div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                        {{ $evaluation['quantity'] }}
-                                    </span>
-                                   
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($evaluation['status'] === 'required' || $item->is_mandatory)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <i class="fas fa-exclamation-circle mr-1"></i>
-                                            Sí
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            No
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if($item->conditionals->count() > 0)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            <i class="fas fa-filter mr-1"></i>
-                                            Con condicionales
-                                        </span>
-                                    @else
-                                        <span class="text-xs text-gray-400">Estándar</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @endif
+                                    </td>
+                                </tr>
                             @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    No hay productos en el check list
-                                </td>
-                            </tr>
+                                <tr>
+                                    <td colspan="4" class="px-6 py-12 text-center text-gray-400">
+                                        <i class="fas fa-exclamation-circle text-4xl mb-3 block"></i>
+                                        <p class="text-sm font-medium">No hay productos requeridos para esta configuración.</p>
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -362,73 +330,88 @@
             @endif
 
             <!-- Timeline de Eventos -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-history mr-2 text-indigo-600"></i>
-                        Historial de Eventos
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800">
+                        <i class="fas fa-stream mr-2 text-indigo-600"></i>
+                        Trazabilidad del Proceso
                     </h3>
                 </div>
-                <div class="p-6">
+                <div class="p-6 bg-white">
                     <div class="flow-root">
                         <ul class="-mb-8">
+                            {{-- Evento: Agendado (Siempre existe) --}}
                             <li>
                                 <div class="relative pb-8">
-                                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-calendar text-white text-xs"></i>
+                                    <span class="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                    <div class="relative flex items-start space-x-4">
+                                        <div class="relative">
+                                            <span class="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center ring-8 ring-white border border-indigo-200">
+                                                <i class="fas fa-calendar-plus text-indigo-600"></i>
                                             </span>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">Cirugía Agendada</p>
-                                                <p class="text-xs text-gray-500">{{ $surgery->created_at->format('d/m/Y H:i') }}</p>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex justify-between items-center">
+                                                <p class="text-sm font-bold text-gray-900">Cirugía Registrada</p>
+                                                <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                                                    {{ $surgery->created_at->format('d M, Y - H:i') }}
+                                                </span>
                                             </div>
-                                            <p class="text-sm text-gray-600 mt-1">Por {{ $surgery->scheduler->name }}</p>
+                                            <p class="text-sm text-gray-500 mt-1">
+                                                Registrada en el sistema por <span class="font-semibold text-gray-700">{{ $surgery->scheduler->name }}</span>.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </li>
-                            
+
+                            {{-- Evento: Inicio de Preparación --}}
                             @if($surgery->preparation && $surgery->preparation->started_at)
                             <li>
                                 <div class="relative pb-8">
-                                    <span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"></span>
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-yellow-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-play text-white text-xs"></i>
+                                    <span class="absolute top-5 left-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                                    <div class="relative flex items-start space-x-4">
+                                        <div class="relative">
+                                            <span class="h-10 w-10 rounded-full bg-yellow-50 flex items-center justify-center ring-8 ring-white border border-yellow-200">
+                                                <i class="fas fa-spinner fa-spin text-yellow-600"></i>
                                             </span>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">Preparación Iniciada</p>
-                                                <p class="text-xs text-gray-500">{{ $surgery->preparation->started_at->format('d/m/Y H:i') }}</p>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex justify-between items-center">
+                                                <p class="text-sm font-bold text-gray-900">Preparación en Curso</p>
+                                                <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                                                    {{ $surgery->preparation->started_at->format('d M, Y - H:i') }}
+                                                </span>
                                             </div>
-                                            <p class="text-sm text-gray-600 mt-1">Por {{ $surgery->preparation->preparer->name ?? 'Sistema' }}</p>
+                                            <p class="text-sm text-gray-500 mt-1">
+                                                Material solicitado y en proceso de surtido por <span class="font-semibold text-gray-700">{{ $surgery->preparation->preparer->name ?? 'Personal de Almacén' }}</span>.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </li>
                             @endif
-                            
-                            @if($surgery->preparation && $surgery->preparation->completed_at)
+
+                            {{-- Evento: Completado --}}
+                            @if($surgery->status === 'ready' || ($surgery->preparation && $surgery->preparation->completed_at))
                             <li>
                                 <div class="relative pb-8">
-                                    <div class="relative flex space-x-3">
-                                        <div>
-                                            <span class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
-                                                <i class="fas fa-check text-white text-xs"></i>
+                                    <div class="relative flex items-start space-x-4">
+                                        <div class="relative">
+                                            <span class="h-10 w-10 rounded-full bg-green-50 flex items-center justify-center ring-8 ring-white border border-green-200 shadow-sm">
+                                                <i class="fas fa-check-circle text-green-600"></i>
                                             </span>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div>
-                                                <p class="text-sm font-medium text-gray-900">Preparación Completada</p>
-                                                <p class="text-xs text-gray-500">{{ $surgery->preparation->completed_at->format('d/m/Y H:i') }}</p>
+                                        <div class="min-w-0 flex-1">
+                                            <div class="flex justify-between items-center">
+                                                <p class="text-sm font-bold text-gray-900">Material Listo para Quirófano</p>
+                                                <span class="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                                                    {{ optional($surgery->preparation->completed_at)->format('d M, Y - H:i') ?? 'Pendiente' }}
+                                                </span>
                                             </div>
-                                            <p class="text-sm text-gray-600 mt-1">Por {{ $surgery->preparation->verifier->name ?? 'Sistema' }}</p>
+                                            <p class="text-sm text-gray-500 mt-1">
+                                                Verificación final completada. Equipo listo para entrega.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>

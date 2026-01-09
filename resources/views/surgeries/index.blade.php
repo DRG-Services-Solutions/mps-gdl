@@ -270,85 +270,83 @@
                                         {{ $surgery->surgery_datetime->format('H:i') }} Hrs
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    @php
-                                        $statusConfig = [
-                                            'scheduled' => ['color' => 'blue', 'label' => 'Agendada', 'icon' => 'calendar'],
-                                            'in_preparation' => ['color' => 'yellow', 'label' => 'En Preparación', 'icon' => 'spinner'],
-                                            'ready' => ['color' => 'green', 'label' => 'Lista', 'icon' => 'check-circle'],
-                                            'in_surgery' => ['color' => 'purple', 'label' => 'En Cirugía', 'icon' => 'procedures'],
-                                            'completed' => ['color' => 'gray', 'label' => 'Completada', 'icon' => 'check'],
-                                            'cancelled' => ['color' => 'red', 'label' => 'Cancelada', 'icon' => 'times-circle'],
-                                        ];
-                                        $config = $statusConfig[$surgery->status] ?? ['color' => 'gray', 'label' => $surgery->status, 'icon' => 'circle'];
-                                    @endphp
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $config['color'] }}-100 text-{{ $config['color'] }}-800">
-                                        <i class="fas fa-{{ $config['icon'] }} mr-1"></i>
-                                        {{ $config['label'] }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                                    {{-- CASO 1: Cirugía agendada pero sin iniciar preparación --}}
-                                    @if($surgery->status === 'scheduled')
-                                        <form action="{{ route('surgeries.preparations.start', $surgery) }}" 
-                                            method="POST" 
-                                            class="inline"
-                                            onsubmit="return confirm('¿Iniciar la preparación de esta cirugía?')">
-                                            @csrf
-                                            <button type="submit" 
-                                                    class="text-green-600 hover:text-green-900 transition-colors"
-                                                    title="Iniciar preparación">
-                                                <i class="fas fa-play-circle text-lg"></i>
-                                            </button>
-                                        </form>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center">
+                                        @php
+                                            $statusConfig = [
+                                                'scheduled' => ['color' => 'blue', 'label' => 'Agendada', 'icon' => 'calendar'],
+                                                'in_preparation' => ['color' => 'yellow', 'label' => 'En Preparación', 'icon' => 'spinner'],
+                                                'ready' => ['color' => 'green', 'label' => 'Lista', 'icon' => 'check-circle'],
+                                                'in_surgery' => ['color' => 'purple', 'label' => 'En Cirugía', 'icon' => 'procedures'],
+                                                'completed' => ['color' => 'gray', 'label' => 'Completada', 'icon' => 'check'],
+                                                'cancelled' => ['color' => 'red', 'label' => 'Cancelada', 'icon' => 'times-circle'],
+                                            ];
+                                            $config = $statusConfig[$surgery->status] ?? ['color' => 'gray', 'label' => $surgery->status, 'icon' => 'circle'];
+                                        @endphp
+                                        
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $config['color'] }}-100 text-{{ $config['color'] }}-800">
+                                            <i class="fas fa-{{ $config['icon'] }} mr-1 {{ $surgery->status === 'in_preparation' ? 'fa-spin' : '' }}"></i>
+                                            {{ $config['label'] }}
+                                        </span>
 
-                                    {{-- CASO 2: Ya está en preparación --}}
-                                    @elseif($surgery->status === 'in_preparation')
-                                        @if($surgery->preparation && !$surgery->preparation->pre_assembled_package_id)
-                                            {{-- Si inició preparación pero NO ha elegido paquete, lo mandamos a la selección --}}
-                                            <a href="{{ route('surgeries.preparations.selectPackage', $surgery) }}" 
-                                            class="text-blue-600 hover:text-blue-900"
-                                            title="Asignar Pre Armado">
-                                                <i class="fas fa-box-open text-lg"></i>
-                                            </a>
-                                        @else
-                                            {{-- Si ya tiene paquete, lo mandamos a la tabla de comparación/surtido --}}
-                                            <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
-                                            class="text-purple-600 hover:text-purple-900"
-                                            title="Continuar Surtido/Comparación">
-                                                <i class="fas fa-clipboard-check text-lg"></i>
-                                            </a>
+                                        {{-- Barra de completitud visual si está en preparación --}}
+                                        @if($surgery->status === 'in_preparation' && $surgery->preparation)
+                                            <div class="w-full mt-2 max-w-[100px]">
+                                                <div class="flex justify-between mb-1">
+                                                    <span class="text-[10px] font-medium text-gray-500">Progreso</span>
+                                                    <span class="text-[10px] font-medium text-gray-500">45%</span> {{-- Aquí va tu lógica de % --}}
+                                                </div>
+                                                <div class="w-full bg-gray-200 rounded-full h-1">
+                                                    <div class="bg-yellow-500 h-1 rounded-full" style="width: 45%"></div>
+                                                </div>
+                                            </div>
                                         @endif
-                                    @endif
-                                    
-                                    {{-- Acciones estándar siempre visibles --}}
-                                    <a href="{{ route('surgeries.show', $surgery) }}" 
-                                    class="text-indigo-600 hover:text-indigo-900"
-                                    title="Ver detalle">
-                                        <i class="fas fa-eye text-lg"></i>
-                                    </a>
-                                    
-                                    @if($surgery->canBeEdited())
-                                        <a href="{{ route('surgeries.edit', $surgery) }}" 
-                                        class="text-blue-600 hover:text-blue-900"
-                                        title="Editar">
-                                            <i class="fas fa-edit text-lg"></i>
-                                        </a>
-                                    @endif
-                                    
-                                    @if($surgery->canBeCancelled())
-                                        <form action="{{ route('surgeries.cancel', $surgery) }}" 
-                                            method="POST" 
-                                            class="inline"
-                                            onsubmit="return confirm('¿Cancelar esta cirugía?')">
-                                            @csrf
-                                            <button type="submit" 
-                                                    class="text-red-600 hover:text-red-900"
-                                                    title="Cancelar">
-                                                <i class="fas fa-ban text-lg"></i>
-                                            </button>
-                                        </form>
-                                    @endif
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                    <div class="flex justify-end items-center space-x-2">
+                                        {{-- ACCIÓN PRINCIPAL (Botón con texto) --}}
+                                        @if($surgery->status === 'scheduled')
+                                            <form action="{{ route('surgeries.preparations.start', $surgery) }}" method="POST" class="inline" onsubmit="return confirm('¿Iniciar preparación?')">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700">
+                                                    <i class="fas fa-play mr-1"></i> Preparar
+                                                </button>
+                                            </form>
+                                        @elseif($surgery->status === 'in_preparation')
+                                            @if($surgery->preparation && !$surgery->preparation->pre_assembled_package_id)
+                                                <a href="{{ route('surgeries.preparations.selectPackage', $surgery) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                                                    <i class="fas fa-box-open mr-1"></i> Paquete
+                                                </a>
+                                            @else
+                                                <a href="{{ route('surgeries.preparations.compare', $surgery) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-purple-600 hover:bg-purple-700">
+                                                    <i class="fas fa-clipboard-check mr-1"></i> Surtir
+                                                </a>
+                                            @endif
+                                        @endif
+
+                                        {{-- ACCIONES SECUNDARIAS (Iconos discretos) --}}
+                                        <div class="flex items-center ml-2 border-l pl-2 space-x-2 border-gray-200">
+                                            <a href="{{ route('surgeries.show', $surgery) }}" class="text-gray-400 hover:text-indigo-600" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            
+                                            @if($surgery->canBeEdited())
+                                                <a href="{{ route('surgeries.edit', $surgery) }}" class="text-gray-400 hover:text-blue-600" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            @endif
+
+                                            @if($surgery->canBeCancelled())
+                                                <form action="{{ route('surgeries.cancel', $surgery) }}" method="POST" class="inline" onsubmit="return confirm('¿Cancelar cirugía?')">
+                                                    @csrf
+                                                    <button type="submit" class="text-gray-400 hover:text-red-600" title="Cancelar">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                             @empty

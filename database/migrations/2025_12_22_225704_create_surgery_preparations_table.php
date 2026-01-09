@@ -11,32 +11,38 @@ return new class extends Migration
         Schema::create('surgery_preparations', function (Blueprint $table) {
             $table->id();
 
-            // Pre-Armado seleccionado
-            $table->foreignId('pre_assembled_package_id')->nullable()->constrained('pre_assembled_packages')->comment('Paquete pre-armado utilizado');
-            $table->foreignId('scheduled_surgery_id')->constrained('scheduled_surgeries')->comment('Cirugía programada asociada');
+            // Relación correcta con Cirugías (Usando el nombre que ya tiene el índice en tu BD)
+            $table->foreignId('scheduled_surgery_id')
+                  ->constrained('scheduled_surgeries')
+                  ->onDelete('cascade')
+                  ->comment('Cirugía programada asociada');
+
+            // Paquete pre-armado
+            $table->foreignId('pre_assembled_package_id')
+                  ->nullable()
+                  ->constrained('pre_assembled_packages')
+                  ->comment('Paquete pre-armado utilizado');
             
             // Estados de preparación
             $table->enum('status', [
-                'pending',        // Pendiente
-                'comparing',      // Comparando check list vs pre-armado
-                'picking',        // Surtiendo faltantes
-                'verifying',      // Verificando
-                'completed'       // Completado
+                'pending',   
+                'comparing', 
+                'picking',   
+                'verifying', 
+                'completed'  
             ])->default('pending');
             
-            // Fechas
             $table->dateTime('started_at')->nullable();
             $table->dateTime('completed_at')->nullable();
             
-            // Usuarios
+            // Usuarios responsable y verificador
             $table->foreignId('prepared_by')->nullable()->constrained('users');
             $table->foreignId('verified_by')->nullable()->constrained('users');
             
             $table->text('notes')->nullable();
             $table->timestamps();
             
-            // Índices
-            $table->index('pre_assembled_package_id');
+            // Índices para optimización de búsquedas
             $table->index('status');
         });
     }

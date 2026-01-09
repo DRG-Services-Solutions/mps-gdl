@@ -18,7 +18,7 @@ class SurgeryPreparation extends Model
         'prepared_by',
         'verified_by',
         'notes',
-        'surgery_id',
+        
     ];
 
     protected $casts = [
@@ -30,6 +30,10 @@ class SurgeryPreparation extends Model
      * RELACIONES
      */
     
+    public function surgery()
+    {
+        return $this->belongsTo(ScheduledSurgery::class, 'scheduled_surgery_id');
+    }
     // Cirugía a preparar
     public function scheduledSurgery()
     {
