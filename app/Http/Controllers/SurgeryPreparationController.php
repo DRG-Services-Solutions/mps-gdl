@@ -367,7 +367,7 @@ class SurgeryPreparationController extends Controller
             auth()->id()
         );
 
-        return redirect()->route('preparations.compare', $preparation->id)
+        return redirect()->route('surgeries.preparations.compare', $preparation->id)
                         ->with('success', 'Hoja de trabajo generada correctamente');
     }
 }

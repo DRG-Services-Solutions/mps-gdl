@@ -32,6 +32,12 @@ class PreAssembledPackage extends Model
     /**
      * RELACIONES
      */
+
+    //Preparacion
+    public function preparation()
+    {
+        return $this->belongsTo(SurgeryPreparation::class);
+    }
     
     // Check list del tipo de cirugía
     public function surgeryChecklist()

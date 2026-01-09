@@ -88,11 +88,13 @@
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Piezas Faltantes</p>
                             @php
                                 $totalFaltante = $preparation->items->sum(function($item) {
-                                    return max(0, $item->quantity_required - ($item->quantity_in_package + ($item->quantity_picked ?? 0)));
+                                    return max(0, $item->quantity_required - ($item->quantity_in_package));
                                 });
+                                 
                             @endphp
                             <p class="text-3xl font-black text-red-600 mt-1">{{ $totalFaltante }}</p>
                         </div>
+                        
                         <div class="bg-red-50 rounded-lg p-3 text-red-600">
                             <i class="fas fa-exclamation-circle text-xl"></i>
                         </div>

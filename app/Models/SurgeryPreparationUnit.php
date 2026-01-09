@@ -37,7 +37,6 @@ class SurgeryPreparationUnit extends Model
         return $this->belongsTo(ProductUnit::class, 'product_unit_id');
     }
 
-    // Paquete de origen (si aplica)
     public function sourcePackage()
     {
         return $this->belongsTo(PreAssembledPackage::class, 'source_package_id');

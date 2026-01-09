@@ -17,11 +17,7 @@ return new class extends Migration
                   ->onDelete('cascade')
                   ->comment('Cirugía programada asociada');
 
-            // Paquete pre-armado
-            $table->foreignId('pre_assembled_package_id')
-                  ->nullable()
-                  ->constrained('pre_assembled_packages')
-                  ->comment('Paquete pre-armado utilizado');
+           
             
             // Estados de preparación
             $table->enum('status', [

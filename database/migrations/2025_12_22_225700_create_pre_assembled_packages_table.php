@@ -17,14 +17,16 @@ return new class extends Migration
 
             // RFID del paquete completo (contenedor)
             $table->string('package_epc')->unique()->nullable()->comment('EPC del contenedor/caja del paquete');
+
+            $table->foreignId('preparation_id')->nullable()->constrained('surgery_preparations')->comment('Preparación de cirugía asociada');
             
             // Estados
             $table->enum('status', ['available', 'in_preparation', 'in_surgery', 'maintenance'])->default('available')->comment('Estado del paquete');
             
             // Ubicación física
             $table->foreignId('storage_location_id')->nullable()->constrained('storage_locations')->comment('Ubicación en área de pre-armados');
-            
-            // DAtos de uso
+
+            // Datos de uso
             $table->dateTime('last_used_at')->nullable()->comment('Última vez usado');
             $table->integer('times_used')->default(0)->comment('Veces usado');
             
