@@ -80,7 +80,7 @@
 
     </head>
     <body class="font-sans antialiased">
-        <div class="min-h-screen bg-pattern" x-data="{ mobileMenuOpen: false, desktopSidebarOpen: true }">
+        <div class="min-h-screen bg-pattern" x-data="{ mobileMenuOpen: false, desktopSidebarOpen: false }">
             <!-- Navigation -->
             @include('layouts.navigation')
 
