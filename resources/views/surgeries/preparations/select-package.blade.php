@@ -38,6 +38,7 @@
                     <div>
                         <p class="text-sm text-indigo-100">Modalidad</p>
                         <p class="text-lg font-semibold">{{ $surgery->modality->name }}</p>
+                        TEST: {{ $surgery->preAssembledPackage }}
                     </div>
                 </div>
             </div>
@@ -190,7 +191,7 @@
                                                 class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
                                             <i class="fas fa-check mr-1"></i>
                                             Seleccionar
-                                        </button>
+                                        </button>   
                                     </form>
                                 </td>
                             </tr>

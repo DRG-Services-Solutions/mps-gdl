@@ -22,6 +22,7 @@ class PreAssembledPackage extends Model
         'times_used',
         'created_by',
         'notes',
+        'preparation_id',
     ];
 
     protected $casts = [

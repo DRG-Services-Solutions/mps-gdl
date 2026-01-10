@@ -161,7 +161,7 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
             Route::post('/start', [SurgeryPreparationController::class, 'start'])->name('start');
             
             // 2. Seleccionar paquete pre-armado
-            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage');
+            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage')->middleware(['auth', 'check.package']);;
             Route::post('/assign-package', [SurgeryPreparationController::class, 'assignPackage'])->name('assignPackage');
             
             // 3. Ver comparación (Check List vs Pre-Armado)

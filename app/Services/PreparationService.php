@@ -12,20 +12,24 @@ class PreparationService
     public function createPreparation($surgeryId, $packageId, $userId)
     {
         return DB::transaction(function () use ($surgeryId, $packageId, $userId) {
-    // 1. Obtener la cirugía y sus datos de contexto
+        // 1. Obtener la cirugía y sus datos de contexto
         $surgery = ScheduledSurgery::with(['hospital', 'doctor', 'checklist.items'])->findOrFail($surgeryId);
         $package = PreAssembledPackage::with('contents')->findOrFail($packageId);
 
         // 2. Crear la cabecera de la Preparación (La Hoja de Trabajo)
-        $preparation = SurgeryPreparation::create([
+        $preparation = SurgeryPreparation::create([  
             'scheduled_surgery_id' => $surgery->id,
             'pre_assembled_package_id' => $package->id,
             'status' => 'comparing',
             'started_at' => now(),
             'prepared_by' => $userId,
         ]);
+        $package-update([
+            'preparation_id' => $preparation->id,
+            'status' => 'in__preparation',
+        ]);
+    
 
-        // 3. EXPLOSIÓN DEL CHECKLIST: Convertir items del checklist en items de preparación
         foreach ($surgery->checklist->items as $checkItem) {
             
             // Ejecutamos tu lógica de condicionales (Paso 2 de la sugerencia)
@@ -41,7 +45,7 @@ class PreparationService
             // 4. EL MATCH: Ver cuánto hay de este producto en el paquete (Paso 3 de la sugerencia)
             $quantityInPackage = $package->contents
                 ->where('product_id', $checkItem->product_id)
-                ->sum('quantity'); // Asumiendo que PreAssembledContent tiene columna 'quantity'
+                ->sum('quantity'); 
 
             $requiredQty = $evaluation['quantity'];
             $missingQty = max(0, $requiredQty - $quantityInPackage);

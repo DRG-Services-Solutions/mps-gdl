@@ -142,7 +142,7 @@ class ScheduledSurgeryController extends Controller
             // PASO 4: Preparar datos
             $surgeryData = [
                 'code' => $code,
-                'checklist_id' => $validated['checklist_id'],  // ← Sin "surgery_"
+                'checklist_id' => $validated['checklist_id'], 
                 'patient_name' => $validated['patient_name'],
                 'hospital_modality_config_id' => $validated['hospital_modality_config_id'],
                 'doctor_id' => $validated['doctor_id'],
@@ -162,7 +162,6 @@ class ScheduledSurgeryController extends Controller
             }
 
 
-            // PASO 5: Crear cirugía
             $surgery = ScheduledSurgery::create($surgeryData);
 
             \Log::info('[SURGERY] ✅ Cirugía creada exitosamente', [

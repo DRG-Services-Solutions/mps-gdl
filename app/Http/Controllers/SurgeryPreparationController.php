@@ -84,11 +84,9 @@ class SurgeryPreparationController extends Controller
     {
         Log::info("[PREPARACIÓN] Iniciando asignación de paquete", ['surgery_id' => $surgery->id, 'package_id' => $request->package_id]);
 
-        // 1. Crear el padre PRIMERO (Fuera de la transacción de los ítems)
         $preparation = SurgeryPreparation::updateOrCreate(
             ['scheduled_surgery_id' => $surgery->id],
             [
-                'pre_assembled_package_id' => $request->package_id,
                 'status' => 'picking',
                 'prepared_by' => auth()->id(),
                 'started_at' => now(),
@@ -101,6 +99,7 @@ class SurgeryPreparationController extends Controller
             if ($request->filled('package_id')) {
                 $package = PreAssembledPackage::findOrFail($request->package_id);
                 $package->updateStatus('in_preparation');
+                $package->update(['preparation_id' => $preparation->id]);
             }
 
             // Limpiar ítems viejos si existen
