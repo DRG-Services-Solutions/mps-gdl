@@ -159,7 +159,7 @@
                                 name="search_input" 
                                 id="search_input" 
                                 placeholder="Escanea EPC, ingresa código o serial..."
-                                class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500 @error('search_input') border-red-500 @enderror"
+                                class="w-full rounded-lg focus:border-green-500 focus:ring-green-500 @error('search_input') border-red-500 @enderror"
                                 autofocus
                                 required>
                             @error('search_input')
