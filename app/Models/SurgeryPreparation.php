@@ -30,10 +30,7 @@ class SurgeryPreparation extends Model
      * RELACIONES
      */
     
-    public function surgery()
-    {
-        return $this->belongsTo(ScheduledSurgery::class, 'scheduled_surgery_id');
-    }
+  
     // Cirugía a preparar
     public function scheduledSurgery()
     {
@@ -43,7 +40,7 @@ class SurgeryPreparation extends Model
     // Paquete pre-armado utilizado
     public function preAssembledPackage()
     {
-        return $this->belongsTo(PreAssembledPackage::class, 'pre_assembled_package_id');
+        return $this->belongsTo(PreAssembledPackage::class, 'preparation_id');
     }
 
     // Usuario que preparó

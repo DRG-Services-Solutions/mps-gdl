@@ -319,7 +319,7 @@
                                                     <i class="fas fa-box-open mr-1"></i> Paquete
                                                 </a>
                                             @else
-                                                <a href="{{ route('surgeries.preparations.compare', $surgery) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-purple-600 hover:bg-purple-700">
+                                                <a href="{{ route('surgeries.preparations.picking', $surgery) }}" class="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-purple-600 hover:bg-purple-700">
                                                     <i class="fas fa-clipboard-check mr-1"></i> Surtir
                                                 </a>
                                             @endif

@@ -82,6 +82,11 @@ class ProductUnit extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function preAssembledPackage()
+    {
+        return $this->belongsTo(PreAssembledPackage::class, 'pre_assembled_package_id');
+    }
+
     /**
      * Obtener entidad legal de cada producto asignada 
      */

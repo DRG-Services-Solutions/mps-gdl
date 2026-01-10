@@ -37,7 +37,7 @@ class PreAssembledPackage extends Model
     //Preparacion
     public function preparation()
     {
-        return $this->belongsTo(SurgeryPreparation::class);
+        return $this->belongsTo(SurgeryPreparation::class, 'preparation_id');
     }
     
     // Check list del tipo de cirugía
@@ -67,7 +67,7 @@ class PreAssembledPackage extends Model
     // Product units actualmente en el paquete
     public function productUnits()
     {
-        return $this->hasMany(ProductUnit::class, 'current_package_id');
+        return $this->hasMany(ProductUnit::class, 'pre_assembled_package_id');
     }
 
     // Preparaciones que usan este paquete

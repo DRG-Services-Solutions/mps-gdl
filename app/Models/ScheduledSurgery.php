@@ -38,8 +38,6 @@ class ScheduledSurgery extends Model
         return $this->belongsTo(SurgicalChecklist::class, 'checklist_id');
     }
 
-   
-
     // Doctor
     public function doctor()
     {
@@ -55,7 +53,7 @@ class ScheduledSurgery extends Model
     // Preparación de la cirugía
     public function preparation()
     {
-        return $this->hasOne(SurgeryPreparation::class);    
+        return $this->hasOne(SurgeryPreparation::class, 'scheduled_surgery_id');    
     }
 
     // Remisión asociaada
@@ -65,11 +63,19 @@ class ScheduledSurgery extends Model
         return $this->hasOne(Invoice::class, 'scheduled_surgery_id');
     }
 
-    // Product units actualmente en esta cirugía
     public function productUnits()
     {
-        return $this->hasMany(ProductUnit::class, 'current_surgery_id');
+        return $this->hasManyThrough(
+            ProductUnit::class,
+            PreAssembledPackage::class,
+            'scheduled_surgery_id', // FK en SurgeryPreparationItem
+            'id',                  // FK en ProductUnit
+            'id',                  // Local key en ScheduledSurgery
+            'product_unit_id',     // Local key en SurgeryPreparationItem
+        );
     }
+
+    
 
     /**
      * SCOPES

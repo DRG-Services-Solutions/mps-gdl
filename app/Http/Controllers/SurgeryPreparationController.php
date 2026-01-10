@@ -198,16 +198,18 @@ class SurgeryPreparationController extends Controller
 
         $preparation = $surgery->preparation;
 
-        if (!$preparation) {
+        if (!$surgery) {
             return redirect()->route('surgeries.show', $surgery);
         }
-
-        // Cambiar estado a picking
-        if ($preparation->status === 'comparing') {
+        /*
+         if ($preparation->status === 'comparing') {
             $preparation->update(['status' => 'picking']);
         }
+        $cirugia = $surgery->id;
+        */
+        $cirugia = $surgery->id;
 
-        return view('surgeries.preparations.picking', compact('surgery', 'preparation'));
+        return view('surgeries.preparations.picking', compact('surgery', 'preparation', 'cirugia'));
     }
 
     /**
