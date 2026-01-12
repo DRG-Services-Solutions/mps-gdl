@@ -40,7 +40,7 @@ class SurgeryPreparation extends Model
     // Paquete pre-armado utilizado
     public function preAssembledPackage()
     {
-        return $this->belongsTo(PreAssembledPackage::class, 'preparation_id');
+        return $this->belongsTo(PreAssembledPackage::class, 'pre_assembled_package_id');
     }
 
     // Usuario que preparó

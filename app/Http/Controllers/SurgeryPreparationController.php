@@ -18,32 +18,31 @@ use Illuminate\Support\Facades\DB;
 
 class SurgeryPreparationController extends Controller
 {
+    protected $preparationService;
+
+    public function __construct(PreparationService $service)
+    {
+        $this->preparationService = $service;
+    }
+
+
     /**
      * Iniciar preparación de cirugía
      */
-    public function start(ScheduledSurgery $surgery)
+    public function startPreparation(Request $request, ScheduledSurgery $surgery)
     {
-        // Verificar que no tenga preparación ya
-        if ($surgery->preparation) {
-            return redirect()
-                ->route('surgeries.preparations.selectPackage', $surgery)
-                ->with('info', 'Esta cirugía ya tiene una preparación iniciada.');
+        try {
+            $preparation = $this->preparationService->createPreparation(
+                $surgery->id,
+                $request->package_id,
+                auth()->id()
+            );
+
+            return redirect()->route('surgeries.preparations.picking', $surgery)
+                ->with('success', 'Hoja de trabajo generada y paquete asignado.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error: ' . $e->getMessage());
         }
-        
-        
-
-        // Crear preparación
-        $preparation = SurgeryPreparation::create([
-            'scheduled_surgery_id' => $surgery->id,
-            'status' => 'pending',
-        ]);
-
-        // Actualizar estado de la cirugía
-        $surgery->updateStatus('in_preparation');
-
-        return redirect()
-            ->route('surgeries.preparations.selectPackage', $surgery)
-            ->with('success', 'Preparación iniciada. Seleccione un paquete pre-armado.');
     }
 
     /**
@@ -75,78 +74,6 @@ class SurgeryPreparationController extends Controller
             ->sortByDesc('completeness');
 
         return view('surgeries.preparations.select-package', compact('surgery', 'availablePackages'));
-    }
-
-    /**
-     * Asignar paquete pre-armado y hacer comparación
-     */
-    public function assignPackage(Request $request, ScheduledSurgery $surgery)
-    {
-        Log::info("[PREPARACIÓN] Iniciando asignación de paquete", ['surgery_id' => $surgery->id, 'package_id' => $request->package_id]);
-
-        $preparation = SurgeryPreparation::updateOrCreate(
-            ['scheduled_surgery_id' => $surgery->id],
-            [
-                'status' => 'picking',
-                'prepared_by' => auth()->id(),
-                'started_at' => now(),
-            ]
-        );
-
-        DB::beginTransaction();
-        try {
-            $package = null;
-            if ($request->filled('package_id')) {
-                $package = PreAssembledPackage::findOrFail($request->package_id);
-                $package->updateStatus('in_preparation');
-                $package->update(['preparation_id' => $preparation->id]);
-            }
-
-            // Limpiar ítems viejos si existen
-            $preparation->items()->delete();
-
-            // Ejecutar comparación
-            $this->performComparison($surgery, $preparation, $package);
-
-            DB::commit();
-            Log::info("[PREPARACIÓN] Éxito en asignación. Redirigiendo...");
-
-            // REDIRECCIÓN EXPLÍCITA
-            return redirect()->route('surgeries.preparations.picking', $surgery);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("[PREPARACIÓN] Error en asignación", ['msg' => $e->getMessage()]);
-            return back()->with('error', 'Error al asignar: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Realizar comparación entre check list y paquete
-     */
-    private function performComparison($surgery, $preparation, $package)
-    {
-        $neededItems = $surgery->getChecklistItemsWithConditionals();
-        $packageContents = $package ? $package->contents->pluck('quantity', 'product_id') : collect();
-
-        foreach ($neededItems as $data) {
-            $checklistItem = $data['item'];
-            $productId = $checklistItem->product_id;
-            $requiredQty = $data['adjusted_quantity'] ?? $checklistItem->quantity;
-            
-            $inPackageQty = $packageContents->get($productId, 0);
-            $missingQty = max(0, $requiredQty - $inPackageQty);
-
-            $preparation->items()->create([
-                'product_id'          => $productId,
-                'quantity_required'   => $requiredQty,
-                'quantity_in_package' => $inPackageQty,
-                'quantity_picked'     => 0,
-                'quantity_missing'    => $missingQty,
-                'is_mandatory'        => $data['is_mandatory'] ?? true,
-                'status'              => $missingQty <= 0 ? 'in_package' : 'pending',
-            ]);
-        }
     }
 
     /**
@@ -186,30 +113,20 @@ class SurgeryPreparationController extends Controller
     /**
      * Vista de surtido de faltantes
      */
-    public function picking(ScheduledSurgery $surgery)
+    public function picking(ScheduledSurgery $surgery, SurgeryPreparation $preparation)
     {
-        $surgery->load([
-            'preparation.items' => function($q) {
-                $q->where('quantity_missing', '>', 0);
-            },
-            'preparation.items.product',
-            'preparation.items.storageLocation'
+        $preparation->load([
+            'items.product',
+            'items.units.productUnit',
+            'preAssembledPackage'
         ]);
 
-        $preparation = $surgery->preparation;
-
-        if (!$surgery) {
-            return redirect()->route('surgeries.show', $surgery);
-        }
-        /*
-         if ($preparation->status === 'comparing') {
+        $pendingItems = $preparation->items->where('quantity_missing', '>', 0);
+        if ($preparation->status === 'comparing') {
             $preparation->update(['status' => 'picking']);
         }
-        $cirugia = $surgery->id;
-        */
-        $cirugia = $surgery->id;
 
-        return view('surgeries.preparations.picking', compact('surgery', 'preparation', 'cirugia'));
+        return view('surgeries.preparations.picking', compact('preparation', 'pendingItems', 'surgery'));
     }
 
     /**
@@ -218,83 +135,39 @@ class SurgeryPreparationController extends Controller
     public function addPickedProduct(Request $request, ScheduledSurgery $surgery)
     {
         $validated = $request->validate([
-            'preparation_item_id' => 'required|exists:surgery_preparation_items,id',
             'epc' => 'required|string',
         ]);
 
         DB::beginTransaction();
         try {
-            $prepItem = SurgeryPreparationItem::findOrFail($validated['preparation_item_id']);
+            // 1. Buscar la unidad física
+            $productUnit = ProductUnit::where('epc', $validated['epc'])->firstOrFail();
+            
+            // 2. Buscar si la preparación necesita este producto
+            $prepItem = $surgery->preparation->items()
+                ->where('product_id', $productUnit->product_id)
+                ->where('quantity_missing', '>', 0)
+                ->first();
 
-            // Buscar product unit por EPC
-            $productUnit = ProductUnit::where('epc', $validated['epc'])->first();
-
-            if (!$productUnit) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'EPC no encontrado en el sistema.'
-                ], 404);
+            if (!$prepItem) {
+                return response()->json(['success' => false, 'message' => 'Este producto no es requerido o ya está completo.'], 400);
             }
 
-            // Verificar que sea del producto correcto
-            if ($productUnit->product_id !== $prepItem->product_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El EPC no corresponde al producto requerido.'
-                ], 400);
-            }
-
-            // Verificar que esté disponible
-            if ($productUnit->current_status !== 'in_stock') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El producto no está disponible en almacén.'
-                ], 400);
-            }
-
-            // Verificar que no se exceda la cantidad
-            if ($prepItem->quantity_picked >= $prepItem->quantity_missing) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ya se completó la cantidad requerida.'
-                ], 400);
-            }
-
-            // Agregar unidad
-            $prepItem->addPickedUnit($productUnit->id, 'warehouse', auth()->id());
-
-            // Actualizar estado del product_unit
-            $productUnit->update([
-                'current_status' => 'in_pre_assembled',
-                'current_package_id' => $surgery->preparation->pre_assembled_package_id,
-            ]);
-
-            // Agregar al contenido del paquete
-            $surgery->preparation->preAssembledPackage->contents()->create([
-                'package_id' => $surgery->preparation->pre_assembled_package_id,
-                'product_id' => $productUnit->product_id,
-                'product_unit_id' => $productUnit->id,
-                'quantity' => 1,
-                'added_at' => now(),
-                'added_by' => auth()->id(),
-                'expiration_date' => $productUnit->expiration_date,
-                'entry_date' => $productUnit->entry_date,
-            ]);
+            // 3. Registrar el surtido (Lógica delegada al modelo o servicio)
+            $prepItem->addUnit($productUnit, auth()->id());
 
             DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Producto agregado exitosamente.',
-                'item' => $prepItem->fresh()
+                'message' => 'Producto detectado: ' . $productUnit->product->name,
+                'item_id' => $prepItem->id,
+                'quantity_picked' => $prepItem->fresh()->quantity_picked,
+                'all_complete' => $surgery->preparation->getCompletenessPercentage() >= 100
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

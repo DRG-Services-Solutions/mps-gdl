@@ -11,6 +11,9 @@ return new class extends Migration
         Schema::create('surgery_preparations', function (Blueprint $table) {
             $table->id();
 
+            //Paquete asociado con la preparacion
+            $table->foreignId('pre_assembled_package_id')->constrained('pre_assembled_packages')->onDelete('set null')->comment('Paquete pre-armado asociado');
+
             // Relación correcta con Cirugías (Usando el nombre que ya tiene el índice en tu BD)
             $table->foreignId('scheduled_surgery_id')
                   ->constrained('scheduled_surgeries')
