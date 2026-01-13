@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('checklist_id')->constrained('surgical_checklists')->onDelete('cascade')->comment('ID del check list');
             $table->foreignId('product_id')->constrained('products')->comment('ID del producto');
             $table->integer('quantity')->comment('Cantidad base requerida');
+            $table->boolean('is_mandatory')->default(true)->comment('Si es obligatorio para la cirugía');
+            $table->integer('order')->default(0)->comment('Orden de presentación en el checklist');
             $table->text('notes')->nullable()->comment('Notas');
             $table->timestamps();
             

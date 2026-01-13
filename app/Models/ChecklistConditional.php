@@ -155,27 +155,28 @@ class ChecklistConditional extends Model
     public function getDescription(): string
     {
         $parts = [];
-
+        
         if ($this->doctor_id) {
-            $parts[] = "Doctor: {$this->doctor->name}";
+            // ✅ CORREGIDO: Doctor con first_name y last_name
+            $doctorName = $this->doctor 
+                ? 'Dr. ' . $this->doctor->first_name . ' ' . $this->doctor->last_name 
+                : 'Doctor ID ' . $this->doctor_id;
+            $parts[] = "Doctor: {$doctorName}";
         }
-
+        
         if ($this->hospital_id) {
-            $parts[] = "Hospital: {$this->hospital->name}";
+            $parts[] = "Hospital: " . ($this->hospital?->name ?? 'ID ' . $this->hospital_id);
         }
-
+        
         if ($this->modality_id) {
-            $parts[] = "Modalidad: {$this->modality->name}";
+            $parts[] = "Modalidad: " . ($this->modality?->name ?? 'ID ' . $this->modality_id);
         }
-
+        
         if ($this->legal_entity_id) {
-            $parts[] = "Legal Entity: {$this->legalEntity->name}";
+            $parts[] = "Legal Entity: " . ($this->legalEntity?->name ?? 'ID ' . $this->legal_entity_id);
         }
-
-        if (empty($parts)) {
-            return "Condicional general (aplica a todos)";
-        }
-
-        return implode(" + ", $parts);
+        
+        return implode(' + ', $parts);
     }
+
 }
