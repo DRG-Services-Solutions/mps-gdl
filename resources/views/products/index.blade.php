@@ -34,7 +34,7 @@
                         <a href="{{ route('products.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
                             <i class="fas fa-plus mr-2"></i>
-                            'Agregar al Catálogo
+                            Nuevo Producto
                         </a>
                         <a href="{{ route('products.import.form') }}" 
                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">

@@ -263,20 +263,7 @@
                                     @endif
                                 </div>
 
-                                {{-- Especialidad Médica --}}
-                                <div>
-                                    <label class="text-sm font-medium text-gray-500 mb-1 block">
-                                        <i class="fas fa-stethoscope text-gray-400 mr-1"></i>
-                                        {{ __('Especialidad Médica') }}
-                                    </label>
-                                    @if($product->specialty)
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                            {{ $product->specialty->name }}
-                                        </span>
-                                    @else
-                                        <p class="text-base text-gray-400 italic">{{ __('Sin especialidad') }}</p>
-                                    @endif
-                                </div>
+                                
                             </div>
                         </div>
                     </div>

@@ -172,22 +172,7 @@
 
                             
 
-                            {{-- Especialidad Médica --}}
-                            <div>
-                                <label for="specialty_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-stethoscope text-gray-400 mr-2"></i>
-                                    {{ __('Especialidad Médica') }}
-                                </label>
-                                <select name="specialty_id" id="specialty_id"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="">{{ __('-- Seleccione --') }}</option>
-                                    @foreach($specialties as $specialty)
-                                        <option value="{{ $specialty->id }}" {{ old('specialty_id') == $specialty->id ? 'selected' : '' }}>
-                                            {{ $specialty->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            
 
                             {{-- Tipo de Producto --}}
                             <div>

@@ -13,7 +13,7 @@ export default defineConfig({
         host: '0.0.0.0', 
         cors: true,
         hmr: {
-            host: '192.168.139.1' 
+            host: '10.20.1.157' 
         }
     }
         

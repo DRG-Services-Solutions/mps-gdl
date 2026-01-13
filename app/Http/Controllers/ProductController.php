@@ -25,7 +25,6 @@ class ProductController extends Controller
     $query = Product::with([
         'supplier', 
         'category',
-        'specialty', 
     ]);
     
     // ========================================
@@ -85,11 +84,10 @@ class ProductController extends Controller
     {
         $suppliers = Supplier::orderBy('name')->get(); 
         $categories = Category::orderBy('name')->get();
-        $specialties = MedicalSpecialty::orderBy('name')->get();
         $product_types = ProductType::orderBy('name')->get();
         
         
-        return view('products.create', compact('suppliers', 'categories', 'specialties', 'product_types'));
+        return view('products.create', compact('suppliers', 'categories', 'product_types'));
     }
 
     // ==========================================================
@@ -103,7 +101,6 @@ class ProductController extends Controller
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
-            'specialty_id' => 'nullable|exists:medical_specialties,id',
             'product_type_id' => 'nullable|exists:product_types,id',
             
             // Información básica del catálogo
