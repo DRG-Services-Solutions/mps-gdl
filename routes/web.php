@@ -161,7 +161,7 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
             Route::post('/start', [SurgeryPreparationController::class, 'start'])->name('start');
             
             // 2. Seleccionar paquete pre-armado
-            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage')->middleware(['auth', 'check.package']);;
+            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage');
             Route::post('/assign-package', [SurgeryPreparationController::class, 'assignPackage'])->name('assignPackage');
             
             // 3. Ver comparación (Check List vs Pre-Armado)
@@ -169,13 +169,18 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
             
             // 4. Surtir faltantes (Picking)
             Route::get('/picking', [SurgeryPreparationController::class, 'picking'])->name('picking');
+            Route::post('scan', [SurgeryPreparationController::class, 'scanProduct'])->name('scan');
+
             Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('add-picked-product');
             
             // 5. Verificar y completar
-            Route::post('/verify', [SurgeryPreparationController::class, 'verify'])->name('verify');
+            Route::post('verify', [SurgeryPreparationController::class, 'verify'])->name('verify');
+            Route::post('cancel', [SurgeryPreparationController::class, 'cancel'])->name('cancel');
             
             // 6. Resumen
-            Route::get('/summary', [SurgeryPreparationController::class, 'summary'])->name('summary');
+            Route::get('summary', [SurgeryPreparationController::class, 'summary'])->name('summary');
+            Route::get('status', [SurgeryPreparationController::class, 'status'])->name('status');
+            Route::get('items', [SurgeryPreparationController::class, 'items'])->name('items');
         });
     });
 

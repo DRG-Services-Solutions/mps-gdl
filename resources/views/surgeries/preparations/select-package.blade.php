@@ -5,9 +5,11 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-box-open mr-2 text-purple-600"></i>
-                   Seleccionar Paquete Pre-Armado
+                    Seleccionar Paquete Pre-Armado
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">{{ $surgery->code }} - {{ $surgery->patient_name }}</p>
+                <p class="text-sm text-gray-600 mt-1">
+                    {{ $surgery->code }} - {{ $surgery->patient->name ?? $surgery->patient_name }}
+                </p>
             </div>
             <a href="{{ route('surgeries.show', $surgery) }}" 
                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
@@ -38,69 +40,52 @@
                     <div>
                         <p class="text-sm text-indigo-100">Modalidad</p>
                         <p class="text-lg font-semibold">{{ $surgery->modality->name }}</p>
-                        TEST: {{ $surgery->preAssembledPackage }}
                     </div>
                 </div>
             </div>
 
-            <!-- Opciones -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Opción 1: Usar Paquete Existente -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden border-2 border-green-200 hover:border-green-400 transition-colors">
-                    <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            <i class="fas fa-box-open mr-2 text-green-600"></i>
-                            Usar Paquete Pre-Armado Existente
-                        </h3>
-                        <p class="text-sm text-gray-600 mt-1">Selecciona un paquete disponible y completa los faltantes</p>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-center mb-4">
-                            <div class="text-4xl font-bold text-green-600">{{ $availablePackages->count() }}</div>
-                            <div class="text-sm text-gray-600">Paquetes disponibles</div>
+            <!-- Flujo del Proceso -->
+            <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-route mr-2 text-indigo-600"></i>
+                    ¿Qué sucede después de seleccionar?
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <span class="text-indigo-600 font-bold text-sm">1</span>
                         </div>
-                        <p class="text-sm text-gray-600 mb-4">
-                            <i class="fas fa-check-circle text-green-600 mr-1"></i>
-                            Aprovecha productos ya preparados
-                        </p>
-                        <p class="text-sm text-gray-600 mb-4">
-                            <i class="fas fa-clock text-green-600 mr-1"></i>
-                            Ahorra tiempo en preparación
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Opción 2: Crear Desde Cero -->
-                <div class="bg-white rounded-lg shadow-sm overflow-hidden border-2 border-blue-200 hover:border-blue-400 transition-colors">
-                    <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            <i class="fas fa-layer-group mr-2 text-blue-600"></i>
-                            Preparar Desde Cero
-                        </h3>
-                        <p class="text-sm text-gray-600 mt-1">Arma un nuevo paquete completo</p>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-center mb-4">
-                            <div class="text-4xl font-bold text-blue-600">100%</div>
-                            <div class="text-sm text-gray-600">Control total</div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Seleccionar Paquete</p>
+                            <p class="text-xs text-gray-500">Elige el paquete disponible</p>
                         </div>
-                        <p class="text-sm text-gray-600 mb-4">
-                            <i class="fas fa-cog text-blue-600 mr-1"></i>
-                            Control total del proceso
-                        </p>
-                        <p class="text-sm text-gray-600 mb-4">
-                            <i class="fas fa-box text-blue-600 mr-1"></i>
-                            Selecciona cada producto
-                        </p>
-                        <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="package_id" value="">
-                            <button type="submit" 
-                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                                <i class="fas fa-play mr-1"></i>
-                                Preparar Desde Cero
-                            </button>
-                        </form>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 font-bold text-sm">2</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Comparar Contenido</p>
+                            <p class="text-xs text-gray-500">Ver qué tiene y qué falta</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="text-green-600 font-bold text-sm">3</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Surtir Faltantes</p>
+                            <p class="text-xs text-gray-500">Escanear productos con RFID</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <span class="text-purple-600 font-bold text-sm">4</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Verificar</p>
+                            <p class="text-xs text-gray-500">Completar preparación</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -108,90 +93,146 @@
             <!-- Paquetes Disponibles -->
             @if($availablePackages->count() > 0)
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-list mr-2 text-green-600"></i>
-                        Paquetes Pre-Armados Disponibles
-                    </h3>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                                <i class="fas fa-boxes mr-2 text-green-600"></i>
+                                Paquetes Pre-Armados Disponibles
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">
+                                Selecciona el paquete con mayor completitud para ahorrar tiempo
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-3xl font-bold text-green-600">{{ $availablePackages->count() }}</span>
+                            <p class="text-xs text-gray-600">disponibles</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="overflow-x-auto">
-                    
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paquete</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Contenido</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completitud</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Usos</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Paquete
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Unidades Físicas
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Completitud
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Ubicación
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Estado
+                                </th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acción
+                                </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($availablePackages as $package)
-                            <tr class="hover:bg-gray-50 transition-colors">
+                            <tr class="hover:bg-green-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box-open text-green-600"></i>
+                                        <div class="flex-shrink-0 h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <i class="fas fa-box-open text-green-600 text-xl"></i>
                                         </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-semibold text-gray-900">{{ $package->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $package->code }}</div>
+                                            <div class="text-xs text-gray-500 font-mono">{{ $package->code }}</div>
+                                            @if($package->last_used_at)
+                                                <div class="text-xs text-gray-400 mt-0.5">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    Usado {{ $package->last_used_at->diffForHumans() }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                        {{ $package->contents->count() }} items
-                                    </span>
+                                    <div class="flex flex-col items-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
+                                            {{ $package->contents->count() }} unidades
+                                        </span>
+                                        <span class="text-xs text-gray-500 mt-1">
+                                            {{ $package->contents->groupBy('product_id')->count() }} productos diferentes
+                                        </span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4">
                                     @php
-                                        $completeness = $package->getCompletenessPercentage();
+                                        $completeness = $package->completeness ?? $package->getCompletenessPercentage($surgery->checklist_id);
                                         $color = $completeness >= 80 ? 'green' : ($completeness >= 50 ? 'yellow' : 'red');
                                     @endphp
                                     <div class="flex items-center justify-center">
                                         <div class="w-full max-w-xs">
                                             <div class="flex items-center justify-between mb-1">
-                                                <span class="text-sm font-semibold text-{{ $color }}-600">{{ number_format($completeness, 1) }}%</span>
+                                                <span class="text-sm font-bold text-{{ $color }}-700">
+                                                    {{ number_format($completeness, 1) }}%
+                                                </span>
+                                                @if($completeness >= 80)
+                                                    <i class="fas fa-star text-yellow-500" title="Muy completo"></i>
+                                                @elseif($completeness >= 50)
+                                                    <i class="fas fa-check-circle text-green-500" title="Bueno"></i>
+                                                @else
+                                                    <i class="fas fa-exclamation-circle text-red-500" title="Bajo"></i>
+                                                @endif
                                             </div>
-                                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                                <div class="bg-{{ $color }}-500 h-2 rounded-full transition-all duration-300" 
+                                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                                <div class="bg-{{ $color }}-500 h-2.5 rounded-full transition-all duration-300 shadow-sm" 
                                                      style="width: {{ $completeness }}%"></div>
                                             </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    <div class="text-sm font-semibold text-gray-900">{{ $package->times_used }}</div>
-                                    @if($package->last_used_at)
-                                        <div class="text-xs text-gray-500">{{ $package->last_used_at->diffForHumans() }}</div>
+                                    @if($package->storageLocation)
+                                        <div class="flex flex-col items-center">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                                {{ $package->storageLocation->code }}
+                                            </span>
+                                            @if($package->storageLocation->name)
+                                                <span class="text-xs text-gray-500 mt-1">
+                                                    {{ $package->storageLocation->name }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-xs text-gray-400 italic">Sin ubicación</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($package->hasExpiredProducts())
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    @if($package->has_expired ?? $package->hasExpiredProducts())
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                             <i class="fas fa-exclamation-triangle mr-1"></i>
                                             Productos vencidos
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <i class="fas fa-check-circle mr-1"></i>
-                                            OK
+                                            Vigente
                                         </span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
-                                    <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
+                                    <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST" class="inline">
                                         @csrf
                                         <input type="hidden" name="package_id" value="{{ $package->id }}">
                                         <button type="submit" 
-                                                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
-                                            <i class="fas fa-check mr-1"></i>
+                                                class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200"
+                                                @if($package->has_expired ?? $package->hasExpiredProducts())
+                                                    onclick="return confirm('Este paquete contiene productos vencidos. ¿Deseas continuar de todos modos?')"
+                                                @endif>
+                                            <i class="fas fa-check-circle mr-2"></i>
                                             Seleccionar
-                                        </button>   
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -200,22 +241,71 @@
                     </table>
                 </div>
             </div>
-            @else
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+
+            <!-- Información Adicional -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
-                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl mr-3"></i>
-                    <div>
-                        <h4 class="text-sm font-semibold text-yellow-900 mb-2">No hay paquetes disponibles</h4>
+                    <i class="fas fa-info-circle text-blue-600 text-xl mr-3 mt-0.5"></i>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                            Después de seleccionar el paquete
+                        </h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li class="flex items-start">
+                                <i class="fas fa-arrow-right text-blue-600 mr-2 mt-1"></i>
+                                <span>Verás una <strong>comparación detallada</strong> entre lo que necesitas y lo que tiene el paquete</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-arrow-right text-blue-600 mr-2 mt-1"></i>
+                                <span>Podrás identificar <strong>qué productos faltan</strong> por surtir</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-arrow-right text-blue-600 mr-2 mt-1"></i>
+                                <span>Escanearás los faltantes con <strong>RFID</strong> para completar la preparación</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            @else
+            <!-- No hay paquetes disponibles -->
+            <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-6">
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-3xl mr-4"></i>
+                    <div class="flex-1">
+                        <h4 class="text-lg font-semibold text-yellow-900 mb-2">
+                            No hay paquetes pre-armados disponibles
+                        </h4>
                         <p class="text-sm text-yellow-800 mb-4">
-                            No hay paquetes pre-armados disponibles para este tipo de cirugía. 
-                            Deberás preparar desde cero o crear un nuevo paquete.
+                            No existen paquetes disponibles para el checklist: <strong>{{ $surgery->checklist->surgery_type }}</strong>.
+                            Deberás preparar todos los productos desde cero escaneando cada uno con RFID.
                         </p>
-                        <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST">
+                        
+                        <div class="bg-white rounded-lg p-4 mb-4 border border-yellow-200">
+                            <h5 class="text-sm font-semibold text-gray-900 mb-2">¿Qué sucederá?</h5>
+                            <ol class="text-sm text-gray-700 space-y-2">
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">1</span>
+                                    <span>Se creará una preparación vacía basada en el checklist</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">2</span>
+                                    <span>Deberás escanear <strong>todos</strong> los productos requeridos</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mr-2">3</span>
+                                    <span>Una vez completo, podrás verificar y marcar como listo</span>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <form action="{{ route('surgeries.preparations.assignPackage', $surgery) }}" method="POST" onsubmit="return confirm('¿Confirmas que deseas preparar desde cero? Todos los productos deberán ser escaneados.');">
                             @csrf
                             <input type="hidden" name="package_id" value="">
                             <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                                <i class="fas fa-play mr-1"></i>
+                                    class="inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all duration-200">
+                                <i class="fas fa-play-circle mr-2"></i>
                                 Preparar Desde Cero
                             </button>
                         </form>
@@ -225,4 +315,18 @@
             @endif
         </div>
     </div>
+
+    @if(session('success'))
+    <div class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
+        <i class="fas fa-check-circle mr-2"></i>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        {{ session('error') }}
+    </div>
+    @endif
 </x-app-layout>

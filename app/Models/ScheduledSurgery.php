@@ -162,7 +162,6 @@ class ScheduledSurgery extends Model
     public function getChecklistItemsWithConditionals()
     {
         $results = [];
-        // 1. Cargamos los items base del checklist
         $baseItems = $this->checklist->items()->with('product')->get();
 
         foreach ($baseItems as $item) {
@@ -183,14 +182,13 @@ class ScheduledSurgery extends Model
                 $results[] = [
                     'item' => $item,
                     'adjusted_quantity' => $finalQuantity,
-                    'is_mandatory' => $item->is_mandatory, // O la lógica que prefieras
+                    'is_mandatory' => $item->is_mandatory, 
                     'source' => $conditional ? 'conditional' : 'base'
                 ];
             }
         }
 
-        // 4. (Opcional) Agregar productos adicionales que no están en el checklist base 
-        // pero sí en los condicionales para este doctor/hospital
+
         $extraProducts = ChecklistConditional::additionalProducts()
             ->whereHas('checklistItem', function($q) {
                 $q->where('checklist_id', $this->checklist_id);

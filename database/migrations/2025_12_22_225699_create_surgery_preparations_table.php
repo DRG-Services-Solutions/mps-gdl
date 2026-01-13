@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             //Paquete asociado con la preparacion
-            $table->foreignId('pre_assembled_package_id')->constrained('pre_assembled_packages')->onDelete('set null')->comment('Paquete pre-armado asociado');
+            $table->foreignId('pre_assembled_package_id')->constrained('pre_assembled_packages')->onDelete('cascade')->comment('Paquete pre-armado asociado');
 
             // Relación correcta con Cirugías (Usando el nombre que ya tiene el índice en tu BD)
             $table->foreignId('scheduled_surgery_id')

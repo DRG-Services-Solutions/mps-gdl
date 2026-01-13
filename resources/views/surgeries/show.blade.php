@@ -20,12 +20,10 @@
                 </a>
 
                 @if($surgery->status === 'scheduled')
-                    <form action="{{ route('surgeries.preparations.start', $surgery) }}" method="POST">
-                        @csrf
-                        <button type="submit" class="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all transform hover:scale-105">
-                            <i class="fas fa-play-circle mr-2 text-lg"></i> INICIAR PREPARACIÓN
-                        </button>
-                    </form>
+                    <a href="{{ route('surgeries.preparations.selectPackage', $surgery) }}" 
+                    class="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all transform hover:scale-105">
+                        <i class="fas fa-play-circle mr-2 text-lg"></i> INICIAR PREPARACIÓN
+                    </a>
                 @endif
                 
                 {{-- Otras acciones como Editar en un botón más discreto --}}

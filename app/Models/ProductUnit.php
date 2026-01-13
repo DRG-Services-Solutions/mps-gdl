@@ -20,7 +20,12 @@ class ProductUnit extends Model
         'expiration_date',
         'manufacture_date',
         'status',
+        'current_status',          
         'current_location_id',
+        'current_package_id',      
+        'current_surgery_id',      
+        'reserved_at',             
+        'reserved_by',             
         'sterilization_cycles',
         'last_sterilization_date',
         'next_maintenance_date',
@@ -48,7 +53,19 @@ class ProductUnit extends Model
         'sterilization_cycles' => 'integer',
         'max_sterilization_cycles' => 'integer',
         'reserved_quantity' => 'integer',
+        'reserved_at' => 'datetime',  
     ];
+
+    const STATUS_AVAILABLE = 'available';
+    const STATUS_IN_USE = 'in_use';
+    const STATUS_RESERVED = 'reserved';
+    const STATUS_IN_STERILIZATION = 'in_sterilization';
+    const STATUS_MAINTENANCE = 'maintenance';
+    const STATUS_QUARANTINE = 'quarantine';
+    const STATUS_DAMAGED = 'damaged';
+    const STATUS_EXPIRED = 'expired';
+    const STATUS_LOST = 'lost';
+    const STATUS_RETIRED = 'retired';
 
     // ==================== RELACIONES ====================
     
@@ -95,6 +112,41 @@ class ProductUnit extends Model
         return $this->belongsTo(LegalEntity::class);
     }
 
+    public function reserveForPreparation($packageId, $surgeryId, $userId)
+    {
+        if (!$this->isAvailable()) {
+            throw new \Exception("Esta unidad no está disponible (estado: {$this->current_status})");
+        }
+
+        $this->update([
+            'current_status' => self::STATUS_RESERVED, // ✅ Usar constante
+            'current_package_id' => $packageId,
+            'current_surgery_id' => $surgeryId,
+            'reserved_at' => now(),
+            'reserved_by' => $userId,
+        ]);
+    }
+
+    public function markAsInUse($surgeryId)
+    {
+        $this->update([
+            'current_status' => self::STATUS_IN_USE,
+            'current_surgery_id' => $surgeryId,
+            'updated_at' => now(),
+        ]);
+    }
+
+    public function release()
+    {
+        $this->update([
+            'current_status' => self::STATUS_AVAILABLE,
+            'current_package_id' => null,
+            'current_surgery_id' => null,
+            'reserved_at' => null,
+            'reserved_by' => null,
+        ]);
+    }
+
     /**
      * Obtener el sub almacen asignado a esta unidad
      */
@@ -134,13 +186,16 @@ class ProductUnit extends Model
     
     public function scopeAvailable($query)
     {
-        return $query->where('status', 'available')
-                     ->where('reserved_quantity', 0);
+        return $query->whereIn('current_status', [self::STATUS_AVAILABLE, 'in_stock']);
     }
 
     public function scopeInUse($query)
     {
-        return $query->where('status', 'in_use');
+        return $query->whereIn('current_status', [
+            self::STATUS_RESERVED,
+            self::STATUS_IN_USE,
+            self::STATUS_IN_STERILIZATION
+        ]);
     }
 
     public function scopeExpiringSoon($query, $days = 30)
@@ -183,11 +238,9 @@ class ProductUnit extends Model
     /**
      * Verifica si la unidad está disponible para uso
      */
-    public function isAvailable(): bool
+    public function isAvailable()
     {
-        return $this->status === 'available' 
-            && $this->reserved_quantity == 0 
-            && !$this->isExpired();
+        return in_array($this->current_status, [self::STATUS_AVAILABLE, 'in_stock']);
     }
 
     /**

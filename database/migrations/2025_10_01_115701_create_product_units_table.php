@@ -78,6 +78,8 @@ return new class extends Migration
             // Campos de auditoría
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('reserved_at')->nullable();
+            $table->foreignId('reserved_by')->nullable()->constrained('users')->nullOnDelete();
             
             $table->timestamps();
             $table->softDeletes();

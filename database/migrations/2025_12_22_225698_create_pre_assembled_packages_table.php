@@ -18,7 +18,6 @@ return new class extends Migration
             // RFID del paquete completo (contenedor)
             $table->string('package_epc')->unique()->nullable()->comment('EPC del contenedor/caja del paquete');
 
-            $table->foreignId('preparation_id')->nullable()->constrained('surgery_preparations')->comment('Preparación de cirugía asociada');
             
             // Estados
             $table->enum('status', ['available', 'in_preparation', 'in_surgery', 'maintenance'])->default('available')->comment('Estado del paquete');
