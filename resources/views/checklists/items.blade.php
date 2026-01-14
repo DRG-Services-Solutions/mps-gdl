@@ -68,7 +68,7 @@
                                    id="quantity" 
                                    min="1"
                                    value="1"
-                                   class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500 @error('quantity') border-red-500 @enderror"
+                                   class="w-full rounded-lg  focus:border-purple-500 focus:ring-purple-500 @error('quantity') border-red-500 @enderror"
                                    required>
                             @error('quantity')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

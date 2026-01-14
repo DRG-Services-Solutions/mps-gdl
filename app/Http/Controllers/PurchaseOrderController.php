@@ -303,7 +303,7 @@ class PurchaseOrderController extends Controller
             ];
         });
 
-        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products', 'items', 'legalEntities')); // ✅ CORREGIDO: agregadas comillas
+        return view('purchase-orders.edit', compact('purchaseOrder', 'suppliers', 'warehouses', 'products', 'items', 'legalEntities'));
     }
 
     /**
@@ -323,7 +323,6 @@ class PurchaseOrderController extends Controller
             'expected_date' => 'nullable|date',
             'notes' => 'nullable|string',
             
-            // Items
             'items' => 'required|array|min:1',
             'items.*.id' => 'nullable|exists:purchase_order_items,id',
             'items.*.product_id' => 'required|exists:products,id',

@@ -39,22 +39,41 @@ return new class extends Migration
                 ->constrained('legal_entities')
                 ->onDelete('cascade')
                 ->comment('Entidad legal que factura (null = aplica a todas)');
+
+            $table->enum('action_type', ['adjust_quantity', 'add_product', 'exclude', 'replace', 'add_dependency'])->default('adjust_quantity')
+                ->comment('Tipo de acción a realizar');
             
             //CANTIDAD ===
             
             $table->integer('quantity_override')
                 ->nullable()
-                ->comment('Cantidad que REEMPLAZA la base. Ejemplo: base=2, override=5 → usar 5 (no 2+5)');
+                ->comment('Cantidad que REEMPLAZA la base. Ejemplo: base=2, override=5 → usar 5 (no 2+5) solo si action_type = adjust_quantity');
             
             //PRODUCTOS ADICIONALES ===
             
             $table->boolean('is_additional_product')
                 ->default(false)
                 ->comment('true = producto que NO está en checklist base pero debe incluirse');
-            
+
+            $table->boolean('exclude_from_invoice')
+            ->default(false)
+            ->comment('Si es true, el producto va físicamente pero NO se factura (cortesía/préstamo)');
+
             $table->integer('additional_quantity')
                 ->nullable()
                 ->comment('Cantidad del producto adicional (solo si is_additional_product=true)');
+
+            $table->foreignId('target_product_id')
+                  ->nullable()
+                  ->constrained('products')
+                  ->onDelete('cascade')
+                  ->comment('Producto de reemplazo (replace) o dependencia (add_dependency)');
+            
+            $table->boolean('requires_approval')
+                  ->default(false)
+                  ->comment('Si requiere aprobación manual para aplicarse');
+            
+
             
             //METADATA ===
             
