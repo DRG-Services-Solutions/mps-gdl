@@ -118,7 +118,7 @@
                                 <option value="">Todos</option>
                                 @foreach($checklists as $checklist)
                                     <option value="{{ $checklist->id }}" {{ request('checklist_id') == $checklist->id ? 'selected' : '' }}>
-                                        {{ $checklist->name }}
+                                        {{ $checklist->surgery_type  }}
                                     </option>
                                 @endforeach
                             </select>
@@ -182,7 +182,12 @@
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                         <i class="fas fa-clipboard-list mr-1"></i>
-                                        {{ $package->surgeryChecklist->name }}
+                                        @foreach ($checklists as $checklists)
+                                            @if($checklists->id === $package->checklist_id)
+                                                @break
+                                            @endif
+                                        @endforeach
+                                        {{ $checklists->surgery_type ?? 'N/A' }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
