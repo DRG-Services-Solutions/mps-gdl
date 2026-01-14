@@ -28,6 +28,7 @@ use App\Http\Controllers\PreAssembledPackageController;
 use App\Http\Controllers\ScheduledSurgeryController;
 use App\Http\Controllers\SurgeryPreparationController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ChecklistConditionalController;
 
 
 // ========================================
@@ -63,6 +64,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     //RUTA PARA CARGAR CONFIGURACIONES DE HOSPITALES
 Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'getConfigs'])->name('api.hospitals.configs');
+
+Route::prefix('checklist-items/{item}/conditionals')->name('checklist-conditionals.')->group(function () {
+        Route::get('/', [ChecklistConditionalController::class, 'index'])->name('index');
+        Route::post('/', [ChecklistConditionalController::class, 'store'])->name('store');
+        Route::put('/{conditional}', [ChecklistConditionalController::class, 'update'])->name('update');
+        Route::delete('/{conditional}', [ChecklistConditionalController::class, 'destroy'])->name('destroy');
+        Route::post('/preview', [ChecklistConditionalController::class, 'preview'])->name('preview');
+    });
+
+Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'getFormData'])->name('conditional-form-data');
 
 
     // ====================================================================
@@ -106,7 +117,7 @@ Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'get
         // ---- CONDICIONALES ----
         
         // Agregar condicional a un item
-        Route::post('/{item}/conditionals', [ChecklistItemController::class, 'addConditional'])->name('conditionals.add');
+        //Route::post('/{item}/conditionals', [ChecklistItemController::class, 'addConditional'])->name('conditionals.add');
         
         // Eliminar condicional
         Route::delete('/conditionals/{conditional}', [ChecklistItemController::class, 'removeConditional'])->name('conditionals.remove');
