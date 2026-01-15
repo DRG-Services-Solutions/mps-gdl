@@ -477,4 +477,284 @@ class SurgeryPreparationController extends Controller
             'data' => $items
         ]);
     }
+
+    public function scanBarcode(Request $request, ScheduledSurgery $surgery)
+    {
+        $validated = $request->validate([
+            'barcode' => 'required|string|max:255',
+        ]);
+
+        Log::info("📦 [MODO MANUAL] Escaneando barcode: {$validated['barcode']} para Cirugía ID: {$surgery->id}");
+
+        $preparation = $surgery->preparation;
+
+        if (!$preparation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay preparación activa para esta cirugía.'
+            ], 404);
+        }
+
+        try {
+            // 1. Buscar producto por código (parsea códigos compuestos automáticamente)
+            $product = \App\Models\Product::findByCode($validated['barcode']);
+
+            if (!$product) {
+                Log::warning("❌ Producto no encontrado con código: {$validated['barcode']}");
+                return response()->json([
+                    'success' => false,
+                    'message' => "❌ Producto no encontrado: {$validated['barcode']}"
+                ], 404);
+            }
+
+            Log::info("✅ Producto encontrado: {$product->name} (ID: {$product->id})");
+
+            // 2. Verificar que el producto esté en la lista de pendientes
+            $preparationItem = $preparation->items()
+                ->where('product_id', $product->id)
+                ->where('quantity_missing', '>', 0)
+                ->first();
+
+            if (!$preparationItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "⚠️ Este producto no está en la lista de pendientes o ya fue completado."
+                ], 400);
+            }
+
+            // 3. Buscar siguiente unidad disponible con FEFO/FIFO
+            $unit = $product->getNextAvailableUnit();
+
+            if (!$unit) {
+                // No hay unidades disponibles, mostrar información de otras unidades
+                $otherUnits = $product->units()
+                    ->whereIn('status', ['in_use', 'reserved', 'in_sterilization'])
+                    ->with('currentLocation')
+                    ->get();
+
+                $statusInfo = $otherUnits->groupBy('status')->map(function($units, $status) {
+                    return [
+                        'count' => $units->count(),
+                        'status_label' => $units->first()->status_label ?? $status
+                    ];
+                });
+
+                Log::warning("❌ No hay unidades disponibles. Estados: " . json_encode($statusInfo));
+
+                return response()->json([
+                    'success' => false,
+                    'message' => "❌ No hay unidades disponibles de {$product->name}",
+                    'other_units' => $statusInfo
+                ], 404);
+            }
+
+            Log::info("🎯 Unidad seleccionada: {$unit->unique_identifier} (FEFO/FIFO)");
+
+            // 4. Reservar unidad inmediatamente
+            $unit->reserve(
+                auth()->id(),
+                $surgery->id,
+                $preparation->pre_assembled_package_id
+            );
+
+            Log::info("🔒 Unidad reservada exitosamente");
+
+            // 5. Registrar en el picking usando el servicio
+            $result = $this->preparationService->pickProduct(
+                $preparation->id,
+                $unit->epc,
+                auth()->id()
+            );
+
+            Log::info("✅ Producto agregado al picking exitosamente");
+
+            // 6. Obtener el item actualizado
+            $item = $preparation->items()->find($result['item_id']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "✅ {$product->name} agregado automáticamente",
+                'mode' => 'manual',
+                'data' => [
+                    'item_id' => $result['item_id'],
+                    'product_name' => $result['product_name'],
+                    'unit_info' => [
+                        'epc' => $unit->epc,
+                        'batch' => $unit->batch_number,
+                        'expiration' => $unit->expiration_date?->format('Y-m-d'),
+                        'days_until_expiration' => $unit->days_until_expiration,
+                        'location' => $unit->currentLocation?->code,
+                    ],
+                    'quantity_picked' => $item->quantity_picked,
+                    'quantity_missing' => $result['quantity_missing'],
+                    'item_status' => $result['item_status'],
+                    'preparation_complete' => $result['preparation_complete'],
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error al escanear barcode: " . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => "Error: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function searchByEPC(Request $request, ScheduledSurgery $surgery)
+    {
+        $validated = $request->validate([
+            'epc' => 'required|string|max:255',
+        ]);
+
+        Log::info("📡 [MODO RFID] Buscando EPC: {$validated['epc']} para Cirugía ID: {$surgery->id}");
+
+        $preparation = $surgery->preparation;
+
+        if (!$preparation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay preparación activa.'
+            ], 404);
+        }
+
+        try {
+            // 1. Buscar unidad por EPC
+            $unit = \App\Models\ProductUnit::findByEPC($validated['epc']);
+
+            if (!$unit) {
+                Log::warning("❌ EPC no encontrado o unidad no disponible: {$validated['epc']}");
+                return response()->json([
+                    'success' => false,
+                    'message' => "❌ Tag RFID no registrado o unidad no disponible"
+                ], 404);
+            }
+
+            // 2. Cargar relaciones necesarias
+            $unit->load(['product', 'currentLocation']);
+
+            Log::info("✅ Unidad encontrada: {$unit->product->name} (EPC: {$unit->epc})");
+
+            // 3. Verificar que el producto esté en la lista de pendientes
+            $preparationItem = $preparation->items()
+                ->where('product_id', $unit->product_id)
+                ->where('quantity_missing', '>', 0)
+                ->first();
+
+            if (!$preparationItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "⚠️ Este producto no está en la lista de pendientes o ya fue completado."
+                ], 400);
+            }
+
+            // 4. Retornar datos para confirmación
+            $confirmationData = $unit->getConfirmationData();
+            $confirmationData['preparation_item_id'] = $preparationItem->id;
+            $confirmationData['quantity_missing'] = $preparationItem->quantity_missing;
+
+            Log::info("📋 Datos de confirmación preparados para modal");
+
+            return response()->json([
+                'success' => true,
+                'data' => $confirmationData
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error al buscar EPC: " . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => "Error al buscar tag: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function confirmRFID(Request $request, ScheduledSurgery $surgery)
+    {
+        $validated = $request->validate([
+            'epc' => 'required|string|max:255',
+        ]);
+
+        Log::info("✅ [MODO RFID] Confirmando EPC: {$validated['epc']} para Cirugía ID: {$surgery->id}");
+
+        $preparation = $surgery->preparation;
+
+        if (!$preparation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay preparación activa.'
+            ], 404);
+        }
+
+        try {
+            // 1. Buscar unidad nuevamente (doble verificación)
+            $unit = \App\Models\ProductUnit::findByEPC($validated['epc']);
+
+            if (!$unit) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "❌ Unidad no disponible"
+                ], 404);
+            }
+
+            // 2. Reservar unidad
+            $unit->reserve(
+                auth()->id(),
+                $surgery->id,
+                $preparation->pre_assembled_package_id
+            );
+
+            Log::info("🔒 Unidad reservada: {$unit->unique_identifier}");
+
+            // 3. Registrar en el picking usando el servicio
+            $result = $this->preparationService->pickProduct(
+                $preparation->id,
+                $unit->epc,
+                auth()->id()
+            );
+
+            Log::info("✅ Producto agregado al picking (RFID confirmado)");
+
+            // 4. Obtener el item actualizado
+            $item = $preparation->items()->find($result['item_id']);
+
+            return response()->json([
+                'success' => true,
+                'message' => "✅ {$result['product_name']} agregado",
+                'mode' => 'rfid',
+                'data' => [
+                    'item_id' => $result['item_id'],
+                    'product_name' => $result['product_name'],
+                    'unit_info' => [
+                        'epc' => $unit->epc,
+                        'batch' => $unit->batch_number,
+                        'expiration' => $unit->expiration_date?->format('Y-m-d'),
+                    ],
+                    'quantity_picked' => $item->quantity_picked,
+                    'quantity_missing' => $result['quantity_missing'],
+                    'item_status' => $result['item_status'],
+                    'preparation_complete' => $result['preparation_complete'],
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("❌ Error al confirmar RFID: " . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => "Error: " . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
+
 }

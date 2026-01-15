@@ -180,6 +180,17 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
             
             // 4. Surtir faltantes (Picking)
             Route::get('/picking', [SurgeryPreparationController::class, 'picking'])->name('picking');
+
+            //MODO MANUAL
+            Route::post('/scan-barcode', [SurgeryPreparationController::class, 'scanBarcode'])->name('scanBarcode');
+
+            //MODO RFID Y CONFIRMACION
+            Route::get('/search-epc', [SurgeryPreparationController::class, 'searchByEPC'])->name('searchEPC');
+            
+            //MODO RFID CONFIRMAR Y AGREGAR
+            Route::post('/confirm-rfid', [SurgeryPreparationController::class, 'confirmRFID'])->name('confirmRFID');
+
+            //DEPRECADO MANTENER POR COMPATIBILIDAD
             Route::post('scan', [SurgeryPreparationController::class, 'scanProduct'])->name('scan');
 
             Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('add-picked-product');
