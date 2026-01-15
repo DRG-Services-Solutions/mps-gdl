@@ -497,4 +497,39 @@ class Product extends Model
                   AND product_units.deleted_at IS NULL) > 0');
         });
     }
+
+    public static function findByCode($code)
+    {
+        // Parsear código compuesto si tiene separadores
+        $parsedCode = static::parseBarcode($code);
+        
+        return static::where('code', $parsedCode)
+                    ->where('status', 'active')
+                    ->first();
+    }
+
+    public static function parseBarcode($scannedCode)
+    {
+        $scannedCode = trim($scannedCode);
+        
+        // CASO 1: Código con separador '|' 
+        if (strpos($scannedCode, '|') !== false) {
+            return explode('|', $scannedCode)[0];
+        }
+        
+        // CASO 2: Código con múltiples '-' (más de 1 guion)
+        $parts = explode('-', $scannedCode);
+        if (count($parts) > 2) {
+            return $parts[0] . '-' . $parts[1]; // Mantiene "AR-3128"
+        }
+        
+        // CASO 3: Código simple
+        return $scannedCode;
+    }
+    
+    public function getNextAvailableUnit($locationId = null, $legalEntityId = null)
+    {
+        return ProductUnit::nextAvailable($this->id, $locationId, $legalEntityId);
+    }
+
 }

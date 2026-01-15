@@ -372,4 +372,74 @@ class ProductUnit extends Model
             }
         });
     }
+
+    public function scopeNextAvailable($query, $productId, $locationId = null, $legalEntityId = null)
+    {
+        // Filtrar por producto y estado disponible
+        $query = $query->where('product_id', $productId)
+                    ->where('status', self::STATUS_AVAILABLE);
+        
+        // Filtrar por ubicación si se especifica
+        if ($locationId) {
+            $query->where('current_location_id', $locationId);
+        }
+        
+        // Filtrar por entidad legal si se especifica
+        if ($legalEntityId) {
+            $query->where('legal_entity_id', $legalEntityId);
+        }
+        
+        // Ordenar por prioridad:
+        // 1. Si tiene expiration_date: ordenar por caducidad (FEFO)
+        // 2. Si no tiene expiration_date: ordenar por antigüedad (FIFO)
+        return $query->orderByRaw('
+            CASE 
+                WHEN expiration_date IS NOT NULL THEN expiration_date
+                ELSE COALESCE(manufacture_date, acquisition_date, created_at)
+            END ASC
+        ')->first();
+    }
+
+    public static function findByEPC($epc)
+    {
+        return static::where('epc', $epc)
+                    ->where('status', self::STATUS_AVAILABLE)
+                    ->first();
+    }
+
+    public function reserve($userId, $surgeryId = null, $packageId = null)
+    {
+        if (!$this->isAvailable()) {
+            throw new \Exception("Esta unidad no está disponible (estado: {$this->status})");
+        }
+        
+        return $this->update([
+            'status' => self::STATUS_RESERVED,
+            'reserved_at' => now(),
+            'reserved_by' => $userId,
+            'current_surgery_id' => $surgeryId,
+            'current_package_id' => $packageId,
+        ]);
+    }
+
+    public function getConfirmationData()
+    {
+        return [
+            'unit_id' => $this->id,
+            'epc' => $this->epc,
+            'serial_number' => $this->serial_number,
+            'product_code' => $this->product->code,
+            'product_name' => $this->product->name,
+            'batch_number' => $this->batch_number,
+            'expiration_date' => $this->expiration_date?->format('Y-m-d'),
+            'days_until_expiration' => $this->days_until_expiration,
+            'is_expiring_soon' => $this->isExpiringSoon(30),
+            'location_code' => $this->currentLocation?->code,
+            'location_name' => $this->currentLocation?->name,
+            'status' => $this->status,
+            'status_label' => $this->status_label,
+        ];
+    }
+
+
 }

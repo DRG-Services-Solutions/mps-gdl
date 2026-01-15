@@ -1,4 +1,3 @@
-{{-- resources/views/surgeries/preparations/picking.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -138,7 +137,7 @@
                 <div class="px-6 py-4 bg-red-50 border-b border-red-100 flex justify-between items-center">
                     <h3 class="text-red-800 font-bold flex items-center">
                         <i class="fas fa-exclamation-circle mr-2"></i>
-                        PRODUCTOS POR SURTIR (<span id="pending-count">{{ $pendingItems->count() }}</span>)
+                        PRODUCTOS POR SURTIR (<span id="pending-count">{{ $pendingItems->count() }} Productos con {{ $summary['total_quantity_missing']}} piezas</span>)
                     </h3>
                     
                     @if($pendingItems->count() > 0)
@@ -261,6 +260,7 @@
             </div>
 
             {{-- Debug Panel --}}
+            <!--
             @if(config('app.debug'))
                 <div class="mt-10 p-4 bg-gray-900 text-green-400 font-mono text-xs rounded-lg shadow-2xl opacity-80 hover:opacity-100 transition-opacity">
                     <h4 class="border-b border-gray-700 mb-3 pb-2 text-white uppercase font-bold flex items-center">
@@ -290,6 +290,7 @@
                     </div>
                 </div>
             @endif
+            -->
 
         </div>
     </div>

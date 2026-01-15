@@ -72,7 +72,6 @@ class ChecklistItemController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Al menos uno debe estar presente
         if (empty($validated['legal_entity_id']) && empty($validated['payment_mode'])) {
             return back()->with('error', 'Debe seleccionar al menos Hospital/Doctor o Modalidad.');
         }
