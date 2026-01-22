@@ -100,7 +100,7 @@ class RfidLabelService
     // COMANDO CORRECTO: ^RFW,H (no E,2,6)
     // ========================================
     $zpl = "^XA\n";
-    $zpl .= "^RFW,H^FD{$epc}^FS\n";  // 🎯 Formato hexadecimal simple
+    $zpl .= "^RFW,H^FD{$epc}^FS\n";  
     $zpl .= "^XZ";
 
     \Log::info("✅ ZPL generado con ^RFW,H");
