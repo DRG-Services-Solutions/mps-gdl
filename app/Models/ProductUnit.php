@@ -99,6 +99,28 @@ class ProductUnit extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function reservedBy()
+    {
+        return $this->belongsTo(User::class, 'reserved_by');
+    }
+
+    public function currentPackage()
+    {
+        return $this->belongsTo(PreAssembledPackage::class, 'current_package_id');
+    }
+
+    public function currentSurgery()
+    {
+        return $this->belongsTo(ScheduledSurgery::class, 'current_surgery_id');
+    }
+
+    public function lastMovement()
+    {
+        return $this->hasOne(ProductUnitMovement::class)->latestOfMany('performed_at');
+    }
+
+
+
     public function preAssembledPackage()
     {
         return $this->belongsTo(PreAssembledPackage::class, 'pre_assembled_package_id');
@@ -187,6 +209,11 @@ class ProductUnit extends Model
     public function scopeAvailable($query)
     {
         return $query->whereIn('current_status', [self::STATUS_AVAILABLE, 'in_stock']);
+    }
+
+    public function scopeReserved($query)
+    {
+        return $query->where('status', 'reserved');
     }
 
     public function scopeInUse($query)

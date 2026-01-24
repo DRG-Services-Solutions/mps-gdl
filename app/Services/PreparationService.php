@@ -92,7 +92,6 @@ class PreparationService
     public function pickProduct($preparationId, $epc, $userId)
     {
         return DB::transaction(function () use ($preparationId, $epc, $userId) {
-            // 1. Buscar la unidad física por su código RFID
             $productUnit = ProductUnit::where('epc', $epc)->first();
 
             if (!$productUnit) {
@@ -101,12 +100,10 @@ class PreparationService
 
             Log::info("ProductUnit encontrado: ID {$productUnit->id}, Status actual: {$productUnit->current_status}");
 
-            // 2. ✅ Validar que la unidad esté disponible (actualizado con ENUM real)
             if (!in_array($productUnit->current_status, ['available', 'in_stock'])) {
                 throw new Exception("Esta unidad no está disponible (estado: {$productUnit->current_status}).");
             }
 
-            // 3. Obtener la preparación
             $preparation = SurgeryPreparation::with('items', 'scheduledSurgery')->findOrFail($preparationId);
 
             if ($preparation->status !== 'picking') {

@@ -314,15 +314,13 @@ class SurgeryPreparationController extends Controller
                 'Verificación completada exitosamente'
             );
 
-            // ✅ Actualizar estado del paquete a "en cirugía"
             $preparation->preAssembledPackage->update(['status' => 'in_surgery']);
 
-            // ✅ Actualizar product units de 'reserved' a 'in_use'
             DB::table('product_units')
                 ->where('current_package_id', $preparation->pre_assembled_package_id)
-                ->where('current_status', 'reserved') // ✅ Cambiado
+                ->where('current_status', 'reserved') 
                 ->update([
-                    'current_status' => 'in_use', // ✅ Cambiado de 'in_surgery' a 'in_use'
+                    'current_status' => 'in_use',
                     'current_surgery_id' => $surgery->id,
                     'updated_at' => now(),
                 ]);
@@ -752,9 +750,5 @@ class SurgeryPreparationController extends Controller
             ], 500);
         }
     }
-
-
-
-
 
 }
