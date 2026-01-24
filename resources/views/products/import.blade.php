@@ -191,7 +191,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('products.import.execute') }}" 
+                    <form action="{{ route('products.import') }}" 
                           method="POST" 
                           enctype="multipart/form-data"
                           onsubmit="return confirm('¿Está seguro de importar los productos? Esta acción guardará los datos en la base de datos.')">
