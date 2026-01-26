@@ -274,10 +274,12 @@
                                     {{ __('Tipo de Tracking') }}
                                 </th>
                                 
-                                
+                                <!--
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
-                                    {{ __('Estado') }}
+                                    Estado
                                 </th>
+                                -->
+
                                 <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     {{ __('Acciones') }}
                                 </th>
@@ -311,15 +313,15 @@
                                     
                                     <!-- Proveedor -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900 text-center">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
+                                        <div class="text-sm text-gray-900 text-center capitalize">{{ Str::lower($product->supplier->name ?? 'Sin Proveedor') }}</div>
                                     </td>
 
                                     <!-- Categoría -->
                                     <td class="px-6 py-4 hidden md:table-cell">
                                         @if($product->category)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
                                                 <i class="fas fa-tag mr-1 text-xs"></i>
-                                                {{ $product->category->name }}
+                                                {{ Str::lower($product->category->name) }}
                                             </span>
                                         @else
                                             <span class="text-sm text-gray-400">-</span>
@@ -354,6 +356,7 @@
 
                                     
                                     <!-- Estado -->
+                                    <!--
                                     <td class="px-6 py-4 text-center hidden xl:table-cell">
                                         @switch($product->status)
                                             @case('active')
@@ -376,6 +379,7 @@
                                                 @break
                                         @endswitch
                                     </td>
+                                    -->
 
                                     <!-- Acciones -->
                                     <td class="px-6 py-4 text-right">

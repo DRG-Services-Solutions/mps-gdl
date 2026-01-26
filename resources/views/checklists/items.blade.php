@@ -314,7 +314,7 @@
                                             <template x-if="cond.exclude_from_invoice">
                                                 <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">
                                                     <i class="fas fa-gift mr-1"></i>
-                                                    No facturar
+                                                    No agregar en remision
                                                 </span>
                                             </template>
                                         </div>
