@@ -40,7 +40,8 @@ return new class extends Migration
                 ->onDelete('cascade')
                 ->comment('Entidad legal que factura (null = aplica a todas)');
 
-            $table->enum('action_type', ['adjust_quantity', 'add_product', 'exclude', 'replace', 'add_dependency'])->default('adjust_quantity')
+            $table->enum('action_type', ['adjust_quantity', 'add_product', 'exclude', 'replace', 'add_dependency'])
+                ->default('adjust_quantity')
                 ->comment('Tipo de acción a realizar');
             
             //CANTIDAD ===
@@ -56,24 +57,31 @@ return new class extends Migration
                 ->comment('true = producto que NO está en checklist base pero debe incluirse');
 
             $table->boolean('exclude_from_invoice')
-            ->default(false)
-            ->comment('Si es true, el producto va físicamente pero NO se factura (cortesía/préstamo)');
+                ->default(false)
+                ->comment('Si es true, el producto va físicamente pero NO se factura (cortesía/préstamo)');
 
             $table->integer('additional_quantity')
                 ->nullable()
                 ->comment('Cantidad del producto adicional (solo si is_additional_product=true)');
 
+            // DEPENDENCIAS Y REEMPLAZOS ===
+            
             $table->foreignId('target_product_id')
-                  ->nullable()
-                  ->constrained('products')
-                  ->onDelete('cascade')
-                  ->comment('Producto de reemplazo (replace) o dependencia (add_dependency)');
+                ->nullable()
+                ->constrained('products')
+                ->onDelete('cascade')
+                ->comment('Producto de reemplazo (replace) o dependencia (add_dependency)');
+            
+            $table->integer('dependency_quantity')
+                ->nullable()
+                ->default(1)
+                ->comment('Cantidad del producto dependiente (solo si action_type = add_dependency)');
+            
+            // APROBACIONES ===
             
             $table->boolean('requires_approval')
-                  ->default(false)
-                  ->comment('Si requiere aprobación manual para aplicarse');
-            
-
+                ->default(false)
+                ->comment('Si requiere aprobación manual para aplicarse');
             
             //METADATA ===
             
@@ -96,12 +104,14 @@ return new class extends Migration
             $table->index('modality_id');
             $table->index('legal_entity_id');
             $table->index('is_additional_product');
+            $table->index('action_type');
+            $table->index('target_product_id');
             
             // Índice compuesto para búsquedas rápidas
             $table->index(
                 ['doctor_id', 'hospital_id', 'modality_id', 'legal_entity_id'], 
-                'conditional_search_idx');
-
+                'conditional_search_idx'
+            );
         });
     }
 

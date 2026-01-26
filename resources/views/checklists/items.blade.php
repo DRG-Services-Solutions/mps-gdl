@@ -20,7 +20,9 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
-            <!-- Agregar Producto -->
+            <!-- ============================================
+                 AGREGAR PRODUCTO
+                 ============================================ -->
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
                     <h3 class="text-lg font-semibold text-gray-900">
@@ -68,14 +70,12 @@
                                    id="quantity" 
                                    min="1"
                                    value="1"
-                                   class="w-full rounded-lg  focus:border-purple-500 focus:ring-purple-500 @error('quantity') border-red-500 @enderror"
+                                   class="w-full rounded-lg focus:border-purple-500 focus:ring-purple-500 @error('quantity') border-red-500 @enderror"
                                    required>
                             @error('quantity')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
-
-                        
 
                         <!-- Botón -->
                         <div class="flex items-end">
@@ -89,8 +89,10 @@
                 </form>
             </div>
 
-            <!-- Lista de Items -->
-            <div class="bg-white rounded-lg shadow-sm ">
+       <!-- ============================================
+                 LISTA DE ITEMS DEL CHECKLIST
+                 ============================================ -->
+            <div class="bg-white rounded-lg shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-list mr-2 text-indigo-600"></i>
@@ -103,7 +105,6 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Condicionales</th>
@@ -113,7 +114,6 @@
                         <tbody class="bg-white divide-y divide-gray-200" id="sortable-items">
                             @foreach($items as $item)
                             <tr class="hover:bg-gray-50 transition-colors" data-item-id="{{ $item->id }}">
-                               
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -141,6 +141,7 @@
                                     </form>
                                 </td>
                                 
+                                {{-- BOTÓN DE CONDICIONALES MEJORADO --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <button type="button" 
                                             @click="$dispatch('open-conditionals-modal', { 
@@ -148,11 +149,16 @@
                                                 itemName: '{{ addslashes($item->product->name) }}',
                                                 baseQuantity: {{ $item->quantity }}
                                             })"
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $item->conditionals->count() > 0 ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }} hover:bg-purple-200 transition-colors">
-                                        <i class="fas fa-filter mr-1"></i>
-                                        {{ $item->conditionals->count() }}
+                                            class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                                                   {{ $item->conditionals->count() > 0 
+                                                      ? 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 hover:from-purple-200 hover:to-indigo-200 border border-purple-300' 
+                                                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300' }}">
+                                        <i class="fas fa-filter mr-1.5"></i>
+                                        <span class="font-bold">{{ $item->conditionals->count() }}</span>
+                                        <span class="ml-1">{{ $item->conditionals->count() === 1 ? 'condicional' : 'condicionales' }}</span>
                                     </button>
                                 </td>
+
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <form action="{{ route('checklist-items.destroy', $item) }}" 
                                           method="POST" 
@@ -161,7 +167,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
-                                                class="text-red-600 hover:text-red-900"
+                                                class="text-red-600 hover:text-red-900 transition-colors"
                                                 title="Eliminar">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -172,14 +178,16 @@
                         </tbody>
                     </table>
                 </div>
-                 {{-- ===== PAGINACIÓN ===== --}}
+
+                {{-- PAGINACIÓN --}}
                 @if($items->hasPages())
                 <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
                     {{ $items->links() }}
                 </div>
                 @endif
-                {{-- ===== FIN PAGINACIÓN ===== --}}
+
                 @else
+                {{-- ESTADO VACÍO --}}
                 <div class="px-6 py-12 text-center">
                     <div class="flex flex-col items-center justify-center text-gray-400">
                         <i class="fas fa-box-open text-4xl mb-3"></i>
@@ -189,10 +197,538 @@
                 </div>
                 @endif
             </div>
-
             
         </div>
     </div>
+
+{{-- ============================================
+     MODAL DE CONDICIONALES - Alpine.js
+     ============================================ --}}
+<div x-data="conditionalsModal()" 
+     x-show="isOpen" 
+     x-cloak
+     @open-conditionals-modal.window="openModal($event.detail)"
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     style="display: none;">
+    
+    {{-- Overlay --}}
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
+         @click="closeModal()"></div>
+    
+    {{-- Modal Content --}}
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full"
+             @click.away="closeModal()">
+            
+            {{-- ===== HEADER ===== --}}
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center text-white">
+                        <i class="fas fa-filter mr-3 text-2xl"></i>
+                        <div>
+                            <h3 class="text-lg font-bold">Gestionar Condicionales</h3>
+                            <p class="text-sm text-purple-100" x-text="itemName"></p>
+                        </div>
+                    </div>
+                    <button @click="closeModal()" 
+                            class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- ===== BODY ===== --}}
+            <div class="bg-white px-6 py-4 max-h-[70vh] overflow-y-auto">
+                
+                {{-- INFO DEL ITEM --}}
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-blue-900">Cantidad Base del Checklist</p>
+                            <p class="text-3xl font-bold text-blue-600" x-text="baseQuantity"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-blue-700">Condicionales Activos</p>
+                            <p class="text-2xl font-bold text-purple-600" x-text="conditionals.length"></p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- LOADING STATE --}}
+                <div x-show="loading" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-3"></i>
+                    <p class="text-gray-600">Cargando condicionales...</p>
+                </div>
+
+                {{-- ===== LISTA DE CONDICIONALES EXISTENTES ===== --}}
+                <div x-show="!loading" class="mb-6">
+                    <h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">
+                        <i class="fas fa-list mr-2 text-indigo-600"></i>
+                        Condicionales Configurados
+                    </h4>
+                    
+                    {{-- ESTADO VACÍO --}}
+                    <template x-if="conditionals.length === 0">
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <i class="fas fa-inbox text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600 text-sm">No hay condicionales configurados</p>
+                            <p class="text-gray-500 text-xs mt-1">Agrega uno usando el formulario de abajo</p>
+                        </div>
+                    </template>
+
+                    {{-- LISTA DE CONDICIONALES --}}
+                    <div class="space-y-3">
+                        <template x-for="(cond, index) in conditionals" :key="cond.id">
+                            <div class="p-4 rounded-lg border-2 transition-all hover:shadow-md"
+                                 :class="{
+                                     'bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-300': cond.action_type === 'adjust_quantity',
+                                     'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300': cond.action_type === 'add_product',
+                                     'bg-gradient-to-r from-red-50 to-rose-50 border-red-300': cond.action_type === 'exclude',
+                                     'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300': cond.action_type === 'replace',
+                                     'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300': cond.action_type === 'add_dependency'
+                                 }">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        {{-- TIPO DE ACCIÓN --}}
+                                        <div class="mb-3">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
+                                                  :class="{
+                                                      'bg-purple-600 text-white': cond.action_type === 'adjust_quantity',
+                                                      'bg-green-600 text-white': cond.action_type === 'add_product',
+                                                      'bg-red-600 text-white': cond.action_type === 'exclude',
+                                                      'bg-orange-600 text-white': cond.action_type === 'replace',
+                                                      'bg-blue-600 text-white': cond.action_type === 'add_dependency'
+                                                  }">
+                                                <i class="fas mr-1.5"
+                                                   :class="{
+                                                       'fa-edit': cond.action_type === 'adjust_quantity',
+                                                       'fa-plus-circle': cond.action_type === 'add_product',
+                                                       'fa-times-circle': cond.action_type === 'exclude',
+                                                       'fa-exchange-alt': cond.action_type === 'replace',
+                                                       'fa-link': cond.action_type === 'add_dependency'
+                                                   }"></i>
+                                                <span x-text="cond.action_description"></span>
+                                            </span>
+                                            
+                                            {{-- Exclusión de factura --}}
+                                            <template x-if="cond.exclude_from_invoice">
+                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                                                    <i class="fas fa-gift mr-1"></i>
+                                                    No facturar
+                                                </span>
+                                            </template>
+                                        </div>
+
+                                        {{-- CRITERIOS --}}
+                                        <p class="text-sm font-bold text-gray-900 mb-2" x-text="cond.description"></p>
+                                        
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <span class="text-gray-600">Doctor:</span>
+                                                <span class="font-semibold text-gray-900" x-text="cond.doctor_name"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">Hospital:</span>
+                                                <span class="font-semibold text-gray-900" x-text="cond.hospital_name"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">Modalidad:</span>
+                                                <span class="font-semibold text-gray-900" x-text="cond.modality_name"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-600">Razón Social:</span>
+                                                <span class="font-semibold text-gray-900" x-text="cond.legal_entity_name"></span>
+                                            </div>
+                                        </div>
+
+                                        {{-- PRODUCTO OBJETIVO (dependencias/reemplazos) --}}
+                                        <template x-if="cond.target_product_name">
+                                            <div class="mt-3 p-2 bg-white bg-opacity-60 rounded border border-gray-300">
+                                                <p class="text-xs font-semibold text-gray-700">
+                                                    <i class="fas fa-box-open mr-1"></i>
+                                                    <span x-text="cond.action_type === 'replace' ? 'Reemplazar por:' : 'Requiere:'"></span>
+                                                    <span class="text-indigo-700" x-text="cond.target_product_name"></span>
+                                                </p>
+                                            </div>
+                                        </template>
+
+                                        {{-- NOTAS --}}
+                                        <template x-if="cond.notes">
+                                            <p class="text-xs text-gray-600 mt-2 italic bg-white bg-opacity-40 p-2 rounded">
+                                                <i class="fas fa-sticky-note mr-1"></i>
+                                                <span x-text="cond.notes"></span>
+                                            </p>
+                                        </template>
+
+                                        {{-- NIVEL DE ESPECIFICIDAD --}}
+                                        <div class="mt-2">
+                                            <span class="text-xs text-gray-500">
+                                                Especificidad: 
+                                                <span class="font-bold" x-text="cond.specificity_level"></span>/4
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {{-- BOTÓN ELIMINAR --}}
+                                    <button @click="deleteConditional(cond.id)" 
+                                            class="ml-4 text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-lg transition-all"
+                                            title="Eliminar condicional">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+{{-- ===== FORMULARIO PARA AGREGAR NUEVO CONDICIONAL ===== --}}
+                <div x-show="!loading" class="border-t-2 border-gray-200 pt-6">
+                    <h4 class="text-md font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-plus-circle mr-2 text-green-600"></i>
+                        Agregar Nuevo Condicional
+                    </h4>
+
+                    <form @submit.prevent="submitConditional()" class="space-y-4">
+                        
+                        {{-- ===== CRITERIOS DE APLICACIÓN ===== --}}
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h5 class="text-sm font-bold text-gray-700 mb-3">
+                                <i class="fas fa-filter mr-1"></i>
+                                Criterios de Aplicación (al menos uno)
+                            </h5>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {{-- Doctor --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Doctor (opcional)
+                                    </label>
+                                    <select x-model="newConditional.doctor_id" 
+                                            class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                                        <option value="">-- Todos los doctores --</option>
+                                        <template x-for="doctor in formData.doctors" :key="doctor.id">
+                                            <option :value="doctor.id" x-text="doctor.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                {{-- Hospital --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Hospital (opcional)
+                                    </label>
+                                    <select x-model="newConditional.hospital_id" 
+                                            class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                                        <option value="">-- Todos los hospitales --</option>
+                                        <template x-for="hospital in formData.hospitals" :key="hospital.id">
+                                            <option :value="hospital.id" x-text="hospital.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                {{-- Modalidad --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Modalidad de Pago (opcional)
+                                    </label>
+                                    <select x-model="newConditional.modality_id" 
+                                            class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                                        <option value="">-- Todas las modalidades --</option>
+                                        <template x-for="modality in formData.modalities" :key="modality.id">
+                                            <option :value="modality.id" x-text="modality.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                {{-- Legal Entity --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Razón Social (opcional)
+                                    </label>
+                                    <select x-model="newConditional.legal_entity_id" 
+                                            class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
+                                        <option value="">-- Todas las entidades --</option>
+                                        <template x-for="entity in formData.legal_entities" :key="entity.id">
+                                            <option :value="entity.id" x-text="entity.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ===== TIPO DE ACCIÓN ===== --}}
+                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">
+                                <i class="fas fa-cog mr-1"></i>
+                                Tipo de Acción <span class="text-red-500">*</span>
+                            </label>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {{-- Ajustar Cantidad --}}
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="newConditional.action_type === 'adjust_quantity' ? 'border-purple-500 bg-purple-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" 
+                                           x-model="newConditional.action_type" 
+                                           value="adjust_quantity" 
+                                           class="mt-1 text-purple-600 focus:ring-purple-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-edit text-purple-600 mr-1"></i>
+                                            Ajustar Cantidad
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Reemplaza la cantidad base del checklist</p>
+                                    </div>
+                                </label>
+
+                                {{-- Agregar Producto --}}
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="newConditional.action_type === 'add_product' ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" 
+                                           x-model="newConditional.action_type" 
+                                           value="add_product" 
+                                           class="mt-1 text-green-600 focus:ring-green-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-plus-circle text-green-600 mr-1"></i>
+                                            Agregar Adicional
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Suma unidades extras al producto</p>
+                                    </div>
+                                </label>
+
+                                {{-- Excluir Producto --}}
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="newConditional.action_type === 'exclude' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" 
+                                           x-model="newConditional.action_type" 
+                                           value="exclude" 
+                                           class="mt-1 text-red-600 focus:ring-red-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-times-circle text-red-600 mr-1"></i>
+                                            Excluir Producto
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">No incluir este producto en el checklist</p>
+                                    </div>
+                                </label>
+
+                                {{-- Reemplazar Producto --}}
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="newConditional.action_type === 'replace' ? 'border-orange-500 bg-orange-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" 
+                                           x-model="newConditional.action_type" 
+                                           value="replace" 
+                                           class="mt-1 text-orange-600 focus:ring-orange-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-exchange-alt text-orange-600 mr-1"></i>
+                                            Reemplazar
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Sustituir por otro producto</p>
+                                    </div>
+                                </label>
+
+                                {{-- Agregar Dependencia --}}
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md col-span-full"
+                                       :class="newConditional.action_type === 'add_dependency' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" 
+                                           x-model="newConditional.action_type" 
+                                           value="add_dependency" 
+                                           class="mt-1 text-blue-600 focus:ring-blue-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900">
+                                            <i class="fas fa-link text-blue-600 mr-1"></i>
+                                            Agregar Dependencia
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1">Este producto requiere otro para funcionar (ej: broca → taladro)</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- ===== CAMPOS DINÁMICOS SEGÚN ACTION_TYPE ===== --}}
+                        
+                        {{-- AJUSTAR CANTIDAD --}}
+                        <div x-show="newConditional.action_type === 'adjust_quantity'" x-transition class="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Nueva Cantidad <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" 
+                                   x-model.number="newConditional.quantity_override"
+                                   min="0"
+                                   class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                   placeholder="Ejemplo: 5">
+                            <p class="text-xs text-gray-600 mt-1">Esta cantidad reemplazará la cantidad base del checklist</p>
+                        </div>
+
+                        {{-- AGREGAR PRODUCTO ADICIONAL --}}
+                        <div x-show="newConditional.action_type === 'add_product'" x-transition class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Cantidad Adicional <span class="text-red-500">*</span>
+                            </label>
+                            <input type="number" 
+                                   x-model.number="newConditional.additional_quantity"
+                                   min="1"
+                                   class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                                   placeholder="Ejemplo: 3">
+                            <p class="text-xs text-gray-600 mt-1">Se sumarán estas unidades a la cantidad base</p>
+                        </div>
+
+                        {{-- EXCLUIR - Solo mensaje informativo --}}
+                        <div x-show="newConditional.action_type === 'exclude'" x-transition class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-red-600 mt-0.5 mr-2"></i>
+                                <div class="text-sm text-gray-700">
+                                    <p class="font-semibold">El producto no se incluirá en el checklist</p>
+                                    <p class="text-xs mt-1">Cuando se cumplan los criterios seleccionados, este producto se omitirá completamente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- REEMPLAZAR PRODUCTO --}}
+                        <div x-show="newConditional.action_type === 'replace'" x-transition class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Producto de Reemplazo <span class="text-red-500">*</span>
+                            </label>
+                            <select x-model="newConditional.target_product_id" 
+                                    class="w-full rounded-lg border-gray-300 focus:border-orange-500 focus:ring-orange-500">
+                                <option value="">-- Selecciona un producto --</option>
+                                <template x-for="product in formData.products" :key="product.id">
+                                    <option :value="product.id" x-text="product.label"></option>
+                                </template>
+                            </select>
+                            <p class="text-xs text-gray-600 mt-1">Este producto sustituirá al original cuando se cumplan los criterios</p>
+                        </div>
+
+                        {{-- AGREGAR DEPENDENCIA --}}
+                        <div x-show="newConditional.action_type === 'add_dependency'" x-transition class="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Producto Requerido <span class="text-red-500">*</span>
+                                </label>
+                                <select x-model="newConditional.target_product_id" 
+                                        class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500">
+                                    <option value="">-- Selecciona el producto dependiente --</option>
+                                    <template x-for="product in formData.products" :key="product.id">
+                                        <option :value="product.id" x-text="product.label"></option>
+                                    </template>
+                                </select>
+                                <p class="text-xs text-gray-600 mt-1">Producto necesario para el funcionamiento</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Cantidad Requerida <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" 
+                                       x-model.number="newConditional.dependency_quantity"
+                                       min="1"
+                                       class="w-full rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="Ejemplo: 1">
+                                <p class="text-xs text-gray-600 mt-1">Ejemplo: Broca requiere 1 taladro</p>
+                            </div>
+                        </div>
+
+                        {{-- ===== OPCIONES ADICIONALES ===== --}}
+                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                            <h5 class="text-sm font-bold text-gray-700 mb-3">
+                                <i class="fas fa-sliders-h mr-1"></i>
+                                Opciones Adicionales
+                            </h5>
+                            
+                            <div class="space-y-2">
+                                {{-- Excluir de factura --}}
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" 
+                                           x-model="newConditional.exclude_from_invoice"
+                                           class="mt-1 rounded text-yellow-600 focus:ring-yellow-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">No facturar (cortesía)</div>
+                                        <p class="text-xs text-gray-600">El producto va físicamente pero no se cobra</p>
+                                    </div>
+                                </label>
+
+                                {{-- Requiere aprobación --}}
+                                <label class="flex items-start cursor-pointer">
+                                    <input type="checkbox" 
+                                           x-model="newConditional.requires_approval"
+                                           class="mt-1 rounded text-yellow-600 focus:ring-yellow-500">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">Requiere aprobación manual</div>
+                                        <p class="text-xs text-gray-600">Deberá ser aprobado antes de aplicarse</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- ===== NOTAS ===== --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Notas (opcional)
+                            </label>
+                            <textarea x-model="newConditional.notes" 
+                                      rows="2"
+                                      class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                                      placeholder="Ej: Dr. Pérez requiere instrumental adicional para cirugías complejas"></textarea>
+                        </div>
+
+                        {{-- ===== MENSAJE DE ERROR/WARNING ===== --}}
+                        <div x-show="errorMessage" 
+                             x-transition
+                             class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5 mr-2"></i>
+                                <p class="text-sm text-red-800" x-text="errorMessage"></p>
+                            </div>
+                        </div>
+
+                        <div x-show="warnings.length > 0" 
+                             x-transition
+                             class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-circle text-yellow-600 mt-0.5 mr-2"></i>
+                                <div>
+                                    <p class="text-sm font-semibold text-yellow-800">Advertencias:</p>
+                                    <ul class="text-sm text-yellow-700 mt-1 space-y-1">
+                                        <template x-for="warning in warnings" :key="warning">
+                                            <li class="text-xs" x-text="'• ' + warning"></li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ===== BOTONES ===== --}}
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" 
+                                    @click="closeModal()" 
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Cerrar
+                            </button>
+                            <button type="submit" 
+                                    :disabled="isSubmitting"
+                                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <template x-if="isSubmitting">
+                                    <span><i class="fas fa-spinner fa-spin mr-2"></i>Guardando...</span>
+                                </template>
+                                <template x-if="!isSubmitting">
+                                    <span><i class="fas fa-save mr-2"></i>Guardar Condicional</span>
+                                </template>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Estilos para x-cloak --}}
+<style>
+    [x-cloak] { 
+        display: none !important; 
+    }
+</style>
 
 @push('styles')
 <style>
@@ -311,8 +847,6 @@
     .ts-wrapper .spinner {
         display: none !important;
     }
-
-    
 </style>
 @endpush
 
@@ -375,6 +909,7 @@ function conditionalsModal() {
         loading: false,
         isSubmitting: false,
         errorMessage: '',
+        warnings: [],
         
         // Datos del item
         itemId: null,
@@ -389,7 +924,8 @@ function conditionalsModal() {
             doctors: [],
             hospitals: [],
             modalities: [],
-            legal_entities: []
+            legal_entities: [],
+            products: []
         },
         
         // Nuevo condicional
@@ -398,9 +934,13 @@ function conditionalsModal() {
             hospital_id: '',
             modality_id: '',
             legal_entity_id: '',
-            is_additional_product: false,
+            action_type: 'adjust_quantity',
             quantity_override: null,
             additional_quantity: null,
+            target_product_id: '',
+            dependency_quantity: 1,
+            exclude_from_invoice: false,
+            requires_approval: false,
             notes: ''
         },
         
@@ -413,6 +953,7 @@ function conditionalsModal() {
             this.baseQuantity = data.baseQuantity;
             this.isOpen = true;
             this.errorMessage = '';
+            this.warnings = [];
             
             // Cargar datos
             await this.loadFormData();
@@ -471,102 +1012,85 @@ function conditionalsModal() {
         
         // Crear condicional
         async submitConditional() {
-    this.isSubmitting = true;
-    this.errorMessage = '';
-    
-    console.log('=== INICIO SUBMIT ===');
-    console.log('Item ID:', this.itemId);
-    
-    try {
-        const data = {
-            doctor_id: this.newConditional.doctor_id || null,
-            hospital_id: this.newConditional.hospital_id || null,
-            modality_id: this.newConditional.modality_id || null,
-            legal_entity_id: this.newConditional.legal_entity_id || null,
-            is_additional_product: this.newConditional.is_additional_product,
-            quantity_override: this.newConditional.is_additional_product ? null : this.newConditional.quantity_override,
-            additional_quantity: this.newConditional.is_additional_product ? this.newConditional.additional_quantity : null,
-            notes: this.newConditional.notes || null
-        };
-        
-        console.log('📤 Datos a enviar:', data);
-        
-        const url = `/checklist-items/${this.itemId}/conditionals`;
-        console.log('🌐 URL:', url);
-        console.log('🌐 URL completa:', window.location.origin + url);
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        console.log('📥 Response Status:', response.status);
-        console.log('📥 Response StatusText:', response.statusText);
-        console.log('📥 Response OK:', response.ok);
-        
-        // LEER COMO TEXTO PRIMERO
-        const textResponse = await response.text();
-        console.log('📥 TEXTO COMPLETO DE RESPUESTA:');
-        console.log(textResponse);
-        console.log('📥 Primeros 500 caracteres:', textResponse.substring(0, 500));
-        console.log('📥 Longitud de respuesta:', textResponse.length, 'caracteres');
-        
-        // Verificar si es HTML
-        if (textResponse.trim().startsWith('<')) {
-            console.error('❌ ¡EL SERVIDOR DEVOLVIÓ HTML!');
-            console.error('Probablemente es una página de error 404, 500 o redirección');
+            this.isSubmitting = true;
+            this.errorMessage = '';
+            this.warnings = [];
             
-            // Intentar extraer el título de la página
-            const titleMatch = textResponse.match(/<title>(.*?)<\/title>/i);
-            if (titleMatch) {
-                console.error('Título de la página:', titleMatch[1]);
-                this.errorMessage = 'Error del servidor: ' + titleMatch[1];
-            } else {
-                this.errorMessage = 'El servidor devolvió HTML en lugar de JSON. Status: ' + response.status;
+            console.log('=== INICIO SUBMIT ===');
+            console.log('Item ID:', this.itemId);
+            console.log('Action Type:', this.newConditional.action_type);
+            
+            try {
+                const data = {
+                    doctor_id: this.newConditional.doctor_id || null,
+                    hospital_id: this.newConditional.hospital_id || null,
+                    modality_id: this.newConditional.modality_id || null,
+                    legal_entity_id: this.newConditional.legal_entity_id || null,
+                    action_type: this.newConditional.action_type,
+                    quantity_override: this.newConditional.action_type === 'adjust_quantity' ? this.newConditional.quantity_override : null,
+                    additional_quantity: this.newConditional.action_type === 'add_product' ? this.newConditional.additional_quantity : null,
+                    target_product_id: ['replace', 'add_dependency'].includes(this.newConditional.action_type) ? this.newConditional.target_product_id : null,
+                    dependency_quantity: this.newConditional.action_type === 'add_dependency' ? this.newConditional.dependency_quantity : null,
+                    exclude_from_invoice: this.newConditional.exclude_from_invoice,
+                    requires_approval: this.newConditional.requires_approval,
+                    notes: this.newConditional.notes || null
+                };
+                
+                console.log('📤 Datos a enviar:', data);
+                
+                const url = `/checklist-items/${this.itemId}/conditionals`;
+                console.log('🌐 URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('📥 Response Status:', response.status);
+                
+                const result = await response.json();
+                console.log('📥 Respuesta:', result);
+                
+                if (result.success) {
+                    console.log('✅ Éxito!');
+                    
+                    // Mostrar warnings si existen
+                    if (result.warnings && result.warnings.length > 0) {
+                        this.warnings = result.warnings;
+                        console.warn('⚠️ Warnings:', result.warnings);
+                    }
+                    
+                    alert('✓ ' + result.message);
+                    this.resetForm();
+                    await this.loadConditionals();
+                    
+                    if (this.warnings.length === 0) {
+                        setTimeout(() => window.location.reload(), 1000);
+                    }
+                } else {
+                    console.warn('⚠️ Success = false:', result.message);
+                    this.errorMessage = result.message;
+                    
+                    // Mostrar conflictos si existen
+                    if (result.conflicts) {
+                        this.errorMessage += '\n\n' + result.conflicts.join('\n');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ EXCEPCIÓN:', error);
+                this.errorMessage = 'Error: ' + error.message;
+            } finally {
+                this.isSubmitting = false;
+                console.log('=== FIN SUBMIT ===');
             }
-            return;
-        }
+        },
         
-        // Intentar parsear JSON
-        let result;
-        try {
-            result = JSON.parse(textResponse);
-            console.log('✅ JSON parseado:', result);
-        } catch (parseError) {
-            console.error('❌ Error al parsear JSON:', parseError);
-            console.error('No se pudo convertir a JSON. Texto:', textResponse);
-            this.errorMessage = 'Respuesta inválida del servidor. Ver consola.';
-            return;
-        }
-        
-        if (result.success) {
-            console.log('✅ Éxito!');
-            alert('✓ ' + result.message);
-            this.resetForm();
-            await this.loadConditionals();
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            console.warn('⚠️ Success = false:', result.message);
-            this.errorMessage = result.message;
-        }
-        
-    } catch (error) {
-        console.error('❌ EXCEPCIÓN CAPTURADA:', error);
-        console.error('Tipo de error:', error.name);
-        console.error('Mensaje:', error.message);
-        console.error('Stack:', error.stack);
-        this.errorMessage = 'Error: ' + error.message;
-    } finally {
-        this.isSubmitting = false;
-        console.log('=== FIN SUBMIT ===');
-    }
-},
-
         // Eliminar condicional
         async deleteConditional(conditionalId) {
             if (!confirm('¿Estás seguro de eliminar este condicional?')) {
@@ -605,299 +1129,21 @@ function conditionalsModal() {
                 hospital_id: '',
                 modality_id: '',
                 legal_entity_id: '',
-                is_additional_product: false,
+                action_type: 'adjust_quantity',
                 quantity_override: null,
                 additional_quantity: null,
+                target_product_id: '',
+                dependency_quantity: 1,
+                exclude_from_invoice: false,
+                requires_approval: false,
                 notes: ''
             };
             this.errorMessage = '';
+            this.warnings = [];
         }
     }
 }
 </script>
 @endpush
-
-
-{{-- ============================================
-     MODAL DE CONDICIONALES - Alpine.js
-     ============================================ --}}
-<div x-data="conditionalsModal()" 
-     x-show="isOpen" 
-     x-cloak
-     @open-conditionals-modal.window="openModal($event.detail)"
-     class="fixed inset-0 z-50 overflow-y-auto" 
-     style="display: none;">
-    
-    {{-- Overlay --}}
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
-         @click="closeModal()"></div>
-    
-    {{-- Modal Content --}}
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
-             @click.away="closeModal()">
-            
-            {{-- Header --}}
-            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center text-white">
-                        <i class="fas fa-filter mr-3 text-2xl"></i>
-                        <div>
-                            <h3 class="text-lg font-bold">Gestionar Condicionales</h3>
-                            <p class="text-sm text-purple-100" x-text="itemName"></p>
-                        </div>
-                    </div>
-                    <button @click="closeModal()" 
-                            class="text-white hover:text-gray-200 transition-colors">
-                        <i class="fas fa-times text-2xl"></i>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Body --}}
-            <div class="bg-white px-6 py-4 max-h-[70vh] overflow-y-auto">
-                
-                {{-- Info del Item --}}
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-blue-900">Cantidad Base del Checklist</p>
-                            <p class="text-3xl font-bold text-blue-600" x-text="baseQuantity"></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-blue-700">Condicionales Activos</p>
-                            <p class="text-2xl font-bold text-purple-600" x-text="conditionals.length"></p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Loading State --}}
-                <div x-show="loading" class="text-center py-8">
-                    <i class="fas fa-spinner fa-spin text-4xl text-purple-600 mb-3"></i>
-                    <p class="text-gray-600">Cargando condicionales...</p>
-                </div>
-
-                {{-- Lista de Condicionales Existentes --}}
-                <div x-show="!loading" class="mb-6">
-                    <h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">
-                        <i class="fas fa-list mr-2 text-indigo-600"></i>
-                        Condicionales Configurados
-                    </h4>
-                    
-                    <template x-if="conditionals.length === 0">
-                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                            <i class="fas fa-inbox text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-gray-600 text-sm">No hay condicionales configurados</p>
-                            <p class="text-gray-500 text-xs mt-1">Agrega uno usando el formulario de abajo</p>
-                        </div>
-                    </template>
-
-                    <div class="space-y-3">
-                        <template x-for="(cond, index) in conditionals" :key="cond.id">
-                            <div class="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <p class="text-sm font-bold text-gray-900 mb-2" x-text="cond.description"></p>
-                                        
-                                        <div class="grid grid-cols-2 gap-2 text-xs">
-                                            <div>
-                                                <span class="text-gray-600">Doctor:</span>
-                                                <span class="font-semibold text-gray-900" x-text="cond.doctor_name"></span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-600">Hospital:</span>
-                                                <span class="font-semibold text-gray-900" x-text="cond.hospital_name"></span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-600">Modalidad:</span>
-                                                <span class="font-semibold text-gray-900" x-text="cond.modality_name"></span>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-600">Razon Social:</span>
-                                                <span class="font-semibold text-gray-900" x-text="cond.legal_entity_name"></span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mt-2">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white">
-                                                <i class="fas fa-arrow-right mr-1"></i>
-                                                Cantidad: <span class="ml-1" x-text="cond.is_additional_product ? cond.additional_quantity : cond.quantity_override"></span>
-                                                <span class="ml-1" x-text="cond.is_additional_product ? '(Adicional)' : '(Reemplazo)'"></span>
-                                            </span>
-                                        </div>
-
-                                        <template x-if="cond.notes">
-                                            <p class="text-xs text-gray-600 mt-2 italic">
-                                                <i class="fas fa-sticky-note mr-1"></i>
-                                                <span x-text="cond.notes"></span>
-                                            </p>
-                                        </template>
-                                    </div>
-                                    
-                                    <button @click="deleteConditional(cond.id)" 
-                                            class="ml-4 text-red-600 hover:text-red-800 transition-colors"
-                                            title="Eliminar condicional">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                {{-- Formulario para Agregar Nuevo Condicional --}}
-                <div x-show="!loading" class="border-t-2 border-gray-200 pt-6">
-                    <h4 class="text-md font-bold text-gray-900 mb-4 flex items-center">
-                        <i class="fas fa-plus-circle mr-2 text-green-600"></i>
-                        Agregar Nuevo Condicional
-                    </h4>
-
-                    <form @submit.prevent="submitConditional()" class="space-y-4">
-                        
-                        {{-- Criterios --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {{-- Doctor --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Doctor (opcional)
-                                </label>
-                                <select x-model="newConditional.doctor_id" 
-                                        class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
-                                    <option value="">-- Todos los doctores --</option>
-                                    <template x-for="doctor in formData.doctors" :key="doctor.id">
-                                        <option :value="doctor.id" x-text="doctor.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            {{-- Hospital --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Hospital (opcional)
-                                </label>
-                                <select x-model="newConditional.hospital_id" 
-                                        class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
-                                    <option value="">-- Todos los hospitales --</option>
-                                    <template x-for="hospital in formData.hospitals" :key="hospital.id">
-                                        <option :value="hospital.id" x-text="hospital.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            {{-- Modalidad --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Modalidad de Pago (opcional)
-                                </label>
-                                <select x-model="newConditional.modality_id" 
-                                        class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
-                                    <option value="">-- Todas las modalidades --</option>
-                                    <template x-for="modality in formData.modalities" :key="modality.id">
-                                        <option :value="modality.id" x-text="modality.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            {{-- Legal Entity --}}
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Legal Entity (opcional)
-                                </label>
-                                <select x-model="newConditional.legal_entity_id" 
-                                        class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500">
-                                    <option value="">-- Todas las entidades --</option>
-                                    <template x-for="entity in formData.legal_entities" :key="entity.id">
-                                        <option :value="entity.id" x-text="entity.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                        </div>
-
-                        {{-- Tipo de Acción --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Producto <span class="text-red-500">*</span>
-                            </label>
-                            <div class="flex space-x-4">
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" 
-                                           x-model="newConditional.is_additional_product" 
-                                           :value="false" 
-                                           class="text-purple-600 focus:ring-purple-500">
-                                    <span class="ml-2 text-sm text-gray-700">Reemplazar cantidad base</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" 
-                                           x-model="newConditional.is_additional_product" 
-                                           :value="true" 
-                                           class="text-purple-600 focus:ring-purple-500">
-                                    <span class="ml-2 text-sm text-gray-700">Producto adicional</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        {{-- Cantidad --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Cantidad <span class="text-red-500">*</span>
-                            </label>
-                            <input type="number" 
-                                   x-model.number="newConditional.is_additional_product ? newConditional.additional_quantity : newConditional.quantity_override"
-                                   min="0"
-                                   required
-                                   class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                   placeholder="Ingresa la cantidad">
-                        </div>
-
-                        {{-- Notas --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Notas (opcional)
-                            </label>
-                            <textarea x-model="newConditional.notes" 
-                                      rows="2"
-                                      class="w-full rounded-lg border-gray-300 focus:border-purple-500 focus:ring-purple-500"
-                                      placeholder="Ej: Dr. Pérez requiere instrumental adicional"></textarea>
-                        </div>
-
-                        {{-- Mensaje de Error --}}
-                        <div x-show="errorMessage" 
-                             x-transition
-                             class="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <p class="text-sm text-red-800" x-text="errorMessage"></p>
-                        </div>
-
-                        {{-- Botones --}}
-                        <div class="flex justify-end space-x-3 pt-4">
-                            <button type="button" 
-                                    @click="closeModal()" 
-                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                                Cerrar
-                            </button>
-                            <button type="submit" 
-                                    :disabled="isSubmitting"
-                                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <template x-if="isSubmitting">
-                                    <span><i class="fas fa-spinner fa-spin mr-2"></i>Guardando...</span>
-                                </template>
-                                <template x-if="!isSubmitting">
-                                    <span><i class="fas fa-save mr-2"></i>Guardar Condicional</span>
-                                </template>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- Estilos para x-cloak --}}
-<style>
-    [x-cloak] { 
-        display: none !important; 
-    }
-</style>
-
 
 </x-app-layout>

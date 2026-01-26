@@ -8,6 +8,7 @@ use App\Models\Doctor;
 use App\Models\Hospital;
 use App\Models\Modality;
 use App\Models\LegalEntity;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -22,14 +23,13 @@ class ChecklistConditionalController extends Controller
     {
         try {
             $conditionals = $item->conditionals()
-                ->with(['doctor', 'hospital', 'modality', 'legalEntity'])
+                ->with(['doctor', 'hospital', 'modality', 'legalEntity', 'targetProduct'])
                 ->orderBy('id', 'desc')
                 ->get()
                 ->map(function($conditional) {
                     return [
                         'id' => $conditional->id,
                         'doctor_id' => $conditional->doctor_id,
-                        // ✅ CORREGIDO: Doctor con first_name y last_name
                         'doctor_name' => $conditional->doctor 
                             ? 'Dr. ' . $conditional->doctor->first_name . ' ' . $conditional->doctor->last_name 
                             : 'Todos',
@@ -39,9 +39,16 @@ class ChecklistConditionalController extends Controller
                         'modality_name' => $conditional->modality?->name ?? 'Todas',
                         'legal_entity_id' => $conditional->legal_entity_id,
                         'legal_entity_name' => $conditional->legalEntity?->name ?? 'Todas',
+                        'action_type' => $conditional->action_type,
+                        'action_description' => $conditional->getActionDescription(),
                         'quantity_override' => $conditional->quantity_override,
                         'is_additional_product' => $conditional->is_additional_product,
                         'additional_quantity' => $conditional->additional_quantity,
+                        'target_product_id' => $conditional->target_product_id,
+                        'target_product_name' => $conditional->targetProduct?->name,
+                        'dependency_quantity' => $conditional->dependency_quantity,
+                        'exclude_from_invoice' => $conditional->exclude_from_invoice,
+                        'requires_approval' => $conditional->requires_approval,
                         'description' => $conditional->getDescription(),
                         'notes' => $conditional->notes,
                         'specificity_level' => $conditional->getSpecificityLevel(),
@@ -80,10 +87,16 @@ class ChecklistConditionalController extends Controller
                 'hospital_id' => 'nullable|exists:hospitals,id',
                 'modality_id' => 'nullable|exists:modalities,id',
                 'legal_entity_id' => 'nullable|exists:legal_entities,id',
+                'action_type' => 'required|in:adjust_quantity,add_product,exclude,replace,add_dependency',
                 'quantity_override' => 'nullable|integer|min:0',
-                'is_additional_product' => 'required|boolean',
                 'additional_quantity' => 'nullable|integer|min:1',
+                'target_product_id' => 'nullable|exists:products,id',
+                'dependency_quantity' => 'nullable|integer|min:1',
+                'exclude_from_invoice' => 'nullable|boolean',
+                'requires_approval' => 'nullable|boolean',
                 'notes' => 'nullable|string|max:500',
+                // Backward compatibility
+                'is_additional_product' => 'nullable|boolean',
             ]);
 
             // Validación: al menos un criterio debe estar presente
@@ -97,42 +110,93 @@ class ChecklistConditionalController extends Controller
                 ], 422);
             }
 
-            // Validación: debe tener cantidad según el tipo
-            if ($validated['is_additional_product']) {
-                if (empty($validated['additional_quantity'])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes especificar la cantidad del producto adicional.',
-                    ], 422);
-                }
-                // Limpiar quantity_override si es producto adicional
-                $validated['quantity_override'] = null;
-            } else {
-                if (!isset($validated['quantity_override']) || $validated['quantity_override'] === null) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes especificar la cantidad a reemplazar.',
-                    ], 422);
-                }
-                // Limpiar additional_quantity si no es producto adicional
-                $validated['additional_quantity'] = null;
+            // Validaciones específicas por action_type
+            switch ($validated['action_type']) {
+                case 'adjust_quantity':
+                    if (!isset($validated['quantity_override']) || $validated['quantity_override'] === null) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes especificar la cantidad para ajustar.',
+                        ], 422);
+                    }
+                    $validated['additional_quantity'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'add_product':
+                    if (empty($validated['additional_quantity'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes especificar la cantidad del producto adicional.',
+                        ], 422);
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    $validated['is_additional_product'] = true; // Backward compatibility
+                    break;
+
+                case 'exclude':
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'replace':
+                    if (empty($validated['target_product_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes seleccionar el producto de reemplazo.',
+                        ], 422);
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'add_dependency':
+                    if (empty($validated['target_product_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes seleccionar el producto dependiente.',
+                        ], 422);
+                    }
+                    if (empty($validated['dependency_quantity'])) {
+                        $validated['dependency_quantity'] = 1; // Default
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    break;
             }
 
-            // Verificar que no exista un condicional idéntico
-            $exists = ChecklistConditional::where('checklist_item_id', $item->id)
-                ->where(function($query) use ($validated) {
-                    $query->where('doctor_id', $validated['doctor_id'] ?? null)
-                          ->where('hospital_id', $validated['hospital_id'] ?? null)
-                          ->where('modality_id', $validated['modality_id'] ?? null)
-                          ->where('legal_entity_id', $validated['legal_entity_id'] ?? null);
-                })
-                ->exists();
+            // Crear condicional temporal para detectar conflictos
+            $tempConditional = new ChecklistConditional($validated);
+            $tempConditional->checklist_item_id = $item->id;
 
-            if ($exists) {
+            // Detectar conflictos
+            $conflictAnalysis = $tempConditional->detectConflicts();
+
+            if ($conflictAnalysis['has_conflict']) {
+                $conflictMessages = $conflictAnalysis['conflicts']->map(function($conflict) {
+                    return $conflict['message'] . ' (Especificidad: ' . $conflict['conditional']->getSpecificityLevel() . ')';
+                })->toArray();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ya existe un condicional con estos mismos criterios.',
+                    'message' => 'Conflicto detectado con condicionales existentes.',
+                    'conflicts' => $conflictMessages,
+                    'action' => 'El sistema aplicará el condicional más específico, pero esto puede causar confusión.',
                 ], 422);
+            }
+
+            // Warnings (no bloquean la creación, solo informan)
+            $warnings = [];
+            if (!empty($conflictAnalysis['warnings'])) {
+                $warnings = collect($conflictAnalysis['warnings'])->map(function($warning) {
+                    return $warning['message'];
+                })->toArray();
             }
 
             // Crear condicional
@@ -140,6 +204,9 @@ class ChecklistConditionalController extends Controller
 
             $validated['checklist_item_id'] = $item->id;
             $validated['created_by'] = auth()->id();
+            $validated['is_additional_product'] = $validated['is_additional_product'] ?? false;
+            $validated['exclude_from_invoice'] = $validated['exclude_from_invoice'] ?? false;
+            $validated['requires_approval'] = $validated['requires_approval'] ?? false;
 
             $conditional = ChecklistConditional::create($validated);
 
@@ -148,12 +215,14 @@ class ChecklistConditionalController extends Controller
             Log::info("Condicional creado exitosamente:", [
                 'conditional_id' => $conditional->id,
                 'item_id' => $item->id,
+                'action_type' => $validated['action_type'],
                 'created_by' => auth()->id(),
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => '✓ Condicional creado exitosamente.',
+                'warnings' => $warnings,
                 'data' => [
                     'id' => $conditional->id,
                     'doctor_name' => $conditional->doctor 
@@ -162,11 +231,16 @@ class ChecklistConditionalController extends Controller
                     'hospital_name' => $conditional->hospital?->name ?? 'Todos',
                     'modality_name' => $conditional->modality?->name ?? 'Todas',
                     'legal_entity_name' => $conditional->legalEntity?->name ?? 'Todas',
+                    'action_type' => $conditional->action_type,
+                    'action_description' => $conditional->getActionDescription(),
                     'quantity_override' => $conditional->quantity_override,
-                    'is_additional_product' => $conditional->is_additional_product,
                     'additional_quantity' => $conditional->additional_quantity,
+                    'target_product_name' => $conditional->targetProduct?->name,
+                    'dependency_quantity' => $conditional->dependency_quantity,
+                    'exclude_from_invoice' => $conditional->exclude_from_invoice,
                     'description' => $conditional->fresh()->getDescription(),
                     'notes' => $conditional->notes,
+                    'specificity_level' => $conditional->getSpecificityLevel(),
                 ],
             ], 201);
 
@@ -210,10 +284,15 @@ class ChecklistConditionalController extends Controller
                 'hospital_id' => 'nullable|exists:hospitals,id',
                 'modality_id' => 'nullable|exists:modalities,id',
                 'legal_entity_id' => 'nullable|exists:legal_entities,id',
+                'action_type' => 'required|in:adjust_quantity,add_product,exclude,replace,add_dependency',
                 'quantity_override' => 'nullable|integer|min:0',
-                'is_additional_product' => 'required|boolean',
                 'additional_quantity' => 'nullable|integer|min:1',
+                'target_product_id' => 'nullable|exists:products,id',
+                'dependency_quantity' => 'nullable|integer|min:1',
+                'exclude_from_invoice' => 'nullable|boolean',
+                'requires_approval' => 'nullable|boolean',
                 'notes' => 'nullable|string|max:500',
+                'is_additional_product' => 'nullable|boolean',
             ]);
 
             // Validación: al menos un criterio
@@ -227,23 +306,65 @@ class ChecklistConditionalController extends Controller
                 ], 422);
             }
 
-            // Validación de cantidades según tipo
-            if ($validated['is_additional_product']) {
-                if (empty($validated['additional_quantity'])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes especificar la cantidad del producto adicional.',
-                    ], 422);
-                }
-                $validated['quantity_override'] = null;
-            } else {
-                if (!isset($validated['quantity_override']) || $validated['quantity_override'] === null) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Debes especificar la cantidad a reemplazar.',
-                    ], 422);
-                }
-                $validated['additional_quantity'] = null;
+            // Validaciones por action_type (igual que en store)
+            switch ($validated['action_type']) {
+                case 'adjust_quantity':
+                    if (!isset($validated['quantity_override']) || $validated['quantity_override'] === null) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes especificar la cantidad para ajustar.',
+                        ], 422);
+                    }
+                    $validated['additional_quantity'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'add_product':
+                    if (empty($validated['additional_quantity'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes especificar la cantidad del producto adicional.',
+                        ], 422);
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    $validated['is_additional_product'] = true;
+                    break;
+
+                case 'exclude':
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    $validated['target_product_id'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'replace':
+                    if (empty($validated['target_product_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes seleccionar el producto de reemplazo.',
+                        ], 422);
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    $validated['dependency_quantity'] = null;
+                    break;
+
+                case 'add_dependency':
+                    if (empty($validated['target_product_id'])) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Debes seleccionar el producto dependiente.',
+                        ], 422);
+                    }
+                    if (empty($validated['dependency_quantity'])) {
+                        $validated['dependency_quantity'] = 1;
+                    }
+                    $validated['quantity_override'] = null;
+                    $validated['additional_quantity'] = null;
+                    break;
             }
 
             DB::beginTransaction();
@@ -259,16 +380,18 @@ class ChecklistConditionalController extends Controller
                 'message' => '✓ Condicional actualizado exitosamente.',
                 'data' => [
                     'id' => $conditional->id,
-                    // ✅ CORREGIDO: Doctor con first_name y last_name
                     'doctor_name' => $conditional->fresh()->doctor 
                         ? 'Dr. ' . $conditional->fresh()->doctor->first_name . ' ' . $conditional->fresh()->doctor->last_name 
                         : 'Todos',
                     'hospital_name' => $conditional->fresh()->hospital?->name ?? 'Todos',
                     'modality_name' => $conditional->fresh()->modality?->name ?? 'Todas',
                     'legal_entity_name' => $conditional->fresh()->legalEntity?->name ?? 'Todas',
+                    'action_type' => $conditional->action_type,
+                    'action_description' => $conditional->fresh()->getActionDescription(),
                     'quantity_override' => $conditional->quantity_override,
-                    'is_additional_product' => $conditional->is_additional_product,
                     'additional_quantity' => $conditional->additional_quantity,
+                    'target_product_name' => $conditional->fresh()->targetProduct?->name,
+                    'dependency_quantity' => $conditional->dependency_quantity,
                     'description' => $conditional->fresh()->getDescription(),
                     'notes' => $conditional->notes,
                 ],
@@ -344,7 +467,6 @@ class ChecklistConditionalController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => [
-                    // ✅ CORREGIDO: Doctores con first_name y last_name
                     'doctors' => Doctor::select('id', 'first_name', 'last_name')
                         ->orderBy('first_name')
                         ->get()
@@ -363,6 +485,17 @@ class ChecklistConditionalController extends Controller
                     'legal_entities' => LegalEntity::select('id', 'name')
                         ->orderBy('name')
                         ->get(),
+                    'products' => Product::select('id', 'code', 'name')
+                        ->orderBy('code')
+                        ->get()
+                        ->map(function($product) {
+                            return [
+                                'id' => $product->id,
+                                'code' => $product->code,
+                                'name' => $product->name,
+                                'label' => $product->code . ' - ' . $product->name,
+                            ];
+                        }),
                 ],
             ]);
 
