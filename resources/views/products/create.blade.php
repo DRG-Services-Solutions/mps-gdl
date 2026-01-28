@@ -144,7 +144,7 @@
                                     <option value="">{{ __('-- Seleccione un proveedor --') }}</option>
                                     @foreach($suppliers as $supplier)
                                         <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                            {{ $supplier->name }}
+                                            {{ str($supplier->name)->title() }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -164,7 +164,7 @@
                                     <option value="">{{ __('-- Seleccione --') }}</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
-                                            {{ $category->name }}
+                                            {{ str($category->name)->title() }}
                                         </option>
                                     @endforeach
                                 </select>
