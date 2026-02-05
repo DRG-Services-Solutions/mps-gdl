@@ -161,7 +161,6 @@ class PurchaseOrderController extends Controller
 
             // 3. Crear la Orden
             $purchaseOrder = PurchaseOrder::create([
-                'order_number' => $this->generateOrderNumber(),
                 'created_by' => auth()->id(), 
                 'supplier_id' => $validated['supplier_id'],
                 'legal_entity_id' => $validated['legal_entity_id'], 
@@ -170,6 +169,8 @@ class PurchaseOrderController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'order_date' => now(),
                 'status' => 'pending',
+                'order_number' => $this->generateOrderNumber($request->legal_entity_id),
+
             ]);
             
             \Log::info('✅ Orden creada:', ['order_id' => $purchaseOrder->id, 'order_number' => $purchaseOrder->order_number]);
@@ -722,7 +723,7 @@ class PurchaseOrderController extends Controller
                     $q->where('code', 'like', "%{$query}%")
                       ->orWhere('name', 'like', "%{$query}%");
                 })
-                ->select('id', 'code', 'name', 'description')
+                ->select('id', 'code', 'name', 'description', 'list_price')
                 ->orderBy('code')
                 ->limit(50)
                 ->get()
@@ -732,7 +733,7 @@ class PurchaseOrderController extends Controller
                         'code' => $product->code,
                         'name' => $product->name,
                         'description' => $product->description,
-                        'price' => 0
+                        'price' => $product->list_price ?? 0
                     ];
                 });
             
@@ -748,17 +749,25 @@ class PurchaseOrderController extends Controller
     // MÉTODOS PRIVADOS / HELPERS
     // ========================================
 
-    private function generateOrderNumber(): string
+    private function generateOrderNumber(int $legalEntityId): string
     {
+       
         $today = now()->format('Ymd');
+
+        $prefix = match ($legalEntityId) {
+            1 => 'MPS', 
+            2 => 'MAB', 
+            default => 'OC', 
+        };
+
+        $pattern = "{$prefix}-{$today}-%";
         
-        $count = PurchaseOrder::where('order_number', 'like', "OC-{$today}-%")
-            ->count();
+        $count = PurchaseOrder::where('order_number', 'like', $pattern)->count();
         
         $nextNumber = $count + 1;
         $suffix = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
         
-        return "OC-{$today}-{$suffix}";
+        return "{$prefix}-{$today}-{$suffix}";
     }
 
     private function generateEPC(): string

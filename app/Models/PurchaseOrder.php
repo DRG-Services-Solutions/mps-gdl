@@ -76,7 +76,6 @@ class PurchaseOrder extends Model
         return $this->hasMany(PurchaseOrderItem::class);
     }
 
-    // ⬇️ NUEVA: Relación con recepciones
     public function receipts(): HasMany
     {
         return $this->hasMany(PurchaseOrderReceipt::class);
@@ -111,7 +110,6 @@ class PurchaseOrder extends Model
         return $query->where('status', 'cancelled');
     }
 
-    // ⬇️ NUEVO: Órdenes que pueden ser recibidas
     public function scopeCanBeReceived($query)
     {
         return $query->whereIn('status', ['pending', 'partial'])
@@ -127,7 +125,6 @@ class PurchaseOrder extends Model
         return !in_array($this->status, ['cancelled', 'received']);
     }
 
-    // ⬇️ NUEVO: Verificar si puede recibirse
     public function canBeReceived(): bool
     {
         return in_array($this->status, ['pending', 'partial']) 
@@ -135,15 +132,12 @@ class PurchaseOrder extends Model
                && !$this->isFullyReceived();
     }
 
-    // ⬇️ NUEVO: Verificar si está completamente recibida
     public function isFullyReceived(): bool
     {
-        // Si no hay items, no está recibida
         if ($this->items->count() === 0) {
             return false;
         }
 
-        // Verificar que todos los items estén completamente recibidos
         foreach ($this->items as $item) {
             if (!$item->isFullyReceived()) {
                 return false;
@@ -153,7 +147,6 @@ class PurchaseOrder extends Model
         return true;
     }
 
-    // ⬇️ NUEVO: Verificar si tiene alguna recepción parcial
     public function hasPartialReceipt(): bool
     {
         return $this->items->sum('quantity_received') > 0 && !$this->isFullyReceived();
@@ -173,13 +166,11 @@ class PurchaseOrder extends Model
         return $this->items->sum('quantity_received');
     }
 
-    // ⬇️ NUEVO: Cantidad pendiente de recibir
     public function getTotalPendingAttribute(): int
     {
         return $this->total_items - $this->total_received;
     }
 
-    // ⬇️ NUEVO: Porcentaje de progreso de recepción
     public function getReceiptProgressAttribute(): float
     {
         $total = $this->total_items;
@@ -187,13 +178,11 @@ class PurchaseOrder extends Model
         return round(($this->total_received / $total) * 100, 2);
     }
 
-    // ⬇️ NUEVO: Última recepción registrada
     public function getLatestReceiptAttribute(): ?PurchaseOrderReceipt
     {
         return $this->receipts()->latest('received_at')->first();
     }
 
-    // ⬇️ NUEVO: Total de recepciones realizadas
     public function getTotalReceiptsAttribute(): int
     {
         return $this->receipts()->count();

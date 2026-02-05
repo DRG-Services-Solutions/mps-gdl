@@ -29,6 +29,7 @@ use App\Http\Controllers\ScheduledSurgeryController;
 use App\Http\Controllers\SurgeryPreparationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ChecklistConditionalController;
+use App\Http\Controllers\PurchaseOrderBulkImportController;
 
 
 // ========================================
@@ -339,6 +340,18 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
         ->name('purchase-orders.mark-unpaid');
     Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
         ->name('purchase-orders.receive');
+
+    // Descargar template CSV básico
+    Route::get('/bulk-import/template', [PurchaseOrderBulkImportController::class, 'downloadTemplate'])
+        ->name('purchase-orders.bulk-import.template');
+    
+    // Descargar template CSV con catálogo de productos
+    Route::get('/bulk-import/template-catalog', [PurchaseOrderBulkImportController::class, 'downloadTemplateWithCatalog'])
+        ->name('purchase-orders.bulk-import.template-catalog');
+    
+    // Procesar archivo CSV (AJAX)
+    Route::post('/bulk-import/process', [PurchaseOrderBulkImportController::class, 'import'])
+        ->name('purchase-orders.bulk-import.process');
     
     // Resource de órdenes de compra
     Route::resource('purchase-orders', PurchaseOrderController::class);
