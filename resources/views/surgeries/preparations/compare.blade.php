@@ -348,7 +348,7 @@
                         </h4>
                         @if($summary['pending_items'] > 0)
                             <p class="text-sm text-indigo-800 mb-4">
-                                Tienes <strong>{{ $summary['total_quantity_missing'] }} unidades faltantes</strong> distribuidas en <strong>{{ $summary['pending_items'] }} productos</strong>. 
+                                Tienes <strong>{{ $summary['total_quantity_missing'] }} piezas faltantes</strong> distribuidas en <strong>{{ $summary['pending_items'] }} productos</strong>. 
                                 Ve a la sección de surtido para escanear estos productos con el lector RFID.
                             </p>
                             <a href="{{ route('surgeries.preparations.picking', $surgery) }}" 
@@ -376,6 +376,7 @@
             </div>
 
             {{-- Debug Panel --}}
+            {{-- 
             @if(config('app.debug'))
             <div class="bg-gray-900 text-green-400 font-mono text-xs rounded-lg p-4 opacity-80 hover:opacity-100 transition-opacity">
                 <h4 class="border-b border-gray-700 mb-3 pb-2 text-white uppercase font-bold flex items-center">
@@ -411,6 +412,7 @@
                 </div>
             </div>
             @endif
+             --}}
 
         </div>
     </div>

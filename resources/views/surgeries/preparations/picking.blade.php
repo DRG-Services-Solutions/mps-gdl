@@ -111,6 +111,48 @@
                 </div>
             </div>
 
+
+            {{-- 🆕 PANEL DE ESTADÍSTICAS RFID EN VIVO --}}
+            <div id="rfid-stats-panel" class="hidden bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-green-600" id="rfid-correct-count">0</p>
+                        <p class="text-xs text-gray-500 uppercase">Tags Correctos</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-red-600" id="rfid-incorrect-count">0</p>
+                        <p class="text-xs text-gray-500 uppercase">Tags Incorrectos</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-blue-600" id="rfid-total-scanned">0</p>
+                        <p class="text-xs text-gray-500 uppercase">Total Escaneados</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 🆕 PANEL DE TAGS INCORRECTOS DETECTADOS --}}
+            <div id="incorrect-tags-panel" class="hidden bg-red-50 rounded-lg shadow-sm border border-red-200">
+                <div class="px-6 py-4 bg-red-100 border-b border-red-200 flex justify-between items-center">
+                    <h3 class="text-red-800 font-bold flex items-center">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        TAGS INCORRECTOS DETECTADOS (<span id="incorrect-tags-count">0</span>)
+                    </h3>
+                    <button onclick="clearIncorrectTags()" 
+                            class="text-sm text-red-600 hover:text-red-800 font-medium">
+                        <i class="fas fa-trash mr-1"></i>
+                        Limpiar
+                    </button>
+                </div>
+                <div id="incorrect-tags-list" class="p-4 space-y-2 max-h-60 overflow-y-auto">
+                    {{-- Se llena dinámicamente --}}
+                </div>
+            </div>
+
+            {{-- 🆕 CONTENEDOR DE TOAST NOTIFICATIONS --}}
+            <div id="toast-container" class="fixed top-20 right-4 z-50 space-y-2" style="max-width: 400px;">
+                {{-- Toasts se agregan aquí dinámicamente --}}
+            </div>
+
             {{-- MODO MANUAL: Escaneo de Barcode --}}
             <div id="manualModeSection" class="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div class="p-6">
@@ -144,6 +186,7 @@
                 </div>
             </div>
 
+            {{-- MODO RFID: Control del Lector RFD90 --}}
             {{-- MODO RFID: Control del Lector RFD90 --}}
             <div id="rfidModeSection" class="bg-white rounded-lg shadow-sm border border-gray-200 hidden">
                 <div class="p-6">
@@ -186,7 +229,7 @@
                                     disabled
                                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i class="fas fa-play mr-1"></i>
-                                Iniciar Lectura
+                                Iniciar Verificación
                             </button>
                             <button type="button" 
                                     id="rfid-stop-btn"
@@ -194,12 +237,12 @@
                                     disabled
                                     class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i class="fas fa-stop mr-1"></i>
-                                Detener Lectura
+                                Detener Verificación
                             </button>
                         </div>
 
-                        {{-- Feedback --}}
-                        <div id="rfid-feedback" class="mt-3 text-sm text-gray-600"></div>
+                        {{-- 🆕 Feedback Visual --}}
+                        <div id="rfid-feedback" class="mt-3 text-sm text-gray-600 font-semibold"></div>
                     </div>
 
                     {{-- Consola de Eventos RFID --}}
@@ -207,7 +250,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <h5 class="text-sm font-medium text-gray-700">
                                 <i class="fas fa-terminal mr-1"></i>
-                                Consola de Eventos RFID
+                                Registro de Escaneos
                             </h5>
                             <button type="button" 
                                     onclick="clearRFIDConsole()"
@@ -217,13 +260,10 @@
                             </button>
                         </div>
                         <div id="rfid-console" 
-                             class="h-40 overflow-y-auto p-3 bg-gray-900 text-green-400 font-mono text-xs rounded-lg border border-gray-700">
+                            class="h-40 overflow-y-auto p-3 bg-gray-900 text-green-400 font-mono text-xs rounded-lg border border-gray-700">
                             {{-- Mensajes se añaden dinámicamente --}}
                         </div>
                     </div>
-                    
-                    {{-- Área de Resultados RFID --}}
-                    <div id="rfidResult" class="mt-4 hidden transition-all duration-300"></div>
                 </div>
             </div>
 
@@ -365,42 +405,7 @@
         </div>
     </div>
 
-    {{-- MODAL DE CONFIRMACIÓN RFID --}}
-    <div id="rfidConfirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-lg bg-white">
-            <div class="mt-3">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-bold text-gray-900 flex items-center">
-                        <i class="fas fa-broadcast-tower text-purple-500 mr-2"></i>
-                        Tag RFID Detectado
-                    </h3>
-                    <button onclick="closeRfidModal()" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                
-                <div id="rfidModalContent" class="space-y-3">
-                    {{-- Contenido dinámico --}}
-                </div>
-                
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" 
-                            onclick="closeRfidModal()"
-                            class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium">
-                        <i class="fas fa-times mr-1"></i>
-                        Cancelar
-                    </button>
-                    <button type="button" 
-                            id="confirmRfidBtn"
-                            onclick="confirmRfidUnit()"
-                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
-                        <i class="fas fa-check mr-1"></i>
-                        Confirmar y Agregar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     {{-- Modal de Cancelación --}}
     <div id="cancelModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
