@@ -33,7 +33,7 @@
         </div>
     </x-slot>
 
-    {{-- ⬇️ IMPORTANTE: El x-data debe envolver TODO el contenido incluyendo los modales --}}
+    
     <div x-data="{ showCancelModal: false, showPaymentModal: false, showReceiveModal: false }">
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -371,7 +371,6 @@
                             <h3 class="text-lg font-semibold text-gray-900">
                                 Recepción de Orden: {{ $purchaseOrder->order_number }}
                             </h3>
-                            
                         </div>
                         <button @click="showReceiveModal = false" class="text-gray-400 hover:text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,8 +379,161 @@
                         </button>
                     </div>
 
+                    {{-- ========================================
+                        NUEVA SECCIÓN: Validación por XML CFDI
+                        ======================================== --}}
+                    <div class="mb-6 border border-blue-200 rounded-lg overflow-hidden">
+                        {{-- Header colapsable --}}
+                        <button type="button" 
+                                @click="showXmlSection = !showXmlSection"
+                                class="w-full px-4 py-3 bg-blue-50 flex items-center justify-between hover:bg-blue-100 transition-colors">
+                            <div class="flex items-center">
+                                <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span class="font-medium text-blue-900">Validar con XML CFDI</span>
+                                <span class="ml-2 text-xs text-blue-600">(Opcional - Carga el XML de la factura para auto-llenar cantidades)</span>
+                            </div>
+                            <svg class="w-5 h-5 text-blue-600 transition-transform" :class="{ 'rotate-180': showXmlSection }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+                        
+                        {{-- Contenido colapsable --}}
+                        <div x-show="showXmlSection" x-collapse class="p-4 bg-white border-t border-blue-200">
+                            {{-- Dropzone para XML --}}
+                            <div x-show="!xmlValidated" class="text-center">
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+                                    :class="{ 'border-blue-500 bg-blue-50': isDragging }"
+                                    @dragover.prevent="isDragging = true"
+                                    @dragleave.prevent="isDragging = false"
+                                    @drop.prevent="handleXmlDrop($event)">
+                                    
+                                    <div x-show="!isProcessingXml && !xmlFile">
+                                        <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                        </svg>
+                                        <p class="mt-2 text-sm text-gray-600">Arrastra el XML aquí o</p>
+                                        <input type="file" x-ref="xmlFileInput" class="hidden" accept=".xml" @change="handleXmlSelect($event)">
+                                        <button type="button" @click="$refs.xmlFileInput.click()" class="mt-2 px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                                            Seleccionar XML
+                                        </button>
+                                    </div>
+                                    
+                                    {{-- Archivo seleccionado --}}
+                                    <div x-show="xmlFile && !isProcessingXml" x-cloak class="flex items-center justify-center gap-4">
+                                        <div class="flex items-center">
+                                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                            <span class="ml-2 text-sm font-medium text-gray-700" x-text="xmlFile?.name"></span>
+                                        </div>
+                                        <button type="button" @click="clearXmlFile()" class="text-red-500 hover:text-red-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                        <button type="button" @click="processXml()" class="px-4 py-1.5 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">
+                                            Validar
+                                        </button>
+                                    </div>
+                                    
+                                    {{-- Procesando --}}
+                                    <div x-show="isProcessingXml" x-cloak class="flex items-center justify-center">
+                                        <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span class="ml-2 text-sm text-gray-600">Validando XML...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- Resultado de validación --}}
+                            <div x-show="xmlValidated" x-cloak>
+                                {{-- Info del CFDI --}}
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span class="text-sm font-medium text-green-800">XML Validado</span>
+                                        </div>
+                                        <button type="button" @click="resetXmlValidation()" class="text-sm text-green-700 hover:text-green-900 underline">
+                                            Cargar otro
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                        <div>
+                                            <span class="text-green-600">Folio:</span>
+                                            <span class="font-medium text-green-900" x-text="cfdiData.serie + ' ' + cfdiData.folio"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-green-600">Emisor:</span>
+                                            <span class="font-medium text-green-900" x-text="cfdiData.emisor_nombre"></span>
+                                        </div>
+                                        <div>
+                                            <span class="text-green-600">Total:</span>
+                                            <span class="font-medium text-green-900" x-text="'$' + Number(cfdiData.total).toLocaleString('es-MX', {minimumFractionDigits: 2})"></span>
+                                        </div>
+                                        <div class="col-span-2 md:col-span-1">
+                                            <span class="text-green-600">UUID:</span>
+                                            <span class="font-mono text-green-900 text-xs" x-text="cfdiData.uuid?.substring(0, 18) + '...'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {{-- Errores bloqueantes --}}
+                                <div x-show="xmlErrors.length > 0" class="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                                    <div class="flex items-start">
+                                        <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-red-800">Errores encontrados:</p>
+                                            <ul class="mt-1 text-xs text-red-700 space-y-0.5">
+                                                <template x-for="error in xmlErrors" :key="error.code">
+                                                    <li class="flex items-start">
+                                                        <span class="mr-1">•</span>
+                                                        <span><strong x-text="error.code"></strong>: <span x-text="error.message"></span></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {{-- Advertencias --}}
+                                <div x-show="xmlWarnings.length > 0" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <div class="flex items-start">
+                                        <svg class="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-sm font-medium text-yellow-800">Advertencias:</p>
+                                            <ul class="mt-1 text-xs text-yellow-700 space-y-0.5">
+                                                <template x-for="warning in xmlWarnings" :key="warning.code">
+                                                    <li class="flex items-start">
+                                                        <span class="mr-1">•</span>
+                                                        <span x-text="warning.message"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{-- FIN SECCIÓN XML --}}
+
                     <form action="{{ route('purchase-orders.receive', $purchaseOrder) }}" method="POST" enctype="multipart/form-data">
                         @csrf
+                        
+                        {{-- Campo oculto para UUID si se validó XML --}}
+                        <input type="hidden" name="cfdi_uuid" :value="cfdiData?.uuid || ''">
+                        
                         <div class="overflow-y-auto max-h-[60vh] border rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50 sticky top-0">
@@ -400,10 +552,45 @@
                                             $fullyReceived = $item->isFullyReceived();
                                             $pendingQty = $item->pending_quantity;
                                         @endphp
-                                        <tr class="{{ $fullyReceived ? 'bg-gray-50' : '' }}">
+                                        <tr class="{{ $fullyReceived ? 'bg-gray-50' : '' }}" 
+                                            :class="{
+                                                'bg-red-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'error',
+                                                'bg-yellow-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'warning',
+                                                'bg-green-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'ok'
+                                            }"
+                                            data-product-code="{{ $item->product_code }}">
                                             <td class="px-4 py-3 text-sm text-gray-900">
-                                                <div class="font-medium">{{ $item->product_code }}</div>
-                                                <div class="text-xs text-gray-500">{{ $item->product_name }}</div>
+                                                <div class="flex items-center">
+                                                    {{-- Indicador de estado XML --}}
+                                                    <template x-if="xmlValidated">
+                                                        <span class="mr-2">
+                                                            <template x-if="getItemStatus('{{ $item->product_code }}') === 'ok'">
+                                                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                                </svg>
+                                                            </template>
+                                                            <template x-if="getItemStatus('{{ $item->product_code }}') === 'warning'">
+                                                                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                                </svg>
+                                                            </template>
+                                                            <template x-if="getItemStatus('{{ $item->product_code }}') === 'error'">
+                                                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                                </svg>
+                                                            </template>
+                                                            <template x-if="getItemStatus('{{ $item->product_code }}') === 'not_in_xml'">
+                                                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                                </svg>
+                                                            </template>
+                                                        </span>
+                                                    </template>
+                                                    <div>
+                                                        <div class="font-medium">{{ $item->product_code }}</div>
+                                                        <div class="text-xs text-gray-500">{{ $item->product_name }}</div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="px-4 py-3 text-center text-sm text-gray-700">
                                                 {{ $item->quantity_ordered }}
@@ -417,10 +604,16 @@
                                             <td class="px-4 py-3 text-center">
                                                 <input type="number" 
                                                     name="items[{{ $item->id }}][quantity_received]" 
+                                                    id="qty_{{ $item->id }}"
                                                     min="0" 
                                                     max="{{ $pendingQty }}" 
                                                     value="{{ $pendingQty }}" 
-                                                    class="w-20 text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                                    class="w-20 text-center border border-gray-300 rounded-lg px-2 py-1 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                                                    :class="{
+                                                        'border-green-500 bg-green-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'ok',
+                                                        'border-yellow-500 bg-yellow-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'warning',
+                                                        'border-red-500 bg-red-50': xmlValidated && getItemStatus('{{ $item->product_code }}') === 'error'
+                                                    }"
                                                     {{ $fullyReceived ? 'disabled' : '' }}>
                                             </td>
                                             <td class="px-4 py-3 text-center">
@@ -454,8 +647,13 @@
                                 </label>
                                 <input type="text" 
                                     name="invoice_number"
+                                    :value="cfdiData?.uuid || ''"
                                     class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    :class="{ 'bg-green-50': cfdiData?.uuid }"
                                     placeholder="Ej: FAC-2024-001">
+                                <p x-show="cfdiData?.uuid" class="mt-1 text-xs text-green-600">
+                                    UUID extraído del XML automáticamente
+                                </p>
                             </div>
 
                             <!-- Archivo de Factura -->
@@ -466,14 +664,14 @@
                                 </label>
                                 <input type="file" 
                                     name="invoice_file"
-                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    accept=".pdf,.jpg,.jpeg,.png,.xml"
                                     class="block w-full text-sm text-gray-500
                                             file:mr-4 file:py-2 file:px-4
                                             file:rounded-lg file:border-0
                                             file:text-sm file:font-semibold
                                             file:bg-green-50 file:text-green-700
                                             hover:file:bg-green-100">
-                                <p class="mt-1 text-xs text-gray-500">PDF, JPG, PNG (Máx. 5MB)</p>
+                                <p class="mt-1 text-xs text-gray-500">PDF, JPG, PNG, XML (Máx. 5MB)</p>
                             </div>
                         </div>
 
@@ -496,9 +694,11 @@
                                 Cancelar
                             </button>
                             <button type="submit" 
-                                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                    class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    :disabled="xmlValidated && hasBlockingErrors"
                                     {{ !$hasPendingItems ? 'disabled' : '' }}>
-                                Registrar Recepción
+                                <span x-show="!xmlValidated || !hasBlockingErrors">Registrar Recepción</span>
+                                <span x-show="xmlValidated && hasBlockingErrors">Corrige los errores del XML</span>
                             </button>
                         </div>
                     </form>
@@ -506,26 +706,173 @@
             </div>
         </div>
 
-        @push('scripts')
-        <script>
-        function receiveModal() {
-            return {
-                checkExpiryDate(event, productName) {
-                    const selectedDate = new Date(event.target.value);
-                    const today = new Date();
-                    const diffTime = selectedDate - today;
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays <= 30 && diffDays > 0) {
-                        alert(`⚠️ ADVERTENCIA:\n\nEl producto "${productName}" tiene una caducidad muy próxima (${diffDays} días).\n\n¿Estás seguro de recibir este producto?`);
-                        event.target.classList.add('border-red-500', 'bg-red-50');
-                    } else {
-                        event.target.classList.remove('border-red-500', 'bg-red-50');
+    @push('scripts')
+    <script>
+    function receiveModal() {
+        return {
+            // Sección XML
+            showXmlSection: false,
+            xmlFile: null,
+            isDragging: false,
+            isProcessingXml: false,
+            xmlValidated: false,
+            cfdiData: null,
+            xmlErrors: [],
+            xmlWarnings: [],
+            xmlItems: [],
+            
+            // Mapa de items por código para acceso rápido
+            itemStatusMap: {},
+            
+            get hasBlockingErrors() {
+                return this.xmlErrors.length > 0;
+            },
+            
+            // Métodos para XML
+            handleXmlDrop(event) {
+                this.isDragging = false;
+                const file = event.dataTransfer.files[0];
+                this.setXmlFile(file);
+            },
+            
+            handleXmlSelect(event) {
+                const file = event.target.files[0];
+                this.setXmlFile(file);
+            },
+            
+            setXmlFile(file) {
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.xml')) {
+                    alert('Solo se permiten archivos XML');
+                    return;
+                }
+                this.xmlFile = file;
+            },
+            
+            clearXmlFile() {
+                this.xmlFile = null;
+                this.$refs.xmlFileInput.value = '';
+            },
+            
+            resetXmlValidation() {
+                this.xmlFile = null;
+                this.xmlValidated = false;
+                this.cfdiData = null;
+                this.xmlErrors = [];
+                this.xmlWarnings = [];
+                this.xmlItems = [];
+                this.itemStatusMap = {};
+                if (this.$refs.xmlFileInput) {
+                    this.$refs.xmlFileInput.value = '';
+                }
+                
+                // Restaurar valores por defecto en los inputs
+                @foreach($purchaseOrder->items as $item)
+                    const input{{ $item->id }} = document.getElementById('qty_{{ $item->id }}');
+                    if (input{{ $item->id }} && !input{{ $item->id }}.disabled) {
+                        input{{ $item->id }}.value = {{ $item->pending_quantity }};
                     }
+                @endforeach
+            },
+            
+            async processXml() {
+                if (!this.xmlFile) return;
+                
+                this.isProcessingXml = true;
+                this.xmlErrors = [];
+                this.xmlWarnings = [];
+                
+                const formData = new FormData();
+                formData.append('xml_file', this.xmlFile);
+                
+                try {
+                    const response = await fetch('{{ route("purchase-orders.process-cfdi", $purchaseOrder) }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Accept': 'application/json',
+                        },
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok && !data.cfdi) {
+                        alert(data.message || 'Error al procesar el XML');
+                        return;
+                    }
+                    
+                    this.cfdiData = data.cfdi;
+                    this.xmlErrors = data.errors || [];
+                    this.xmlWarnings = data.warnings || [];
+                    this.xmlItems = data.items || [];
+                    this.xmlValidated = true;
+                    
+                    // Construir mapa de estados
+                    this.buildItemStatusMap();
+                    
+                    // Auto-llenar cantidades si no hay errores bloqueantes
+                    if (this.xmlErrors.length === 0) {
+                        this.fillQuantitiesFromXml();
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error de conexión al procesar el XML');
+                } finally {
+                    this.isProcessingXml = false;
+                }
+            },
+            
+            buildItemStatusMap() {
+                this.itemStatusMap = {};
+                
+                // Items procesados del XML
+                this.xmlItems.forEach(item => {
+                    this.itemStatusMap[item.product_code] = item.status;
+                });
+                
+                // Marcar items que no están en el XML
+                @foreach($purchaseOrder->items as $item)
+                    if (!this.itemStatusMap['{{ $item->product_code }}']) {
+                        this.itemStatusMap['{{ $item->product_code }}'] = 'not_in_xml';
+                    }
+                @endforeach
+            },
+            
+            getItemStatus(productCode) {
+                return this.itemStatusMap[productCode] || null;
+            },
+            
+            fillQuantitiesFromXml() {
+                this.xmlItems.forEach(item => {
+                    // Buscar el input correspondiente
+                    const row = document.querySelector(`tr[data-product-code="${item.product_code}"]`);
+                    if (row) {
+                        const input = row.querySelector('input[type="number"]');
+                        if (input && !input.disabled) {
+                            input.value = item.quantity_to_receive;
+                        }
+                    }
+                });
+            },
+            
+            // Método existente para caducidad
+            checkExpiryDate(event, productName) {
+                const selectedDate = new Date(event.target.value);
+                const today = new Date();
+                const diffTime = selectedDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 30 && diffDays > 0) {
+                    alert(`⚠️ ADVERTENCIA:\n\nEl producto "${productName}" tiene una caducidad muy próxima (${diffDays} días).\n\n¿Estás seguro de recibir este producto?`);
+                    event.target.classList.add('border-red-500', 'bg-red-50');
+                } else {
+                    event.target.classList.remove('border-red-500', 'bg-red-50');
                 }
             }
         }
-        </script>
-        @endpush
-    </div>
+    }
+    </script>
+    @endpush
 </x-app-layout>

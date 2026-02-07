@@ -30,7 +30,7 @@ use App\Http\Controllers\SurgeryPreparationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ChecklistConditionalController;
 use App\Http\Controllers\PurchaseOrderBulkImportController;
-
+use App\Http\Controllers\CfdiXmlController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -352,6 +352,10 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // Procesar archivo CSV (AJAX)
     Route::post('/bulk-import/process', [PurchaseOrderBulkImportController::class, 'import'])
         ->name('purchase-orders.bulk-import.process');
+
+    //procesar xml
+    Route::post('/purchase-orders/{purchaseOrder}/process-cfdi', [CfdiXmlController::class, 'processForReceipt'])
+        ->name('purchase-orders.process-cfdi');
     
     // Resource de órdenes de compra
     Route::resource('purchase-orders', PurchaseOrderController::class);
