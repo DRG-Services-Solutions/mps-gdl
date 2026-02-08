@@ -1,6 +1,9 @@
 
 <!-- Modal de Importación Masiva -->
 <div x-data="bulkImportModal()" 
+    const supplierSelect = document.querySelector('select[name="supplier_id"]');
+    const suppliersWithMapping = [2]; // Medartis
+    return supplierSelect && suppliersWithMapping.includes(parseInt(supplierSelect.value));
      x-show="isOpen" 
      x-cloak
      class="fixed inset-0 z-50 overflow-y-auto"
@@ -324,6 +327,11 @@ function bulkImportModal() {
 
             const formData = new FormData();
             formData.append('file', this.selectedFile);
+
+            const supplierSelect = document.querySelector('select[name="supplier_id"]');
+            if (supplierSelect && supplierSelect.value) {
+                formData.append('supplier_id', supplierSelect.value);
+            }
 
             try {
                 const response = await fetch('{{ route("purchase-orders.bulk-import.process") }}', {

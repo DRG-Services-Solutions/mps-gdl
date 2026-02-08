@@ -2,22 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Traits\SupplierCodeMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CfdiXmlController extends Controller
 {
+    use SupplierCodeMapping;
+
     /**
      * Procesar XML CFDI y validar contra la orden de compra
      */
     public function processForReceipt(Request $request, PurchaseOrder $purchaseOrder)
     {
+        // Validación más flexible - solo verificar que sea un archivo
         $validator = Validator::make($request->all(), [
-            'xml_file' => 'required|file|mimes:xml|max:5120',
+            'xml_file' => 'required|file|max:5120',
         ], [
             'xml_file.required' => 'Debes seleccionar un archivo XML.',
-            'xml_file.mimes' => 'El archivo debe ser un XML válido.',
+            'xml_file.file' => 'Debes seleccionar un archivo válido.',
             'xml_file.max' => 'El archivo no debe superar los 5MB.',
         ]);
 
@@ -28,9 +33,27 @@ class CfdiXmlController extends Controller
             ], 422);
         }
 
+        // Validar extensión manualmente
+        $file = $request->file('xml_file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        
+        if ($extension !== 'xml') {
+            return response()->json([
+                'success' => false,
+                'message' => 'El archivo debe tener extensión .xml',
+            ], 422);
+        }
+
         try {
-            $file = $request->file('xml_file');
             $xmlContent = file_get_contents($file->getPathname());
+            
+            // Verificar que el contenido parezca XML
+            if (empty($xmlContent) || strpos($xmlContent, '<?xml') === false && strpos($xmlContent, '<cfdi:') === false) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El contenido del archivo no parece ser un XML válido.',
+                ], 422);
+            }
             
             // Parsear el XML
             $cfdiData = $this->parseCfdiXml($xmlContent);
@@ -42,8 +65,11 @@ class CfdiXmlController extends Controller
                 ], 422);
             }
 
+            // Obtener el supplier_id de la orden para aplicar transformaciones
+            $supplierId = $purchaseOrder->supplier_id;
+
             // Validar productos contra la orden de compra
-            $validationResult = $this->validateAgainstOrder($purchaseOrder, $cfdiData['conceptos']);
+            $validationResult = $this->validateAgainstOrder($purchaseOrder, $cfdiData['conceptos'], $supplierId);
 
             return response()->json([
                 'success' => $validationResult['success'],
@@ -67,6 +93,7 @@ class CfdiXmlController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error al procesar XML CFDI: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
             
             return response()->json([
                 'success' => false,
@@ -84,7 +111,20 @@ class CfdiXmlController extends Controller
             // Limpiar BOM si existe
             $xmlContent = preg_replace('/^\xEF\xBB\xBF/', '', $xmlContent);
             
-            $xml = new \SimpleXMLElement($xmlContent);
+            // Suprimir errores de XML y manejarlos manualmente
+            libxml_use_internal_errors(true);
+            
+            $xml = simplexml_load_string($xmlContent);
+            
+            if ($xml === false) {
+                $errors = libxml_get_errors();
+                libxml_clear_errors();
+                $errorMsg = !empty($errors) ? $errors[0]->message : 'Error desconocido';
+                return [
+                    'success' => false,
+                    'message' => 'Error al parsear el XML: ' . trim($errorMsg),
+                ];
+            }
             
             // Registrar namespaces
             $namespaces = $xml->getNamespaces(true);
@@ -139,11 +179,11 @@ class CfdiXmlController extends Controller
             return [
                 'success' => true,
                 'uuid' => $uuid,
-                'folio' => (string) $attrs['Folio'],
-                'serie' => (string) $attrs['Serie'],
-                'fecha' => (string) $attrs['Fecha'],
-                'subtotal' => (float) $attrs['SubTotal'],
-                'total' => (float) $attrs['Total'],
+                'folio' => (string) ($attrs['Folio'] ?? ''),
+                'serie' => (string) ($attrs['Serie'] ?? ''),
+                'fecha' => (string) ($attrs['Fecha'] ?? ''),
+                'subtotal' => (float) ($attrs['SubTotal'] ?? 0),
+                'total' => (float) ($attrs['Total'] ?? 0),
                 'emisor_rfc' => $emisorRfc,
                 'emisor_nombre' => $emisorNombre,
                 'receptor_rfc' => $receptorRfc,
@@ -162,37 +202,52 @@ class CfdiXmlController extends Controller
     /**
      * Validar conceptos del CFDI contra la orden de compra
      */
-    private function validateAgainstOrder(PurchaseOrder $purchaseOrder, array $conceptos): array
+    private function validateAgainstOrder(PurchaseOrder $purchaseOrder, array $conceptos, ?int $supplierId = null): array
     {
         $items = [];
         $errors = [];
         $warnings = [];
         $hasBlockingError = false;
 
-        // Cargar items de la orden con sus códigos
+        // Cargar items de la orden
         $orderItems = $purchaseOrder->items()
             ->whereColumn('quantity_received', '<', 'quantity_ordered')
-            ->get()
-            ->keyBy('product_code');
+            ->get();
 
-        // Crear mapa de códigos del XML
-        $xmlCodes = collect($conceptos)->pluck('cantidad', 'no_identificacion');
+        // Crear mapa por código interno
+        $orderItemsByCode = $orderItems->keyBy('product_code');
 
-        // Validar cada concepto del XML
+        // =====================================================
+        // PROCESAR CADA CONCEPTO DEL XML CON MAPEO DE CÓDIGOS
+        // =====================================================
         foreach ($conceptos as $concepto) {
-            $code = $concepto['no_identificacion'];
+            $xmlCode = $concepto['no_identificacion'];
             $xmlQty = (int) $concepto['cantidad'];
             
-            $orderItem = $orderItems->get($code);
+            // Intentar encontrar el código interno usando el trait
+            $internalCode = $this->transformSupplierCode($xmlCode, $supplierId);
+            
+            // Si no se encontró con transformación, usar el código original
+            $lookupCode = $internalCode ?? $xmlCode;
+            
+            $orderItem = $orderItemsByCode->get($lookupCode);
+
+            // Log para debugging
+            if ($internalCode && $internalCode !== $xmlCode) {
+                \Log::info("XML Code Mapping: {$xmlCode} -> {$internalCode} (Supplier: {$supplierId})");
+            }
 
             if (!$orderItem) {
                 // Producto no está en la orden
                 $errors[] = [
                     'type' => 'not_in_order',
-                    'code' => $code,
+                    'code' => $xmlCode,
+                    'mapped_code' => $internalCode,
                     'description' => $concepto['descripcion'],
                     'xml_quantity' => $xmlQty,
-                    'message' => "El producto '{$code}' no está en la orden de compra o ya fue recibido completamente.",
+                    'message' => "El producto '{$xmlCode}'" . 
+                                ($internalCode && $internalCode !== $xmlCode ? " (buscado como '{$internalCode}')" : "") .
+                                " no está en la orden de compra o ya fue recibido completamente.",
                 ];
                 $hasBlockingError = true;
                 continue;
@@ -206,33 +261,36 @@ class CfdiXmlController extends Controller
                 // Cantidad del XML excede lo pendiente
                 $errors[] = [
                     'type' => 'quantity_exceeded',
-                    'code' => $code,
+                    'code' => $xmlCode,
+                    'mapped_code' => $orderItem->product_code,
                     'description' => $concepto['descripcion'],
                     'xml_quantity' => $xmlQty,
                     'pending_quantity' => $pendingQty,
                     'ordered_quantity' => $orderItem->quantity_ordered,
                     'received_quantity' => $orderItem->quantity_received,
-                    'message' => "El producto '{$code}' tiene cantidad {$xmlQty} en el XML pero solo hay {$pendingQty} pendiente(s) de recibir.",
+                    'message' => "El producto '{$xmlCode}' tiene cantidad {$xmlQty} en el XML pero solo hay {$pendingQty} pendiente(s) de recibir.",
                 ];
                 $hasBlockingError = true;
                 $status = 'error';
-                $finalQty = $pendingQty; // Sugerir la cantidad máxima permitida
+                $finalQty = $pendingQty;
             } elseif ($xmlQty < $pendingQty) {
                 // Cantidad del XML es menor (recepción parcial)
                 $warnings[] = [
                     'type' => 'partial_receipt',
-                    'code' => $code,
+                    'code' => $xmlCode,
+                    'mapped_code' => $orderItem->product_code,
                     'description' => $concepto['descripcion'],
                     'xml_quantity' => $xmlQty,
                     'pending_quantity' => $pendingQty,
-                    'message' => "El producto '{$code}' tiene {$pendingQty} pendiente(s) pero el XML solo indica {$xmlQty}. Se registrará recepción parcial.",
+                    'message' => "El producto '{$xmlCode}' tiene {$pendingQty} pendiente(s) pero el XML solo indica {$xmlQty}. Se registrará recepción parcial.",
                 ];
                 $status = 'warning';
             }
 
             $items[] = [
                 'item_id' => $orderItem->id,
-                'product_code' => $code,
+                'product_code' => $orderItem->product_code, // Código interno
+                'xml_code' => $xmlCode, // Código del XML
                 'product_name' => $orderItem->product_name,
                 'description' => $concepto['descripcion'],
                 'quantity_ordered' => $orderItem->quantity_ordered,
@@ -241,13 +299,14 @@ class CfdiXmlController extends Controller
                 'xml_quantity' => $xmlQty,
                 'quantity_to_receive' => $finalQty,
                 'status' => $status,
+                'code_was_mapped' => ($internalCode && $internalCode !== $xmlCode),
             ];
         }
 
-        // Verificar si hay productos pendientes en la orden que NO están en el XML
-        $xmlCodes = collect($conceptos)->pluck('no_identificacion')->toArray();
-        foreach ($orderItems as $code => $orderItem) {
-            if (!in_array($code, $xmlCodes)) {
+        // Verificar productos pendientes que NO están en el XML
+        $xmlMappedCodes = collect($items)->pluck('product_code')->toArray();
+        foreach ($orderItemsByCode as $code => $orderItem) {
+            if (!in_array($code, $xmlMappedCodes)) {
                 $warnings[] = [
                     'type' => 'not_in_xml',
                     'code' => $code,

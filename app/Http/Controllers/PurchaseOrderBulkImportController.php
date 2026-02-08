@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Traits\SupplierCodeMapping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PurchaseOrderBulkImportController extends Controller
 {
+    use SupplierCodeMapping;
+
     /**
      * Descargar template CSV para carga masiva de productos
      */
@@ -104,6 +107,7 @@ class PurchaseOrderBulkImportController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|mimes:csv,txt|max:5120',
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
         ], [
             'file.required' => 'Debes seleccionar un archivo CSV.',
             'file.mimes' => 'El archivo debe ser un CSV (.csv).',
@@ -119,6 +123,7 @@ class PurchaseOrderBulkImportController extends Controller
 
         try {
             $file = $request->file('file');
+            $supplierId = $request->input('supplier_id'); // Proveedor seleccionado
             $handle = fopen($file->getPathname(), 'r');
 
             if (!$handle) {
@@ -210,23 +215,32 @@ class PurchaseOrderBulkImportController extends Controller
                 ], 422);
             }
 
-            // Buscar productos en la base de datos
-            $products = Product::whereIn('code', array_keys($productCodes))
-                ->get()
-                ->keyBy('code');
+            // =====================================================
+            // BÚSQUEDA CON MAPEO DE CÓDIGOS POR PROVEEDOR
+            // =====================================================
+            $result = $this->findProductsBySupplierCodes(array_keys($productCodes), $supplierId);
+            $foundProducts = $result['found'];
+            $codeMap = $result['code_map'];
 
-            foreach ($productCodes as $code => $quantity) {
-                $product = $products->get($code);
+            foreach ($productCodes as $originalCode => $quantity) {
+                $product = $foundProducts[$originalCode] ?? null;
 
                 if (!$product) {
-                    $errors[] = "Producto '{$code}' no encontrado en el sistema.";
+                    $errors[] = "Producto '{$originalCode}' no encontrado en el sistema.";
                     continue;
                 }
+
+                // Si el código fue transformado, notificar
+                $internalCode = $codeMap[$originalCode] ?? $originalCode;
+                $codeNote = ($internalCode !== $originalCode) 
+                    ? " (mapeado desde {$originalCode})" 
+                    : "";
 
                 $items[] = [
                     'product_id' => $product->id,
                     'code' => $product->code,
-                    'name' => $product->name,
+                    'original_code' => $originalCode, // Código original del CSV
+                    'name' => $product->name . $codeNote,
                     'description' => $product->description,
                     'quantity_ordered' => $quantity,
                     'unit_price' => $product->list_price ?? 0,
