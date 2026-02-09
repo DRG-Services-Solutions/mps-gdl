@@ -31,6 +31,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ChecklistConditionalController;
 use App\Http\Controllers\PurchaseOrderBulkImportController;
 use App\Http\Controllers\CfdiXmlController;
+use App\Http\Controllers\InventoryCountController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -496,6 +497,91 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     Route::resource('sub-warehouses', SubWarehouseController::class);
     Route::patch('sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])
         ->name('sub-warehouses.toggle-status');
+
+    // Listado y CRUD básico
+
+    Route::get('inventory-counts', [InventoryCountController::class, 'index'])
+    ->name('inventory-counts.index');
+    
+    Route::get('inventory-counts/create', [InventoryCountController::class, 'create'])
+        ->name('inventory-counts.create');
+    
+    Route::post('inventory-counts', [InventoryCountController::class, 'store'])
+        ->name('inventory-counts.store');
+    
+    Route::get('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'show'])
+        ->name('inventory-counts.show');
+    
+    // Iniciar conteo
+    Route::post('inventory-counts/{inventoryCount}/start', [InventoryCountController::class, 'start'])
+        ->name('inventory-counts.start');
+    
+    // Pantalla de conteo (escaneo)
+    Route::get('inventory-counts/{inventoryCount}/count', [InventoryCountController::class, 'count'])
+        ->name('inventory-counts.count');
+    
+    // Procesar escaneo (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/scan', [InventoryCountController::class, 'processScan'])
+        ->name('inventory-counts.process-scan');
+    
+    // Actualizar cantidad de item (AJAX)
+    Route::put('inventory-counts/{inventoryCount}/items/{item}/quantity', [InventoryCountController::class, 'updateItemQuantity'])
+        ->name('inventory-counts.update-item-quantity');
+    
+    // Marcar item como no encontrado (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/not-found', [InventoryCountController::class, 'markNotFound'])
+        ->name('inventory-counts.mark-not-found');
+    
+    // Recontar item (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/recount', [InventoryCountController::class, 'recountItem'])
+        ->name('inventory-counts.recount-item');
+    
+    // Completar conteo
+    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete'])
+        ->name('inventory-counts.complete');
+    
+    // Pantalla de revisión de discrepancias
+    Route::get('inventory-counts/{inventoryCount}/review', [InventoryCountController::class, 'review'])
+        ->name('inventory-counts.review');
+    
+    // Justificar discrepancia (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/justify', [InventoryCountController::class, 'justifyDiscrepancy'])
+        ->name('inventory-counts.justify-discrepancy');
+    
+    // Generar ajustes automáticos
+    Route::post('inventory-counts/{inventoryCount}/generate-adjustments', [InventoryCountController::class, 'generateAdjustments'])
+        ->name('inventory-counts.generate-adjustments');
+    
+    // Ver ajustes del inventario
+    Route::get('inventory-counts/{inventoryCount}/adjustments', [InventoryCountController::class, 'adjustments'])
+        ->name('inventory-counts.adjustments');
+    
+    // Aprobar inventario
+    Route::post('inventory-counts/{inventoryCount}/approve', [InventoryCountController::class, 'approve'])
+        ->name('inventory-counts.approve');
+    
+    // Cancelar inventario
+    Route::post('inventory-counts/{inventoryCount}/cancel', [InventoryCountController::class, 'cancel'])
+        ->name('inventory-counts.cancel');
+    
+    // Reporte
+    Route::get('inventory-counts/{inventoryCount}/report', [InventoryCountController::class, 'report'])
+        ->name('inventory-counts.report');
+    
+    // Exportar PDF
+    Route::get('inventory-counts/{inventoryCount}/export-pdf', [InventoryCountController::class, 'exportPdf'])
+        ->name('inventory-counts.export-pdf');
+    
+    // ==================== AJUSTES DE INVENTARIO ====================
+    
+    // Aprobar ajuste individual
+    Route::post('inventory-adjustments/{adjustment}/approve', [InventoryCountController::class, 'approveAdjustment'])
+        ->name('inventory-adjustments.approve');
+    
+    // Rechazar ajuste
+    Route::post('inventory-adjustments/{adjustment}/reject', [InventoryCountController::class, 'rejectAdjustment'])
+        ->name('inventory-adjustments.reject');
+
 });
 
 require __DIR__.'/auth.php';
