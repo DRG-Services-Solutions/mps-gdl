@@ -116,7 +116,7 @@
                             {{-- Sección de la tabla de productos --}}
                             <div class="p-6 border-b border-gray-200">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h4 class="text-lg font-bold text-gray-900">Productos Ordenados</h4>
+                                    <h4 class="text-lg font-bold text-gray-900">Productos Solicitados</h4>
                                     
                                     {{-- Botón Registrar Recepción --}}
                                     @if($hasPendingItems && $purchaseOrder->canBeEdited())
@@ -542,10 +542,13 @@
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Solicitada</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Recibido</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">A Recibir</th>
+                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">P. Unit.</th>
+                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Subtotal</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Lote</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Caducidad</th>
                                     </tr>
                                 </thead>
+
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($purchaseOrder->items as $item)
                                         @php
@@ -616,6 +619,8 @@
                                                     }"
                                                     {{ $fullyReceived ? 'disabled' : '' }}>
                                             </td>
+
+                                            
                                             <td class="px-4 py-3 text-center">
                                                 <input type="text" 
                                                     name="items[{{ $item->id }}][batch_number]" 
