@@ -161,7 +161,7 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Número</th>
                                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tipo</th>
-                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Razón Social</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Razones Sociales</th>
                                     <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Ubicación</th>
                                     <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Estado</th>
                                     <th class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Precisión</th>
@@ -182,8 +182,15 @@
                                             <span class="text-sm text-gray-900">{{ $count->type_label }}</span>
                                             <div class="text-xs text-gray-500">{{ $count->method_label }}</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $count->legalEntity->name }}
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">
+                                                {{ $count->legal_entities_names }}
+                                            </div>
+                                            @if($count->legalEntities->count() > 2)
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $count->legalEntities->count() }} razones sociales
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {{ $count->location_name }}

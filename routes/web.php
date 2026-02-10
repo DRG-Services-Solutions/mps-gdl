@@ -501,7 +501,7 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // Listado y CRUD básico
 
     Route::get('inventory-counts', [InventoryCountController::class, 'index'])
-    ->name('inventory-counts.index');
+        ->name('inventory-counts.index');
     
     Route::get('inventory-counts/create', [InventoryCountController::class, 'create'])
         ->name('inventory-counts.create');
@@ -520,7 +520,7 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     Route::get('inventory-counts/{inventoryCount}/count', [InventoryCountController::class, 'count'])
         ->name('inventory-counts.count');
     
-    // Procesar escaneo (AJAX)
+    // Procesar escaneo (AJAX) - Busca en ProductUnit
     Route::post('inventory-counts/{inventoryCount}/scan', [InventoryCountController::class, 'processScan'])
         ->name('inventory-counts.process-scan');
     
@@ -528,9 +528,13 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     Route::put('inventory-counts/{inventoryCount}/items/{item}/quantity', [InventoryCountController::class, 'updateItemQuantity'])
         ->name('inventory-counts.update-item-quantity');
     
-    // Marcar item como no encontrado (AJAX)
+    // Marcar item como no encontrado/faltante (AJAX)
     Route::post('inventory-counts/{inventoryCount}/items/{item}/not-found', [InventoryCountController::class, 'markNotFound'])
         ->name('inventory-counts.mark-not-found');
+    
+    // Marcar item como dañado (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/damaged', [InventoryCountController::class, 'markDamaged'])
+        ->name('inventory-counts.mark-damaged');
     
     // Recontar item (AJAX)
     Route::post('inventory-counts/{inventoryCount}/items/{item}/recount', [InventoryCountController::class, 'recountItem'])

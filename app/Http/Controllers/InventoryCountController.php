@@ -12,7 +12,7 @@ use App\Models\SubWarehouse;
 use App\Models\StorageLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class InventoryCountController extends Controller
 {
@@ -21,7 +21,7 @@ class InventoryCountController extends Controller
      */
     public function index(Request $request)
     {
-        $query = InventoryCount::with(['legalEntity', 'subWarehouse', 'createdBy', 'assignedTo']);
+        $query = InventoryCount::with(['legalEntities', 'subWarehouse', 'createdBy', 'assignedTo']);
 
         // Filtros
         if ($request->filled('status')) {
@@ -33,7 +33,9 @@ class InventoryCountController extends Controller
         }
 
         if ($request->filled('legal_entity_id')) {
-            $query->where('legal_entity_id', $request->legal_entity_id);
+            $query->whereHas('legalEntities', function ($q) use ($request) {
+                $q->where('legal_entities.id', $request->legal_entity_id);
+            });
         }
 
         if ($request->filled('date_from')) {
@@ -85,7 +87,8 @@ class InventoryCountController extends Controller
         $validated = $request->validate([
             'type' => 'required|in:full,partial,cyclic,spot_check',
             'method' => 'required|in:rfid_bulk,rfid_handheld,barcode_scan,manual',
-            'legal_entity_id' => 'required|exists:legal_entities,id',
+            'legal_entity_ids' => 'required|array|min:1',
+            'legal_entity_ids.*' => 'exists:legal_entities,id',
             'sub_warehouse_id' => 'nullable|exists:sub_warehouses,id',
             'storage_location_id' => 'nullable|exists:storage_locations,id',
             'scheduled_at' => 'nullable|date',
@@ -99,7 +102,6 @@ class InventoryCountController extends Controller
             $inventoryCount = InventoryCount::create([
                 'type' => $validated['type'],
                 'method' => $validated['method'],
-                'legal_entity_id' => $validated['legal_entity_id'],
                 'sub_warehouse_id' => $validated['sub_warehouse_id'] ?? null,
                 'storage_location_id' => $validated['storage_location_id'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
@@ -109,17 +111,20 @@ class InventoryCountController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
-            // Generar items esperados
+            // Asociar Legal Entities (múltiples)
+            $inventoryCount->legalEntities()->attach($validated['legal_entity_ids']);
+
+            // Generar items esperados basados en ProductUnits
             $itemsGenerated = $inventoryCount->generateExpectedItems();
 
             DB::commit();
 
             return redirect()->route('inventory-counts.show', $inventoryCount)
-                ->with('success', "Toma de inventario creada exitosamente. Se generaron {$itemsGenerated} productos para contar.");
+                ->with('success', "Toma de inventario creada exitosamente. Se generaron {$itemsGenerated} unidades para verificar.");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error al crear toma de inventario: ' . $e->getMessage());
+            Log::error('Error al crear toma de inventario: ' . $e->getMessage());
             
             return redirect()->back()
                 ->withInput()
@@ -133,22 +138,22 @@ class InventoryCountController extends Controller
     public function show(InventoryCount $inventoryCount)
     {
         $inventoryCount->load([
-            'legalEntity',
+            'legalEntities',
             'subWarehouse',
             'storageLocation',
             'createdBy',
             'assignedTo',
             'approvedBy',
             'items.product',
+            'items.productUnit',
             'adjustments',
         ]);
 
-        // Estadísticas de items
         $itemStats = [
             'total' => $inventoryCount->items->count(),
             'pending' => $inventoryCount->items->where('status', 'pending')->count(),
-            'matched' => $inventoryCount->items->where('status', 'matched')->count(),
-            'discrepancies' => $inventoryCount->items->whereIn('status', ['surplus', 'shortage', 'not_found', 'unexpected'])->count(),
+            'found' => $inventoryCount->items->whereIn('status', ['found', 'matched'])->count(),
+            'discrepancies' => $inventoryCount->items->whereIn('status', ['surplus', 'missing', 'wrong_location', 'damaged', 'expired'])->count(),
         ];
 
         return view('inventory-counts.show', compact('inventoryCount', 'itemStats'));
@@ -182,11 +187,11 @@ class InventoryCountController extends Controller
             $inventoryCount->start();
         }
 
-        $inventoryCount->load(['items.product', 'legalEntity']);
+        $inventoryCount->load(['items.product', 'items.productUnit', 'legalEntities']);
 
         $items = $inventoryCount->items()
-            ->with('product')
-            ->orderByRaw("FIELD(status, 'pending', 'shortage', 'surplus', 'matched', 'not_found')")
+            ->with(['product', 'productUnit'])
+            ->orderByRaw("FIELD(status, 'pending', 'missing', 'surplus', 'found', 'matched', 'damaged', 'expired')")
             ->get();
 
         return view('inventory-counts.count', compact('inventoryCount', 'items'));
@@ -194,84 +199,144 @@ class InventoryCountController extends Controller
 
     /**
      * Procesar escaneo (AJAX)
+     * Busca en ProductUnit por EPC, serial_number o código de barras del producto
      */
     public function processScan(Request $request, InventoryCount $inventoryCount)
     {
         $validated = $request->validate([
             'scan_code' => 'required|string',
-            'scan_type' => 'required|in:barcode,rfid,epc,manual',
+            'scan_type' => 'required|in:barcode,rfid,epc,serial,manual',
         ]);
 
         $scanCode = trim($validated['scan_code']);
         $scanType = $validated['scan_type'];
 
-        // Buscar producto por código de barras, EPC, o código
-        $product = null;
-        $productUnit = null;
+        // Obtener IDs de legal entities del inventario
+        $legalEntityIds = $inventoryCount->legalEntities->pluck('id')->toArray();
 
-        if ($scanType === 'rfid' || $scanType === 'epc') {
-            // Buscar por EPC
-            $productUnit = ProductUnit::where('epc', $scanCode)->first();
-            if ($productUnit) {
-                $product = $productUnit->product;
-            }
-        } else {
-            // Buscar por código de barras o código de producto
-            $product = Product::where('code', $scanCode)
-                ->orWhere('barcode', $scanCode)
-                ->first();
+        // 1. Buscar en items esperados (por EPC o Serial)
+        $item = $inventoryCount->items()
+            ->where(function ($q) use ($scanCode) {
+                $q->where('expected_epc', $scanCode)
+                  ->orWhere('expected_serial', $scanCode);
+            })
+            ->first();
 
-            if (!$product) {
-                // Intentar buscar por serial_number en ProductUnit
-                $productUnit = ProductUnit::where('serial_number', $scanCode)->first();
-                if ($productUnit) {
-                    $product = $productUnit->product;
-                }
-            }
-        }
+        if ($item) {
+            // Encontrado en la lista esperada
+            $item->markAsFound($scanCode, $scanType, auth()->id());
 
-        if (!$product) {
             return response()->json([
-                'success' => false,
-                'message' => 'Producto no encontrado para el código: ' . $scanCode,
-                'code' => $scanCode,
-            ], 404);
-        }
-
-        // Buscar o crear item en el conteo
-        $item = $inventoryCount->items()->where('product_id', $product->id)->first();
-
-        if (!$item) {
-            // Producto no esperado - crear item como "unexpected"
-            $item = $inventoryCount->items()->create([
-                'product_id' => $product->id,
-                'product_code' => $product->code,
-                'product_name' => $product->name,
-                'expected_quantity' => 0,
-                'counted_quantity' => 0,
-                'difference' => 0,
-                'status' => InventoryCountItem::STATUS_UNEXPECTED,
+                'success' => true,
+                'message' => "✓ Encontrado: {$item->product_code}",
+                'item' => $this->formatItemResponse($item),
+                'action' => 'found',
             ]);
         }
 
-        // Registrar escaneo
-        $item->recordScan($scanCode, $scanType, auth()->id());
+        // 2. Buscar ProductUnit por EPC o Serial que no esté en la lista
+        $productUnit = ProductUnit::with('product')
+            ->where(function ($q) use ($scanCode) {
+                $q->where('epc', $scanCode)
+                  ->orWhere('serial_number', $scanCode);
+            })
+            ->whereIn('legal_entity_id', $legalEntityIds)
+            ->first();
 
+        if ($productUnit) {
+            // ProductUnit existe pero no estaba esperada - es un SOBRANTE
+            $item = $inventoryCount->items()->create([
+                'product_unit_id' => $productUnit->id,
+                'product_id' => $productUnit->product_id,
+                'product_code' => $productUnit->product->code,
+                'product_name' => $productUnit->product->name,
+                'expected_epc' => null,
+                'expected_serial' => null,
+                'expected_batch' => $productUnit->batch_number,
+                'scanned_epc' => ($scanType === 'rfid' || $scanType === 'epc') ? $scanCode : null,
+                'scanned_serial' => ($scanType === 'serial') ? $scanCode : null,
+                'expected_quantity' => 0,
+                'counted_quantity' => 1,
+                'difference' => 1,
+                'status' => InventoryCountItem::STATUS_SURPLUS,
+                'scanned_at' => now(),
+                'scanned_by' => auth()->id(),
+                'scan_method' => $scanType,
+            ]);
+
+            $inventoryCount->calculateSummary();
+
+            return response()->json([
+                'success' => true,
+                'message' => "⚠ Sobrante: {$productUnit->product->code} (no esperado en esta ubicación)",
+                'item' => $this->formatItemResponse($item),
+                'action' => 'surplus',
+            ]);
+        }
+
+        // 3. Buscar por código de barras del producto
+        $product = Product::where('code', $scanCode)->first();
+
+
+        if ($product) {
+            // Encontramos el producto pero no una unidad específica
+            // Buscar si hay items pendientes de este producto
+            $pendingItem = $inventoryCount->items()
+                ->where('product_id', $product->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($pendingItem) {
+                $pendingItem->markAsFound($scanCode, 'barcode', auth()->id());
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "✓ Encontrado: {$product->code}",
+                    'item' => $this->formatItemResponse($pendingItem),
+                    'action' => 'found',
+                ]);
+            }
+
+            // No hay pendientes de este producto - posible sobrante
+            return response()->json([
+                'success' => false,
+                'message' => "Producto {$product->code} encontrado pero no hay unidades pendientes de verificar",
+                'code' => $scanCode,
+                'product' => [
+                    'id' => $product->id,
+                    'code' => $product->code,
+                    'name' => $product->name,
+                ],
+            ], 200);
+        }
+
+        // 4. No encontrado en ninguna parte
         return response()->json([
-            'success' => true,
-            'message' => "Escaneado: {$product->name}",
-            'item' => [
-                'id' => $item->id,
-                'product_code' => $item->product_code,
-                'product_name' => $item->product_name,
-                'expected_quantity' => $item->expected_quantity,
-                'counted_quantity' => $item->counted_quantity,
-                'difference' => $item->difference,
-                'status' => $item->status,
-                'status_label' => $item->status_label,
-                'status_color' => $item->status_color,
-            ],
-        ]);
+            'success' => false,
+            'message' => 'Código no encontrado: ' . $scanCode,
+            'code' => $scanCode,
+        ], 404);
+    }
+
+    /**
+     * Formatear respuesta de item para JSON
+     */
+    private function formatItemResponse(InventoryCountItem $item): array
+    {
+        return [
+            'id' => $item->id,
+            'product_code' => $item->product_code,
+            'product_name' => $item->product_name,
+            'expected_epc' => $item->expected_epc,
+            'expected_serial' => $item->expected_serial,
+            'expected_quantity' => $item->expected_quantity,
+            'counted_quantity' => $item->counted_quantity,
+            'difference' => $item->difference,
+            'status' => $item->status,
+            'status_label' => $item->status_label,
+            'status_color' => $item->status_color,
+            'identifier' => $item->identifier,
+        ];
     }
 
     /**
@@ -292,19 +357,12 @@ class InventoryCountController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Cantidad actualizada',
-            'item' => [
-                'id' => $item->id,
-                'counted_quantity' => $item->counted_quantity,
-                'difference' => $item->difference,
-                'status' => $item->status,
-                'status_label' => $item->status_label,
-                'status_color' => $item->status_color,
-            ],
+            'item' => $this->formatItemResponse($item),
         ]);
     }
 
     /**
-     * Marcar item como no encontrado
+     * Marcar item como faltante (no encontrado)
      */
     public function markNotFound(InventoryCount $inventoryCount, InventoryCountItem $item)
     {
@@ -312,16 +370,12 @@ class InventoryCountController extends Controller
             return response()->json(['success' => false, 'message' => 'Item no pertenece a este inventario'], 403);
         }
 
-        $item->markAsNotFound(auth()->id());
+        $item->markAsMissing(auth()->id());
 
         return response()->json([
             'success' => true,
-            'message' => 'Item marcado como no encontrado',
-            'item' => [
-                'id' => $item->id,
-                'status' => $item->status,
-                'status_label' => $item->status_label,
-            ],
+            'message' => 'Item marcado como faltante',
+            'item' => $this->formatItemResponse($item),
         ]);
     }
 
@@ -343,16 +397,37 @@ class InventoryCountController extends Controller
     }
 
     /**
+     * Marcar item como dañado
+     */
+    public function markDamaged(Request $request, InventoryCount $inventoryCount, InventoryCountItem $item)
+    {
+        if ($item->inventory_count_id !== $inventoryCount->id) {
+            return response()->json(['success' => false, 'message' => 'Item no pertenece a este inventario'], 403);
+        }
+
+        $validated = $request->validate([
+            'description' => 'required|string|max:500',
+        ]);
+
+        $item->markAsDamaged($validated['description'], auth()->id());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item marcado como dañado',
+            'item' => $this->formatItemResponse($item),
+        ]);
+    }
+
+    /**
      * Completar conteo
      */
     public function complete(InventoryCount $inventoryCount)
     {
-        // Verificar que todos los items hayan sido contados
-        $pendingCount = $inventoryCount->items()->where('status', 'pending')->count();
-
-        if ($pendingCount > 0) {
-            return redirect()->back()
-                ->with('error', "Aún hay {$pendingCount} producto(s) pendientes de contar.");
+        // Marcar items pendientes como faltantes
+        $pendingItems = $inventoryCount->items()->where('status', 'pending')->get();
+        
+        foreach ($pendingItems as $item) {
+            $item->markAsMissing(auth()->id());
         }
 
         if (!$inventoryCount->complete()) {
@@ -372,18 +447,18 @@ class InventoryCountController extends Controller
             return redirect()->route('inventory-counts.show', $inventoryCount);
         }
 
-        $inventoryCount->load(['legalEntity', 'items.product']);
+        $inventoryCount->load(['legalEntities', 'items.product', 'items.productUnit']);
 
         // Solo items con discrepancia
         $discrepancies = $inventoryCount->items()
-            ->whereIn('status', ['surplus', 'shortage', 'not_found', 'unexpected'])
-            ->with('product')
+            ->whereIn('status', ['surplus', 'missing', 'wrong_location', 'damaged', 'expired'])
+            ->with(['product', 'productUnit'])
             ->orderBy('status')
             ->get();
 
         // Items que coinciden
         $matched = $inventoryCount->items()
-            ->where('status', 'matched')
+            ->whereIn('status', ['found', 'matched'])
             ->with('product')
             ->get();
 
@@ -417,7 +492,7 @@ class InventoryCountController extends Controller
         }
 
         $discrepancies = $inventoryCount->items()
-            ->whereIn('status', ['surplus', 'shortage', 'not_found', 'unexpected'])
+            ->whereIn('status', ['surplus', 'missing', 'damaged', 'expired'])
             ->get();
 
         $adjustmentsCreated = 0;
@@ -438,10 +513,10 @@ class InventoryCountController extends Controller
      */
     public function adjustments(InventoryCount $inventoryCount)
     {
-        $inventoryCount->load(['legalEntity']);
+        $inventoryCount->load(['legalEntities']);
 
         $adjustments = $inventoryCount->adjustments()
-            ->with(['product', 'createdBy', 'approvedBy'])
+            ->with(['product', 'productUnit', 'createdBy', 'approvedBy'])
             ->orderBy('status')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -523,12 +598,13 @@ class InventoryCountController extends Controller
     public function report(InventoryCount $inventoryCount)
     {
         $inventoryCount->load([
-            'legalEntity',
+            'legalEntities',
             'subWarehouse',
             'storageLocation',
             'createdBy',
             'approvedBy',
             'items.product',
+            'items.productUnit',
             'adjustments.product',
         ]);
 
@@ -541,17 +617,16 @@ class InventoryCountController extends Controller
     public function exportPdf(InventoryCount $inventoryCount)
     {
         $inventoryCount->load([
-            'legalEntity',
+            'legalEntities',
             'subWarehouse',
             'storageLocation',
             'createdBy',
             'approvedBy',
             'items.product',
+            'items.productUnit',
             'adjustments.product',
         ]);
 
-        // Usar biblioteca de PDF (dompdf, snappy, etc.)
-        // Por ahora retornamos la vista
         return view('inventory-counts.report-pdf', compact('inventoryCount'));
     }
 }

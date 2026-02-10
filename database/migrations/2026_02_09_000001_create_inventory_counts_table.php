@@ -40,8 +40,7 @@ return new class extends Migration
                 'cancelled'        // Cancelado
             ])->default('draft');
             
-            // Alcance del inventario
-            $table->foreignId('legal_entity_id')->constrained()->onDelete('cascade');
+            // Alcance del inventario (ubicaciones opcionales)
             $table->foreignId('sub_warehouse_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('storage_location_id')->nullable()->constrained()->onDelete('set null');
             
@@ -70,9 +69,19 @@ return new class extends Migration
             $table->softDeletes();
             
             // Índices
-            $table->index(['status', 'legal_entity_id']);
+            $table->index(['status']);
             $table->index(['type', 'status']);
             $table->index('scheduled_at');
+        });
+
+        // Tabla pivote para múltiples Legal Entities
+        Schema::create('inventory_count_legal_entity', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('inventory_count_id')->constrained()->onDelete('cascade');
+            $table->foreignId('legal_entity_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+            
+            $table->unique(['inventory_count_id', 'legal_entity_id'], 'inv_count_legal_entity_unique');
         });
     }
 
@@ -81,6 +90,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('inventory_count_legal_entity');
         Schema::dropIfExists('inventory_counts');
     }
 };

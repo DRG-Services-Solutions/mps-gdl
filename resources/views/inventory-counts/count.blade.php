@@ -12,7 +12,7 @@
                     <h2 class="font-semibold text-lg text-gray-800 leading-tight">
                         Conteo: {{ $inventoryCount->count_number }}
                     </h2>
-                    <p class="text-xs text-gray-500">{{ $inventoryCount->legalEntity->name }}</p>
+                    <p class="text-xs text-gray-500">{{ $inventoryCount->legal_entities_names }}</p>
                 </div>
             </div>
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
@@ -41,11 +41,15 @@
                     </span>
                     <span class="text-green-600">
                         <span class="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>
-                        Coinciden: <strong x-text="stats.matched"></strong>
+                        Encontrados: <strong x-text="stats.found"></strong>
                     </span>
                     <span class="text-red-600">
                         <span class="inline-block w-3 h-3 bg-red-500 rounded mr-1"></span>
-                        Discrepancias: <strong x-text="stats.discrepancies"></strong>
+                        Faltantes: <strong x-text="stats.missing"></strong>
+                    </span>
+                    <span class="text-blue-600">
+                        <span class="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>
+                        Sobrantes: <strong x-text="stats.surplus"></strong>
                     </span>
                 </div>
             </div>
@@ -66,7 +70,7 @@
                            @focus="isScanFocused = true"
                            @blur="isScanFocused = false"
                            class="w-full px-4 py-4 text-lg rounded-lg border-0 focus:ring-4 focus:ring-blue-300 placeholder-gray-400"
-                           placeholder="Escanea código de barras o RFID..."
+                           placeholder="Escanea EPC, Serial o Código de Barras..."
                            autofocus
                            autocomplete="off">
                     <button @click="processScan()" 
@@ -90,7 +94,8 @@
                 <div x-show="lastScanMessage" x-transition class="mt-3">
                     <div :class="{
                         'bg-green-100 text-green-800 border-green-300': lastScanSuccess,
-                        'bg-red-100 text-red-800 border-red-300': !lastScanSuccess
+                        'bg-yellow-100 text-yellow-800 border-yellow-300': lastScanAction === 'surplus',
+                        'bg-red-100 text-red-800 border-red-300': !lastScanSuccess && lastScanAction !== 'surplus'
                     }" class="px-4 py-2 rounded-lg border text-sm font-medium">
                         <span x-text="lastScanMessage"></span>
                     </div>
@@ -110,29 +115,34 @@
                             class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
                         Pendientes (<span x-text="stats.pending"></span>)
                     </button>
-                    <button @click="filterStatus = 'matched'" 
-                            :class="filterStatus === 'matched' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'"
+                    <button @click="filterStatus = 'found'" 
+                            :class="filterStatus === 'found' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'"
                             class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                        Coinciden (<span x-text="stats.matched"></span>)
+                        Encontrados (<span x-text="stats.found"></span>)
                     </button>
-                    <button @click="filterStatus = 'discrepancy'" 
-                            :class="filterStatus === 'discrepancy' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'"
+                    <button @click="filterStatus = 'missing'" 
+                            :class="filterStatus === 'missing' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'"
                             class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
-                        Discrepancias (<span x-text="stats.discrepancies"></span>)
+                        Faltantes (<span x-text="stats.missing"></span>)
+                    </button>
+                    <button @click="filterStatus = 'surplus'" 
+                            :class="filterStatus === 'surplus' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors">
+                        Sobrantes (<span x-text="stats.surplus"></span>)
                     </button>
                 </div>
             </div>
 
-            {{-- Lista de Productos --}}
+            {{-- Lista de Unidades (ProductUnits) --}}
             <div class="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div class="divide-y divide-gray-200">
                     <template x-for="item in filteredItems" :key="item.id">
                         <div class="p-4 hover:bg-gray-50 transition-colors"
                              :class="{
-                                 'bg-green-50': item.status === 'matched',
-                                 'bg-red-50': ['shortage', 'not_found'].includes(item.status),
+                                 'bg-green-50': item.status === 'found' || item.status === 'matched',
+                                 'bg-red-50': item.status === 'missing',
                                  'bg-blue-50': item.status === 'surplus',
-                                 'bg-yellow-50': item.status === 'unexpected'
+                                 'bg-orange-50': item.status === 'damaged' || item.status === 'expired'
                              }">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1 min-w-0">
@@ -146,7 +156,7 @@
                                                     </svg>
                                                 </span>
                                             </template>
-                                            <template x-if="item.status === 'matched'">
+                                            <template x-if="item.status === 'found' || item.status === 'matched'">
                                                 <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500">
                                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -160,10 +170,10 @@
                                                     </svg>
                                                 </span>
                                             </template>
-                                            <template x-if="['shortage', 'not_found'].includes(item.status)">
+                                            <template x-if="item.status === 'missing'">
                                                 <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500">
                                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                     </svg>
                                                 </span>
                                             </template>
@@ -174,65 +184,60 @@
                                             <p class="text-xs text-gray-500 truncate" x-text="item.product_name"></p>
                                         </div>
                                     </div>
+
+                                    {{-- Identificadores (EPC/Serial) --}}
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <template x-if="item.expected_epc">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-indigo-100 text-indigo-700">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0"/>
+                                                </svg>
+                                                <span x-text="item.expected_epc.substring(0, 20) + '...'"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="item.expected_serial && !item.expected_epc">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-700">
+                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+                                                </svg>
+                                                <span x-text="item.expected_serial"></span>
+                                            </span>
+                                        </template>
+                                        <template x-if="item.expected_batch">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-600">
+                                                Lote: <span x-text="item.expected_batch" class="ml-1"></span>
+                                            </span>
+                                        </template>
+                                    </div>
                                 </div>
 
-                                {{-- Cantidades --}}
-                                <div class="flex items-center space-x-4 ml-4">
-                                    <div class="text-center">
-                                        <p class="text-xs text-gray-500">Sistema</p>
-                                        <p class="text-lg font-bold text-gray-700" x-text="item.expected_quantity"></p>
-                                    </div>
-                                    <div class="text-center">
-                                        <p class="text-xs text-gray-500">Contado</p>
-                                        <input type="number" 
-                                               x-model.number="item.counted_quantity"
-                                               @change="updateQuantity(item)"
-                                               min="0"
-                                               class="w-16 text-center text-lg font-bold border rounded-lg py-1 focus:ring-2 focus:ring-blue-500"
-                                               :class="{
-                                                   'border-green-500 text-green-700': item.status === 'matched',
-                                                   'border-red-500 text-red-700': ['shortage', 'not_found'].includes(item.status),
-                                                   'border-blue-500 text-blue-700': item.status === 'surplus',
-                                                   'border-gray-300': item.status === 'pending'
-                                               }">
-                                    </div>
-                                    <div class="text-center" x-show="item.difference !== 0">
-                                        <p class="text-xs text-gray-500">Dif.</p>
-                                        <p class="text-lg font-bold" 
-                                           :class="{
-                                               'text-green-600': item.difference > 0,
-                                               'text-red-600': item.difference < 0
-                                           }"
-                                           x-text="(item.difference > 0 ? '+' : '') + item.difference"></p>
-                                    </div>
+                                {{-- Estado y Acciones --}}
+                                <div class="ml-4 text-right">
+                                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                                          :class="{
+                                              'bg-gray-100 text-gray-600': item.status === 'pending',
+                                              'bg-green-100 text-green-800': item.status === 'found' || item.status === 'matched',
+                                              'bg-red-100 text-red-800': item.status === 'missing',
+                                              'bg-blue-100 text-blue-800': item.status === 'surplus',
+                                              'bg-orange-100 text-orange-800': item.status === 'damaged' || item.status === 'expired'
+                                          }"
+                                          x-text="item.status_label">
+                                    </span>
                                 </div>
                             </div>
 
                             {{-- Acciones del Item --}}
-                            <div class="mt-3 flex items-center justify-between">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
-                                      :class="{
-                                          'bg-gray-100 text-gray-600': item.status === 'pending',
-                                          'bg-green-100 text-green-800': item.status === 'matched',
-                                          'bg-red-100 text-red-800': ['shortage', 'not_found'].includes(item.status),
-                                          'bg-blue-100 text-blue-800': item.status === 'surplus',
-                                          'bg-yellow-100 text-yellow-800': item.status === 'unexpected'
-                                      }"
-                                      x-text="item.status_label">
-                                </span>
-                                
-                                <div class="flex items-center space-x-2">
-                                    <button @click="markNotFound(item)" 
-                                            x-show="item.status === 'pending'"
-                                            class="text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors">
-                                        No Encontrado
-                                    </button>
-                                    <button @click="recountItem(item)" 
-                                            x-show="item.status !== 'pending'"
-                                            class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors">
-                                        Recontar
-                                    </button>
-                                </div>
+                            <div class="mt-3 flex items-center justify-end space-x-2">
+                                <button @click="markNotFound(item)" 
+                                        x-show="item.status === 'pending'"
+                                        class="text-xs px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded transition-colors">
+                                    Marcar Faltante
+                                </button>
+                                <button @click="recountItem(item)" 
+                                        x-show="item.status !== 'pending'"
+                                        class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors">
+                                    Recontar
+                                </button>
                             </div>
                         </div>
                     </template>
@@ -242,7 +247,7 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
-                        <p class="mt-2 text-sm text-gray-500">No hay productos con este filtro</p>
+                        <p class="mt-2 text-sm text-gray-500">No hay unidades con este filtro</p>
                     </div>
                 </div>
             </div>
@@ -257,10 +262,9 @@
                     <form action="{{ route('inventory-counts.complete', $inventoryCount) }}" method="POST" class="flex-1 md:flex-none">
                         @csrf
                         <button type="submit" 
-                                class="w-full md:w-auto px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-lg transition-colors"
-                                :disabled="stats.pending > 0">
-                            <span x-show="stats.pending > 0">Faltan <span x-text="stats.pending"></span> productos</span>
-                            <span x-show="stats.pending === 0">Finalizar Conteo</span>
+                                class="w-full md:w-auto px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                                onclick="return confirm('¿Finalizar el conteo? Los items pendientes se marcarán como faltantes.')">
+                            Finalizar Conteo
                         </button>
                     </form>
                 </div>
@@ -271,23 +275,44 @@
         </div>
     </div>
 
+    @php
+        $itemsJson = $items->map(function($item) {
+            return [
+                'id' => $item->id,
+                'product_code' => $item->product_code,
+                'product_name' => $item->product_name,
+                'expected_epc' => $item->expected_epc,
+                'expected_serial' => $item->expected_serial,
+                'expected_batch' => $item->expected_batch,
+                'expected_quantity' => $item->expected_quantity,
+                'counted_quantity' => $item->counted_quantity,
+                'difference' => $item->difference,
+                'status' => $item->status,
+                'status_label' => $item->status_label,
+                'status_color' => $item->status_color,
+            ];
+        })->values();
+    @endphp
+
     @push('scripts')
     <script>
     function countingApp() {
         return {
-            items: @json($items),
+            items: @json($itemsJson),
             scanCode: '',
             isProcessing: false,
             isScanFocused: false,
             lastScanMessage: '',
             lastScanSuccess: false,
+            lastScanAction: '',
             filterStatus: 'all',
 
             get stats() {
                 return {
                     pending: this.items.filter(i => i.status === 'pending').length,
-                    matched: this.items.filter(i => i.status === 'matched').length,
-                    discrepancies: this.items.filter(i => ['shortage', 'surplus', 'not_found', 'unexpected'].includes(i.status)).length,
+                    found: this.items.filter(i => ['found', 'matched'].includes(i.status)).length,
+                    missing: this.items.filter(i => i.status === 'missing').length,
+                    surplus: this.items.filter(i => i.status === 'surplus').length,
                 };
             },
 
@@ -306,8 +331,9 @@
             get filteredItems() {
                 if (this.filterStatus === 'all') return this.items;
                 if (this.filterStatus === 'pending') return this.items.filter(i => i.status === 'pending');
-                if (this.filterStatus === 'matched') return this.items.filter(i => i.status === 'matched');
-                if (this.filterStatus === 'discrepancy') return this.items.filter(i => ['shortage', 'surplus', 'not_found', 'unexpected'].includes(i.status));
+                if (this.filterStatus === 'found') return this.items.filter(i => ['found', 'matched'].includes(i.status));
+                if (this.filterStatus === 'missing') return this.items.filter(i => i.status === 'missing');
+                if (this.filterStatus === 'surplus') return this.items.filter(i => i.status === 'surplus');
                 return this.items;
             },
 
@@ -316,6 +342,7 @@
 
                 this.isProcessing = true;
                 this.lastScanMessage = '';
+                this.lastScanAction = '';
 
                 try {
                     const response = await fetch('{{ route("inventory-counts.process-scan", $inventoryCount) }}', {
@@ -327,34 +354,36 @@
                         },
                         body: JSON.stringify({
                             scan_code: this.scanCode.trim(),
-                            scan_type: '{{ $inventoryCount->method === "rfid_bulk" || $inventoryCount->method === "rfid_handheld" ? "rfid" : "barcode" }}'
+                            scan_type: '{{ in_array($inventoryCount->method, ["rfid_bulk", "rfid_handheld"]) ? "rfid" : "barcode" }}'
                         })
                     });
 
                     const data = await response.json();
 
                     if (data.success) {
-                        this.lastScanSuccess = true;
+                        this.lastScanSuccess = data.action === 'found';
+                        this.lastScanAction = data.action;
                         this.lastScanMessage = data.message;
                         
-                        // Actualizar item en la lista
+                        // Actualizar o agregar item en la lista
                         const index = this.items.findIndex(i => i.id === data.item.id);
                         if (index !== -1) {
                             this.items[index] = { ...this.items[index], ...data.item };
                         } else {
-                            // Item nuevo (no esperado)
+                            // Item nuevo (sobrante)
                             this.items.unshift(data.item);
                         }
 
-                        // Sonido de éxito (opcional)
-                        this.playSound('success');
+                        this.playSound(data.action === 'found' ? 'success' : 'warning');
                     } else {
                         this.lastScanSuccess = false;
+                        this.lastScanAction = 'error';
                         this.lastScanMessage = data.message;
                         this.playSound('error');
                     }
                 } catch (error) {
                     this.lastScanSuccess = false;
+                    this.lastScanAction = 'error';
                     this.lastScanMessage = 'Error de conexión';
                     this.playSound('error');
                 } finally {
@@ -362,45 +391,17 @@
                     this.scanCode = '';
                     this.$refs.scanInput.focus();
 
-                    // Limpiar mensaje después de 3 segundos
                     setTimeout(() => {
                         this.lastScanMessage = '';
-                    }, 3000);
-                }
-            },
-
-            async updateQuantity(item) {
-                try {
-                    const response = await fetch(`{{ url('inventory-counts') }}/${{{ $inventoryCount->id }}}/items/${item.id}/quantity`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            quantity: item.counted_quantity
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        const index = this.items.findIndex(i => i.id === item.id);
-                        if (index !== -1) {
-                            this.items[index] = { ...this.items[index], ...data.item };
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al actualizar cantidad:', error);
+                    }, 4000);
                 }
             },
 
             async markNotFound(item) {
-                if (!confirm(`¿Marcar "${item.product_code}" como NO ENCONTRADO?`)) return;
+                if (!confirm(`¿Marcar "${item.product_code}" como FALTANTE?`)) return;
 
                 try {
-                    const response = await fetch(`{{ url('inventory-counts') }}/${{{ $inventoryCount->id }}}/items/${item.id}/not-found`, {
+                    const response = await fetch(`{{ url('inventory-counts') }}/{{ $inventoryCount->id }}/items/${item.id}/not-found`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -414,10 +415,7 @@
                     if (data.success) {
                         const index = this.items.findIndex(i => i.id === item.id);
                         if (index !== -1) {
-                            this.items[index].status = 'not_found';
-                            this.items[index].status_label = 'No Encontrado';
-                            this.items[index].counted_quantity = 0;
-                            this.items[index].difference = -item.expected_quantity;
+                            this.items[index] = { ...this.items[index], ...data.item };
                         }
                     }
                 } catch (error) {
@@ -429,7 +427,7 @@
                 if (!confirm(`¿Recontar "${item.product_code}"?`)) return;
 
                 try {
-                    const response = await fetch(`{{ url('inventory-counts') }}/${{{ $inventoryCount->id }}}/items/${item.id}/recount`, {
+                    const response = await fetch(`{{ url('inventory-counts') }}/{{ $inventoryCount->id }}/items/${item.id}/recount`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -446,7 +444,6 @@
                             this.items[index].status = 'pending';
                             this.items[index].status_label = 'Pendiente';
                             this.items[index].counted_quantity = 0;
-                            this.items[index].difference = -item.expected_quantity;
                         }
                     }
                 } catch (error) {
@@ -455,20 +452,22 @@
             },
 
             playSound(type) {
-                // Para Enterprise Browser de Zebra, puedes usar la API nativa
-                // O simplemente vibrar el dispositivo
                 if (navigator.vibrate) {
-                    navigator.vibrate(type === 'success' ? 100 : [100, 50, 100]);
+                    if (type === 'success') {
+                        navigator.vibrate(100);
+                    } else if (type === 'warning') {
+                        navigator.vibrate([100, 50, 100]);
+                    } else {
+                        navigator.vibrate([100, 50, 100, 50, 100]);
+                    }
                 }
             },
 
             init() {
-                // Focus automático en el input de escaneo
                 this.$refs.scanInput.focus();
 
-                // Re-focus cuando se pierde el foco (útil para escáneres)
-                document.addEventListener('click', () => {
-                    if (!this.isScanFocused) {
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('input') && !e.target.closest('button') && !e.target.closest('a')) {
                         setTimeout(() => this.$refs.scanInput.focus(), 100);
                     }
                 });

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Carbon\Carbon;
 
@@ -18,7 +19,6 @@ class InventoryCount extends Model
         'type',
         'method',
         'status',
-        'legal_entity_id',
         'sub_warehouse_id',
         'storage_location_id',
         'scheduled_at',
@@ -68,9 +68,13 @@ class InventoryCount extends Model
 
     // ==================== RELACIONES ====================
 
-    public function legalEntity(): BelongsTo
+    /**
+     * Múltiples Legal Entities (relación muchos a muchos)
+     */
+    public function legalEntities(): BelongsToMany
     {
-        return $this->belongsTo(LegalEntity::class);
+        return $this->belongsToMany(LegalEntity::class, 'inventory_count_legal_entity')
+                    ->withTimestamps();
     }
 
     public function subWarehouse(): BelongsTo
@@ -137,7 +141,9 @@ class InventoryCount extends Model
 
     public function scopeByLegalEntity($query, $legalEntityId)
     {
-        return $query->where('legal_entity_id', $legalEntityId);
+        return $query->whereHas('legalEntities', function ($q) use ($legalEntityId) {
+            $q->where('legal_entities.id', $legalEntityId);
+        });
     }
 
     public function scopeByType($query, $type)
@@ -202,6 +208,24 @@ class InventoryCount extends Model
         return $colors[$this->status] ?? 'gray';
     }
 
+    /**
+     * Obtener nombres de Legal Entities seleccionadas
+     */
+    public function getLegalEntitiesNamesAttribute(): string
+    {
+        $names = $this->legalEntities->pluck('name')->toArray();
+        
+        if (count($names) === 0) {
+            return 'Sin asignar';
+        }
+        
+        if (count($names) <= 2) {
+            return implode(', ', $names);
+        }
+        
+        return $names[0] . ' y ' . (count($names) - 1) . ' más';
+    }
+
     public function getLocationNameAttribute(): string
     {
         if ($this->storageLocation) {
@@ -215,14 +239,15 @@ class InventoryCount extends Model
 
     public function getProgressPercentageAttribute(): float
     {
-        if ($this->total_expected == 0) {
+        $total = $this->items()->count();
+        
+        if ($total == 0) {
             return 0;
         }
         
         $counted = $this->items()->where('status', '!=', 'pending')->count();
-        $total = $this->items()->count();
         
-        return $total > 0 ? round(($counted / $total) * 100, 2) : 0;
+        return round(($counted / $total) * 100, 2);
     }
 
     // ==================== MÉTODOS ====================
@@ -230,14 +255,11 @@ class InventoryCount extends Model
     /**
      * Generar número de inventario único
      */
-    public static function generateCountNumber(int $legalEntityId): string
+    public static function generateCountNumber(): string
     {
-        $legalEntity = LegalEntity::find($legalEntityId);
-        $prefix = $legalEntity ? strtoupper(substr($legalEntity->name, 0, 3)) : 'INV';
-        
         $date = now()->format('Ymd');
         
-        $lastCount = self::where('count_number', 'like', "{$prefix}-{$date}-%")
+        $lastCount = self::where('count_number', 'like', "INV-{$date}-%")
             ->orderBy('count_number', 'desc')
             ->first();
 
@@ -248,7 +270,7 @@ class InventoryCount extends Model
             $newNumber = '001';
         }
 
-        return "{$prefix}-{$date}-{$newNumber}";
+        return "INV-{$date}-{$newNumber}";
     }
 
     /**
@@ -331,11 +353,14 @@ class InventoryCount extends Model
 
         $totalExpected = $items->sum('expected_quantity');
         $totalCounted = $items->sum('counted_quantity');
-        $totalMatched = $items->where('status', 'matched')->count();
-        $totalDiscrepancies = $items->whereIn('status', ['surplus', 'shortage', 'not_found', 'unexpected'])->count();
+        
+        // Para RFID: contar items encontrados vs esperados
+        $totalMatched = $items->whereIn('status', ['found', 'matched'])->count();
+        $totalDiscrepancies = $items->whereIn('status', ['surplus', 'missing', 'wrong_location', 'damaged', 'expired'])->count();
 
-        $accuracy = $totalExpected > 0 
-            ? round(($totalMatched / $items->count()) * 100, 2) 
+        $totalItems = $items->count();
+        $accuracy = $totalItems > 0 
+            ? round(($totalMatched / $totalItems) * 100, 2) 
             : 0;
 
         $this->update([
@@ -364,45 +389,64 @@ class InventoryCount extends Model
     }
 
     /**
-     * Generar items esperados basados en el inventario actual
+     * Generar items esperados basados en ProductUnits
+     * Cada ProductUnit disponible genera un item a verificar
      */
     public function generateExpectedItems(): int
     {
-        $query = ProductUnit::where('status', 'available');
+        // Obtener IDs de legal entities seleccionadas
+        $legalEntityIds = $this->legalEntities->pluck('id')->toArray();
 
-        // Filtrar por alcance
+        if (empty($legalEntityIds)) {
+            return 0;
+        }
+
+        // Query base: ProductUnits disponibles
+        $query = ProductUnit::with('product')
+            ->whereIn('status', ['available', 'in_stock', 'reserved'])
+            ->whereIn('legal_entity_id', $legalEntityIds);
+
+        // Filtrar por ubicación si se especifica
         if ($this->storage_location_id) {
             $query->where('current_location_id', $this->storage_location_id);
         } elseif ($this->sub_warehouse_id) {
             $query->where('sub_warehouse_id', $this->sub_warehouse_id);
         }
 
-        $query->where('legal_entity_id', $this->legal_entity_id);
-
-        $units = $query->with('product')->get();
-
-        // Agrupar por producto
-        $grouped = $units->groupBy('product_id');
+        $productUnits = $query->get();
 
         $itemsCreated = 0;
 
-        foreach ($grouped as $productId => $productUnits) {
-            $firstUnit = $productUnits->first();
-            
+        foreach ($productUnits as $unit) {
             $this->items()->create([
-                'product_id' => $productId,
-                'product_code' => $firstUnit->product->code,
-                'product_name' => $firstUnit->product->name,
-                'expected_quantity' => $productUnits->count(),
+                'product_unit_id' => $unit->id,
+                'product_id' => $unit->product_id,
+                'product_code' => $unit->product->code,
+                'product_name' => $unit->product->name,
+                'expected_epc' => $unit->epc,
+                'expected_serial' => $unit->serial_number,
+                'expected_batch' => $unit->batch_number,
+                'expected_quantity' => 1, // Cada ProductUnit es 1 unidad
                 'counted_quantity' => 0,
-                'difference' => 0 - $productUnits->count(),
+                'difference' => -1,
                 'status' => 'pending',
             ]);
 
             $itemsCreated++;
         }
 
+        // Actualizar total esperado
+        $this->update(['total_expected' => $itemsCreated]);
+
         return $itemsCreated;
+    }
+
+    /**
+     * Obtener IDs de legal entities como array
+     */
+    public function getLegalEntityIdsAttribute(): array
+    {
+        return $this->legalEntities->pluck('id')->toArray();
     }
 
     // ==================== BOOT ====================
@@ -413,7 +457,7 @@ class InventoryCount extends Model
 
         static::creating(function ($model) {
             if (empty($model->count_number)) {
-                $model->count_number = self::generateCountNumber($model->legal_entity_id);
+                $model->count_number = self::generateCountNumber();
             }
             if (empty($model->created_by)) {
                 $model->created_by = auth()->id();

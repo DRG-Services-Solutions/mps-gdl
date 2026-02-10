@@ -287,7 +287,8 @@
                 <!-- Inventario Dropdown -->
                 <div class="relative">
                     <button @click="inventoryMenuOpen = !inventoryMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
                                 <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
@@ -331,6 +332,13 @@
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
                             <span class="truncate">Lay Out</span>
                         </a>
+
+                        <!-- Toma de Inventarios -->
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span class="truncate">Toma de Inventarios</span>
+                        </a>
                     </div>
 
                     <!-- Tooltip Inventario (colapsado) -->
@@ -355,6 +363,12 @@
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
                             <span>Lay Out</span>
+                        </a>
+
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span>Toma de Inventarios</span>
                         </a>
                     </div>
                 </div>

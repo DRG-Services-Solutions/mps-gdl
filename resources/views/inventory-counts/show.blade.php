@@ -52,8 +52,11 @@
                         <div class="p-6">
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
                                 <div>
-                                    <p class="text-sm text-gray-500">Razón Social</p>
-                                    <p class="font-semibold text-gray-900">{{ $inventoryCount->legalEntity->name }}</p>
+                                    <p class="text-sm text-gray-500">Razón(es) Social(es)</p>
+                                    <p class="font-semibold text-gray-900">{{ $inventoryCount->legal_entities_names }}</p>
+                                    @if($inventoryCount->legalEntities->count() > 1)
+                                        <p class="text-xs text-gray-500">{{ $inventoryCount->legalEntities->count() }} entidades</p>
+                                    @endif
                                 </div>
                                 <div>
                                     <p class="text-sm text-gray-500">Ubicación</p>
@@ -124,7 +127,7 @@
                                         <p class="text-sm text-blue-600">Pendientes</p>
                                     </div>
                                     <div class="bg-green-50 rounded-lg p-4 text-center">
-                                        <p class="text-3xl font-bold text-green-600">{{ $itemStats['matched'] }}</p>
+                                        <p class="text-3xl font-bold text-green-600">{{ $itemStats['found'] }}</p>
                                         <p class="text-sm text-green-600">Coinciden</p>
                                     </div>
                                     <div class="bg-red-50 rounded-lg p-4 text-center">

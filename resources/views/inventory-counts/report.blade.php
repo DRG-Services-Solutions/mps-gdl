@@ -60,7 +60,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                         <div>
                             <p class="text-sm text-gray-500">Razón Social</p>
-                            <p class="font-semibold text-gray-900">{{ $inventoryCount->legalEntity->name }}</p>
+                            <p class="font-semibold text-gray-900">{{ $inventoryCount->legal_entities_names }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Ubicación</p>

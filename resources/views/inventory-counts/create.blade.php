@@ -147,35 +147,63 @@
                         @enderror
                     </div>
 
-                    {{-- Alcance --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="legal_entity_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Razón Social <span class="text-red-500">*</span>
-                            </label>
-                            <select name="legal_entity_id" id="legal_entity_id" 
-                                    x-model="legalEntityId"
-                                    @change="loadSubWarehouses()"
-                                    class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500" required>
-                                <option value="">Seleccionar...</option>
+                    {{-- Razones Sociales (Múltiple selección) --}}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            Razones Sociales <span class="text-red-500">*</span>
+                            <span class="text-gray-400 font-normal">(Selecciona una o más)</span>
+                        </label>
+                        
+                        <div class="border rounded-lg p-4 bg-gray-50 max-h-48 overflow-y-auto">
+                            {{-- Botón seleccionar/deseleccionar todas --}}
+                            <div class="flex items-center justify-between mb-3 pb-3 border-b">
+                                <button type="button" 
+                                        @click="selectAllEntities()" 
+                                        class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                    Seleccionar todas
+                                </button>
+                                <button type="button" 
+                                        @click="deselectAllEntities()" 
+                                        class="text-sm text-gray-600 hover:text-gray-800">
+                                    Limpiar selección
+                                </button>
+                            </div>
+
+                            <div class="space-y-2">
                                 @foreach($legalEntities as $entity)
-                                    <option value="{{ $entity->id }}" {{ old('legal_entity_id') == $entity->id ? 'selected' : '' }}>
-                                        {{ $entity->name }}
-                                    </option>
+                                    <label class="flex items-center p-2 rounded hover:bg-white cursor-pointer transition-colors">
+                                        <input type="checkbox" 
+                                               name="legal_entity_ids[]" 
+                                               value="{{ $entity->id }}"
+                                               x-model="selectedEntities"
+                                               class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                               {{ in_array($entity->id, old('legal_entity_ids', [])) ? 'checked' : '' }}>
+                                        <span class="ml-3 text-sm text-gray-700">{{ $entity->name }}</span>
+                                    </label>
                                 @endforeach
-                            </select>
-                            @error('legal_entity_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            </div>
                         </div>
 
+                        {{-- Contador de seleccionadas --}}
+                        <p class="mt-2 text-sm text-gray-500">
+                            <span x-text="selectedEntities.length"></span> razón(es) social(es) seleccionada(s)
+                        </p>
+
+                        @error('legal_entity_ids')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        @error('legal_entity_ids.*')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Ubicaciones opcionales --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="sub_warehouse_id" class="block text-sm font-semibold text-gray-700 mb-2">
                                 Sub-Almacén <span class="text-gray-400">(Opcional)</span>
                             </label>
                             <select name="sub_warehouse_id" id="sub_warehouse_id"
-                                    x-model="subWarehouseId"
-                                    @change="loadLocations()"
                                     class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Todos los sub-almacenes</option>
                                 @foreach($subWarehouses as $warehouse)
@@ -185,9 +213,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="storage_location_id" class="block text-sm font-semibold text-gray-700 mb-2">
                                 Ubicación Específica <span class="text-gray-400">(Opcional)</span>
@@ -202,15 +228,16 @@
                                 @endforeach
                             </select>
                         </div>
+                    </div>
 
-                        <div>
-                            <label for="scheduled_at" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Fecha Programada <span class="text-gray-400">(Opcional)</span>
-                            </label>
-                            <input type="datetime-local" name="scheduled_at" id="scheduled_at" 
-                                   value="{{ old('scheduled_at') }}"
-                                   class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
+                    {{-- Fecha programada --}}
+                    <div>
+                        <label for="scheduled_at" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Fecha Programada <span class="text-gray-400">(Opcional)</span>
+                        </label>
+                        <input type="datetime-local" name="scheduled_at" id="scheduled_at" 
+                               value="{{ old('scheduled_at') }}"
+                               class="block w-full rounded-lg border-gray-300 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     {{-- Notas --}}
@@ -230,7 +257,8 @@
                             Cancelar
                         </a>
                         <button type="submit" 
-                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:bg-gray-400"
+                                :disabled="selectedEntities.length === 0">
                             Crear Toma de Inventario
                         </button>
                     </div>
@@ -243,15 +271,14 @@
     <script>
     function createInventoryForm() {
         return {
-            legalEntityId: '{{ old('legal_entity_id') }}',
-            subWarehouseId: '{{ old('sub_warehouse_id') }}',
+            selectedEntities: @json(old('legal_entity_ids', [])).map(String),
             
-            loadSubWarehouses() {
-                // Si tienes API para cargar sub-almacenes dinámicamente
+            selectAllEntities() {
+                this.selectedEntities = @json($legalEntities->pluck('id')->map(fn($id) => (string) $id));
             },
             
-            loadLocations() {
-                // Si tienes API para cargar ubicaciones dinámicamente
+            deselectAllEntities() {
+                this.selectedEntities = [];
             }
         }
     }
