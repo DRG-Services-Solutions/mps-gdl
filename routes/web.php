@@ -32,6 +32,8 @@ use App\Http\Controllers\ChecklistConditionalController;
 use App\Http\Controllers\PurchaseOrderBulkImportController;
 use App\Http\Controllers\CfdiXmlController;
 use App\Http\Controllers\InventoryCountController;
+use App\Http\Controllers\ChecklistImportController;
+use App\Http\Controllers\BrandController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -87,6 +89,13 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
         Route::get('/', [SurgicalChecklistController::class, 'index'])->name('index');
         Route::get('/create', [SurgicalChecklistController::class, 'create'])->name('create');
         Route::post('/', [SurgicalChecklistController::class, 'store'])->name('store');
+        
+        Route::get('/import', [ChecklistImportController::class, 'showForm'])->name('import.form');
+        Route::post('/import/preview', [ChecklistImportController::class, 'preview'])->name('import.preview');
+        Route::post('/import/confirm', [ChecklistImportController::class, 'confirm'])->name('import.confirm');
+        Route::get('/import/template', [ChecklistImportController::class, 'downloadTemplate'])->name('import.template');
+
+        
         Route::get('/{checklist}', [SurgicalChecklistController::class, 'show'])->name('show');
         Route::get('/{checklist}/edit', [SurgicalChecklistController::class, 'edit'])->name('edit');
         Route::put('/{checklist}', [SurgicalChecklistController::class, 'update'])->name('update');
@@ -104,8 +113,14 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // ====================================================================
     Route::prefix('checklist-items')->name('checklist-items.')->group(function () {
         
+        
+
         // Agregar item a un check list
         Route::post('/checklists/{checklist}', [ChecklistItemController::class, 'store'])->name('store');
+
+        Route::get('/checklists/{checklist}/bulk-template', [ChecklistItemController::class, 'bulkTemplate'])->name('bulk-template');
+        Route::post('/checklists/{checklist}/bulk-import', [ChecklistItemController::class, 'bulkImport'])->name('bulk-import');
+
         
         // Actualizar item
         Route::put('/{item}', [ChecklistItemController::class, 'update'])->name('update');
@@ -585,6 +600,8 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // Rechazar ajuste
     Route::post('inventory-adjustments/{adjustment}/reject', [InventoryCountController::class, 'rejectAdjustment'])
         ->name('inventory-adjustments.reject');
+
+    Route::resource('brands', BrandController::class);
 
 });
 

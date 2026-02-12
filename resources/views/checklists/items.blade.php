@@ -78,11 +78,17 @@
                         </div>
 
                         <!-- Botón -->
-                        <div class="flex items-end">
+                        <div class="flex items-end gap-4">
                             <button type="submit" 
-                                    class="w-full px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+                                    class="w-[250px] px-4 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
                                 <i class="fas fa-plus mr-1"></i>
                                 Agregar
+                            </button>
+                            <button type="button"
+                                    @click="$dispatch('open-bulk-import-modal')"
+                                    class="w-[450px] px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-file-upload mr-1"></i>
+                                Carga Masiva
                             </button>
                         </div>
                     </div>
@@ -141,7 +147,7 @@
                                     </form>
                                 </td>
                                 
-                                {{-- BOTÓN DE CONDICIONALES MEJORADO --}}
+                                {{-- BOTÓN DE CONDICIONALES --}}
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <button type="button" 
                                             @click="$dispatch('open-conditionals-modal', { 
@@ -643,7 +649,7 @@
                                            x-model="newConditional.exclude_from_invoice"
                                            class="mt-1 rounded text-yellow-600 focus:ring-yellow-500">
                                     <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900">No facturar (cortesía)</div>
+                                        <div class="text-sm font-medium text-gray-900">No facturar</div>
                                         <p class="text-xs text-gray-600">El producto va físicamente pero no se cobra</p>
                                     </div>
                                 </label>
@@ -722,6 +728,235 @@
         </div>
     </div>
 </div>
+<div x-data="bulkImportModal()" 
+     x-show="isOpen" 
+     x-cloak
+     @open-bulk-import-modal.window="openModal()"
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     style="display: none;">
+    
+    {{-- Overlay --}}
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" 
+         @click="closeModal()"></div>
+    
+    {{-- Modal --}}
+    <div class="flex items-center justify-center min-h-screen px-4 py-8">
+        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
+             @click.away="closeModal()">
+            
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center text-white">
+                        <i class="fas fa-file-upload mr-3 text-2xl"></i>
+                        <div>
+                            <h3 class="text-lg font-bold">Carga Masiva de Productos</h3>
+                            <p class="text-sm text-green-100">{{ $checklist->code }} - {{ $checklist->surgery_type }}</p>
+                        </div>
+                    </div>
+                    <button @click="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+                
+                {{-- ===== PASO 1: SUBIR ARCHIVO ===== --}}
+                <div x-show="step === 'upload'">
+                    
+                    {{-- Descargar plantilla --}}
+                    <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-blue-900">Paso 1: Descarga la plantilla</p>
+                                <p class="text-xs text-blue-700 mt-1">Llénala con los SKU y cantidades de los productos</p>
+                            </div>
+                            <a href="{{ route('checklist-items.bulk-template', $checklist) }}" 
+                               class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                                <i class="fas fa-download mr-1.5"></i>
+                                Plantilla .xlsx
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Drop zone --}}
+                    <div class="mb-4">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Paso 2: Sube tu archivo</p>
+                        
+                        <div id="bulkDropZone"
+                             @dragover.prevent="isDragging = true"
+                             @dragleave.prevent="isDragging = false"
+                             @drop.prevent="handleDrop($event)"
+                             @click="$refs.bulkFileInput.click()"
+                             class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200"
+                             :class="isDragging ? 'border-green-400 bg-green-50' : (selectedFile ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-green-400')">
+                            
+                            {{-- Sin archivo --}}
+                            <div x-show="!selectedFile">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                <p class="text-sm text-gray-600">Arrastra tu archivo aquí o haz clic</p>
+                                <p class="text-xs text-gray-400 mt-1">.xlsx o .xls (máx. 5MB)</p>
+                            </div>
+
+                            {{-- Con archivo --}}
+                            <div x-show="selectedFile">
+                                <i class="fas fa-file-excel text-3xl text-green-500 mb-2"></i>
+                                <p class="text-sm font-medium text-gray-800" x-text="selectedFile?.name"></p>
+                                <p class="text-xs text-gray-500" x-text="selectedFile ? (selectedFile.size / 1024).toFixed(1) + ' KB' : ''"></p>
+                            </div>
+
+                            <input type="file" 
+                                   x-ref="bulkFileInput"
+                                   @change="handleFileSelect($event)"
+                                   accept=".xlsx,.xls"
+                                   class="hidden">
+                        </div>
+                    </div>
+
+                    {{-- Formato esperado --}}
+                    <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <p class="text-xs font-semibold text-gray-600 mb-2">
+                            <i class="fas fa-info-circle mr-1"></i> Formato esperado:
+                        </p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs">
+                                <thead>
+                                    <tr class="text-gray-500">
+                                        <th class="px-2 py-1 text-left font-semibold">product_sku</th>
+                                        <th class="px-2 py-1 text-left font-semibold">quantity</th>
+                                        <th class="px-2 py-1 text-left font-semibold">notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-600">
+                                    <tr>
+                                        <td class="px-2 py-1 font-mono">PROD-001</td>
+                                        <td class="px-2 py-1">5</td>
+                                        <td class="px-2 py-1">Opcional</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ===== PASO 2: PROCESANDO ===== --}}
+                <div x-show="step === 'processing'" class="text-center py-10">
+                    <i class="fas fa-spinner fa-spin text-4xl text-green-600 mb-4"></i>
+                    <p class="text-gray-700 font-medium">Procesando archivo...</p>
+                    <p class="text-sm text-gray-500 mt-1">Validando SKUs contra el catálogo de productos</p>
+                </div>
+
+                {{-- ===== PASO 3: RESULTADOS ===== --}}
+                <div x-show="step === 'results'">
+                    
+                    {{-- Resumen --}}
+                    <div class="grid grid-cols-3 gap-3 mb-5">
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-green-600" x-text="result.created"></p>
+                            <p class="text-xs text-green-700">Agregados</p>
+                        </div>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-yellow-600" x-text="result.skipped"></p>
+                            <p class="text-xs text-yellow-700">Omitidos</p>
+                        </div>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                            <p class="text-2xl font-bold text-red-600" x-text="result.errors?.length || 0"></p>
+                            <p class="text-xs text-red-700">Errores</p>
+                        </div>
+                    </div>
+
+                    {{-- Mensaje --}}
+                    <div class="mb-4 p-3 rounded-lg border"
+                         :class="result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'">
+                        <div class="flex items-start">
+                            <i class="fas mt-0.5 mr-2" 
+                               :class="result.success ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600'"></i>
+                            <p class="text-sm" 
+                               :class="result.success ? 'text-green-800' : 'text-red-800'"
+                               x-text="result.message"></p>
+                        </div>
+                    </div>
+
+                    {{-- Detalle por fila --}}
+                    <div x-show="result.preview && result.preview.length > 0" class="mb-4">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Detalle:</p>
+                        <div class="max-h-48 overflow-y-auto border rounded-lg">
+                            <table class="w-full text-xs">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500">SKU</th>
+                                        <th class="px-3 py-2 text-center font-medium text-gray-500">Cant.</th>
+                                        <th class="px-3 py-2 text-left font-medium text-gray-500">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="(item, i) in result.preview" :key="i">
+                                        <tr :class="{
+                                            'bg-green-50': item.status === 'created',
+                                            'bg-yellow-50': item.status === 'skipped',
+                                            'bg-red-50': item.status === 'error'
+                                        }">
+                                            <td class="px-3 py-1.5 font-mono" x-text="item.sku"></td>
+                                            <td class="px-3 py-1.5 text-center" x-text="item.qty"></td>
+                                            <td class="px-3 py-1.5">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                                      :class="{
+                                                          'bg-green-100 text-green-800': item.status === 'created',
+                                                          'bg-yellow-100 text-yellow-800': item.status === 'skipped',
+                                                          'bg-red-100 text-red-800': item.status === 'error'
+                                                      }">
+                                                    <span x-text="item.reason"></span>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Errores detallados --}}
+                    <div x-show="result.errors && result.errors.length > 0">
+                        <p class="text-sm font-semibold text-red-700 mb-2">Errores:</p>
+                        <div class="max-h-32 overflow-y-auto p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <template x-for="(err, i) in result.errors" :key="i">
+                                <p class="text-xs text-red-700 mb-1" x-text="err"></p>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3">
+                <button @click="closeModal()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <span x-text="step === 'results' ? 'Cerrar' : 'Cancelar'"></span>
+                </button>
+
+                {{-- Botón subir --}}
+                <button x-show="step === 'upload'"
+                        @click="uploadFile()"
+                        :disabled="!selectedFile"
+                        class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-upload mr-1.5"></i>
+                    Importar
+                </button>
+
+                {{-- Botón recargar --}}
+                <button x-show="step === 'results' && result.success && result.created > 0"
+                        @click="window.location.reload()"
+                        class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-sync mr-1.5"></i>
+                    Recargar Página
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {{-- Estilos para x-cloak --}}
 <style>
@@ -1143,6 +1378,81 @@ function conditionalsModal() {
         }
     }
 }
+
+
+function bulkImportModal() {
+    return {
+        isOpen: false,
+        step: 'upload', // upload | processing | results
+        isDragging: false,
+        selectedFile: null,
+        result: {},
+
+        openModal() {
+            this.isOpen = true;
+            this.step = 'upload';
+            this.selectedFile = null;
+            this.result = {};
+        },
+
+        closeModal() {
+            // Si hubo items creados, recargar al cerrar
+            if (this.result.success && this.result.created > 0) {
+                window.location.reload();
+                return;
+            }
+            this.isOpen = false;
+        },
+
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) this.selectedFile = file;
+        },
+
+        handleDrop(event) {
+            this.isDragging = false;
+            const file = event.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                this.selectedFile = file;
+            }
+        },
+
+        async uploadFile() {
+            if (!this.selectedFile) return;
+
+            this.step = 'processing';
+
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+
+            try {
+                const response = await fetch('{{ route("checklist-items.bulk-import", $checklist) }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                this.result = await response.json();
+                this.step = 'results';
+
+            } catch (error) {
+                this.result = {
+                    success: false,
+                    message: 'Error de conexión: ' + error.message,
+                    created: 0,
+                    skipped: 0,
+                    errors: [],
+                    preview: [],
+                };
+                this.step = 'results';
+            }
+        },
+    }
+}
+
 </script>
 @endpush
 

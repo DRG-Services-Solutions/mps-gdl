@@ -109,4 +109,166 @@ class ChecklistItemController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function bulkTemplate(SurgicalChecklist $checklist)
+{
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    $sheet->setTitle('Items');
+
+    // Headers
+    $sheet->setCellValue('A1', 'product_sku');
+    $sheet->setCellValue('B1', 'quantity');
+    $sheet->setCellValue('C1', 'notes');
+
+    // Estilo headers
+    $headerStyle = [
+        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '7C3AED']],
+    ];
+    $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+
+    // Ejemplos
+    $sheet->setCellValue('A2', 'PROD-BISTURI-10');
+    $sheet->setCellValue('B2', 2);
+    $sheet->setCellValue('C2', 'Ejemplo - eliminar esta fila');
+    $sheet->setCellValue('A3', 'PROD-GASA-50');
+    $sheet->setCellValue('B3', 10);
+    $sheet->setCellValue('C3', '');
+
+    $sheet->getStyle('A2:C3')->applyFromArray([
+        'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FEF9C3']],
+        'font' => ['italic' => true, 'color' => ['rgb' => '92400E']],
+    ]);
+
+    $sheet->getColumnDimension('A')->setWidth(22);
+    $sheet->getColumnDimension('B')->setWidth(12);
+    $sheet->getColumnDimension('C')->setWidth(30);
+
+    $fileName = "plantilla_items_{$checklist->code}.xlsx";
+    $tempPath = storage_path("app/temp/{$fileName}");
+    if (!is_dir(dirname($tempPath))) mkdir(dirname($tempPath), 0755, true);
+
+    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer->save($tempPath);
+
+    return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+}
+
+/**
+ * Carga masiva de items a un checklist existente
+ */
+public function bulkImport(Request $request, SurgicalChecklist $checklist)
+{
+    $request->validate([
+        'file' => 'required|file|mimes:xlsx,xls|max:5120',
+    ]);
+
+    $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($request->file('file')->getPathname());
+    $rows = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+
+    if (count($rows) < 2) {
+        return response()->json([
+            'success' => false,
+            'message' => 'El archivo está vacío o solo tiene encabezados.',
+        ]);
+    }
+
+    // Quitar header
+    array_shift($rows);
+
+    $errors = [];
+    $created = 0;
+    $skipped = 0;
+    $preview = [];
+
+    // Recolectar todos los SKUs para una sola consulta
+    $allSkus = collect($rows)
+        ->map(fn($r) => trim((string)($r['A'] ?? '')))
+        ->filter()
+        ->unique();
+
+    $existingProducts = Product::whereIn('code', $allSkus)->pluck('id', 'code');
+    $existingItems = $checklist->items()->pluck('product_id')->toArray();
+
+    \DB::beginTransaction();
+
+    try {
+        $order = $checklist->items()->max('order') ?? 0;
+
+        foreach ($rows as $index => $row) {
+            $rowNum = $index;
+            $sku = trim((string)($row['A'] ?? ''));
+            $qty = (int)($row['B'] ?? 0);
+            $notes = trim((string)($row['C'] ?? ''));
+
+            // Saltar filas vacías
+            if (empty($sku)) continue;
+
+            // Validar cantidad
+            if ($qty < 1) {
+                $errors[] = "Fila {$rowNum}: Cantidad inválida para SKU '{$sku}'.";
+                $preview[] = ['sku' => $sku, 'qty' => $qty, 'status' => 'error', 'reason' => 'Cantidad inválida'];
+                continue;
+            }
+
+            // Validar producto existe
+            $productId = $existingProducts->get($sku);
+            if (!$productId) {
+                $errors[] = "Fila {$rowNum}: SKU '{$sku}' no existe en el catálogo.";
+                $preview[] = ['sku' => $sku, 'qty' => $qty, 'status' => 'error', 'reason' => 'SKU no encontrado'];
+                continue;
+            }
+
+            // Validar no duplicado en checklist
+            if (in_array($productId, $existingItems)) {
+                $skipped++;
+                $preview[] = ['sku' => $sku, 'qty' => $qty, 'status' => 'skipped', 'reason' => 'Ya existe en el checklist'];
+                continue;
+            }
+
+            $checklist->items()->create([
+                'product_id' => $productId,
+                'quantity' => $qty,
+                'is_mandatory' => true,
+                'order' => ++$order,
+                'notes' => $notes ?: null,
+            ]);
+
+            $existingItems[] = $productId; // Evitar duplicados dentro del mismo archivo
+            $created++;
+            $preview[] = ['sku' => $sku, 'qty' => $qty, 'status' => 'created', 'reason' => 'Agregado'];
+        }
+
+        if (!empty($errors) && $created === 0) {
+            \DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo agregar ningún item.',
+                'errors' => $errors,
+                'preview' => $preview,
+            ]);
+        }
+
+        \DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$created} items agregados exitosamente." .
+                ($skipped > 0 ? " {$skipped} omitidos por duplicados." : '') .
+                (!empty($errors) ? " " . count($errors) . " con errores." : ''),
+            'created' => $created,
+            'skipped' => $skipped,
+            'errors' => $errors,
+            'preview' => $preview,
+        ]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => 'Error durante la importación: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }
