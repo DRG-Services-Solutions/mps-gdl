@@ -24,6 +24,7 @@ use App\Services\RfidLabelService;
 
 class PurchaseOrderController extends Controller
 {
+    /**  */ 
     protected $purchaseOrderService;
 
     public function __construct(PurchaseOrderService $purchaseOrderService)
@@ -520,25 +521,27 @@ class PurchaseOrderController extends Controller
 
                         case 'rfid':
                         case 'serial':
-                            // PRODUCTOS CON TRACKING INDIVIDUAL (INSTRUMENTALES)
                             for ($i = 0; $i < $quantityToReceive; $i++) {
-                                // Crear unidad individual
-                                $unit = ProductUnit::create([
-                                    'product_id' => $product->id,
-                                    'legal_entity_id' => $purchaseOrder->legal_entity_id,
-                                    'sub_warehouse_id' => $purchaseOrder->sub_warehouse_id,
-                                    'epc' => $product->tracking_type === 'rfid' ? $this->generateEPC() : null,
-                                    'serial_number' => $product->tracking_type === 'serial' ? $this->generateSerialNumber($product) : null,
-                                    'batch_number' => $itemData['batch_number'] ?? null,
-                                    'expiration_date' => $itemData['expiry_date'] ?? null,
-                                    'status' => $initialStatus,
-                                    'current_location_id' => $purchaseOrder->destination_warehouse_id,
+                                $trackingData = match($product->tracking_type) {
+                                    'rfid'   => ['epc' => $this->generateEPC()],
+                                    'serial' => ['serial_number' => $this->generateSerialNumber($product)],
+                                    default  => []
+                                };
+
+                                // Crear la unidad a través de la relación del producto
+                                $unit = $product->units()->create(array_merge([
+                                    'legal_entity_id'      => $purchaseOrder->legal_entity_id,
+                                    'sub_warehouse_id'     => $purchaseOrder->sub_warehouse_id,
+                                    'batch_number'         => $itemData['batch_number'] ?? null,
+                                    'expiration_date'      => $itemData['expiry_date'] ?? null,
+                                    'status'               => $initialStatus,
+                                    'current_location_id'  => $purchaseOrder->destination_warehouse_id,
                                     'sterilization_cycles' => 0,
-                                    'acquisition_cost' => $orderItem->unit_price,
-                                    'acquisition_date' => now(),
-                                    'notes' => "Recibido en orden {$purchaseOrder->order_number}",
-                                    'created_by' => auth()->id(),
-                                ]);
+                                    'acquisition_cost'     => $orderItem->unit_price,
+                                    'acquisition_date'     => now(),
+                                    'notes'                => "Recibido en orden {$purchaseOrder->order_number}",
+                                    'created_by'           => auth()->id(),
+                                ], $trackingData));
 
                                 // Crear movimiento de entrada para esta unidad
                                 InventoryMovement::create([

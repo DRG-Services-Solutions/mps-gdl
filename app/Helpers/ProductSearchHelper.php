@@ -122,18 +122,33 @@ class ProductSearchHelper
     {
         \Log::info('[SEARCH] 📦 Buscando por Code de Producto', ['code' => $code]);
 
-        // Paso 1: Buscar el producto
-        $product = Product::where('code', $code)
-            ->where('status', 'active')
+        // Paso 1: Buscar el producto - EXACTO primero
+        $product = Product::where('status', 'active')
+            ->where(function($q) use ($code) {
+                $q->where('code', $code)
+                ->orWhere('name', $code);
+            })
             ->first();
 
         if (!$product) {
-            \Log::warning('[SEARCH] ❌ No existe Product con ese código', ['code' => $code]);
+            \Log::info('[SEARCH] 🔄 Búsqueda exacta sin resultados, intentando parcial...', ['code' => $code]);
+
+            $product = Product::where('status', 'active')
+                ->where(function($q) use ($code) {
+                    $q->where('code', 'LIKE', "%{$code}%")
+                    ->orWhere('name', 'LIKE', "%{$code}%");
+                })
+                ->first();
+        }
+
+        if (!$product) {
+            \Log::warning('[SEARCH] ❌ No existe Product con ese código o nombre', ['code' => $code]);
             return null;
         }
 
         \Log::info('[SEARCH] ✅ Product encontrado', [
             'product_id' => $product->id,
+            'product_code' => $product->code,
             'product_name' => $product->name,
         ]);
 
@@ -147,8 +162,8 @@ class ProductSearchHelper
         // Paso 3: Buscar ProductUnit disponible que NO esté en la lista de usados
         $productUnit = ProductUnit::where('product_id', $product->id)
             ->where('status', 'available')
-            ->whereNotIn('id', $usedProductUnitIds) // ✅ Excluir los que ya están en paquetes
-            ->orderBy('created_at', 'asc') // FIFO
+            ->whereNotIn('id', $usedProductUnitIds)
+            ->orderBy('created_at', 'asc')
             ->first();
 
         if ($productUnit) {
@@ -163,7 +178,7 @@ class ProductSearchHelper
             $availableUnits = ProductUnit::where('product_id', $product->id)
                 ->where('status', 'available')
                 ->count();
-            
+
             \Log::warning('[SEARCH] ⚠️ Product existe pero SIN stock disponible', [
                 'product_id' => $product->id,
                 'product_code' => $code,
@@ -175,6 +190,7 @@ class ProductSearchHelper
 
         return $productUnit;
     }
+
 
     /**
      * Obtener stock disponible de un producto (excluyendo los que están en paquetes)

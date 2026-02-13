@@ -21,7 +21,7 @@ class ProductUnit extends Model
         'batch_number',
         'expiration_date',
         'manufacture_date',
-        'status',                   // ✅ Campo canónico — eliminado current_status
+        'status',                   
         'current_location_id',
         'current_package_id',
         'current_surgery_id',
@@ -35,8 +35,8 @@ class ProductUnit extends Model
         'acquisition_date',
         'supplier_id',
         'supplier_invoice',
-        'purchase_order_id',        // ✅ Agregado — ahora existe en la migración
-        'print_job_id',             // ID del job de impresión de etiquetas (recepción de OC)
+        'purchase_order_id',        
+        'print_job_id',             
         'notes',
         'damage_description',
         'created_by',
