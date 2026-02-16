@@ -21,7 +21,7 @@
 
 <nav @mouseenter="desktopSidebarOpen = true" @mouseleave="desktopSidebarOpen = false"
      x-data="{ 
-         inventoryMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') ? 'true' : 'false' }},
+         inventoryMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'true' : 'false' }},
          purchasesMenuOpen: {{ request()->routeIs('purchase-orders.*') || request()->routeIs('suppliers.*') ? 'true' : 'false' }},
          catalogsMenuOpen: {{ request()->routeIs('storage_locations.*') || request()->routeIs('legal-entities.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'true' : 'false' }}
      }"
@@ -159,33 +159,35 @@
                             x-transition:leave-end="opacity-0 -translate-y-2"
                             class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
                             
-                            <!-- ⭐ CHECK LISTS - NUEVO -->
+                            <!-- CHECK LISTS - NUEVO -->
                             <a href="{{ route('checklists.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('checklists.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-clipboard-list fa-fw text-sm"></i>
                                 <span class="truncate">{{ __('Check Lists') }}</span>
                             </a>
 
-                            <!-- ⭐ PAQUETES PRE-ARMADOS - NUEVO -->
+                            <!-- PAQUETES PRE-ARMADOS - NUEVO -->
                             <a href="{{ route('pre-assembled.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('pre-assembled.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-box-open fa-fw text-sm"></i>
                                 <span class="truncate">{{ __('Pre-Armados') }}</span>
                             </a>
 
-                            <!-- ⭐ CIRUGÍAS PROGRAMADAS - NUEVO -->
+                            <!-- CIRUGÍAS PROGRAMADAS - NUEVO -->
                             <a href="{{ route('surgeries.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-calendar-check fa-fw text-sm"></i>
                                 <span class="truncate">{{ __('Programadas') }}</span>
                             </a>
 
-                            <!-- Remisiones (existente) -->
+                            <!-- Remisiones -->
                             <a href="{{ route('quotations.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('quotations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-file-invoice fa-fw text-sm"></i>
                                 <span class="truncate">Remisiones</span>
                             </a>
+
+                            
 
                             <!-- Ventas (existente) -->
                             <a href="{{ route('sales.index') }}" 
@@ -225,21 +227,21 @@
                                 {{ __('Cirugías') }}
                             </div>
                             
-                            <!-- ⭐ CHECK LISTS EN TOOLTIP -->
+                            <!-- CHECK LISTS EN TOOLTIP -->
                             <a href="{{ route('checklists.index') }}" 
                             class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('checklists.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                                 <i class="fas fa-clipboard-list fa-fw text-sm"></i>
                                 <span>{{ __('Check Lists') }}</span>
                             </a>
 
-                            <!-- ⭐ PAQUETES PRE-ARMADOS EN TOOLTIP -->
+                            <!-- PAQUETES PRE-ARMADOS EN TOOLTIP -->
                             <a href="{{ route('pre-assembled.index') }}" 
                             class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('pre-assembled.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                                 <i class="fas fa-box-open fa-fw text-sm"></i>
                                 <span>{{ __('Pre-Armados') }}</span>
                             </a>
 
-                            <!-- ⭐ CIRUGÍAS PROGRAMADAS EN TOOLTIP -->
+                            <!-- CIRUGÍAS PROGRAMADAS EN TOOLTIP -->
                             <a href="{{ route('surgeries.index') }}" 
                             class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                                 <i class="fas fa-calendar-check fa-fw text-sm"></i>
@@ -287,7 +289,7 @@
                 <!-- Inventario Dropdown -->
                 <div class="relative">
                     <button @click="inventoryMenuOpen = !inventoryMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
 
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
@@ -338,6 +340,12 @@
                         class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-clipboard-check fa-fw text-sm"></i>
                             <span class="truncate">Toma de Inventarios</span>
+                        </a>
+
+                        <a href="{{ route('inventory.movements') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-history fa-fw text-sm"></i>
+                            <span class="truncate">Movimientos (Kardex)</span>
                         </a>
                     </div>
 

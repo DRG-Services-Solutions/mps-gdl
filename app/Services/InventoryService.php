@@ -29,70 +29,60 @@ class InventoryService
         ?string $expirationDate = null,
         string $reason = ''
     ) {
-        
         return DB::transaction(function () use ($productId, $subWarehouseId, $legalEntityId, $quantity, $type, $lotNumber, $expirationDate, $reason) {
             
-
+            // 1. TRADUCCIÓN (Esto crea la variable $dbType)
             $dbType = match($type) {
-                    'in' => 'entry',  
-                    'out' => 'exit',  
-                    default => $type, 
-                };
-           \Log::info("🏁 Iniciando transacción de Inventario para Producto ID: {$productId}");
-            $batchNumber = $lotNumber ?? ''; // Lote vacío si es nulo
+                'in' => 'entry',  // Traduce 'in' -> 'entry'
+                'out' => 'exit',  // Traduce 'out' -> 'exit'
+                default => $type,
+            };
 
-            $searchCriteria = [
-            'product_id' => $productId,
-            'sub_warehouse_id' => $subWarehouseId,
-            'batch_number' => $batchNumber
-            ];
-            \Log::info("🔍 Buscando Summary con:", $searchCriteria);
-            
-            // 2. Buscar o Crear el registro de Resumen (Snapshot)
-            // Usamos lockForUpdate() para evitar condiciones de carrera (Race Conditions)
-            try {
+            $lotNumber = $lotNumber ?? '';
+
+            // 2. Summary (Snapshot)
             $summary = InventorySummary::firstOrCreate(
                 [
                     'product_id' => $productId,
                     'sub_warehouse_id' => $subWarehouseId,
-                    'batch_number' => $batchNumber,
-                    'legal_entity_id' => $legalEntityId
+                    'legal_entity_id' => $legalEntityId,
+                    'batch_number' => $lotNumber
                 ],
                 [
                     'quantity_on_hand' => 0,
                     'quantity_reserved' => 0,
-                    'expiration_date' => $expirationDate // Solo se guarda al crear
+                    'expiration_date' => $expirationDate
                 ]
             );
-            \Log::info("✅ Summary obtenido/creado ID: " . $summary->id);
-            } catch (\Exception $e) {
-            \Log::error("❌ Error al crear Summary: " . $e->getMessage());
-            throw $e; // Re-lanzar para que falle la transacción
-        }
 
-            // Bloqueamos la fila para que nadie más la modifique mientras calculamos
             $summary->refresh()->lockForUpdate();
-
-            // 3. Validar y Actualizar Stock
+            
+            // Cálculo de saldos
+            $previousBalance = floatval($summary->quantity_on_hand);
+            
             if ($type === 'out') {
-                if ($summary->quantity_on_hand < $quantity) {
-                    throw new Exception("Stock insuficiente para el producto ID: {$productId}, Lote: {$batchNumber}. Disponible: {$summary->quantity_on_hand}");
-                }
+                if ($previousBalance < $quantity) throw new Exception("Stock insuficiente.");
                 $summary->decrement('quantity_on_hand', $quantity);
+                $newBalance = $previousBalance - $quantity;
             } else {
                 $summary->increment('quantity_on_hand', $quantity);
+                $newBalance = $previousBalance + $quantity;
             }
 
-            // 4. Crear el Histórico (El rastro de migas de pan)
+            // 3. CREAR MOVIMIENTO (¡AQUÍ ESTÁ EL ERROR!)
             $movement = InventoryMovement::create([
                 'product_id' => $productId,
                 'sub_warehouse_id' => $subWarehouseId,
                 'legal_entity_id' => $legalEntityId,
-                'type' => $dbType,
+                
+                // --- CORRECCIÓN CRÍTICA ---
+                'type' => $dbType, // <--- DEBE DECIR $dbType, NO $type
+                // --------------------------
+                
                 'quantity' => $quantity,
-                'batch_number' => $batchNumber, // Asegúrate de tener esta columna en inventory_movements también
-                'previous_balance' => $type === 'in' ? ($summary->quantity_on_hand - $quantity) : ($summary->quantity_on_hand + $quantity),
-                'new_balance' => $summary->quantity_on_hand,
+                'batch_number' => $lotNumber,
+                'previous_balance' => $previousBalance,
+                'new_balance' => $newBalance,
                 'reason' => $reason,
                 'user_id' => auth()->id() ?? null,
             ]);

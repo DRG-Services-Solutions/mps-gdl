@@ -66,6 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])
+    ->name('inventory.movements');
 
 
     //RUTA PARA CARGAR CONFIGURACIONES DE HOSPITALES

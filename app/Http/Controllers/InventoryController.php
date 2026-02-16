@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\SubWarehouse;
+use App\Models\InventorySummary;
+use App\Models\InventoryMovement;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -85,5 +87,47 @@ class InventoryController extends Controller
         $subWarehouses = SubWarehouse::all();
 
         return view('inventory.index', compact('products', 'subWarehouses'));
+    }
+
+    public function movements(Request $request)
+    {
+        // 1. Iniciar Query con relaciones necesarias
+        $query = InventoryMovement::with([
+            'product', 
+            'subWarehouse', 
+            'user', 
+            'productUnit' 
+        ]);
+
+        // 2. Filtros
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('product', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('sub_warehouse_id')) {
+            $query->where('sub_warehouse_id', $request->sub_warehouse_id);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type); // 'entry' o 'exit'
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $movements = $query->latest()->paginate(20)->withQueryString();
+
+        $subWarehouses = SubWarehouse::orderBy('name')->get();
+
+        return view('inventory.movements', compact('movements', 'subWarehouses'));
     }
 }
