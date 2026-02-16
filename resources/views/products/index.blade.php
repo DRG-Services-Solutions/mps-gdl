@@ -477,7 +477,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500">Tracking RFID</p>
                             <p class="text-2xl font-bold text-gray-900">
-                                {{ $products->where('tracking_type', 'rfid')->count() }}
+                                {{ $trackingCounts['rfid'] }}
                             </p>
                         </div>
                     </div>

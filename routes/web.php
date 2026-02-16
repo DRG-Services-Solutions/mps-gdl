@@ -34,7 +34,7 @@ use App\Http\Controllers\CfdiXmlController;
 use App\Http\Controllers\InventoryCountController;
 use App\Http\Controllers\ChecklistImportController;
 use App\Http\Controllers\BrandController;
-
+use App\Http\Controllers\InventoryController;
 // ========================================
 // RUTAS PÚBLICAS
 // ========================================
@@ -64,6 +64,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 
 
     //RUTA PARA CARGAR CONFIGURACIONES DE HOSPITALES

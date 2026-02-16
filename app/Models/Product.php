@@ -194,7 +194,7 @@ class Product extends Model
      */
    public function getTotalStockAttribute()
     {
-        return $this->inventorySummaries()->sum('quantity_on_hand');
+        return $this->attributes['total_stock'] ?? $this->inventorySummaries()->sum('quantity_on_hand');
     }
 
     /**
@@ -275,11 +275,9 @@ class Product extends Model
         return $this->units()->where('status', 'damaged');
     }
 
-    public function stockInWarehouse($warehouseId)
+    public function inventorySummaries()
     {
-        return $this->inventorySummaries()
-                    ->where('warehouse_id', $warehouseId)
-                    ->sum('quantity_on_hand');
+        return $this->hasMany(InventorySummary::class);
     }
 
     public function totalStockGlobal()

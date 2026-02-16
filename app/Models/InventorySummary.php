@@ -37,7 +37,7 @@ class InventorySummary extends Model
 
     public function subWarehouse(): BelongsTo
     {
-        return $this->belongsTo(SubWarehouse::class);
+        return $this->belongsTo(SubWarehouse::class, 'sub_warehouse_id');
     }
 
     //scope de caducidad

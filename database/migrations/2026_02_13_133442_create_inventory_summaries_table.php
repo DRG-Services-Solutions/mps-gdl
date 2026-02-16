@@ -29,7 +29,7 @@ return new class extends Migration
 
             
 
-            $table->unique(['warehouse_id', 'product_id', 'lot_number'], 'unique_stock_per_batch');
+            $table->unique(['legal_entity_id', 'sub_warehouse_id', 'product_id', 'batch_number'], 'unique_stock_per_batch');
         });
     }
 

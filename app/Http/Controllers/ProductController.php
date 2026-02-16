@@ -20,62 +20,71 @@ class ProductController extends Controller
     // INDEX 
     // ==========================================================
    public function index(Request $request): View
-{
-    // Query base con relaciones
-    $query = Product::with([
-        'supplier', 
-        'category',
-    ]);
-    
-    // ========================================
-    // FILTRO: Búsqueda por nombre o código
-    // ========================================
-    if ($request->filled('search')) {
-        $search = $request->search;
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('code', 'like', "%{$search}%")
-              ->orWhere('description', 'like', "%{$search}%");
-        });
+    {
+        // Query base con relaciones
+        $query = Product::with([
+            'supplier', 
+            'category',
+        ]);
+        
+        // ========================================
+        // FILTRO: Búsqueda por nombre o código
+        // ========================================
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                ->orWhere('code', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        // ========================================
+        // FILTRO: Proveedor
+        // ========================================
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+        
+        // ========================================
+        // FILTRO: Categoría
+        // ========================================
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+        
+        // ========================================
+        // FILTRO: Tipo de Tracking
+        // ========================================
+        if ($request->filled('tracking_type')) {
+            $query->where('tracking_type', $request->tracking_type);
+        }
+        
+        // ========================================
+        // FILTRO: Estado
+        // ========================================
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        
+        // Obtener productos paginados
+        $products = $query->latest()->paginate(10)->withQueryString();
+        
+        // Obtener datos para los filtros (select options)
+        $suppliers = Supplier::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get();
+
+        //Conteos totales para mostrar en tarjetas
+        $trackingCounts = [
+        'total'  => Product::count(),
+        'code'   => Product::where('tracking_type', 'code')->count(),
+        'rfid'   => Product::where('tracking_type', 'rfid')->count(),
+        'serial' => Product::where('tracking_type', 'serial')->count(),
+    ];
+
+        
+        return view('products.index', compact('products', 'suppliers', 'categories', 'trackingCounts'));
     }
-    
-    // ========================================
-    // FILTRO: Proveedor
-    // ========================================
-    if ($request->filled('supplier_id')) {
-        $query->where('supplier_id', $request->supplier_id);
-    }
-    
-    // ========================================
-    // FILTRO: Categoría
-    // ========================================
-    if ($request->filled('category_id')) {
-        $query->where('category_id', $request->category_id);
-    }
-    
-    // ========================================
-    // FILTRO: Tipo de Tracking
-    // ========================================
-    if ($request->filled('tracking_type')) {
-        $query->where('tracking_type', $request->tracking_type);
-    }
-    
-    // ========================================
-    // FILTRO: Estado
-    // ========================================
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-    
-    // Obtener productos paginados
-    $products = $query->latest()->paginate(10)->withQueryString();
-    
-    // Obtener datos para los filtros (select options)
-    $suppliers = \App\Models\Supplier::orderBy('name')->get();
-    $categories = \App\Models\Category::orderBy('name')->get();
-    
-    return view('products.index', compact('products', 'suppliers', 'categories'));
-}
 
     // ==========================================================
     // CREATE
