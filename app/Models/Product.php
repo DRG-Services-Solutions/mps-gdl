@@ -192,30 +192,9 @@ class Product extends Model
     /**
      * Obtiene el stock total del producto en todas las ubicaciones
      */
-    public function getTotalStockAttribute(): int
+   public function getTotalStockAttribute()
     {
-        switch ($this->tracking_type) {
-            case 'code':
-                $entries = $this->movements()
-                    ->whereIn('type', ['entry', 'return'])
-                    ->sum('quantity');
-                    
-                $exits = $this->movements()
-                    ->whereIn('type', ['exit', 'discard'])
-                    ->sum('quantity');
-                    
-                return max(0, $entries - $exits);
-                
-            case 'rfid':
-            case 'serial':
-                return $this->units()
-                    ->whereIn('status', ['available', 'reserved', 'in_use'])
-                    ->count();
-                
-            case 'none':
-            default:
-                return 0;
-        }
+        return $this->inventorySummaries()->sum('quantity_on_hand');
     }
 
     /**
@@ -294,6 +273,19 @@ class Product extends Model
     public function damagedUnits()
     {
         return $this->units()->where('status', 'damaged');
+    }
+
+    public function stockInWarehouse($warehouseId)
+    {
+        return $this->inventorySummaries()
+                    ->where('warehouse_id', $warehouseId)
+                    ->sum('quantity_on_hand');
+    }
+
+    public function totalStockGlobal()
+    {
+        // Suma de todos los almacenes
+        return $this->hasMany(InventorySummary::class)->sum('quantity_on_hand');
     }
 
     // ==================== MÉTODOS AUXILIARES ====================
