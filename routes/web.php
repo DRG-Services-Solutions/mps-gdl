@@ -65,6 +65,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
+
+
+// Rutas de pre-armados quirúrgicos (RFID)
+Route::post('pre-assembled/{preAssembled}/rfid-compare', [PreAssembledPackageController::class, 'rfidCompare'])
+    ->name('pre-assembled.rfid-compare');
+
+Route::post('pre-assembled/{preAssembled}/rfid-add', [PreAssembledPackageController::class, 'rfidAddProduct'])
+    ->name('pre-assembled.rfid-add');
+
+Route::get('pre-assembled/{preAssembled}/search-epc', [PreAssembledPackageController::class, 'searchEpc'])
+    ->name('pre-assembled.search-epc');
+
+    
+
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])
     ->name('inventory.movements');

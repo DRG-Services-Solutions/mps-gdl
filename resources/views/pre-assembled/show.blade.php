@@ -229,6 +229,11 @@
                 </form>
             </div>
 
+            @include('pre-assembled.partials.rfid-compare-section')
+
+            
+
+
             <!-- Contenido del Paquete (sin cambios mayores) -->
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -275,20 +280,19 @@
                                 <td class="px-6 py-4">
                                     <div class="space-y-1">
                                         @foreach($items as $item)
-                                            @if($item->productUnit)
+                                            @if($item->productUnit->epc)
                                                 <div class="flex items-center space-x-2">
                                                     <i class="fas fa-qrcode text-xs text-gray-400"></i>
                                                     <span class="text-xs font-mono text-gray-600">
-                                                        {{ Str::limit($item->productUnit->epc, 20, '...') }}
+                                                        {{ Str::limit($item->productUnit->epc, 20, '...')  }}
                                                     </span>
                                                 </div>
-                                            @else
-                                                <div class="text-xs text-gray-400">
-                                                    <i class="fas fa-times-circle mr-1"></i>
-                                                    Sin EPC
-                                                </div>
                                             @endif
-                                        @endforeach
+                                            @endforeach
+                                                <div class="text-xs text-gray-400">
+                                                    <i class="fas fa-qrcode text-xs text-gray-400"></i>
+                                                    {{ $item->product->code }}
+                                                </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -654,5 +658,9 @@
             }
         });
     </script>
+    @endpush
+    
+    @push('scripts')
+        @vite('resources/js/pages/pre-assembled/rfid-compare.js')
     @endpush
 </x-app-layout>

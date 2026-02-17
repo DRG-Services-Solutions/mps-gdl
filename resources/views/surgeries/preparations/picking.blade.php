@@ -465,10 +465,8 @@
     @endpush
 
     @push('scripts')
-        {{-- 🆕 Cargar el módulo RFID compilado por Vite --}}
         @vite('resources/js/pages/surgeries/picking-rfid.js')
         
-        {{-- ⚠️ IMPORTANTE: Estas funciones pequeñas se quedan aquí (no vale la pena modularizarlas) --}}
         <script>
             // Modal de cancelación
             function openCancelModal() {
