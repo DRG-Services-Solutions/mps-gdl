@@ -35,6 +35,9 @@ use App\Http\Controllers\InventoryCountController;
 use App\Http\Controllers\ChecklistImportController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\ShippingNoteController;
+
+
 // ========================================
 // RUTAS PÚBLICAS
 // ========================================
@@ -64,6 +67,91 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->group(function () {
+    
+    // Listado y creación
+    Route::get('/', [ShippingNoteController::class, 'index'])->name('index');
+    Route::get('/create', [ShippingNoteController::class, 'create'])->name('create');
+    Route::post('/', [ShippingNoteController::class, 'store'])->name('store');
+
+    // Ver, editar, eliminar
+    Route::get('/{shippingNote}', [ShippingNoteController::class, 'show'])->name('show');
+    Route::get('/{shippingNote}/edit', [ShippingNoteController::class, 'edit'])->name('edit');
+    Route::put('/{shippingNote}', [ShippingNoteController::class, 'update'])->name('update');
+    Route::delete('/{shippingNote}', [ShippingNoteController::class, 'destroy'])->name('destroy');
+
+    // ═══════════════════════════════════════════════════════════
+    // PAQUETES PRE-ARMADOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/packages', [ShippingNoteController::class, 'assignPackage'])
+        ->name('assign-package');
+    Route::delete('/{shippingNote}/packages/{package}', [ShippingNoteController::class, 'removePackage'])
+        ->name('remove-package');
+
+    // ═══════════════════════════════════════════════════════════
+    // KITS QUIRÚRGICOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/kits', [ShippingNoteController::class, 'assignKit'])
+        ->name('assign-kit');
+    Route::delete('/{shippingNote}/kits/{kit}', [ShippingNoteController::class, 'removeKit'])
+        ->name('remove-kit');
+
+    // ═══════════════════════════════════════════════════════════
+    // ITEMS INDIVIDUALES
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/items', [ShippingNoteController::class, 'addItem'])
+        ->name('add-item');
+    Route::put('/{shippingNote}/items/{item}', [ShippingNoteController::class, 'updateItem'])
+        ->name('update-item');
+    Route::delete('/{shippingNote}/items/{item}', [ShippingNoteController::class, 'removeItem'])
+        ->name('remove-item');
+
+    // ═══════════════════════════════════════════════════════════
+    // CONCEPTOS DE RENTA
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/rental-concepts', [ShippingNoteController::class, 'addRentalConcept'])
+        ->name('add-rental-concept');
+    Route::delete('/{shippingNote}/rental-concepts/{concept}', [ShippingNoteController::class, 'removeRentalConcept'])
+        ->name('remove-rental-concept');
+
+    // ═══════════════════════════════════════════════════════════
+    // FLUJO DE ESTADOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/confirm', [ShippingNoteController::class, 'confirm'])
+        ->name('confirm');
+    Route::post('/{shippingNote}/send', [ShippingNoteController::class, 'send'])
+        ->name('send');
+    Route::post('/{shippingNote}/start-surgery', [ShippingNoteController::class, 'startSurgery'])
+        ->name('start-surgery');
+
+    // Retorno
+    Route::get('/{shippingNote}/return', [ShippingNoteController::class, 'showReturnForm'])
+        ->name('return-form');
+    Route::post('/{shippingNote}/return', [ShippingNoteController::class, 'registerReturn'])
+        ->name('register-return');
+
+    // Completar y cancelar
+    Route::post('/{shippingNote}/complete', [ShippingNoteController::class, 'complete'])
+        ->name('complete');
+    Route::post('/{shippingNote}/cancel', [ShippingNoteController::class, 'cancel'])
+        ->name('cancel');
+
+    // ═══════════════════════════════════════════════════════════
+    // RE-EVALUAR CHECKLIST
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/reevaluate', [ShippingNoteController::class, 'reevaluateChecklist'])
+        ->name('reevaluate');
+
+    // ═══════════════════════════════════════════════════════════
+    // API (AJAX para Alpine.js)
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/api/search-products', [ShippingNoteController::class, 'searchAvailableProducts'])
+        ->name('api.search-products');
+    Route::post('/api/preview-checklist', [ShippingNoteController::class, 'previewChecklist'])
+        ->name('api.preview-checklist');
+});
+
 
 
 
