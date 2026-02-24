@@ -11,7 +11,7 @@ class ChecklistItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'checklist_id',     // ✅ CORRECTO
+        'checklist_id',     
         'product_id',
         'quantity',
         'is_mandatory',
@@ -113,58 +113,44 @@ class ChecklistItem extends Model
      */
     protected function findApplicableConditional($surgery): ?ChecklistConditional
     {
-        // Obtener legal_entity_id según tu estructura
-        // ⚠️ AJUSTA ESTO según cómo obtengas el legal_entity en tu sistema:
-        
-        // Opción 1: Si está en el hospital
         $legalEntityId = $surgery->hospital->legal_entity_id ?? null;
         
-        // Opción 2: Si está en el doctor
-        // $legalEntityId = $surgery->doctor->legal_entity_id ?? null;
-        
-        // Opción 3: Si está directamente en surgery
-        // $legalEntityId = $surgery->legal_entity_id ?? null;
-        
+        // ✅ FIX: Obtener el modality_id real desde la configuración
+        $modalityId = null;
+        if ($surgery->hospital_modality_config_id) {
+            $config = \App\Models\HospitalModalityConfig::find($surgery->hospital_modality_config_id);
+            $modalityId = $config?->modality_id;
+        }
+
         Log::info("Buscando condicional para:", [
             'checklist_item_id' => $this->id,
             'doctor_id' => $surgery->doctor_id,
             'hospital_id' => $surgery->hospital_id,
-            'modality_id' => $surgery->hospital_modality_config_id,
+            'modality_id' => $modalityId,
             'legal_entity_id' => $legalEntityId,
         ]);
-        
+
         $conditionals = $this->conditionals()->get();
-        
+
         if ($conditionals->isEmpty()) {
             Log::info("No hay condicionales para este item");
             return null;
         }
-        
-        // Ordenar por especificidad (más específico primero)
-        $conditionals = $conditionals->sortByDesc(function($conditional) {
+
+        $conditionals = $conditionals->sortByDesc(function ($conditional) {
             return $conditional->getSpecificityLevel();
         });
-        
-        Log::info("Condicionales ordenados por especificidad:", [
-            'count' => $conditionals->count(),
-            'specificity_levels' => $conditionals->map(fn($c) => [
-                'id' => $c->id,
-                'level' => $c->getSpecificityLevel(),
-            ])->toArray(),
-        ]);
-        
-        // Buscar el primero que coincida (el más específico)
+
         foreach ($conditionals as $conditional) {
-            if ($this->conditionalMatches($conditional, $surgery, $legalEntityId)) {
+            if ($this->conditionalMatches($conditional, $surgery, $legalEntityId, $modalityId)) {
                 Log::info("Condicional aplicable encontrado:", [
                     'conditional_id' => $conditional->id,
                     'description' => $conditional->getDescription(),
-                    'specificity' => $conditional->getSpecificityLevel(),
                 ]);
                 return $conditional;
             }
         }
-        
+
         Log::info("Ningún condicional coincidió con los criterios");
         return null;
     }
@@ -177,56 +163,57 @@ class ChecklistItem extends Model
      * @param int|null $legalEntityId
      * @return bool
      */
-    protected function conditionalMatches(ChecklistConditional $conditional, $surgery, ?int $legalEntityId): bool
+    
+    protected function conditionalMatches(
+    ChecklistConditional $conditional,
+    $surgery,
+    ?int $legalEntityId,
+    ?int $modalityId
+): bool 
     {
-        // Si el condicional especifica un doctor, debe coincidir
-        if ($conditional->doctor_id !== null) {
-            if ($conditional->doctor_id !== $surgery->doctor_id) {
-                Log::debug("No coincide doctor", [
-                    'conditional_doctor' => $conditional->doctor_id,
-                    'surgery_doctor' => $surgery->doctor_id,
-                ]);
-                return false;
-            }
+    if ($conditional->doctor_id !== null) {
+        if ((int) $conditional->doctor_id !== (int) $surgery->doctor_id) {
+            Log::debug("No coincide doctor", [
+                'conditional' => $conditional->doctor_id,
+                'surgery' => $surgery->doctor_id,
+            ]);
+            return false;
         }
-        
-        // Si el condicional especifica un hospital, debe coincidir
-        if ($conditional->hospital_id !== null) {
-            if ($conditional->hospital_id !== $surgery->hospital_id) {
-                Log::debug("No coincide hospital", [
-                    'conditional_hospital' => $conditional->hospital_id,
-                    'surgery_hospital' => $surgery->hospital_id,
-                ]);
-                return false;
-            }
-        }
-        
-        // Si el condicional especifica una modalidad, debe coincidir
-        if ($conditional->modality_id !== null) {
-            if ($conditional->modality_id !== $surgery->hospital_modality_config_id) {
-                Log::debug("No coincide modalidad", [
-                    'conditional_modality' => $conditional->modality_id,
-                    'surgery_modality' => $surgery->hospital_modality_config_id,
-                ]);
-                return false;
-            }
-        }
-        
-        // Si el condicional especifica una legal entity, debe coincidir
-        if ($conditional->legal_entity_id !== null) {
-            if ($conditional->legal_entity_id !== $legalEntityId) {
-                Log::debug("No coincide legal entity", [
-                    'conditional_legal_entity' => $conditional->legal_entity_id,
-                    'surgery_legal_entity' => $legalEntityId,
-                ]);
-                return false;
-            }
-        }
-        
-        // Si todos los criterios especificados coinciden, este condicional aplica
-        Log::debug("Condicional coincide con todos los criterios");
-        return true;
     }
+
+    if ($conditional->hospital_id !== null) {
+        if ((int) $conditional->hospital_id !== (int) $surgery->hospital_id) {
+            Log::debug("No coincide hospital", [
+                'conditional' => $conditional->hospital_id,
+                'surgery' => $surgery->hospital_id,
+            ]);
+            return false;
+        }
+    }
+
+    // ✅ FIX: Comparar contra modality_id real, NO hospital_modality_config_id
+    if ($conditional->modality_id !== null) {
+        if ((int) $conditional->modality_id !== (int) $modalityId) {
+            Log::debug("No coincide modalidad", [
+                'conditional' => $conditional->modality_id,
+                'surgery_modality' => $modalityId,
+            ]);
+            return false;
+        }
+    }
+
+    if ($conditional->legal_entity_id !== null) {
+        if ((int) $conditional->legal_entity_id !== (int) $legalEntityId) {
+            Log::debug("No coincide legal entity", [
+                'conditional' => $conditional->legal_entity_id,
+                'surgery' => $legalEntityId,
+            ]);
+            return false;
+        }
+    }
+
+    return true;
+}
 
     // ==================== SCOPES ====================
     

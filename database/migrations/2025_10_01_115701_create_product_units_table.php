@@ -53,24 +53,17 @@ return new class extends Migration
                   ->constrained('storage_locations')
                   ->onDelete('set null')
                   ->comment('Ubicación física actual');
-            
-            // Información para instrumentales
-            $table->integer('sterilization_cycles')->default(0)->comment('Número de ciclos de esterilización');
-            $table->date('last_sterilization_date')->nullable()->comment('Última fecha de esterilización');
-            $table->date('next_maintenance_date')->nullable()->comment('Próxima fecha de mantenimiento programado');
-            $table->integer('max_sterilization_cycles')->nullable()->comment('Ciclos máximos permitidos');
+
+                
+
+                  //informacion de la cirugia actual si está en uso
+         
+            //$table->foreignId('suergery_id')->constrained('surgeries')->onDelete('set null')->comment('Cirugía actual si está en uso');
             
             // Información de costos
             $table->decimal('acquisition_cost', 10, 2)->nullable()->comment('Costo de adquisición');
             $table->date('acquisition_date')->nullable()->comment('Fecha de adquisición');
-            
-            // Información del proveedor en esta unidad específica
-            // TEMPORAL: Descomentar cuando exista la tabla suppliers
-                //$table->foreignId('supplier_id')->nullable()->constrained()->onDelete('set null');
-                //$table->string('supplier_invoice')->nullable()->comment('Número de factura del proveedor');
-            // TEMPORAL: Descomentar cuando exista la tabla suppliers
 
-            
             // Notas y observaciones
             $table->text('notes')->nullable()->comment('Observaciones generales');
             $table->text('damage_description')->nullable()->comment('Descripción de daños si aplica');

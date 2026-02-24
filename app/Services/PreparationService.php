@@ -15,7 +15,9 @@ use Exception;
 class PreparationService
 {
     /**
-     * Crear preparación de cirugía basada en un paquete pre-armado
+     * Crear preparación de cirugía
+     * 
+     * FIX #1: Ahora acepta $packageId = null para "preparar desde cero"
      */
     public function createPreparation($surgeryId, $packageId, $userId)
     {
@@ -24,34 +26,39 @@ class PreparationService
             $surgery = ScheduledSurgery::findOrFail($surgeryId);
             
             // Validar que no tenga ya una preparación activa
-            if ($surgery->preparation()->exists()) {
+            if ($surgery->preparation()->whereNotIn('status', ['cancelled'])->exists()) {
                 throw new Exception('Esta cirugía ya tiene una preparación en proceso.');
             }
 
             // 2. Crear el registro de preparación
             $preparation = SurgeryPreparation::create([
                 'scheduled_surgery_id' => $surgery->id,
-                'pre_assembled_package_id' => $packageId,
+                'pre_assembled_package_id' => $packageId, // puede ser null
                 'status' => 'picking',
                 'prepared_by' => $userId,
                 'started_at' => now(),
             ]);
 
-            // 3. Actualizar estados
+            // 3. Actualizar estado de la cirugía
             $surgery->update(['status' => 'in_preparation']);
             
-            $package = PreAssembledPackage::with('contents')->findOrFail($packageId);
-            $package->update(['status' => 'in_preparation']);
+            // 4. Obtener contenido del paquete (si existe)
+            $packageContents = collect();
 
-            // 4. ✅ CORRECCIÓN CRÍTICA: Contar unidades físicas, no sumar quantity
-            $packageContents = $package->contents
-                ->groupBy('product_id')
-                ->map->count(); // Cada registro = 1 unidad física
+            if ($packageId) {
+                $package = PreAssembledPackage::with('contents')->findOrFail($packageId);
+                $package->update(['status' => 'in_preparation']);
 
-            Log::info("=== CONTENIDO DEL PAQUETE ===");
-            Log::info("Unidades por producto:");
-            foreach ($packageContents as $productId => $count) {
-                Log::info("Product {$productId}: {$count} unidades físicas");
+                $packageContents = $package->contents
+                    ->groupBy('product_id')
+                    ->map->count();
+
+                Log::info("=== CONTENIDO DEL PAQUETE ===");
+                foreach ($packageContents as $productId => $count) {
+                    Log::info("Product {$productId}: {$count} unidades físicas");
+                }
+            } else {
+                Log::info("=== PREPARACIÓN DESDE CERO (sin paquete) ===");
             }
 
             // 5. Obtener items necesarios del checklist
@@ -63,7 +70,7 @@ class PreparationService
                 $productId = $checklistItem->product_id;
                 $requiredQty = $data['adjusted_quantity'] ?? $checklistItem->quantity;
 
-                // Obtener cuántas unidades físicas hay en el paquete
+                // Obtener cuántas unidades físicas hay en el paquete (0 si no hay paquete)
                 $inPackageQty = $packageContents->get($productId, 0);
                 $missingQty = max(0, $requiredQty - $inPackageQty);
 
@@ -100,7 +107,8 @@ class PreparationService
 
             Log::info("ProductUnit encontrado: ID {$productUnit->id}, Status actual: {$productUnit->current_status}");
 
-            if (!in_array($productUnit->current_status, ['available', 'in_stock'])) {
+            // FIX #2: También aceptar 'reserved' porque scanBarcode() reserva ANTES de llamar pickProduct
+            if (!in_array($productUnit->current_status, ['available', 'in_stock', 'reserved'])) {
                 throw new Exception("Esta unidad no está disponible (estado: {$productUnit->current_status}).");
             }
 
@@ -110,10 +118,19 @@ class PreparationService
                 throw new Exception('La preparación no está en estado de recolección.');
             }
 
-            // 4. Validar que no se haya escaneado previamente en esta preparación
-            $alreadyScanned = PackageContent::where('pre_assembled_package_id', $preparation->pre_assembled_package_id)
-                ->where('product_unit_id', $productUnit->id)
-                ->exists();
+            // 4. Validar que no se haya escaneado previamente
+            // FIX #3: Validar tanto por package_id como por preparation_id para casos sin paquete
+            if ($preparation->pre_assembled_package_id) {
+                $alreadyScanned = PackageContent::where('pre_assembled_package_id', $preparation->pre_assembled_package_id)
+                    ->where('product_unit_id', $productUnit->id)
+                    ->exists();
+            } else {
+                // Sin paquete: verificar por la preparación directamente
+                $alreadyScanned = DB::table('preparation_scanned_units')
+                    ->where('surgery_preparation_id', $preparation->id)
+                    ->where('product_unit_id', $productUnit->id)
+                    ->exists();
+            }
 
             if ($alreadyScanned) {
                 throw new Exception('Esta unidad ya fue escaneada para esta preparación.');
@@ -134,44 +151,47 @@ class PreparationService
             $prepItem->decrement('quantity_missing');
             
             // Actualizar estado si se completó
-            if ($prepItem->quantity_missing <= 0) {
+            if ($prepItem->fresh()->quantity_missing <= 0) {
                 $prepItem->update(['status' => 'complete']);
             }
 
-            Log::info("Item actualizado: Picked={$prepItem->quantity_picked}, Missing={$prepItem->quantity_missing}");
+            Log::info("Item actualizado: Picked={$prepItem->fresh()->quantity_picked}, Missing={$prepItem->fresh()->quantity_missing}");
 
-            // 7. ✅ ACTUALIZAR CON EL ENUM CORRECTO: 'reserved'
+            // 7. Actualizar ProductUnit
             $productUnit->update([
-                'current_status' => 'reserved', // ✅ Cambiado de 'in_preparation' a 'reserved'
+                'current_status' => 'reserved', 
                 'current_package_id' => $preparation->pre_assembled_package_id,
                 'current_surgery_id' => $preparation->scheduled_surgery_id,
                 'reserved_at' => now(),
                 'reserved_by' => $userId,
             ]);
 
-            Log::info("ProductUnit actualizado: Status=reserved, Package={$preparation->pre_assembled_package_id}, Surgery={$preparation->scheduled_surgery_id}");
-
-            // 8. Registrar en contenidos del paquete (auditoría)
-            PackageContent::create([
-                'pre_assembled_package_id' => $preparation->pre_assembled_package_id,
-                'product_id' => $productUnit->product_id,
-                'product_unit_id' => $productUnit->id,
-                'quantity' => 1,
-                'added_at' => now(),
-                'added_by' => $userId,
-            ]);
+            // 8. Registrar en contenidos del paquete (auditoría) - solo si hay paquete
+            if ($preparation->pre_assembled_package_id) {
+                PackageContent::create([
+                    'pre_assembled_package_id' => $preparation->pre_assembled_package_id,
+                    'product_id' => $productUnit->product_id,
+                    'product_unit_id' => $productUnit->id,
+                    'quantity' => 1,
+                    'added_at' => now(),
+                    'added_by' => $userId,
+                ]);
+            }
 
             Log::info("PackageContent creado para tracking");
 
             // 9. Verificar si la preparación está completa
             $this->checkPreparationCompletion($preparation);
 
+            // Refrescar para obtener datos actualizados
+            $prepItem->refresh();
+
             return [
                 'success' => true,
                 'product_name' => $productUnit->product->name,
                 'item_id' => $prepItem->id,
-                'quantity_missing' => $prepItem->fresh()->quantity_missing,
-                'quantity_picked' => $prepItem->fresh()->quantity_picked,
+                'quantity_missing' => $prepItem->quantity_missing,
+                'quantity_picked' => $prepItem->quantity_picked,
                 'item_status' => $prepItem->status,
                 'preparation_complete' => $preparation->fresh()->status === 'complete',
             ];
@@ -180,52 +200,68 @@ class PreparationService
 
     /**
      * Verificar si la preparación está completa
+     * 
+     * FIX #4: Usar quantity_missing en lugar de solo status para mayor precisión
      */
     protected function checkPreparationCompletion(SurgeryPreparation $preparation)
     {
-        // Verificar items obligatorios
         $pendingMandatory = $preparation->items()
             ->where('is_mandatory', true)
-            ->where('status', '!=', 'complete')
-            ->where('status', '!=', 'in_package')
+            ->where('quantity_missing', '>', 0)
             ->exists();
 
         if (!$pendingMandatory) {
+            // Solo marcar como complete si NO hay mandatorios pendientes
+            Log::info("✅ Todos los items obligatorios completos. Marcando preparación como complete.");
+            
             $preparation->update([
                 'status' => 'complete',
                 'completed_at' => now(),
             ]);
 
-            // Actualizar cirugía
             $preparation->scheduledSurgery->update(['status' => 'ready']);
         }
     }
 
     /**
-     * Finalizar preparación manualmente
+     * Finalizar preparación manualmente (llamado desde verify)
+     * 
+     * FIX #5: Doble validación server-side de items obligatorios
      */
     public function finishPreparation($preparationId, $userId, $notes = null)
     {
         return DB::transaction(function () use ($preparationId, $userId, $notes) {
             $preparation = SurgeryPreparation::with('items')->findOrFail($preparationId);
 
-            // Validar que no haya items obligatorios pendientes
+            // Validar estado: solo se puede finalizar desde picking o complete
+            if (!in_array($preparation->status, ['picking', 'complete', 'comparing'])) {
+                throw new Exception("No se puede finalizar una preparación en estado: {$preparation->status}");
+            }
+
+            // BLINDAJE CRÍTICO: Recalcular items obligatorios pendientes
             $pendingMandatory = $preparation->items()
                 ->where('is_mandatory', true)
                 ->where('quantity_missing', '>', 0)
                 ->get();
 
             if ($pendingMandatory->isNotEmpty()) {
-                throw new Exception('No se puede finalizar. Hay items obligatorios pendientes.');
+                $details = $pendingMandatory->map(function($item) {
+                    return "- {$item->product->name}: faltan {$item->quantity_missing} de {$item->quantity_required}";
+                })->implode("\n");
+                
+                throw new Exception("No se puede finalizar. Items obligatorios pendientes:\n{$details}");
             }
 
             $preparation->update([
-                'status' => 'complete',
+                'status' => 'verified',  // FIX #6: Usar 'verified' en vez de 'complete' para distinguir
+                'verified_by' => $userId,
                 'completed_at' => now(),
                 'completion_notes' => $notes,
             ]);
 
             $preparation->scheduledSurgery->update(['status' => 'ready']);
+
+            Log::info("Preparación {$preparationId} verificada por usuario {$userId}");
 
             return $preparation;
         });
@@ -233,23 +269,44 @@ class PreparationService
 
     /**
      * Cancelar preparación
+     * 
+     * FIX #7: Manejar caso sin paquete pre-armado
      */
     public function cancelPreparation($preparationId, $userId, $reason)
     {
         return DB::transaction(function () use ($preparationId, $userId, $reason) {
             $preparation = SurgeryPreparation::findOrFail($preparationId);
 
-            // ✅ Liberar unidades físicas que se habían asignado (usar 'reserved')
-            ProductUnit::where('current_package_id', $preparation->pre_assembled_package_id)
-                ->where('current_status', 'reserved') // ✅ Cambiado de 'in_preparation'
-                ->update([
-                    'current_status' => 'available',
-                    'current_package_id' => null,
-                    'current_surgery_id' => null,
-                    'reserved_at' => null,
-                    'reserved_by' => null,
-                    'updated_at' => now(),
-                ]);
+            // Validar que se pueda cancelar
+            if (in_array($preparation->status, ['verified', 'cancelled'])) {
+                throw new Exception("No se puede cancelar una preparación en estado: {$preparation->status}");
+            }
+
+            // Liberar ProductUnits reservadas
+            if ($preparation->pre_assembled_package_id) {
+                ProductUnit::where('current_package_id', $preparation->pre_assembled_package_id)
+                    ->where('current_status', 'reserved')
+                    ->update([
+                        'current_status' => 'available',
+                        'current_package_id' => null,
+                        'current_surgery_id' => null,
+                        'reserved_at' => null,
+                        'reserved_by' => null,
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                // Sin paquete: liberar por surgery_id
+                ProductUnit::where('current_surgery_id', $preparation->scheduled_surgery_id)
+                    ->where('current_status', 'reserved')
+                    ->update([
+                        'current_status' => 'available',
+                        'current_package_id' => null,
+                        'current_surgery_id' => null,
+                        'reserved_at' => null,
+                        'reserved_by' => null,
+                        'updated_at' => now(),
+                    ]);
+            }
 
             $preparation->update([
                 'status' => 'cancelled',
@@ -258,8 +315,13 @@ class PreparationService
                 'cancellation_reason' => $reason,
             ]);
 
+            // Restaurar estado de la cirugía
             $preparation->scheduledSurgery->update(['status' => 'scheduled']);
-            $preparation->preAssembledPackage->update(['status' => 'available']);
+            
+            // Restaurar paquete solo si existe
+            if ($preparation->preAssembledPackage) {
+                $preparation->preAssembledPackage->update(['status' => 'available']);
+            }
 
             return $preparation;
         });
@@ -278,23 +340,14 @@ class PreparationService
 
         $items = $preparation->items;
 
-        // ✅ CALCULAR BASADO EN CANTIDADES, NO EN ITEMS
         $totalQuantityRequired = $items->sum('quantity_required');
         $totalQuantityInPackage = $items->sum('quantity_in_package');
         $totalQuantityPicked = $items->sum('quantity_picked');
         $totalQuantitySatisfied = $totalQuantityInPackage + $totalQuantityPicked;
 
-        // Calcular porcentaje basado en unidades reales
         $completionPercentage = $totalQuantityRequired > 0
             ? round(($totalQuantitySatisfied / $totalQuantityRequired) * 100, 2)
             : 0;
-
-        Log::info("=== CÁLCULO DE COMPLETITUD ===");
-        Log::info("Total Required: {$totalQuantityRequired}");
-        Log::info("Total In Package: {$totalQuantityInPackage}");
-        Log::info("Total Picked: {$totalQuantityPicked}");
-        Log::info("Total Satisfied: {$totalQuantitySatisfied}");
-        Log::info("Completion %: {$completionPercentage}");
 
         return [
             'preparation' => $preparation,
@@ -302,18 +355,18 @@ class PreparationService
             'completed_items' => $items->where('status', 'complete')->count(),
             'pending_items' => $items->where('status', 'pending')->count(),
             'in_package_items' => $items->where('status', 'in_package')->count(),
+            
+            // FIX #8: mandatory_pending calculado con quantity_missing (no con status)
             'mandatory_pending' => $items->where('is_mandatory', true)
                                     ->where('quantity_missing', '>', 0)
                                     ->count(),
             
-            // ✅ NUEVO: Información basada en cantidades
             'total_quantity_required' => $totalQuantityRequired,
             'total_quantity_in_package' => $totalQuantityInPackage,
             'total_quantity_picked' => $totalQuantityPicked,
             'total_quantity_satisfied' => $totalQuantitySatisfied,
             'total_quantity_missing' => $items->sum('quantity_missing'),
             
-            // ✅ CORREGIDO: Porcentaje basado en cantidades reales
             'completion_percentage' => $completionPercentage,
         ];
     }

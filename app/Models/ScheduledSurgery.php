@@ -30,6 +30,19 @@ class ScheduledSurgery extends Model
     ];
 
     // ==================== RELACIONES ====================
+
+    public function shippingNote()
+    {
+        return $this->hasOne(ShippingNote::class, 'scheduled_surgery_id');
+    }
+
+    public function hasActiveShippingNote(): bool
+    {
+        return $this->shippingNote()
+            ->whereNotIn('status', ['cancelled'])
+            ->exists();
+    }
+
     
     /**
      * Check list aplicado
@@ -38,6 +51,7 @@ class ScheduledSurgery extends Model
     {
         return $this->belongsTo(SurgicalChecklist::class, 'checklist_id');
     }
+    
 
     /**
      * Doctor asignado
@@ -278,12 +292,17 @@ class ScheduledSurgery extends Model
      */
     protected function getAdditionalProducts()
     {
-        // Obtener legal_entity_id según tu estructura
         $legalEntityId = $this->hospital->legal_entity_id ?? null;
+        
+        // ✅ FIX: Obtener modality_id real
+        $modalityId = null;
+        if ($this->hospital_modality_config_id) {
+            $config = \App\Models\HospitalModalityConfig::find($this->hospital_modality_config_id);
+            $modalityId = $config?->modality_id;
+        }
 
-        // Buscar condicionales que marquen productos adicionales
         $additionalConditionals = ChecklistConditional::where('is_additional_product', true)
-            ->whereHas('checklistItem', function($query) {
+            ->whereHas('checklistItem', function ($query) {
                 $query->where('checklist_id', $this->checklist_id);
             })
             ->get();
@@ -291,22 +310,19 @@ class ScheduledSurgery extends Model
         $results = collect();
 
         foreach ($additionalConditionals as $conditional) {
-            // Verificar si este condicional aplica a esta cirugía
             $matches = true;
 
-            if ($conditional->doctor_id !== null && $conditional->doctor_id !== $this->doctor_id) {
+            if ($conditional->doctor_id !== null && (int) $conditional->doctor_id !== (int) $this->doctor_id) {
                 $matches = false;
             }
-
-            if ($conditional->hospital_id !== null && $conditional->hospital_id !== $this->hospital_id) {
+            if ($conditional->hospital_id !== null && (int) $conditional->hospital_id !== (int) $this->hospital_id) {
                 $matches = false;
             }
-
-            if ($conditional->modality_id !== null && $conditional->modality_id !== $this->hospital_modality_config_id) {
+            // ✅ FIX: Usar modality_id real
+            if ($conditional->modality_id !== null && (int) $conditional->modality_id !== (int) $modalityId) {
                 $matches = false;
             }
-
-            if ($conditional->legal_entity_id !== null && $conditional->legal_entity_id !== $legalEntityId) {
+            if ($conditional->legal_entity_id !== null && (int) $conditional->legal_entity_id !== (int) $legalEntityId) {
                 $matches = false;
             }
 
