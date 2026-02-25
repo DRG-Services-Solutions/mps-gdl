@@ -28,6 +28,11 @@ class LegalEntity extends Model
      * Relaciones
      */
 
+    public function hospitalConfigs()
+    {
+        return $this->hasMany(HospitalModalityConfig::class);
+    }
+
     public function getActiveSubWarehouses()
     {
         return $this->subWarehouses()->active()->orderBy('name')->get();

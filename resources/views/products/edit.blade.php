@@ -18,7 +18,6 @@
         </div>
     </x-slot>
 
-    <div class="py-8" x-data="productForm({{ json_encode($subcategories) }}, {{ $product->category_id ?? 'null' }})">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 
@@ -137,23 +136,7 @@
                             
                             
 
-                            {{-- Especialidad Médica --}}
-                            <div>
-                                <label for="specialty_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-stethoscope text-gray-400 mr-2"></i>
-                                    {{ __('Especialidad Médica') }}
-                                </label>
-                                <select name="specialty_id" id="specialty_id"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('specialty_id') border-red-500 @enderror">
-                                    <option value="">{{ __('-- Seleccione la especialidad --') }}</option>
-                                    @foreach($specialties as $specialty)
-                                        <option value="{{ $specialty->id }}" {{ old('specialty_id', $product->specialty_id) == $specialty->id ? 'selected' : '' }}>
-                                            {{ $specialty->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('specialty_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
+                            
                         </div>
                     </div>
 

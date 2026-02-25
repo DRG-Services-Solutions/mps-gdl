@@ -195,7 +195,7 @@
                             <div class="px-6 py-4">
                                 <!-- Items de la Orden -->
                                 <div class="mb-6">
-                                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                    <h4 class="text-sm fwont-semibold text-gray-700 mb-3 flex items-center">
                                         <i class="fas fa-list-ul mr-2 text-gray-400"></i>
                                         Productos Ordenados
                                     </h4>

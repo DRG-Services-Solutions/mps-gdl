@@ -45,8 +45,10 @@ return new class extends Migration
                   ->constrained('product_units')
                   ->nullOnDelete();
             
-            // Para productos sin tracking individual, se usa cantidad
-            $table->integer('quantity')->default(1);
+            $table->decimal('quantity', 15, 4);
+            $table->decimal('previous_balance', 15, 4)->default(0)->comment('Saldo antes del movimiento');
+            $table->decimal('new_balance', 15, 4)->default(0)->comment('Saldo después del movimiento');
+
             
             // ==========================================================
             // UBICACIONES (ORIGEN Y DESTINO)

@@ -47,22 +47,7 @@
                                 @enderror
                             </div>
                             
-                            <div class="md:col-span-2">
-
-                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Razon Social <span class="text-red-500">*</span>
-                                </label>
-                                <input type="text" 
-                                       id="razon_social" 
-                                       name="razon_social" 
-                                       value="{{ old('razon_social') }}"
-                                       required
-                                       placeholder="Hospital del Centro S.A. de C.V. "
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('narazon_social') border-red-500 @enderror">
-                                @error('razon_social')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+   
 
                             <div class="md:col-span-2">
 
@@ -85,89 +70,56 @@
                         </div>
                     </div>
 
-                    <!-- Información de Contacto -->
+                    <!-- Fiscal -->
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                            <i class="fas fa-address-book mr-2 text-indigo-600"></i>Información de Contacto
+                            <i class="fas fa-address-book mr-2 text-indigo-600"></i>Informacion Fiscal
                         </h3>
+                        <div class="py-6">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <form method="POST" action="{{ route('hospitals.store') }}" class="p-6 space-y-6">
+                    @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-
-                            <!-- Teléfono -->
-                            <div>
-                                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Teléfono
-                                </label>
-                                <input type="text" 
-                                       id="phone" 
-                                       name="phone" 
-                                       value="{{ old('phone') }}"
-                                       placeholder="Ej: (81) 1234-5678, 8112345678..."
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('phone') border-red-500 @enderror">
-                                @error('phone')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <!-- Email -->
-                            <div class="md:col-span-2">
-                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Correo Electrónico
-                                </label>
-                                <input type="email" 
-                                       id="email" 
-                                       name="email" 
-                                       value="{{ old('email') }}"
-                                       placeholder="Ej: contacto@hospital.com"
-                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('email') border-red-500 @enderror">
-                                @error('email')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Dirección -->
-                    <div>
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b pb-2">
-                            <i class="fas fa-map-marker-alt mr-2 text-indigo-600"></i>Dirección
+                            <i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i>Configuración de Facturación
                         </h3>
+                        <p class="text-sm text-gray-600 mb-4">Selecciona las modalidades bajo las que operará este hospital y qué entidad emitirá la factura.</p>
 
                         <div class="space-y-4">
-                            <!-- Dirección -->
-                            <div>
-                                <label for="address" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Dirección Completa
-                                </label>
-                                <textarea id="address" 
-                                          name="address" 
-                                          rows="2"
-                                          placeholder="Calle, número, colonia..."
-                                          class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
-                                @error('address')
-                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+                            @foreach($modalities as $modality)
+                                <div class="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 gap-4">
+                                    <div class="flex items-center w-full md:w-1/3">
+                                        <input type="checkbox" 
+                                               name="configs[{{ $modality->id }}][selected]" 
+                                               id="mod_{{ $modality->id }}"
+                                               class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                               {{ old("configs.{$modality->id}.selected") ? 'checked' : '' }}>
+                                        <label for="mod_{{ $modality->id }}" class="ml-3 font-medium text-gray-700">
+                                            {{ $modality->name }}
+                                        </label>
+                                    </div>
 
-                            
+                                    <div class="w-full md:w-2/3">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1 uppercase">Entidad que Factura</label>
+                                        <select name="configs[{{ $modality->id }}][legal_entity_id]" 
+                                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg text-sm">
+                                            <option value="">-- Seleccionar Entidad --</option>
+                                            @foreach($legalEntities as $entity)
+                                                <option value="{{ $entity->id }}" 
+                                                    {{ old("configs.{$modality->id}.legal_entity_id") == $entity->id ? 'selected' : '' }}>
+                                                    {{ $entity->name }} ({{ $entity->rfc }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error("configs.{$modality->id}.legal_entity_id")
+                                            <p class="mt-1 text-xs text-red-600">La entidad es obligatoria si activas esta modalidad.</p>
+                                        @enderror
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                    </div>
-
-                    <!-- Notas -->
-                    <div>
-                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">
-                            <i class="fas fa-sticky-note mr-1 text-indigo-600"></i>
-                            Notas / Observaciones
-                        </label>
-                        <textarea id="notes" 
-                                  name="notes" 
-                                  rows="3"
-                                  placeholder="Información adicional sobre el hospital..."
-                                  class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
-                        @error('notes')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <!-- Actions -->
@@ -183,6 +135,18 @@
                             Crear Hospital
                         </button>
                     </div>
+                </form>
+            </div>
+        </div>
+    </div>                   
+</div>
+                        
+
+
+                    
+                    
+
+                    
 
                 </form>
             </div>

@@ -7,10 +7,7 @@
                 </h2>
                 <p class="text-sm mt-1 text-blue-600 font-medium">Bienvenido de vuelta, <span class="font-semibold">{{ Auth::user()->name }}</span></p>
             </div>
-            <div class="text-right">
-                <p class="text-sm text-gray-600 font-medium">{{ now()->format('d/m/Y') }}</p>
-                <p class="text-xs text-gray-500">{{ now()->format('H:i') }} hrs</p>
-            </div>
+            
         </div>
     </x-slot>
 

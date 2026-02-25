@@ -9,7 +9,7 @@
                     </svg>
                 </a>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ __('Nueva Orden de Compra') }}
+                    Nueva Orden de Compra
                 </h2>
             </div>
         </div>
@@ -53,14 +53,14 @@
                             <!-- Razón Social (Legal Entity) -->
                             <div>
                                 <label for="legal_entity_id" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    {{ __('Razón Social') }} <span class="text-red-500">*</span>
+                                    Razón Social <span class="text-red-500">*</span>
                                 </label>
                                 <select name="legal_entity_id" 
                                         id="legal_entity_id"
                                         onchange="updateSubWarehouses()"
                                         class="block w-full rounded-lg focus:ring-2 focus:ring-blue-500 @error('legal_entity_id') border-red-300 @enderror"
                                         required>
-                                    <option value="">{{ __('Seleccionar razón social...') }}</option>
+                                    <option value="">Seleccionar razón social...</option>
                                     @foreach($legalEntities as $entity)
                                         <option value="{{ $entity->id }}" 
                                                 {{ old('legal_entity_id') == $entity->id ? 'selected' : '' }}>
@@ -73,7 +73,7 @@
                                 @enderror
                                 <p class="mt-1 text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    {{ __('Selecciona la razón social con la que se realiza esta compra') }}
+                                    Selecciona la razón social con la que se realiza esta compra
                                 </p>
                             </div>
 
@@ -119,27 +119,27 @@
                     <div class="bg-white shadow-xl sm:rounded-lg" style="min-height: 400px; overflow: visible;">
                         <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4 flex justify-between items-center">
                             <h3 class="text-xl font-bold text-white">Productos</h3>
-                            <button type="button" 
-                                    @click="addItem"
-                                    class="px-4 py-2 bg-white text-green-600 rounded-lg hover:bg-green-50 font-semibold transition-all">
-                                <svg class="w-5 h-5 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                </svg>
-                                Agregar Producto
-                            </button>
+                            <div class="flex gap-2">
+                                {{-- Botón Importar CSV --}}
+                                <button type="button" 
+                                        @click="$dispatch('open-bulk-import')"
+                                        class="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-all flex items-center">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                    </svg>
+                                    Importar CSV
+                                </button>
+                                
+                            </div>
                         </div>
                         <div class="p-6" style="overflow: visible;">
                             <template x-if="items.length === 0">
-                                <div class="text-center py-12 bg-gray-50 rounded-lg">
+                                <div class="text-center py-8 bg-gray-50 rounded-lg mb-4">
                                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                     </svg>
                                     <p class="mt-2 text-sm text-gray-500">No hay productos agregados</p>
-                                    <button type="button" 
-                                            @click="addItem"
-                                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                        Agregar Primer Producto
-                                    </button>
+                                    <p class="text-xs text-gray-400">Usa el botón de abajo o importa desde CSV</p>
                                 </div>
                             </template>
 
@@ -156,6 +156,7 @@
                                                 </svg>
                                             </button>
                                         </div>
+                                        
 
                                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" style="overflow: visible;">
                                             <!-- Producto con Búsqueda AJAX -->
@@ -167,6 +168,7 @@
                                                     isSearching: false,
                                                     selectedProduct: null
                                                 }"
+                                                x-init="if(item._product) { selectedProduct = item._product; }"
                                                 style="position: relative; overflow: visible; z-index: 100;">
 
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -319,6 +321,15 @@
                                         </div>
                                     </div>
                                 </template>
+                                 <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer"
+                                    @click="addItem">
+                                    <div class="flex items-center justify-center text-gray-500 hover:text-blue-600">
+                                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                        </svg>
+                                        <span class="font-semibold">Agregar Producto</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -389,6 +400,13 @@
             return {
                 items: [],
                 
+                init() {
+                    // Escuchar el evento de importación masiva
+                    window.addEventListener('bulk-import-complete', (event) => {
+                        this.addBulkItems(event.detail.items);
+                    });
+                },
+                
                 addItem() {
                     this.items.push({
                         product_id: '',
@@ -405,6 +423,42 @@
                 calculateSubtotal(index) {
                     const item = this.items[index];
                     item.subtotal = (item.quantity_ordered || 0) * (item.unit_price || 0);
+                },
+                
+                /**
+                 * Agregar múltiples productos desde la importación CSV
+                 */
+                addBulkItems(importedItems) {
+                    if (!importedItems || importedItems.length === 0) return;
+                    
+                    importedItems.forEach(importedItem => {
+                        // Verificar si el producto ya existe en la lista
+                        const existingIndex = this.items.findIndex(
+                            item => item.product_id == importedItem.product_id
+                        );
+                        
+                        if (existingIndex !== -1) {
+                            // Si ya existe, sumar la cantidad
+                            this.items[existingIndex].quantity_ordered += importedItem.quantity_ordered;
+                            this.calculateSubtotal(existingIndex);
+                        } else {
+                            // Si no existe, agregarlo como nuevo
+                            this.items.push({
+                                product_id: importedItem.product_id,
+                                quantity_ordered: importedItem.quantity_ordered,
+                                unit_price: importedItem.unit_price,
+                                subtotal: importedItem.subtotal,
+                                // Datos adicionales para mostrar el producto como "seleccionado"
+                                _imported: true,
+                                _product: {
+                                    id: importedItem.product_id,
+                                    code: importedItem.code,
+                                    name: importedItem.name,
+                                    description: importedItem.description
+                                }
+                            });
+                        }
+                    });
                 },
                 
                 get totalQuantity() {
@@ -506,4 +560,7 @@
         }
     </style>
     @endpush
+
+    @include('components.bulk-import-modal')
+
 </x-app-layout>

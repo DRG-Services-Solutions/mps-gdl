@@ -4,12 +4,14 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-user-md mr-2 text-indigo-600"></i>
-                    {{ $doctor->full_name }}
+                    @if($doctor->middle_name)
+                        Dr. {{ $doctor->first_name }} {{ $doctor->middle_name }} {{ $doctor->last_name }}
+                    @else
+                        Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}
+                    @endif
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">
-                    @if($doctor->specialty)
-                        <i class="fas fa-stethoscope mr-1"></i>{{ $doctor->specialty }} •
-                    @endif
+                   
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $doctor->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                         <i class="fas {{ $doctor->is_active ? 'fa-check-circle' : 'fa-ban' }} mr-1"></i>
                         {{ $doctor->is_active ? 'Activo' : 'Inactivo' }}
@@ -53,22 +55,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
-                            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
-                        </div>
-                        
-                    </div>
-                </div>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-                            <i class="fas fa-stethoscope text-yellow-600 text-2xl"></i>
-                        </div>
-                        
-                    </div>
-                </div>
+               
             </div>
 
             <!-- Doctor Info -->
@@ -83,19 +70,18 @@
                         <div class="space-y-4">
                             <div>
                                 <p class="text-sm font-medium text-gray-500">Nombre Completo</p>
-                                <p class="text-base text-gray-900">{{ $doctor->full_name }}</p>
+                                @if($doctor->middle_name)
+                                    <p class="text-base text-gray-900">{{ $doctor->first_name }} {{ $doctor->middle_name }} {{ $doctor->last_name }}</p>
+                                @else
+                                    <p class="text-base text-gray-900">{{ $doctor->first_name }} {{ $doctor->last_name }}</p>
+                                @endif
                             </div>
                        
                         </div>
 
                         <!-- Hospital y Contacto -->
                         <div class="space-y-4">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">
-                                    <i class="fas fa-hospital mr-1"></i>Hospital
-                                </p>
-                             
-                            </div>
+                           
                             @if($doctor->phone)
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">

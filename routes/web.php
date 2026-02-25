@@ -22,6 +22,21 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SurgicalKitController;
 use App\Http\Controllers\ProductImportController;
 use App\Http\Controllers\ProductTypeController;
+use App\Http\Controllers\SurgicalChecklistController;
+use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\PreAssembledPackageController;
+use App\Http\Controllers\ScheduledSurgeryController;
+use App\Http\Controllers\SurgeryPreparationController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ChecklistConditionalController;
+use App\Http\Controllers\PurchaseOrderBulkImportController;
+use App\Http\Controllers\CfdiXmlController;
+use App\Http\Controllers\InventoryCountController;
+use App\Http\Controllers\ChecklistImportController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\ShippingNoteController;
+
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -52,6 +67,309 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->group(function () {
+    
+    // Listado y creación
+    Route::get('/', [ShippingNoteController::class, 'index'])->name('index');
+    Route::get('/create', [ShippingNoteController::class, 'create'])->name('create');
+    Route::post('/', [ShippingNoteController::class, 'store'])->name('store');
+
+    // Ver, editar, eliminar
+    Route::get('/{shippingNote}', [ShippingNoteController::class, 'show'])->name('show');
+    Route::get('/{shippingNote}/edit', [ShippingNoteController::class, 'edit'])->name('edit');
+    Route::put('/{shippingNote}', [ShippingNoteController::class, 'update'])->name('update');
+    Route::delete('/{shippingNote}', [ShippingNoteController::class, 'destroy'])->name('destroy');
+
+    // ═══════════════════════════════════════════════════════════
+    // PAQUETES PRE-ARMADOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/packages', [ShippingNoteController::class, 'assignPackage'])
+        ->name('assign-package');
+    Route::delete('/{shippingNote}/packages/{package}', [ShippingNoteController::class, 'removePackage'])
+        ->name('remove-package');
+
+    // ═══════════════════════════════════════════════════════════
+    // KITS QUIRÚRGICOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/kits', [ShippingNoteController::class, 'assignKit'])
+        ->name('assign-kit');
+    Route::delete('/{shippingNote}/kits/{kit}', [ShippingNoteController::class, 'removeKit'])
+        ->name('remove-kit');
+
+    // ═══════════════════════════════════════════════════════════
+    // ITEMS INDIVIDUALES
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/items', [ShippingNoteController::class, 'addItem'])
+        ->name('add-item');
+    Route::put('/{shippingNote}/items/{item}', [ShippingNoteController::class, 'updateItem'])
+        ->name('update-item');
+    Route::delete('/{shippingNote}/items/{item}', [ShippingNoteController::class, 'removeItem'])
+        ->name('remove-item');
+
+    // ═══════════════════════════════════════════════════════════
+    // CONCEPTOS DE RENTA
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/rental-concepts', [ShippingNoteController::class, 'addRentalConcept'])
+        ->name('add-rental-concept');
+    Route::delete('/{shippingNote}/rental-concepts/{concept}', [ShippingNoteController::class, 'removeRentalConcept'])
+        ->name('remove-rental-concept');
+
+    // ═══════════════════════════════════════════════════════════
+    // FLUJO DE ESTADOS
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/confirm', [ShippingNoteController::class, 'confirm'])
+        ->name('confirm');
+    Route::post('/{shippingNote}/send', [ShippingNoteController::class, 'send'])
+        ->name('send');
+    Route::post('/{shippingNote}/start-surgery', [ShippingNoteController::class, 'startSurgery'])
+        ->name('start-surgery');
+
+    // Retorno
+    Route::get('/{shippingNote}/return', [ShippingNoteController::class, 'showReturnForm'])
+        ->name('return-form');
+    Route::post('/{shippingNote}/return', [ShippingNoteController::class, 'registerReturn'])
+        ->name('register-return');
+
+    // Completar y cancelar
+    Route::post('/{shippingNote}/complete', [ShippingNoteController::class, 'complete'])
+        ->name('complete');
+    Route::post('/{shippingNote}/cancel', [ShippingNoteController::class, 'cancel'])
+        ->name('cancel');
+
+    // ═══════════════════════════════════════════════════════════
+    // RE-EVALUAR CHECKLIST
+    // ═══════════════════════════════════════════════════════════
+    Route::post('/{shippingNote}/reevaluate', [ShippingNoteController::class, 'reevaluateChecklist'])
+        ->name('reevaluate');
+
+    // ═══════════════════════════════════════════════════════════
+    // API (AJAX para Alpine.js)
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/api/search-products', [ShippingNoteController::class, 'searchAvailableProducts'])
+        ->name('api.search-products');
+    Route::post('/api/preview-checklist', [ShippingNoteController::class, 'previewChecklist'])
+        ->name('api.preview-checklist');
+});
+
+
+
+
+// Rutas de pre-armados quirúrgicos (RFID)
+Route::post('pre-assembled/{preAssembled}/rfid-compare', [PreAssembledPackageController::class, 'rfidCompare'])
+    ->name('pre-assembled.rfid-compare');
+
+Route::post('pre-assembled/{preAssembled}/rfid-add', [PreAssembledPackageController::class, 'rfidAddProduct'])
+    ->name('pre-assembled.rfid-add');
+
+Route::get('pre-assembled/{preAssembled}/search-epc', [PreAssembledPackageController::class, 'searchEpc'])
+    ->name('pre-assembled.search-epc');
+
+    
+
+Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+Route::get('/inventory/movements', [App\Http\Controllers\InventoryController::class, 'movements'])
+    ->name('inventory.movements');
+
+
+    //RUTA PARA CARGAR CONFIGURACIONES DE HOSPITALES
+Route::get('/api/hospitals/{hospital}/configs', [HospitalController::class, 'getConfigs'])->name('api.hospitals.configs');
+
+Route::prefix('checklist-items/{item}/conditionals')->name('checklist-conditionals.')->group(function () {
+        Route::get('/', [ChecklistConditionalController::class, 'index'])->name('index');
+        Route::post('/', [ChecklistConditionalController::class, 'store'])->name('store');
+        Route::put('/{conditional}', [ChecklistConditionalController::class, 'update'])->name('update');
+        Route::delete('/{conditional}', [ChecklistConditionalController::class, 'destroy'])->name('destroy');
+        Route::post('/preview', [ChecklistConditionalController::class, 'preview'])->name('preview');
+    });
+
+Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'getFormData'])->name('conditional-form-data');
+
+
+    // ====================================================================
+    // MÓDULO 1: SURGICAL CHECKLISTS (Plantillas de Check Lists)
+    // ====================================================================
+    Route::prefix('checklists')->name('checklists.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [SurgicalChecklistController::class, 'index'])->name('index');
+        Route::get('/create', [SurgicalChecklistController::class, 'create'])->name('create');
+        Route::post('/', [SurgicalChecklistController::class, 'store'])->name('store');
+        
+        Route::get('/import', [ChecklistImportController::class, 'showForm'])->name('import.form');
+        Route::post('/import/preview', [ChecklistImportController::class, 'preview'])->name('import.preview');
+        Route::post('/import/confirm', [ChecklistImportController::class, 'confirm'])->name('import.confirm');
+        Route::get('/import/template', [ChecklistImportController::class, 'downloadTemplate'])->name('import.template');
+
+        
+        Route::get('/{checklist}', [SurgicalChecklistController::class, 'show'])->name('show');
+        Route::get('/{checklist}/edit', [SurgicalChecklistController::class, 'edit'])->name('edit');
+        Route::put('/{checklist}', [SurgicalChecklistController::class, 'update'])->name('update');
+        Route::delete('/{checklist}', [SurgicalChecklistController::class, 'destroy'])->name('destroy');
+
+        // Gestión de items
+        Route::get('/{checklist}/items', [SurgicalChecklistController::class, 'items'])->name('items');
+        
+        // Duplicar check list
+        Route::post('/{checklist}/duplicate', [SurgicalChecklistController::class, 'duplicate'])->name('duplicate');
+    });
+
+    // ====================================================================
+    // MÓDULO 2: CHECKLIST ITEMS (Items y Condicionales)
+    // ====================================================================
+    Route::prefix('checklist-items')->name('checklist-items.')->group(function () {
+        
+        
+
+        // Agregar item a un check list
+        Route::post('/checklists/{checklist}', [ChecklistItemController::class, 'store'])->name('store');
+
+        Route::get('/checklists/{checklist}/bulk-template', [ChecklistItemController::class, 'bulkTemplate'])->name('bulk-template');
+        Route::post('/checklists/{checklist}/bulk-import', [ChecklistItemController::class, 'bulkImport'])->name('bulk-import');
+
+        
+        // Actualizar item
+        Route::put('/{item}', [ChecklistItemController::class, 'update'])->name('update');
+        
+        // Eliminar item
+        Route::delete('/{item}', [ChecklistItemController::class, 'destroy'])->name('destroy');
+        
+        // Reordenar items
+        Route::post('/checklists/{checklist}/reorder', [ChecklistItemController::class, 'reorder'])->name('reorder');
+        
+        // ---- CONDICIONALES ----
+        
+        // Agregar condicional a un item
+        //Route::post('/{item}/conditionals', [ChecklistItemController::class, 'addConditional'])->name('conditionals.add');
+        
+        // Eliminar condicional
+        Route::delete('/conditionals/{conditional}', [ChecklistItemController::class, 'removeConditional'])->name('conditionals.remove');
+    });
+
+    // ====================================================================
+    // MÓDULO 3: PRE-ASSEMBLED PACKAGES (Paquetes Pre-Armados)
+    // ====================================================================
+    Route::prefix('pre-assembled')->name('pre-assembled.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [PreAssembledPackageController::class, 'index'])->name('index');
+        Route::get('/create', [PreAssembledPackageController::class, 'create'])->name('create');
+        Route::post('/', [PreAssembledPackageController::class, 'store'])->name('store');
+        Route::get('/{preAssembled}', [PreAssembledPackageController::class, 'show'])->name('show');
+        Route::get('/{preAssembled}/edit', [PreAssembledPackageController::class, 'edit'])->name('edit');
+        Route::put('/{preAssembled}', [PreAssembledPackageController::class, 'update'])->name('update');
+        Route::delete('/{preAssembled}', [PreAssembledPackageController::class, 'destroy'])->name('destroy');
+
+        // Gestión de contenido del paquete
+        Route::post('/{preAssembled}/add-product', [PreAssembledPackageController::class, 'addProduct'])->name('add-product');
+        Route::post('/{preAssembled}/remove-product', [PreAssembledPackageController::class, 'removeProduct'])->name('remove-product');
+        Route::post('/{preAssembled}/bulk-scan', [PreAssembledPackageController::class, 'bulkScan'])->name('bulk-scan');
+        
+        // Cambiar estado
+        Route::post('/{preAssembled}/update-status', [PreAssembledPackageController::class, 'updateStatus'])->name('update-status');
+    });
+
+    // ====================================================================
+    // MÓDULO 4: SCHEDULED SURGERIES (Cirugías Programadas)
+    // ====================================================================
+    Route::prefix('surgeries')->name('surgeries.')->group(function () {
+        
+        // CRUD básico
+        Route::get('/', [ScheduledSurgeryController::class, 'index'])->name('index');
+        Route::get('/create', [ScheduledSurgeryController::class, 'create'])->name('create');
+        Route::post('/', [ScheduledSurgeryController::class, 'store'])->name('store');
+        Route::get('/{surgery}', [ScheduledSurgeryController::class, 'show'])->name('show');
+        Route::get('/{surgery}/edit', [ScheduledSurgeryController::class, 'edit'])->name('edit');
+        Route::put('/{surgery}', [ScheduledSurgeryController::class, 'update'])->name('update');
+        
+        // Cancelar cirugía
+        Route::post('/{surgery}/cancel', [ScheduledSurgeryController::class, 'cancel'])->name('cancel');
+        
+        // Ver check list aplicado
+        Route::get('/{surgery}/checklist', [ScheduledSurgeryController::class, 'viewChecklist'])->name('checklist');
+
+        // ---- PREPARACIONES (FLUJO COMPLETO) ----
+        Route::prefix('{surgery}/preparations')->name('preparations.')->group(function () {
+            
+            // 1. Iniciar preparación
+            Route::post('/start', [SurgeryPreparationController::class, 'start'])->name('start');
+            
+            // 2. Seleccionar paquete pre-armado
+            Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage');
+            Route::post('/assign-package', [SurgeryPreparationController::class, 'assignPackage'])->name('assignPackage');
+            
+            // 3. Ver comparación (Check List vs Pre-Armado)
+            Route::get('/compare', [SurgeryPreparationController::class, 'compare'])->name('compare');
+            
+            // 4. Surtir faltantes (Picking)
+            Route::get('/picking', [SurgeryPreparationController::class, 'picking'])->name('picking');
+
+            //MODO MANUAL
+            Route::post('/scan-barcode', [SurgeryPreparationController::class, 'scanBarcode'])->name('scanBarcode');
+
+            //MODO RFID Y CONFIRMACION
+            Route::get('/search-epc', [SurgeryPreparationController::class, 'searchByEPC'])->name('searchEPC');
+            
+            //MODO RFID CONFIRMAR Y AGREGAR
+            Route::post('/confirm-rfid', [SurgeryPreparationController::class, 'confirmRFID'])->name('confirmRFID');
+
+            //DEPRECADO MANTENER POR COMPATIBILIDAD
+            Route::post('scan', [SurgeryPreparationController::class, 'scanProduct'])->name('scan');
+
+            Route::post('/add-picked-product', [SurgeryPreparationController::class, 'addPickedProduct'])->name('add-picked-product');
+            
+            // 5. Verificar y completar
+            Route::post('verify', [SurgeryPreparationController::class, 'verify'])->name('verify');
+            Route::post('cancel', [SurgeryPreparationController::class, 'cancel'])->name('cancel');
+            
+            // 6. Resumen
+            Route::get('summary', [SurgeryPreparationController::class, 'summary'])->name('summary');
+            Route::get('status', [SurgeryPreparationController::class, 'status'])->name('status');
+            Route::get('items', [SurgeryPreparationController::class, 'items'])->name('items');
+        });
+    });
+
+    
+
+    // ====================================================================
+    // MÓDULO 5: INVOICES (Remisiones)
+    // ====================================================================
+    Route::prefix('invoices')->name('invoices.')->group(function () {
+        
+        // Listado
+        Route::get('/', [InvoiceController::class, 'index'])->name('index');
+        
+        // Crear desde cirugía
+        Route::get('/create-from-surgery/{surgery}', [InvoiceController::class, 'createFromSurgery'])->name('createFromSurgery');
+        Route::post('/store-from-surgery/{surgery}', [InvoiceController::class, 'store'])->name('store');
+        
+        // Ver remisión
+        Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+        
+        // Acciones sobre remisión
+        Route::post('/{invoice}/issue', [InvoiceController::class, 'issue'])->name('issue');
+        Route::post('/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('cancel');
+        Route::post('/{invoice}/mark-as-paid', [InvoiceController::class, 'markAsPaid'])->name('markAsPaid');
+        
+        // Generar PDF
+        Route::get('/{invoice}/pdf', [InvoiceController::class, 'generatePdf'])->name('pdf');
+        Route::get('/{invoice}/preview-pdf', [InvoiceController::class, 'previewPdf'])->name('previewPdf');
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+
+    });
+
+      Route::get('/dashboard', function () {
+        // Datos del dashboard
+        $availablePackages = \App\Models\PreAssembledPackage::available()->count();
+        $activeChecklists = \App\Models\SurgicalChecklist::active()->count();
+        $pendingInvoices = \App\Models\Invoice::where('status', 'draft')->count();
+
+        return view('dashboard', compact(
+            'availablePackages',
+            'activeChecklists',
+            'pendingInvoices'
+        ));
+    })->name('dashboard');
 
     // ========================================
     // Tipos de Productos
@@ -144,6 +462,22 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('purchase-orders.mark-unpaid');
     Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
         ->name('purchase-orders.receive');
+
+    // Descargar template CSV básico
+    Route::get('/bulk-import/template', [PurchaseOrderBulkImportController::class, 'downloadTemplate'])
+        ->name('purchase-orders.bulk-import.template');
+    
+    // Descargar template CSV con catálogo de productos
+    Route::get('/bulk-import/template-catalog', [PurchaseOrderBulkImportController::class, 'downloadTemplateWithCatalog'])
+        ->name('purchase-orders.bulk-import.template-catalog');
+    
+    // Procesar archivo CSV (AJAX)
+    Route::post('/bulk-import/process', [PurchaseOrderBulkImportController::class, 'import'])
+        ->name('purchase-orders.bulk-import.process');
+
+    //procesar xml
+    Route::post('/purchase-orders/{purchaseOrder}/process-cfdi', [CfdiXmlController::class, 'processForReceipt'])
+        ->name('purchase-orders.process-cfdi');
     
     // Resource de órdenes de compra
     Route::resource('purchase-orders', PurchaseOrderController::class);
@@ -161,26 +495,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     });
 
     // ========================================
-    // HOSPITALES
+    // HOSPITALES ruta tipo recurso
     // ========================================
-    Route::prefix('hospitals')->name('hospitals.')->group(function () {
-        // CRUD
-        Route::get('/', [HospitalController::class, 'index'])->name('index');
-        Route::get('/create', [HospitalController::class, 'create'])->name('create');
-        Route::post('/', [HospitalController::class, 'store'])->name('store');
-        Route::get('/{hospital}', [HospitalController::class, 'show'])->name('show');
-        Route::get('/{hospital}/edit', [HospitalController::class, 'edit'])->name('edit');
-        Route::put('/{hospital}', [HospitalController::class, 'update'])->name('update');
-        Route::delete('/{hospital}', [HospitalController::class, 'destroy'])->name('destroy');
-        
-        // Acciones especiales
-        Route::post('/{hospital}/toggle-status', [HospitalController::class, 'toggleStatus'])
-            ->name('toggle-status');
+    Route::prefix('hospitals')->group(function () {
+       Route::resource('hospitals', HospitalController::class);
     });
 
-    // API para Select2 de Hospitales
-    Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
-        ->name('api.hospitals.select2');
+   
 
     // ========================================
     // DOCTORES
@@ -297,6 +618,97 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('sub-warehouses', SubWarehouseController::class);
     Route::patch('sub-warehouses/{subWarehouse}/toggle-status', [SubWarehouseController::class, 'toggleStatus'])
         ->name('sub-warehouses.toggle-status');
+
+    // Listado y CRUD básico
+
+    Route::get('inventory-counts', [InventoryCountController::class, 'index'])
+        ->name('inventory-counts.index');
+    
+    Route::get('inventory-counts/create', [InventoryCountController::class, 'create'])
+        ->name('inventory-counts.create');
+    
+    Route::post('inventory-counts', [InventoryCountController::class, 'store'])
+        ->name('inventory-counts.store');
+    
+    Route::get('inventory-counts/{inventoryCount}', [InventoryCountController::class, 'show'])
+        ->name('inventory-counts.show');
+    
+    // Iniciar conteo
+    Route::post('inventory-counts/{inventoryCount}/start', [InventoryCountController::class, 'start'])
+        ->name('inventory-counts.start');
+    
+    // Pantalla de conteo (escaneo)
+    Route::get('inventory-counts/{inventoryCount}/count', [InventoryCountController::class, 'count'])
+        ->name('inventory-counts.count');
+    
+    // Procesar escaneo (AJAX) - Busca en ProductUnit
+    Route::post('inventory-counts/{inventoryCount}/scan', [InventoryCountController::class, 'processScan'])
+        ->name('inventory-counts.process-scan');
+    
+    // Actualizar cantidad de item (AJAX)
+    Route::put('inventory-counts/{inventoryCount}/items/{item}/quantity', [InventoryCountController::class, 'updateItemQuantity'])
+        ->name('inventory-counts.update-item-quantity');
+    
+    // Marcar item como no encontrado/faltante (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/not-found', [InventoryCountController::class, 'markNotFound'])
+        ->name('inventory-counts.mark-not-found');
+    
+    // Marcar item como dañado (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/damaged', [InventoryCountController::class, 'markDamaged'])
+        ->name('inventory-counts.mark-damaged');
+    
+    // Recontar item (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/recount', [InventoryCountController::class, 'recountItem'])
+        ->name('inventory-counts.recount-item');
+    
+    // Completar conteo
+    Route::post('inventory-counts/{inventoryCount}/complete', [InventoryCountController::class, 'complete'])
+        ->name('inventory-counts.complete');
+    
+    // Pantalla de revisión de discrepancias
+    Route::get('inventory-counts/{inventoryCount}/review', [InventoryCountController::class, 'review'])
+        ->name('inventory-counts.review');
+    
+    // Justificar discrepancia (AJAX)
+    Route::post('inventory-counts/{inventoryCount}/items/{item}/justify', [InventoryCountController::class, 'justifyDiscrepancy'])
+        ->name('inventory-counts.justify-discrepancy');
+    
+    // Generar ajustes automáticos
+    Route::post('inventory-counts/{inventoryCount}/generate-adjustments', [InventoryCountController::class, 'generateAdjustments'])
+        ->name('inventory-counts.generate-adjustments');
+    
+    // Ver ajustes del inventario
+    Route::get('inventory-counts/{inventoryCount}/adjustments', [InventoryCountController::class, 'adjustments'])
+        ->name('inventory-counts.adjustments');
+    
+    // Aprobar inventario
+    Route::post('inventory-counts/{inventoryCount}/approve', [InventoryCountController::class, 'approve'])
+        ->name('inventory-counts.approve');
+    
+    // Cancelar inventario
+    Route::post('inventory-counts/{inventoryCount}/cancel', [InventoryCountController::class, 'cancel'])
+        ->name('inventory-counts.cancel');
+    
+    // Reporte
+    Route::get('inventory-counts/{inventoryCount}/report', [InventoryCountController::class, 'report'])
+        ->name('inventory-counts.report');
+    
+    // Exportar PDF
+    Route::get('inventory-counts/{inventoryCount}/export-pdf', [InventoryCountController::class, 'exportPdf'])
+        ->name('inventory-counts.export-pdf');
+    
+    // ==================== AJUSTES DE INVENTARIO ====================
+    
+    // Aprobar ajuste individual
+    Route::post('inventory-adjustments/{adjustment}/approve', [InventoryCountController::class, 'approveAdjustment'])
+        ->name('inventory-adjustments.approve');
+    
+    // Rechazar ajuste
+    Route::post('inventory-adjustments/{adjustment}/reject', [InventoryCountController::class, 'rejectAdjustment'])
+        ->name('inventory-adjustments.reject');
+
+    Route::resource('brands', BrandController::class);
+
 });
 
 require __DIR__.'/auth.php';

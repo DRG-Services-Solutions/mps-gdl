@@ -34,7 +34,7 @@
                         <a href="{{ route('products.create') }}" 
                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5">
                             <i class="fas fa-plus mr-2"></i>
-                            'Agregar al Catálogo
+                            Nuevo Producto
                         </a>
                         <a href="{{ route('products.import.form') }}" 
                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
@@ -273,25 +273,13 @@
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     {{ __('Tipo de Tracking') }}
                                 </th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider relative group">
-                                    <div class="flex items-center justify-center">
-                                        {{ __('Esterilización') }}
-                                    </div>
-                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
-                                        {{ __('Solo los productos de tipo instrumental requieren esterilización.') }}
-                                    </div>
-                                </th>
-                                <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider relative group">
-                                    <div class="flex items-center justify-center">
-                                        {{ __('Refrigeración') }}
-                                    </div>
-                                    <div class="absolute z-10 hidden group-hover:block px-3 py-2 text-xs font-normal text-white bg-indigo-600 rounded-lg whitespace-nowrap top-full mt-1 transform -translate-x-1/2 left-1/2 shadow-lg">
-                                        {{ __('Solo los productos clasificados requieren Refrigeración.') }}
-                                    </div>
-                                </th>
+                                
+                                <!--
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider hidden xl:table-cell">
-                                    {{ __('Estado') }}
+                                    Estado
                                 </th>
+                                -->
+
                                 <th class="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                     {{ __('Acciones') }}
                                 </th>
@@ -325,15 +313,15 @@
                                     
                                     <!-- Proveedor -->
                                     <td class="px-6 py-4 hidden lg:table-cell">
-                                        <div class="text-sm text-gray-900 text-center">{{ $product->supplier->name ?? 'Sin Proveedor' }}</div>
+                                        <div class="text-sm text-gray-900 text-center capitalize">{{ Str::lower($product->supplier->name ?? 'Sin Proveedor') }}</div>
                                     </td>
 
                                     <!-- Categoría -->
                                     <td class="px-6 py-4 hidden md:table-cell">
                                         @if($product->category)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
                                                 <i class="fas fa-tag mr-1 text-xs"></i>
-                                                {{ $product->category->name }}
+                                                {{ Str::lower($product->category->name) }}
                                             </span>
                                         @else
                                             <span class="text-sm text-gray-400">-</span>
@@ -364,25 +352,11 @@
                                         @endswitch
                                     </td>
 
-                                    <!-- Esterilización -->
-                                    <td class="px-6 py-4 text-center">
-                                        @if($product->requires_sterilization)
-                                            <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Esterilización"></i>
-                                        @else
-                                            <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Esterilización"></i>
-                                        @endif
-                                    </td>
+                                   
 
-                                    <!-- Refrigeración -->
-                                    <td class="px-6 py-4 text-center">
-                                        @if($product->requires_refrigeration)
-                                            <i class="fas fa-check-circle text-green-500 text-lg" title="Requiere Refrigeración"></i>
-                                        @else
-                                            <i class="fas fa-times-circle text-red-400 text-lg" title="No Requiere Refrigeración"></i>
-                                        @endif
-                                    </td>
-
+                                    
                                     <!-- Estado -->
+                                    <!--
                                     <td class="px-6 py-4 text-center hidden xl:table-cell">
                                         @switch($product->status)
                                             @case('active')
@@ -405,6 +379,7 @@
                                                 @break
                                         @endswitch
                                     </td>
+                                    -->
 
                                     <!-- Acciones -->
                                     <td class="px-6 py-4 text-right">
@@ -502,7 +477,7 @@
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500">Tracking RFID</p>
                             <p class="text-2xl font-bold text-gray-900">
-                                {{ $products->where('tracking_type', 'rfid')->count() }}
+                                {{ $trackingCounts['rfid'] }}
                             </p>
                         </div>
                     </div>

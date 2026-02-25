@@ -137,9 +137,7 @@
                              
                                 
                                
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Contacto
-                                </th>
+                              
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Estado
                                 </th>
@@ -166,20 +164,7 @@
                                         </div>
                                     </td>
                                    
-                                    
-                                    
-                                    <td class="px-6 py-4">
-                                        @if($doctor->telefono)
-                                            @if($doctor->telefono)
-                                                <div class="text-sm text-gray-900">
-                                                    <i class="fas fa-phone mr-1"></i>{{ $doctor->telefono }}
-                                                </div>
-                                            @endif
-                                            
-                                        @else
-                                            <span class="text-sm text-gray-400">Sin contacto</span>
-                                        @endif
-                                    </td>
+
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <form action="{{ route('doctors.toggle-status', $doctor) }}" method="POST">
                                             @csrf

@@ -9,16 +9,27 @@ class Hospital extends Model
 {
     protected $fillable = [
         'name',
-        'phone',
-        'email',
-        'address',
+        'rfc',
         'is_active',
-        'notes',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+
+    // Relaciones pivote
+    public function configs()
+    {
+        return $this->hasMany(HospitalModalityConfig::class);
+    }
+
+    public function modalities()
+    {
+        return $this->belongsToMany(Modality::class, 'hospital_modality_configs')
+                            ->withPivot('legal_entity_id')
+                            ->withTimestamps();    
+    }
 
     /**
      * RELACIONES
@@ -27,6 +38,11 @@ class Hospital extends Model
     public function quotations(): HasMany
     {
         return $this->hasMany(Quotation::class);
+    }
+
+    public function legalEntity()
+    {
+        return $this->belongsTo(LegalEntity::class);
     }
 
     /**

@@ -21,7 +21,7 @@
 
 <nav @mouseenter="desktopSidebarOpen = true" @mouseleave="desktopSidebarOpen = false"
      x-data="{ 
-         inventoryMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') ? 'true' : 'false' }},
+         inventoryMenuOpen: {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'true' : 'false' }},
          purchasesMenuOpen: {{ request()->routeIs('purchase-orders.*') || request()->routeIs('suppliers.*') ? 'true' : 'false' }},
          catalogsMenuOpen: {{ request()->routeIs('storage_locations.*') || request()->routeIs('legal-entities.*') || request()->routeIs('categories.*') || request()->routeIs('subcategories.*') || request()->routeIs('specialties.*') ? 'true' : 'false' }}
      }"
@@ -123,110 +123,162 @@
                 </div>
 
                 <!-- SECCIÓN: CIRUGÍAS -->
-                <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cirugías</p>
-                </div>
+                    <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
+                        <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cirugías</p>
+                    </div>
 
-                <!-- Cotizaciones Dropdown -->
-                <div class="relative" x-data="{ 
-                    quotationsMenuOpen: {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') ? 'true' : 'false' }}
-                }">
-                    <button @click="quotationsMenuOpen = !quotationsMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
-                        <div class="flex items-center space-x-3 flex-1 min-w-0">
-                            <div class="flex-shrink-0">
-                                <i class="fa-solid fa-notes-medical fa-fw text-lg"></i>
+                    <!-- Cirugías Dropdown -->
+                    <div class="relative" x-data="{ 
+                        quotationsMenuOpen: {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') || request()->routeIs('checklists.*') || request()->routeIs('pre-assembled.*') || request()->routeIs('surgeries.*') ? 'true' : 'false' }}
+                    }">
+                        <button @click="quotationsMenuOpen = !quotationsMenuOpen"
+                                class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('quotations.*') || request()->routeIs('hospitals.*') || request()->routeIs('doctors.*') || request()->routeIs('sales.*') || request()->routeIs('surgical-kits.*') || request()->routeIs('checklists.*') || request()->routeIs('pre-assembled.*') || request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                <div class="flex-shrink-0">
+                                    <i class="fa-solid fa-notes-medical fa-fw text-lg"></i>
+                                </div>
+                                <span class="truncate transition-opacity duration-300" 
+                                    :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
+                                    {{ __('Cirugías') }}
+                                </span>
                             </div>
-                            <span class="truncate transition-opacity duration-300" 
-                                :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
-                                {{ __('Cotizaciones') }}
-                            </span>
+                            <div class="flex-shrink-0 transition-all duration-300" 
+                                :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
+                                <i class="fas fa-chevron-down text-xs transition-transform duration-200" 
+                                :class="{ 'rotate-180': quotationsMenuOpen }"></i>
+                            </div>
+                        </button>
+
+                        <!-- Submenú Cirugías (expandido) -->
+                        <div x-show="quotationsMenuOpen && desktopSidebarOpen" 
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 -translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 -translate-y-2"
+                            class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
+                            
+                            <!-- CHECK LISTS - NUEVO -->
+                            <a href="{{ route('checklists.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('checklists.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-clipboard-list fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Check Lists') }}</span>
+                            </a>
+
+                            <!-- PAQUETES PRE-ARMADOS - NUEVO -->
+                            <a href="{{ route('pre-assembled.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('pre-assembled.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-box-open fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Pre-Armados') }}</span>
+                            </a>
+
+                            <!-- CIRUGÍAS PROGRAMADAS - NUEVO -->
+                            <a href="{{ route('surgeries.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-calendar-check fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Programadas') }}</span>
+                            </a>
+
+                            <!-- Remisiones -->
+                            <a href="{{ route('shipping-notes.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('quotations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-file-invoice fa-fw text-sm"></i>
+                                <span class="truncate">Remisiones</span>
+                            </a>
+
+                            
+
+                            <!-- Ventas (existente) -->
+                            <a href="{{ route('sales.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-dollar-sign fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Ventas') }}</span>
+                            </a>
+
+                            <!-- Kits Quirúrgicos (existente) -->
+                            <a href="{{ route('surgical-kits.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-kit-medical fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Kits') }}</span>
+                            </a>
+
+                            <!-- Hospitales (existente) -->
+                            <a href="{{ route('hospitals.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-hospital fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Hospitales') }}</span>
+                            </a>
+
+                            <!-- Doctores (existente) -->
+                            <a href="{{ route('doctors.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('doctors.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-user-md fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Doctores') }}</span>
+                            </a>
                         </div>
-                        <div class="flex-shrink-0 transition-all duration-300" 
-                            :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
-                            <i class="fas fa-chevron-down text-xs transition-transform duration-200" 
-                            :class="{ 'rotate-180': quotationsMenuOpen }"></i>
+
+                        <!-- Tooltip Cirugías (colapsado) -->
+                        <div x-show="!desktopSidebarOpen && quotationsMenuOpen" 
+                            x-transition
+                            @click.outside="quotationsMenuOpen = false"
+                            class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                            <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                                {{ __('Cirugías') }}
+                            </div>
+                            
+                            <!-- CHECK LISTS EN TOOLTIP -->
+                            <a href="{{ route('checklists.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('checklists.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-clipboard-list fa-fw text-sm"></i>
+                                <span>{{ __('Check Lists') }}</span>
+                            </a>
+
+                            <!-- PAQUETES PRE-ARMADOS EN TOOLTIP -->
+                            <a href="{{ route('pre-assembled.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('pre-assembled.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-box-open fa-fw text-sm"></i>
+                                <span>{{ __('Pre-Armados') }}</span>
+                            </a>
+
+                            <!-- CIRUGÍAS PROGRAMADAS EN TOOLTIP -->
+                            <a href="{{ route('surgeries.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-calendar-check fa-fw text-sm"></i>
+                                <span>{{ __('Programadas') }}</span>
+                            </a>
+
+                            <a href="{{ route('quotations.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('quotations.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-file-invoice fa-fw text-sm"></i>
+                                <span>{{ __('Remisiones') }}</span>
+                            </a>
+                            
+                            <a href="{{ route('sales.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-dollar-sign fa-fw text-sm"></i>
+                                <span>{{ __('Ventas') }}</span>
+                            </a>
+                            
+                            <a href="{{ route('surgical-kits.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-kit-medical fa-fw text-sm"></i>
+                                <span>{{ __('Kits') }}</span>
+                            </a>
+                            
+                            <a href="{{ route('hospitals.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-hospital fa-fw text-sm"></i>
+                                <span>{{ __('Hospitales') }}</span>
+                            </a>
+                            
+                            <a href="{{ route('doctors.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('doctors.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-user-md fa-fw text-sm"></i>
+                                <span>{{ __('Doctores') }}</span>
+                            </a>
                         </div>
-                    </button>
-
-                    <!-- Submenú Cotizaciones (expandido) -->
-                    <div x-show="quotationsMenuOpen && desktopSidebarOpen" 
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 -translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-150"
-                        x-transition:leave-start="opacity-100 translate-y-0"
-                        x-transition:leave-end="opacity-0 -translate-y-2"
-                        class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
-                        
-                        <a href="{{ route('quotations.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('quotations.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-file-invoice fa-fw text-sm"></i>
-                            <span class="truncate">Remisiones</span>
-                        </a>
-
-                        <a href="{{ route('sales.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-dollar-sign fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Ventas') }}</span>
-                        </a>
-
-                        <!-- ⭐ PREARMADOS QUIRÚRGICOS - NUEVO -->
-                        <a href="{{ route('surgical-kits.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-kit-medical fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Prearmados') }}</span>
-                        </a>
-
-                        <a href="{{ route('hospitals.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-hospital fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Hospitales') }}</span>
-                        </a>
-
-                        <a href="{{ route('doctors.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('doctors.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-user-md fa-fw text-sm"></i>
-                            <span class="truncate">{{ __('Doctores') }}</span>
-                        </a>
                     </div>
-
-                    <!-- Tooltip Cotizaciones (colapsado) -->
-                    <div x-show="!desktopSidebarOpen && quotationsMenuOpen" 
-                        x-transition
-                        @click.outside="quotationsMenuOpen = false"
-                        class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                            {{ __('Cirugías') }}
-                        </div>
-                        <a href="{{ route('quotations.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('quotations.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-file-invoice fa-fw text-sm"></i>
-                            <span>{{ __('Cotizaciones') }}</span>
-                        </a>
-                        <a href="{{ route('sales.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-dollar-sign fa-fw text-sm"></i>
-                            <span>{{ __('Ventas') }}</span>
-                        </a>
-                        <!-- ⭐ PREARMADOS EN TOOLTIP -->
-                        <a href="{{ route('surgical-kits.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-kit-medical fa-fw text-sm"></i>
-                            <span>{{ __('Prearmados') }}</span>
-                        </a>
-                        <a href="{{ route('hospitals.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-hospital fa-fw text-sm"></i>
-                            <span>{{ __('Hospitales') }}</span>
-                        </a>
-                        <a href="{{ route('doctors.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('doctors.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-user-md fa-fw text-sm"></i>
-                            <span>{{ __('Doctores') }}</span>
-                        </a>
-                    </div>
-                </div>
 
 
                 <!-- SECCIÓN: INVENTARIO -->
@@ -237,7 +289,8 @@
                 <!-- Inventario Dropdown -->
                 <div class="relative">
                     <button @click="inventoryMenuOpen = !inventoryMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+
                         <div class="flex items-center space-x-3 flex-1 min-w-0">
                             <div class="flex-shrink-0">
                                 <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
@@ -267,19 +320,32 @@
                         <a href="{{ route('products.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('products.index') || request()->routeIs('products.create') || request()->routeIs('products.edit') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-box fa-fw text-sm"></i>
-                            <span class="truncate">Productos</span>
+                            <span class="truncate">Catalogo</span>
                         </a>
 
                         <a href="{{ route('product-units.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span class="truncate">Unidades</span>
+                            <span class="truncate">Unidades RFID</span>
                         </a>
 
                         <a href="{{ route('product_layouts.index') }}" 
                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
                             <span class="truncate">Lay Out</span>
+                        </a>
+
+                        <!-- Toma de Inventarios -->
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span class="truncate">Toma de Inventarios</span>
+                        </a>
+
+                        <a href="{{ route('inventory.movements') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-history fa-fw text-sm"></i>
+                            <span class="truncate">Movimientos (Kardex)</span>
                         </a>
                     </div>
 
@@ -299,12 +365,18 @@
                         <a href="{{ route('product-units.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span>Unidades</span>
+                            <span>Unidades RFID</span>
                         </a>
                         <a href="{{ route('product_layouts.index') }}" 
                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                             <i class="fas fa-sitemap fa-fw text-sm"></i>
                             <span>Lay Out</span>
+                        </a>
+
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span>Toma de Inventarios</span>
                         </a>
                     </div>
                 </div>

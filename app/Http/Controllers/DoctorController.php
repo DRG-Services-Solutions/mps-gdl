@@ -65,8 +65,9 @@ class DoctorController extends Controller
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:100',
+            'middle_name' => 'nullable|string|max:100',
             'last_name' => 'required|string|max:100',
-            'telefono' => 'required|string|max:50',
+            'phone' => 'required|string|max:50',
             'is_active' => 'boolean',
 
         ]);
@@ -114,15 +115,10 @@ class DoctorController extends Controller
     {
         $validated = $request->validate([
             'first_name' => 'required|string|max:100',
+            'middle_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'specialty' => 'nullable|string|max:100',
-            'license_number' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
-            'mobile' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'primary_hospital_id' => 'nullable|exists:hospitals,id',
             'is_active' => 'boolean',
-            'notes' => 'nullable|string',
         ]);
 
         $doctor->update($validated);

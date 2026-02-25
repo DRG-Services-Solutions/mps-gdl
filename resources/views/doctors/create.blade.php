@@ -46,11 +46,27 @@
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
+                            <!-- Apellido -->
+                            <div>
+                                <label for="middle_name" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Segundo Nombre o Primer Apellido <span class="text-red-500">(Opcional)</span>
+                                </label>
+                                <input type="text" 
+                                       id="middle_name" 
+                                       name="middle_name" 
+                                       value="{{ old('middle_name') }}"
+                                       
+                                       placeholder="Ej: Juan Carlos"
+                                       class="w-full  focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('middle_name') border-red-500 @enderror">
+                                @error('middle_name')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
 
                             <!-- Apellido -->
                             <div>
                                 <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Apellido(s) <span class="text-red-500">*</span>
+                                    Segundo Apellido(s) <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" 
                                        id="last_name" 
@@ -66,16 +82,16 @@
 
                             <!-- Teléfono -->
                             <div>
-                                <label for="telefono" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
                                     Teléfono
                                 </label>
                                 <input type="text" 
-                                       id="telefono" 
-                                       name="telefono" 
-                                       value="{{ old('telefono') }}"
-                                       placeholder="Ej: (81) 1234-5678, 8112345678..."
+                                       id="phone" 
+                                       name="phone" 
+                                       value="{{ old('phone') }}"
+                                       placeholder="Ej: (81) 1234-5678"
                                        class="w-full focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm @error('phone') border-red-500 @enderror">
-                                @error('telefono')
+                                @error('phone')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
@@ -88,8 +104,8 @@
                                 <select id="is_active" 
                                         name="is_active" 
                                         class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm">
-                                    <option value="1" {{ old('is_active', 1) == 1 ? 'selected' : '' }}>Activo</option>
                                     <option value="0" {{ old('is_active') == 0 ? 'selected' : '' }}>Inactivo</option>
+                                    <option value="1" {{ old('is_active', 1) == 1 ? 'selected' : '' }}>Activo</option>
                                 </select>
                             </div>
 

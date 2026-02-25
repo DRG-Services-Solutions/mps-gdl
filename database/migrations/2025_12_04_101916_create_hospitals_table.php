@@ -15,21 +15,10 @@ return new class extends Migration
             $table->id();
 
             // Informacion Basica
-            $table->string('name', 255);
-
-            //Contacto
-            $table->string('phone', 50)->nullable();
-            $table->string('email', 255)->nullable();
-
-            //Direccion
-            $table->text('address')->nullable();
+            $table->string('name', 150);
             $table->string('rfc')->nullable();
-            $table->string('razon_social')->nullable();
-
             $table->boolean('is_active')->default(true);
-
             $table->timestamps();
-
             //Indices
             $table->index('name');
       

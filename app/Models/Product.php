@@ -24,7 +24,6 @@ class Product extends Model
 
     protected $fillable = [
         'category_id',
-        'specialty_id', 
         'product_type_id',
         'supplier_id',
         'name',
@@ -193,30 +192,9 @@ class Product extends Model
     /**
      * Obtiene el stock total del producto en todas las ubicaciones
      */
-    public function getTotalStockAttribute(): int
+   public function getTotalStockAttribute()
     {
-        switch ($this->tracking_type) {
-            case 'code':
-                $entries = $this->movements()
-                    ->whereIn('type', ['entry', 'return'])
-                    ->sum('quantity');
-                    
-                $exits = $this->movements()
-                    ->whereIn('type', ['exit', 'discard'])
-                    ->sum('quantity');
-                    
-                return max(0, $entries - $exits);
-                
-            case 'rfid':
-            case 'serial':
-                return $this->units()
-                    ->whereIn('status', ['available', 'reserved', 'in_use'])
-                    ->count();
-                
-            case 'none':
-            default:
-                return 0;
-        }
+        return $this->attributes['total_stock'] ?? $this->inventorySummaries()->sum('quantity_on_hand');
     }
 
     /**
@@ -295,6 +273,17 @@ class Product extends Model
     public function damagedUnits()
     {
         return $this->units()->where('status', 'damaged');
+    }
+
+    public function inventorySummaries()
+    {
+        return $this->hasMany(InventorySummary::class);
+    }
+
+    public function totalStockGlobal()
+    {
+        // Suma de todos los almacenes
+        return $this->hasMany(InventorySummary::class)->sum('quantity_on_hand');
     }
 
     // ==================== MÉTODOS AUXILIARES ====================
@@ -498,4 +487,39 @@ class Product extends Model
                   AND product_units.deleted_at IS NULL) > 0');
         });
     }
+
+    public static function findByCode($code)
+    {
+        // Parsear código compuesto si tiene separadores
+        $parsedCode = static::parseBarcode($code);
+        
+        return static::where('code', $parsedCode)
+                    ->where('status', 'active')
+                    ->first();
+    }
+
+    public static function parseBarcode($scannedCode)
+    {
+        $scannedCode = trim($scannedCode);
+        
+        // CASO 1: Código con separador '|' 
+        if (strpos($scannedCode, '|') !== false) {
+            return explode('|', $scannedCode)[0];
+        }
+        
+        // CASO 2: Código con múltiples '-' (más de 1 guion)
+        $parts = explode('-', $scannedCode);
+        if (count($parts) > 2) {
+            return $parts[0] . '-' . $parts[1]; // Mantiene "AR-3128"
+        }
+        
+        // CASO 3: Código simple
+        return $scannedCode;
+    }
+    
+    public function getNextAvailableUnit($locationId = null, $legalEntityId = null)
+    {
+        return ProductUnit::nextAvailable($this->id, $locationId, $legalEntityId);
+    }
+
 }

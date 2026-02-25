@@ -4,234 +4,136 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-hospital mr-2 text-indigo-600"></i>
-                    {{ $hospital->name }}
+                    Detalle del Hospital
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $hospital->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                        <i class="fas {{ $hospital->is_active ? 'fa-check-circle' : 'fa-ban' }} mr-1"></i>
-                        {{ $hospital->is_active ? 'Activo' : 'Inactivo' }}
-                    </span>
-                </p>
+                <p class="text-sm text-gray-600 mt-1">Visualización completa del perfil y configuraciones</p>
             </div>
-            <div class="flex items-center space-x-3">
-                <form action="{{ route('hospitals.toggle-status', $hospital) }}" method="POST">
-                    @csrf
-                    <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 {{ $hospital->is_active ? 'bg-gray-600' : 'bg-green-600' }} border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:{{ $hospital->is_active ? 'bg-gray-700' : 'bg-green-700' }} transition">
-                        <i class="fas {{ $hospital->is_active ? 'fa-ban' : 'fa-check-circle' }} mr-2"></i>
-                        {{ $hospital->is_active ? 'Desactivar' : 'Activar' }}
-                    </button>
-                </form>
-                <a href="{{ route('hospitals.edit', $hospital) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                    <i class="fas fa-edit mr-2"></i>Editar
-                </a>
+            <div class="flex space-x-3">
                 <a href="{{ route('hospitals.index') }}" 
                    class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 transition">
-                    <i class="fas fa-arrow-left mr-2"></i>Volver
+                    <i class="fas fa-arrow-left mr-2"></i> Volver
+                </a>
+                <a href="{{ route('hospitals.edit', $hospital) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                    <i class="fas fa-edit mr-2"></i> Editar
                 </a>
             </div>
         </div>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
-            
-            <!-- Hospital Info -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-6 border-b pb-3">
-                        <i class="fas fa-info-circle mr-2 text-indigo-600"></i>Información del Hospital
-                    </h3>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Información General -->
-                        <div class="space-y-4">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Nombre</p>
-                                <p class="text-base text-gray-900">{{ $hospital->name }}</p>
-                            </div>
-                            @if($hospital->code)
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div class="md:col-span-2 space-y-6">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-id-card mr-2 text-indigo-600"></i> Información General
+                            </h3>
+                            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
                                 <div>
-                                    <p class="text-sm font-medium text-gray-500">Código</p>
-                                    <p class="text-base text-gray-900">{{ $hospital->code }}</p>
+                                    <dt class="text-sm font-medium text-gray-500 italic">Nombre Comercial</dt>
+                                    <dd class="text-lg font-semibold text-gray-900">{{ $hospital->name }}</dd>
                                 </div>
-                            @endif
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-500 italic">RFC</dt>
+                                    <dd class="text-lg font-mono text-gray-900">{{ $hospital->rfc }}</dd>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <dt class="text-sm font-medium text-gray-500 italic">Estado del Hospital</dt>
+                                    <dd class="mt-1">
+                                        @if($hospital->is_active)
+                                            <span class="px-3 py-1 text-xs font-bold bg-green-100 text-green-800 rounded-full italic">
+                                                <i class="fas fa-check-circle mr-1"></i> OPERATIVO / ACTIVO
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1 text-xs font-bold bg-red-100 text-red-800 rounded-full italic">
+                                                <i class="fas fa-ban mr-1"></i> INACTIVO / FUERA DE SERVICIO
+                                            </span>
+                                        @endif
+                                    </dd>
+                                </div>
+                            </dl>
                         </div>
+                    </div>
 
-                        <!-- Contacto -->
-                        <div class="space-y-4">
-                            @if($hospital->contact_person)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">
-                                        <i class="fas fa-user mr-1"></i>Persona de Contacto
-                                    </p>
-                                    <p class="text-base text-gray-900">{{ $hospital->contact_person }}</p>
-                                </div>
-                            @endif
-                            @if($hospital->phone)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">
-                                        <i class="fas fa-phone mr-1"></i>Teléfono
-                                    </p>
-                                    <p class="text-base text-gray-900">{{ $hospital->phone }}</p>
-                                </div>
-                            @endif
-                            @if($hospital->email)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">
-                                        <i class="fas fa-envelope mr-1"></i>Email
-                                    </p>
-                                    <p class="text-base text-gray-900">
-                                        <a href="mailto:{{ $hospital->email }}" class="text-indigo-600 hover:text-indigo-900">
-                                            {{ $hospital->email }}
-                                        </a>
-                                    </p>
-                                </div>
-                            @endif
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                                <i class="fas fa-file-invoice-dollar mr-2 text-indigo-600"></i> Esquema de Facturación Asignado
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                @forelse($hospital->configs as $config)
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+                                                <i class="fas {{ $config->modality->name == 'Seguro' ? 'fa-shield-alt' : 'fa-user' }}"></i>
+                                            </div>
+                                            <div class="ml-4">
+                                                <p class="text-sm font-bold text-gray-900 uppercase">Modalidad {{ $config->modality->name }}</p>
+                                                <p class="text-xs text-gray-500">Facturado por nuestra entidad legal:</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-bold text-indigo-700">{{ $config->legalEntity->name }}</p>
+                                            <p class="text-xs text-gray-500 font-mono">{{ $config->legalEntity->rfc }}</p>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-center py-6 bg-red-50 rounded-xl border border-red-100">
+                                        <i class="fas fa-exclamation-triangle text-red-400 text-2xl mb-2"></i>
+                                        <p class="text-red-600 font-medium">Este hospital no tiene configurada ninguna modalidad de cobro.</p>
+                                    </div>
+                                @endforelse
+                            </div>
                         </div>
-
-                        <!-- Dirección -->
-                        @if($hospital->address || $hospital->city || $hospital->state)
-                            <div class="md:col-span-2">
-                                <p class="text-sm font-medium text-gray-500 mb-2">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>Dirección
-                                </p>
-                                <div class="text-base text-gray-900">
-                                    @if($hospital->address)
-                                        <p>{{ $hospital->address }}</p>
-                                    @endif
-                                    @if($hospital->city || $hospital->state || $hospital->zip_code)
-                                        <p>
-                                            {{ $hospital->city }}{{ $hospital->city && $hospital->state ? ', ' : '' }}{{ $hospital->state }}{{ ($hospital->city || $hospital->state) && $hospital->zip_code ? '. ' : '' }}{{ $hospital->zip_code ? 'CP ' . $hospital->zip_code : '' }}
-                                        </p>
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
-
-                        <!-- Notas -->
-                        @if($hospital->notes)
-                            <div class="md:col-span-2">
-                                <p class="text-sm font-medium text-gray-500 mb-2">
-                                    <i class="fas fa-sticky-note mr-1"></i>Notas
-                                </p>
-                                <p class="text-base text-gray-900">{{ $hospital->notes }}</p>
-                            </div>
-                        @endif
                     </div>
                 </div>
-            </div>
-
-            <!-- Recent Quotations -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 border-b border-gray-200 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-file-invoice mr-2"></i>Cotizaciones Recientes
-                    </h3>
-                    <a href="{{ route('quotations.create') }}?hospital_id={{ $hospital->id }}" 
-                       class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
-                        <i class="fas fa-plus mr-2"></i>Nueva Cotización
-                    </a>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cirugía</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse($hospital->quotations as $quotation)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <a href="{{ route('quotations.show', $quotation) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
-                                            {{ $quotation->quotation_number }}
-                                        </a>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $quotation->doctor->full_name ?? 'N/A' }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-900">
-                                        {{ $quotation->surgery_type ?? 'N/A' }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @php
-                                            $statusClasses = [
-                                                'draft' => 'bg-gray-100 text-gray-800',
-                                                'sent' => 'bg-blue-100 text-blue-800',
-                                                'in_surgery' => 'bg-yellow-100 text-yellow-800',
-                                                'completed' => 'bg-green-100 text-green-800',
-                                                'invoiced' => 'bg-indigo-100 text-indigo-800',
-                                            ];
-                                            $statusLabels = [
-                                                'draft' => 'Borrador',
-                                                'sent' => 'Enviada',
-                                                'in_surgery' => 'En Cirugía',
-                                                'completed' => 'Completada',
-                                                'invoiced' => 'Facturada',
-                                            ];
-                                        @endphp
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClasses[$quotation->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                            {{ $statusLabels[$quotation->status] ?? $quotation->status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $quotation->created_at->format('d/m/Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('quotations.show', $quotation) }}" class="text-indigo-600 hover:text-indigo-900">
-                                            <i class="fas fa-eye"></i> Ver
-                                        </a>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                                        <i class="fas fa-inbox text-3xl text-gray-300 mb-2"></i>
-                                        <p>No hay cotizaciones registradas</p>
-                                        <a href="{{ route('quotations.create') }}?hospital_id={{ $hospital->id }}" class="mt-2 inline-block text-indigo-600 hover:text-indigo-900 font-medium">
-                                            <i class="fas fa-plus mr-1"></i>Crear primera cotización
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            
-            <!-- Delete Button -->
-            @if($hospital->quotations()->count() === 0 && $hospital->sales()->count() === 0)
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <div class="p-6">
-                        <h3 class="text-lg font-semibold text-red-600 mb-3">
-                            <i class="fas fa-exclamation-triangle mr-2"></i>Zona de Peligro
-                        </h3>
-                        <p class="text-sm text-gray-600 mb-4">
-                            Esta acción es permanente y no se puede deshacer. El hospital no tiene cotizaciones ni ventas asociadas.
-                        </p>
-                        <form action="{{ route('hospitals.destroy', $hospital) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este hospital? Esta acción no se puede deshacer.')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:ring focus:ring-red-300 transition">
-                                <i class="fas fa-trash mr-2"></i>
-                                Eliminar Hospital
-                            </button>
-                        </form>
+                <!-- Sidebar de Contacto y Notas -->
+                <!--
+                <div class="space-y-6">
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6">
+                            <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider border-b pb-2">
+                                <i class="fas fa-address-book mr-2 text-indigo-600"></i> Contacto
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-medium text-gray-500 block">Teléfono</label>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $hospital->phone ?? 'No registrado' }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-gray-500 block">Email</label>
+                                    <p class="text-sm font-semibold text-gray-800">{{ $hospital->email ?? 'No registrado' }}</p>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-gray-500 block">Dirección</label>
+                                    <p class="text-sm text-gray-700 leading-relaxed italic">{{ $hospital->address ?? 'Sin dirección registrada' }}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                -->
+
+                    @if($hospital->notes)
+                    <div class="bg-yellow-50 overflow-hidden shadow-sm sm:rounded-lg border border-yellow-100">
+                        <div class="p-6">
+                            <h3 class="text-sm font-bold text-yellow-800 mb-2 uppercase">
+                                <i class="fas fa-sticky-note mr-2"></i> Notas Internas
+                            </h3>
+                            <p class="text-sm text-yellow-900 italic">
+                                "{{ $hospital->notes }}"
+                            </p>
+                        </div>
+                    </div>
+                    @endif
                 </div>
-            @endif
-            
+
+            </div>
         </div>
     </div>
 </x-app-layout>

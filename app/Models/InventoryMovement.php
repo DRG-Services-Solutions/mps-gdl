@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class InventoryMovement extends Model
@@ -18,6 +19,8 @@ class InventoryMovement extends Model
         'to_location_id',
         'user_id',
         'reference_number',
+        'previous_balance',
+        'new_balance',
         'notes',
         'reason',
         'surgery_id',
