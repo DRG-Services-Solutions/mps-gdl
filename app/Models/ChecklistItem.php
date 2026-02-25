@@ -115,7 +115,7 @@ class ChecklistItem extends Model
     {
         $legalEntityId = $surgery->hospital->legal_entity_id ?? null;
         
-        // ✅ FIX: Obtener el modality_id real desde la configuración
+        // ✅ FIX: Obtener el modality_id REAL desde la configuración
         $modalityId = null;
         if ($surgery->hospital_modality_config_id) {
             $config = \App\Models\HospitalModalityConfig::find($surgery->hospital_modality_config_id);
@@ -127,25 +127,32 @@ class ChecklistItem extends Model
             'doctor_id' => $surgery->doctor_id,
             'hospital_id' => $surgery->hospital_id,
             'modality_id' => $modalityId,
+            'hospital_modality_config_id' => $surgery->hospital_modality_config_id,
             'legal_entity_id' => $legalEntityId,
         ]);
 
-        $conditionals = $this->conditionals()->get();
+        // ✅ Cargar targetProduct para dependencias
+        $conditionals = $this->conditionals()->with('targetProduct')->get();
 
         if ($conditionals->isEmpty()) {
             Log::info("No hay condicionales para este item");
             return null;
         }
 
+        // Ordenar por especificidad (más específico primero)
         $conditionals = $conditionals->sortByDesc(function ($conditional) {
             return $conditional->getSpecificityLevel();
         });
 
+        // Buscar el primero que coincida
         foreach ($conditionals as $conditional) {
             if ($this->conditionalMatches($conditional, $surgery, $legalEntityId, $modalityId)) {
                 Log::info("Condicional aplicable encontrado:", [
                     'conditional_id' => $conditional->id,
+                    'action_type' => $conditional->action_type,
+                    'target_product' => $conditional->targetProduct?->name,
                     'description' => $conditional->getDescription(),
+                    'specificity' => $conditional->getSpecificityLevel(),
                 ]);
                 return $conditional;
             }
@@ -154,6 +161,8 @@ class ChecklistItem extends Model
         Log::info("Ningún condicional coincidió con los criterios");
         return null;
     }
+
+
 
     /**
      * Verificar si un condicional coincide con los criterios de la cirugía
@@ -165,12 +174,11 @@ class ChecklistItem extends Model
      */
     
     protected function conditionalMatches(
-    ChecklistConditional $conditional,
-    $surgery,
+    ChecklistConditional $conditional, 
+    $surgery, 
     ?int $legalEntityId,
     ?int $modalityId
-): bool 
-    {
+): bool {
     if ($conditional->doctor_id !== null) {
         if ((int) $conditional->doctor_id !== (int) $surgery->doctor_id) {
             Log::debug("No coincide doctor", [
@@ -191,11 +199,11 @@ class ChecklistItem extends Model
         }
     }
 
-    // ✅ FIX: Comparar contra modality_id real, NO hospital_modality_config_id
+    // ✅ FIX: Comparar contra modality_id REAL
     if ($conditional->modality_id !== null) {
-        if ((int) $conditional->modality_id !== (int) $modalityId) {
+        if ($modalityId === null || (int) $conditional->modality_id !== (int) $modalityId) {
             Log::debug("No coincide modalidad", [
-                'conditional' => $conditional->modality_id,
+                'conditional_modality' => $conditional->modality_id,
                 'surgery_modality' => $modalityId,
             ]);
             return false;
@@ -203,7 +211,7 @@ class ChecklistItem extends Model
     }
 
     if ($conditional->legal_entity_id !== null) {
-        if ((int) $conditional->legal_entity_id !== (int) $legalEntityId) {
+        if ($legalEntityId === null || (int) $conditional->legal_entity_id !== (int) $legalEntityId) {
             Log::debug("No coincide legal entity", [
                 'conditional' => $conditional->legal_entity_id,
                 'surgery' => $legalEntityId,
@@ -212,8 +220,10 @@ class ChecklistItem extends Model
         }
     }
 
+    Log::debug("Condicional coincide con todos los criterios");
     return true;
 }
+
 
     // ==================== SCOPES ====================
     

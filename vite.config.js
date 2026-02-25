@@ -8,7 +8,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/js/pages/surgeries/picking-rfid.js',
-                'resources/js/pages/pre-assembled/rfid-compare.js',  // ← AGREGAR
+                'resources/js/pages/pre-assembled/rfid-compare.js',
 
             ],
             refresh: true,

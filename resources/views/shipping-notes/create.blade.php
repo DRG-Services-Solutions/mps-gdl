@@ -15,7 +15,7 @@
     </x-slot>
 
     <div class="py-6" x-data="shippingNoteCreate()">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Alertas --}}
             @if (session('error'))
@@ -37,7 +37,6 @@
                     </h3>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Selección de cirugía --}}
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 Cirugía <span class="text-red-500">*</span>
@@ -69,14 +68,12 @@
                                 <div class="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                     <p class="text-sm text-yellow-800">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        No hay cirugías disponibles para generar remisión. Todas ya tienen una remisión activa
-                                        o no están en estado válido.
+                                        No hay cirugías disponibles para generar remisión.
                                     </p>
                                 </div>
                             @endif
                         </div>
 
-                        {{-- Razón social --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">
                                 Razón Social (Facturación) <span class="text-red-500">*</span>
@@ -96,7 +93,6 @@
                             @enderror
                         </div>
 
-                        {{-- Notas --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
                             <textarea name="notes" rows="2"
@@ -106,7 +102,7 @@
                     </div>
                 </div>
 
-                {{-- Info de la cirugía seleccionada --}}
+                {{-- Info de la cirugía --}}
                 <div x-show="surgeryInfo" x-cloak
                     class="mt-6 bg-indigo-50 rounded-xl border border-indigo-200 p-6">
                     <h3 class="text-lg font-semibold text-indigo-900 mb-4">
@@ -132,33 +128,95 @@
                     </div>
                 </div>
 
-                {{-- Preview del checklist evaluado --}}
+                {{-- Info del paquete pre-armado --}}
+                <div x-show="packageInfo" x-cloak class="mt-6">
+                    <div class="bg-green-50 rounded-xl border border-green-200 p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-box-open text-green-600 mr-3 text-xl"></i>
+                                <div>
+                                    <h4 class="font-semibold text-green-900">Paquete Pre-Armado</h4>
+                                    <p class="text-sm text-green-700">
+                                        <span x-text="packageInfo?.code"></span> — <span x-text="packageInfo?.name"></span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-sm text-green-700">Unidades en paquete:</span>
+                                <span class="text-lg font-bold text-green-800 ml-1" x-text="packageInfo?.total_units"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Alerta: Sin paquete --}}
+                <div x-show="surgeryInfo && !packageInfo && !loading" x-cloak class="mt-6">
+                    <div class="bg-yellow-50 rounded-xl border border-yellow-300 p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 mr-3 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-yellow-800">Sin paquete pre-armado</h4>
+                                <p class="text-sm text-yellow-700 mt-1">
+                                    Esta cirugía no tiene una preparación con paquete asignado.
+                                    La remisión se creará solo con la evaluación del checklist.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Leyenda de dependencias (si hay) --}}
+                <div x-show="checklistSummary?.items_with_dependencies > 0" x-cloak class="mt-6">
+                    <div class="bg-blue-50 rounded-xl border border-blue-200 p-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-link text-blue-600 mr-3 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-semibold text-blue-900">Dependencias detectadas</h4>
+                                <p class="text-sm text-blue-700 mt-1">
+                                    Algunos productos requieren otro producto para funcionar. 
+                                    Estos se resaltan con <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-200 text-blue-800"><i class="fas fa-link mr-1"></i>azul</span> 
+                                    en la tabla. Verifica que ambos productos estén incluidos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Tabla de comparación --}}
                 <div x-show="checklistItems.length > 0" x-cloak class="mt-6">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900">
                                 <i class="fas fa-clipboard-list mr-2 text-green-500"></i>
-                                Preview del Checklist Evaluado
+                                Verificación: Checklist vs Paquete
                             </h3>
                             <p class="text-sm text-gray-600 mt-1">
-                                Productos que se incluirán en la remisión según condicionales aplicados
+                                Comparación del checklist evaluado contra el contenido real del paquete
                             </p>
                         </div>
 
                         {{-- Resumen --}}
-                        <div x-show="checklistSummary" class="px-6 py-3 bg-green-50 border-b border-green-100">
-                            <div class="flex gap-6 text-sm">
-                                <span class="text-green-800">
+                        <div x-show="checklistSummary" class="px-6 py-3 bg-gray-50 border-b border-gray-100">
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <span class="text-gray-800">
                                     <i class="fas fa-boxes mr-1"></i>
-                                    Total: <strong x-text="checklistSummary?.total_items"></strong> productos
+                                    Requeridos: <strong x-text="checklistSummary?.total_items"></strong>
                                 </span>
-                                <span class="text-green-800">
-                                    <i class="fas fa-calculator mr-1"></i>
-                                    Cantidad total: <strong x-text="checklistSummary?.total_quantity"></strong> unidades
+                                <span class="text-green-700" x-show="checklistSummary?.complete_items > 0">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Completos: <strong x-text="checklistSummary?.complete_items"></strong>
+                                </span>
+                                <span class="text-red-700" x-show="checklistSummary?.incomplete_items > 0">
+                                    <i class="fas fa-times-circle mr-1"></i>
+                                    Faltantes: <strong x-text="checklistSummary?.incomplete_items"></strong>
                                 </span>
                                 <span class="text-amber-700" x-show="checklistSummary?.items_with_conditionals > 0">
                                     <i class="fas fa-sliders-h mr-1"></i>
                                     Con condicionales: <strong x-text="checklistSummary?.items_with_conditionals"></strong>
+                                </span>
+                                <span class="text-blue-700" x-show="checklistSummary?.items_with_dependencies > 0">
+                                    <i class="fas fa-link mr-1"></i>
+                                    Con dependencias: <strong x-text="checklistSummary?.items_with_dependencies"></strong>
                                 </span>
                             </div>
                         </div>
@@ -167,31 +225,151 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cant. Base</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cant. Ajustada</th>
-                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Condicional</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Obligatorio</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Base</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Requerido</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">En Paquete</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Diferencia</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Condicional</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
                                     <template x-for="(item, index) in checklistItems" :key="index">
-                                        <tr :class="item.has_conditional ? 'bg-amber-50' : ''">
-                                            <td class="px-6 py-3 text-sm text-gray-900" x-text="item.product_name"></td>
-                                            <td class="px-6 py-3 text-sm text-gray-600 text-center" x-text="item.base_quantity"></td>
-                                            <td class="px-6 py-3 text-center">
+                                        <tr :class="{
+                                            'bg-red-50': item.status === 'incomplete',
+                                            'bg-blue-50 border-l-4 border-l-blue-400': item.action_type === 'add_dependency',
+                                            'bg-amber-50': item.has_conditional && item.action_type !== 'add_dependency' && item.status !== 'incomplete',
+                                            'bg-orange-50 border-l-4 border-l-orange-400': item.action_type === 'replace',
+                                            'bg-gray-100': item.status === 'extra',
+                                        }">
+                                            {{-- Producto con badges --}}
+                                            <td class="px-4 py-3">
+                                                <div class="flex flex-col gap-1">
+                                                    <span class="text-sm font-medium text-gray-900" x-text="item.product_name"></span>
+                                                    
+                                                    {{-- Badge: Dependencia --}}
+                                                    <template x-if="item.action_type === 'add_dependency' && item.target_product_name">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                                                                <i class="fas fa-link mr-1"></i>
+                                                                Requiere
+                                                            </span>
+                                                            <span class="text-xs font-semibold text-blue-700" x-text="item.dependency_quantity + 'x ' + item.target_product_name"></span>
+                                                        </div>
+                                                    </template>
+
+                                                    {{-- Badge: Reemplazo --}}
+                                                    <template x-if="item.action_type === 'replace' && item.target_product_name">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">
+                                                                <i class="fas fa-exchange-alt mr-1"></i>
+                                                                Reemplaza por
+                                                            </span>
+                                                            <span class="text-xs font-semibold text-orange-700" x-text="item.target_product_name"></span>
+                                                        </div>
+                                                    </template>
+
+                                                    {{-- Badge: Excluido --}}
+                                                    <template x-if="item.action_type === 'exclude'">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800 border border-red-300">
+                                                            <i class="fas fa-ban mr-1"></i>
+                                                            Excluido por condicional
+                                                        </span>
+                                                    </template>
+
+                                                    {{-- Badge: Cantidad ajustada --}}
+                                                    <template x-if="item.action_type === 'adjust_quantity' && item.has_conditional">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                                                            <i class="fas fa-edit mr-1"></i>
+                                                            Cantidad ajustada
+                                                        </span>
+                                                    </template>
+
+                                                    {{-- Badge: Producto adicional --}}
+                                                    <template x-if="item.source === 'additional'">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800 border border-green-300">
+                                                            <i class="fas fa-plus-circle mr-1"></i>
+                                                            Producto adicional
+                                                        </span>
+                                                    </template>
+
+                                                    {{-- Badge: Extra en paquete (no en checklist) --}}
+                                                    <template x-if="item.source === 'extra_in_package'">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-200 text-gray-700 border border-gray-300">
+                                                            <i class="fas fa-question-circle mr-1"></i>
+                                                            No está en checklist
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </td>
+                                            
+                                            {{-- Cantidad base --}}
+                                            <td class="px-4 py-3 text-sm text-gray-500 text-center" x-text="item.base_quantity"></td>
+                                            
+                                            {{-- Cantidad requerida --}}
+                                            <td class="px-4 py-3 text-center">
                                                 <span class="inline-flex px-2 py-0.5 text-sm font-bold rounded"
                                                     :class="item.has_conditional ? 'bg-amber-200 text-amber-800' : 'text-gray-900'"
                                                     x-text="item.adjusted_quantity">
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-3 text-xs text-amber-700" x-text="item.conditional_description || '—'"></td>
-                                            <td class="px-6 py-3 text-center">
-                                                <template x-if="item.is_mandatory">
-                                                    <i class="fas fa-check-circle text-green-500"></i>
+                                            
+                                            {{-- En paquete --}}
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="inline-flex px-2 py-0.5 text-sm font-bold rounded"
+                                                    :class="{
+                                                        'bg-green-200 text-green-800': item.in_package >= item.adjusted_quantity && item.in_package > 0,
+                                                        'bg-red-200 text-red-800': item.in_package < item.adjusted_quantity && item.adjusted_quantity > 0,
+                                                        'text-gray-400': item.in_package === 0 && item.adjusted_quantity === 0
+                                                    }"
+                                                    x-text="item.in_package">
+                                                </span>
+                                            </td>
+                                            
+                                            {{-- Diferencia --}}
+                                            <td class="px-4 py-3 text-center">
+                                                <template x-if="item.missing > 0">
+                                                    <span class="inline-flex px-2 py-0.5 text-sm font-bold rounded bg-red-200 text-red-800"
+                                                        x-text="'-' + item.missing">
+                                                    </span>
                                                 </template>
-                                                <template x-if="!item.is_mandatory">
-                                                    <i class="fas fa-minus-circle text-gray-400"></i>
+                                                <template x-if="item.surplus > 0">
+                                                    <span class="inline-flex px-2 py-0.5 text-sm font-bold rounded bg-blue-200 text-blue-800"
+                                                        x-text="'+' + item.surplus">
+                                                    </span>
+                                                </template>
+                                                <template x-if="item.missing === 0 && item.surplus === 0">
+                                                    <span class="text-green-500"><i class="fas fa-check"></i></span>
+                                                </template>
+                                            </td>
+                                            
+                                            {{-- Condicional (descripción breve) --}}
+                                            <td class="px-4 py-3 text-xs text-gray-600 max-w-xs">
+                                                <span x-text="item.conditional_description || '—'"></span>
+                                            </td>
+                                            
+                                            {{-- Estado --}}
+                                            <td class="px-4 py-3 text-center">
+                                                <template x-if="item.status === 'complete'">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                        <i class="fas fa-check-circle mr-1"></i>OK
+                                                    </span>
+                                                </template>
+                                                <template x-if="item.status === 'incomplete'">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <i class="fas fa-times-circle mr-1"></i>Falta
+                                                    </span>
+                                                </template>
+                                                <template x-if="item.status === 'surplus'">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                        <i class="fas fa-plus-circle mr-1"></i>Sobra
+                                                    </span>
+                                                </template>
+                                                <template x-if="item.status === 'extra'">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                                                        <i class="fas fa-question-circle mr-1"></i>Extra
+                                                    </span>
                                                 </template>
                                             </td>
                                         </tr>
@@ -205,10 +383,10 @@
                 {{-- Loading --}}
                 <div x-show="loading" x-cloak class="mt-6 text-center py-8">
                     <i class="fas fa-spinner fa-spin text-2xl text-indigo-500"></i>
-                    <p class="text-sm text-gray-600 mt-2">Evaluando checklist con condicionales...</p>
+                    <p class="text-sm text-gray-600 mt-2">Evaluando checklist y comparando con paquete...</p>
                 </div>
 
-                {{-- Botón de enviar --}}
+                {{-- Botones --}}
                 <div class="mt-6 flex justify-end gap-3">
                     <a href="{{ route('shipping-notes.index') }}"
                         class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition">
@@ -230,6 +408,7 @@
             return {
                 selectedSurgeryId: '{{ $selectedSurgery?->id ?? old('scheduled_surgery_id', '') }}',
                 surgeryInfo: null,
+                packageInfo: null,
                 checklistItems: [],
                 checklistSummary: null,
                 loading: false,
@@ -243,12 +422,12 @@
                 async loadChecklistPreview() {
                     if (!this.selectedSurgeryId) {
                         this.surgeryInfo = null;
+                        this.packageInfo = null;
                         this.checklistItems = [];
                         this.checklistSummary = null;
                         return;
                     }
 
-                    // Leer datos del option seleccionado
                     const select = document.querySelector('select[name="scheduled_surgery_id"]');
                     const option = select.options[select.selectedIndex];
                     this.surgeryInfo = {
@@ -258,10 +437,10 @@
                         date: option.dataset.date,
                     };
 
-                    // Cargar preview del checklist via AJAX
                     this.loading = true;
                     this.checklistItems = [];
                     this.checklistSummary = null;
+                    this.packageInfo = null;
 
                     try {
                         const response = await fetch('{{ route("shipping-notes.api.preview-checklist") }}', {
@@ -278,6 +457,7 @@
                             const data = await response.json();
                             this.checklistItems = data.items || [];
                             this.checklistSummary = data.summary || null;
+                            this.packageInfo = data.package || null;
                         }
                     } catch (error) {
                         console.error('Error cargando preview:', error);

@@ -23,10 +23,9 @@ class ScheduledSurgeryController extends Controller
         // Query base
         $query = ScheduledSurgery::with([
             'checklist',
-            'checklist',
             'hospital',
             'doctor',
-            'preparation',
+            'preparation.items',
             'hospitalModalityConfig.hospital',     
             'hospitalModalityConfig.modality',      
             'hospitalModalityConfig.legalEntity',   

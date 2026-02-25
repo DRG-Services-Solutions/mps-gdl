@@ -712,10 +712,119 @@ class ShippingNoteController extends Controller
             'surgery_id' => 'required|exists:scheduled_surgeries,id',
         ]);
 
-        $surgery = ScheduledSurgery::with(['checklist.items.product', 'doctor', 'hospital'])
-            ->findOrFail($validated['surgery_id']);
+        $surgery = ScheduledSurgery::with([
+            'checklist.items.product',
+            'checklist.items.conditionals.targetProduct',
+            'doctor',
+            'hospital',
+            'hospitalModalityConfig',
+            'preparation.preAssembledPackage.contents.product',
+        ])->findOrFail($validated['surgery_id']);
 
+        // 1. Evaluar checklist con condicionales
         $evaluatedItems = $surgery->getChecklistItemsWithConditionals();
+
+        // 2. Obtener contenido real del paquete (si existe)
+        $package = $surgery->preparation?->preAssembledPackage;
+        $packageContents = collect();
+        $packageInfo = null;
+
+        if ($package) {
+            $packageContents = $package->contents
+                ->groupBy('product_id')
+                ->map(function ($items, $productId) {
+                    return [
+                        'product_id' => $productId,
+                        'product_name' => $items->first()->product->name ?? 'N/A',
+                        'quantity' => $items->count(),
+                    ];
+                });
+
+            $packageInfo = [
+                'id' => $package->id,
+                'code' => $package->code,
+                'name' => $package->name,
+                'status' => $package->status,
+                'total_units' => $package->contents->count(),
+            ];
+        }
+
+        // 3. Comparar checklist evaluado vs paquete real
+        $comparison = $evaluatedItems->map(function ($item) use ($packageContents) {
+            $productId = $item['product_id'];
+            $packageProduct = $packageContents->get($productId);
+            $inPackage = $packageProduct ? $packageProduct['quantity'] : 0;
+            $required = $item['adjusted_quantity'];
+            $missing = max(0, $required - $inPackage);
+            $surplus = max(0, $inPackage - $required);
+
+            // ✅ Info del condicional aplicado
+            $conditional = $item['conditional'] ?? null;
+
+            return [
+                'product_id' => $productId,
+                'product_name' => $item['product_name'],
+                'base_quantity' => $item['base_quantity'],
+                'adjusted_quantity' => $required,
+                'in_package' => $inPackage,
+                'missing' => $missing,
+                'surplus' => $surplus,
+                'has_conditional' => $item['has_conditional'],
+                'conditional_description' => $item['conditional_description'],
+                'is_mandatory' => $item['is_mandatory'],
+                'source' => $item['source'],
+                // ✅ Info de acción y dependencias
+                'action_type' => $conditional?->action_type ?? null,
+                'target_product_name' => $conditional?->targetProduct?->name ?? null,
+                'dependency_quantity' => $conditional?->dependency_quantity ?? null,
+                'depends_on_product_id' => $conditional?->target_product_id ?? null,
+                // Estado visual
+                'status' => $missing > 0 
+                    ? 'incomplete' 
+                    : ($surplus > 0 ? 'surplus' : 'complete'),
+            ];
+        });
+
+        // 4. Productos en el paquete que NO están en el checklist
+        $checklistProductIds = $evaluatedItems->pluck('product_id')->unique();
+        $extraProducts = $packageContents
+            ->filter(fn($item, $productId) => !$checklistProductIds->contains($productId))
+            ->map(fn($item) => [
+                'product_id' => $item['product_id'],
+                'product_name' => $item['product_name'],
+                'base_quantity' => 0,
+                'adjusted_quantity' => 0,
+                'in_package' => $item['quantity'],
+                'missing' => 0,
+                'surplus' => $item['quantity'],
+                'has_conditional' => false,
+                'conditional_description' => null,
+                'is_mandatory' => false,
+                'source' => 'extra_in_package',
+                'action_type' => null,
+                'target_product_name' => null,
+                'dependency_quantity' => null,
+                'depends_on_product_id' => null,
+                'status' => 'extra',
+            ])
+            ->values();
+
+        // 5. Resumen
+        $allItems = $comparison->concat($extraProducts);
+        
+        $summary = [
+            'total_items' => $evaluatedItems->count(),
+            'total_quantity' => $evaluatedItems->sum('adjusted_quantity'),
+            'items_with_conditionals' => $evaluatedItems->where('has_conditional', true)->count(),
+            'items_with_dependencies' => $comparison->where('action_type', 'add_dependency')->count(),
+            'package_total_units' => $packageContents->sum('quantity'),
+            'complete_items' => $comparison->where('status', 'complete')->count(),
+            'incomplete_items' => $comparison->where('status', 'incomplete')->count(),
+            'surplus_items' => $comparison->where('status', 'surplus')->count(),
+            'extra_items' => $extraProducts->count(),
+            'total_missing' => $comparison->sum('missing'),
+            'has_package' => $package !== null,
+        ];
 
         return response()->json([
             'surgery' => [
@@ -723,18 +832,12 @@ class ShippingNoteController extends Controller
                 'hospital' => $surgery->hospital->name ?? 'N/A',
                 'doctor' => $surgery->doctor->full_name ?? 'N/A',
                 'checklist' => $surgery->checklist->surgery_type ?? 'N/A',
-                'date' => $surgery->surgery_datetime->format('d/m/Y H:i'),
+                'date' => $surgery->surgery_datetime?->format('d/m/Y H:i'),
             ],
-            'items' => $evaluatedItems->map(fn($item) => [
-                'product_name' => $item['product_name'],
-                'base_quantity' => $item['base_quantity'],
-                'adjusted_quantity' => $item['adjusted_quantity'],
-                'has_conditional' => $item['has_conditional'],
-                'conditional_description' => $item['conditional_description'],
-                'is_mandatory' => $item['is_mandatory'],
-                'source' => $item['source'],
-            ]),
-            'summary' => $surgery->getPreparationSummary(),
+            'package' => $packageInfo,
+            'items' => $allItems->values(),
+            'summary' => $summary,
         ]);
     }
+
 }

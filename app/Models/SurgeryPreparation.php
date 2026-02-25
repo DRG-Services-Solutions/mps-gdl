@@ -108,11 +108,13 @@ class SurgeryPreparation extends Model
 
     // Calcular porcentaje de completitud
     public function getCompletenessPercentage()
-    {
-        $totalItems = $this->items()->count();
-        if ($totalItems === 0) return 0;
+{
+    $items = $this->items;
+    $totalItems = $items->count();
+    
+    if ($totalItems === 0) return 0;
 
-        $completeItems = $this->items()->where('status', 'complete')->count();
-        return round(($completeItems / $totalItems) * 100, 2);
-    }
+    $doneItems = $items->whereIn('status', ['complete', 'in_package'])->count();
+    return round(($doneItems / $totalItems) * 100);
+}
 }

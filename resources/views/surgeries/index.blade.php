@@ -291,13 +291,17 @@
 
                                         {{-- Barra de completitud visual si está en preparación --}}
                                         @if($surgery->status === 'in_preparation' && $surgery->preparation)
+                                            @php
+                                                $progress = $surgery->preparation->getCompletenessPercentage();
+                                            @endphp
                                             <div class="w-full mt-2 max-w-[100px]">
                                                 <div class="flex justify-between mb-1">
                                                     <span class="text-[10px] font-medium text-gray-500">Progreso</span>
-                                                    <span class="text-[10px] font-medium text-gray-500">45%</span> {{-- Aquí va tu lógica de % --}}
+                                                    <span class="text-[10px] font-medium text-gray-500">{{ $progress }}%</span>
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-1">
-                                                    <div class="bg-yellow-500 h-1 rounded-full" style="width: 45%"></div>
+                                                    <div class="bg-{{ $progress == 100 ? 'green' : 'yellow' }}-500 h-1 rounded-full" 
+                                                        style="width: {{ $progress }}%"></div>
                                                 </div>
                                             </div>
                                         @endif

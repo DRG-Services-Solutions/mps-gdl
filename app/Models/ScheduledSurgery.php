@@ -223,7 +223,7 @@ class ScheduledSurgery extends Model
 
         // Obtener items base del checklist
         $baseItems = ChecklistItem::where('checklist_id', $this->checklist_id)
-            ->with(['product', 'conditionals'])
+            ->with(['product', 'conditionals.targetProduct'])  // ✅ Cargar targetProduct
             ->ordered()
             ->get();
 
@@ -231,7 +231,6 @@ class ScheduledSurgery extends Model
 
         $results = collect();
 
-        // Procesar cada item base
         foreach ($baseItems as $item) {
             $adjustedData = $item->getAdjustedQuantity($this);
             
@@ -240,6 +239,7 @@ class ScheduledSurgery extends Model
                 'base_quantity' => $adjustedData['base_quantity'],
                 'final_quantity' => $adjustedData['final_quantity'],
                 'has_conditional' => $adjustedData['has_conditional'],
+                'action_type' => $adjustedData['conditional']?->action_type ?? null,
             ]);
 
             // Solo agregar si la cantidad final es mayor a 0
@@ -251,6 +251,7 @@ class ScheduledSurgery extends Model
                     'base_quantity' => $adjustedData['base_quantity'],
                     'adjusted_quantity' => $adjustedData['final_quantity'],
                     'has_conditional' => $adjustedData['has_conditional'],
+                    'conditional' => $adjustedData['conditional'],  // ✅ NUEVO: pasar el objeto condicional
                     'conditional_description' => $adjustedData['conditional_description'],
                     'is_mandatory' => $item->is_mandatory ?? true,
                     'source' => $adjustedData['has_conditional'] ? 'conditional' : 'base',
@@ -258,7 +259,7 @@ class ScheduledSurgery extends Model
             }
         }
 
-        // Buscar productos adicionales (items con is_additional_product = true)
+        // Buscar productos adicionales
         $additionalProducts = $this->getAdditionalProducts();
         
         if ($additionalProducts->isNotEmpty()) {
@@ -272,6 +273,7 @@ class ScheduledSurgery extends Model
                     'base_quantity' => 0,
                     'adjusted_quantity' => $additional['quantity'],
                     'has_conditional' => true,
+                    'conditional' => $additional['conditional'] ?? null,  // ✅ NUEVO
                     'conditional_description' => $additional['description'],
                     'is_mandatory' => false,
                     'source' => 'additional',
@@ -284,6 +286,7 @@ class ScheduledSurgery extends Model
         return $results;
     }
 
+
     /**
      * Obtener productos adicionales que no están en el checklist base
      * pero deben incluirse por condicionales específicos
@@ -293,7 +296,7 @@ class ScheduledSurgery extends Model
     protected function getAdditionalProducts()
     {
         $legalEntityId = $this->hospital->legal_entity_id ?? null;
-        
+
         // ✅ FIX: Obtener modality_id real
         $modalityId = null;
         if ($this->hospital_modality_config_id) {
@@ -305,6 +308,7 @@ class ScheduledSurgery extends Model
             ->whereHas('checklistItem', function ($query) {
                 $query->where('checklist_id', $this->checklist_id);
             })
+            ->with(['checklistItem.product', 'targetProduct'])  // ✅ Cargar targetProduct
             ->get();
 
         $results = collect();
@@ -319,11 +323,15 @@ class ScheduledSurgery extends Model
                 $matches = false;
             }
             // ✅ FIX: Usar modality_id real
-            if ($conditional->modality_id !== null && (int) $conditional->modality_id !== (int) $modalityId) {
-                $matches = false;
+            if ($conditional->modality_id !== null) {
+                if ($modalityId === null || (int) $conditional->modality_id !== (int) $modalityId) {
+                    $matches = false;
+                }
             }
-            if ($conditional->legal_entity_id !== null && (int) $conditional->legal_entity_id !== (int) $legalEntityId) {
-                $matches = false;
+            if ($conditional->legal_entity_id !== null) {
+                if ($legalEntityId === null || (int) $conditional->legal_entity_id !== (int) $legalEntityId) {
+                    $matches = false;
+                }
             }
 
             if ($matches && $conditional->additional_quantity > 0) {
@@ -331,6 +339,7 @@ class ScheduledSurgery extends Model
                     'item' => $conditional->checklistItem,
                     'quantity' => $conditional->additional_quantity,
                     'description' => $conditional->getDescription(),
+                    'conditional' => $conditional,  // ✅ NUEVO: pasar objeto
                 ]);
             }
         }

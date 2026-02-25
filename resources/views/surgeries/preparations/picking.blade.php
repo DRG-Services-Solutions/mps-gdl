@@ -1,5 +1,3 @@
-{{-- resources/views/surgeries/preparations/pick.blade.php --}}
-
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
