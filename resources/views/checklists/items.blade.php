@@ -207,9 +207,9 @@
         </div>
     </div>
 
-{{-- ============================================
-     MODAL DE CONDICIONALES - Alpine.js
-     ============================================ --}}
+    {{-- ============================================ 
+        MODAL DE CONDICIONALES - Alpine.js
+        ============================================ --}}
 <div x-data="conditionalsModal()" 
      x-show="isOpen" 
      x-cloak
@@ -295,34 +295,45 @@
                                  }">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
-                                        {{-- TIPO DE ACCIÓN --}}
-                                        <div class="mb-3">
+                                        {{-- TIPO DE ACCIÓN + MODIFICADORES (reemplaza el bloque "TIPO DE ACCIÓN" dentro del x-for) --}}
+                                        <div class="mb-3 flex flex-wrap items-center gap-2">
+
+                                            {{-- Badge principal: tipo de acción --}}
                                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-                                                  :class="{
-                                                      'bg-purple-600 text-white': cond.action_type === 'adjust_quantity',
-                                                      'bg-green-600 text-white': cond.action_type === 'add_product',
-                                                      'bg-red-600 text-white': cond.action_type === 'exclude',
-                                                      'bg-orange-600 text-white': cond.action_type === 'replace',
-                                                      'bg-blue-600 text-white': cond.action_type === 'add_dependency'
-                                                  }">
+                                                :class="{
+                                                    'bg-purple-600 text-white': cond.action_type === 'adjust_quantity',
+                                                    'bg-green-600 text-white':  cond.action_type === 'add_product',
+                                                    'bg-red-600 text-white':    cond.action_type === 'exclude',
+                                                    'bg-orange-600 text-white': cond.action_type === 'replace',
+                                                    'bg-blue-600 text-white':   cond.action_type === 'add_dependency'
+                                                }">
                                                 <i class="fas mr-1.5"
-                                                   :class="{
-                                                       'fa-edit': cond.action_type === 'adjust_quantity',
-                                                       'fa-plus-circle': cond.action_type === 'add_product',
-                                                       'fa-times-circle': cond.action_type === 'exclude',
-                                                       'fa-exchange-alt': cond.action_type === 'replace',
-                                                       'fa-link': cond.action_type === 'add_dependency'
-                                                   }"></i>
+                                                :class="{
+                                                    'fa-edit':         cond.action_type === 'adjust_quantity',
+                                                    'fa-plus-circle':  cond.action_type === 'add_product',
+                                                    'fa-times-circle': cond.action_type === 'exclude',
+                                                    'fa-exchange-alt': cond.action_type === 'replace',
+                                                    'fa-link':         cond.action_type === 'add_dependency'
+                                                }"></i>
                                                 <span x-text="cond.action_description"></span>
                                             </span>
-                                            
-                                            {{-- Exclusión de factura --}}
+
+                                            {{-- Badge: No remisionar --}}
                                             <template x-if="cond.exclude_from_invoice">
-                                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-300">
-                                                    <i class="fas fa-gift mr-1"></i>
-                                                    No agregar en remision
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                    <i class="fas fa-file-invoice mr-1"></i>
+                                                    No remisionar
                                                 </span>
                                             </template>
+
+                                            {{-- Badge: Requiere aprobación --}}
+                                            <template x-if="cond.requires_approval">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300">
+                                                    <i class="fas fa-user-shield mr-1"></i>
+                                                    Requiere aprobación
+                                                </span>
+                                            </template>
+
                                         </div>
 
                                         {{-- CRITERIOS --}}
@@ -635,35 +646,76 @@
                             </div>
                         </div>
 
-                        {{-- ===== OPCIONES ADICIONALES ===== --}}
-                        <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                            <h5 class="text-sm font-bold text-gray-700 mb-3">
-                                <i class="fas fa-sliders-h mr-1"></i>
-                                Opciones Adicionales
-                            </h5>
-                            
-                            <div class="space-y-2">
-                                {{-- Excluir de factura --}}
-                                <label class="flex items-start cursor-pointer">
-                                    <input type="checkbox" 
-                                           x-model="newConditional.exclude_from_invoice"
-                                           class="mt-1 rounded text-yellow-600 focus:ring-yellow-500">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900">No facturar</div>
-                                        <p class="text-xs text-gray-600">El producto va físicamente pero no se cobra</p>
+                        {{-- ===== MODIFICADORES TRANSVERSALES ===== --}}
+                        <div class="rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
+
+                            {{-- Header de la sección --}}
+                            <div class="px-4 py-3 bg-gray-100 border-b border-gray-300 flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-sliders-h mr-2 text-gray-500"></i>
+                                    <span class="text-sm font-bold text-gray-700">Modificadores adicionales</span>
+                                </div>
+                                <span class="text-xs text-gray-500 italic">Aplican independientemente del tipo de acción</span>
+                            </div>
+
+                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                                {{-- No remisionar --}}
+                                <label
+                                    class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-150 select-none"
+                                    :class="newConditional.exclude_from_invoice
+                                        ? 'border-amber-400 bg-amber-50'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        x-model="newConditional.exclude_from_invoice"
+                                        class="mt-0.5 rounded text-amber-500 focus:ring-amber-400 cursor-pointer"
+                                    >
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-file-invoice text-amber-500 text-sm"></i>
+                                            <span class="text-sm font-semibold text-gray-900">No agregar en remisión</span>
+                                            <template x-if="newConditional.exclude_from_invoice">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">
+                                                    Activo
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                            El producto se despacha físicamente pero <strong>no aparece</strong> en la remisión ni se factura al cliente.
+                                        </p>
                                     </div>
                                 </label>
 
                                 {{-- Requiere aprobación --}}
-                                <label class="flex items-start cursor-pointer">
-                                    <input type="checkbox" 
-                                           x-model="newConditional.requires_approval"
-                                           class="mt-1 rounded text-yellow-600 focus:ring-yellow-500">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900">Requiere aprobación manual</div>
-                                        <p class="text-xs text-gray-600">Deberá ser aprobado antes de aplicarse</p>
+                                <label
+                                    class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all duration-150 select-none"
+                                    :class="newConditional.requires_approval
+                                        ? 'border-violet-400 bg-violet-50'
+                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        x-model="newConditional.requires_approval"
+                                        class="mt-0.5 rounded text-violet-500 focus:ring-violet-400 cursor-pointer"
+                                    >
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user-shield text-violet-500 text-sm"></i>
+                                            <span class="text-sm font-semibold text-gray-900">Requiere aprobación manual</span>
+                                            <template x-if="newConditional.requires_approval">
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-violet-100 text-violet-700 border border-violet-300">
+                                                    Activo
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                                            Este condicional <strong>no se aplica automáticamente</strong>; debe ser revisado y aprobado por un supervisor antes de surtirse.
+                                        </p>
                                     </div>
                                 </label>
+
                             </div>
                         </div>
 
