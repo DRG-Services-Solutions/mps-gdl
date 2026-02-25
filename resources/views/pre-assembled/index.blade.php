@@ -182,12 +182,10 @@
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                         <i class="fas fa-clipboard-list mr-1"></i>
-                                        @foreach ($checklists as $checklist)
-                                            @if($checklist->id === $package->checklist_id)
-                                                @break
-                                            @endif
-                                        @endforeach
-                                        {{ $checklists->firstWhere('id', $package->checklist_id)?->surgery_type ?? 'N/A' }}
+                                        
+                                         {{ $package->surgeryChecklist->surgery_type }}
+                                        
+                                        
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
