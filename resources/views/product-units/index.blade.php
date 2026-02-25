@@ -4,16 +4,16 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 {{ __('Gestión de Inventario - Unidades de Productos') }}
             </h2>
-           
         </div>
     </x-slot>
 
-    <div class="py-12" x-data="{ showDeleteModal: false, deleteId: null, deleteName: '' }">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
             <!-- Alertas -->
             @if(session('success'))
-                <div x-data="{ show: true }" 
-                     x-show="show" 
+                <div x-data="{ show: true }"
+                     x-show="show"
                      x-transition
                      class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-sm">
                     <div class="flex items-center justify-between">
@@ -33,8 +33,8 @@
             @endif
 
             @if(session('error'))
-                <div x-data="{ show: true }" 
-                     x-show="show" 
+                <div x-data="{ show: true }"
+                     x-show="show"
                      x-transition
                      class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg shadow-sm">
                     <div class="flex items-center justify-between">
@@ -55,6 +55,7 @@
 
             <!-- Tarjeta Principal -->
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+
                 <!-- Header de la Tabla -->
                 <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -71,12 +72,94 @@
                     </div>
                 </div>
 
-                <!-- Filtros -->
-                <div class="p-6 bg-gray-50 border-b border-gray-200">
-                    <form method="GET" action="{{ route('product-units.index') }}" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <!-- Búsqueda -->
-                            <div class="md:col-span-2">
+                {{-- ============================================================
+                     FILTROS REACTIVOS (Alpine.js)
+                     ============================================================ --}}
+                <div
+                    x-data="{
+                        filters: {
+                            search:     '{{ request('search') }}',
+                            product_id: '{{ request('product_id') }}',
+                            status:     '{{ request('status') }}',
+                        },
+                        productLabel: '{{ addslashes(optional($products->firstWhere('id', request('product_id')))->name ?? '') }}',
+                        loading: false,
+                        debounceTimer: null,
+
+                        get activeFilters() {
+                            const self = this;
+                            const labels = {
+                                search:     v => v ? `Búsqueda: ${v}` : null,
+                                product_id: v => v ? `Producto: ${self.productLabel}` : null,
+                                status:     v => v ? `Estado: ${self.statusLabel(v)}` : null,
+                            };
+                            return Object.entries(this.filters)
+                                .map(([k, v]) => ({ key: k, label: labels[k](v) }))
+                                .filter(f => f.label !== null);
+                        },
+
+                        statusLabel(v) {
+                            const map = {
+                                available:        'Disponible',
+                                in_use:           'En Uso',
+                                reserved:         'Reservado',
+                                in_sterilization: 'En Esterilización',
+                                maintenance:      'Mantenimiento',
+                                damaged:          'Dañado',
+                                expired:          'Caducado',
+                            };
+                            return map[v] ?? v;
+                        },
+
+                        removeFilter(key) {
+                            this.filters[key] = '';
+                            if (key === 'product_id') {
+                                this.productLabel = '';
+                                // Limpia el input visual del componente hijo
+                                window.dispatchEvent(new CustomEvent('clear-product'));
+                            }
+                            this.doFetch();
+                        },
+
+                        doFetch() {
+                            clearTimeout(this.debounceTimer);
+                            this.debounceTimer = setTimeout(async () => {
+                                this.loading = true;
+
+                                const params = new URLSearchParams(
+                                    Object.fromEntries(
+                                        Object.entries(this.filters).filter(([, v]) => v !== '')
+                                    )
+                                );
+
+                                const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                                window.history.pushState({}, '', newUrl);
+
+                                const res = await fetch(window.location.pathname + '?' + params.toString(), {
+                                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                                });
+                                document.getElementById('table-container').innerHTML = await res.text();
+                                this.loading = false;
+                            }, 350);
+                        }
+                    }"
+                    x-init="
+                        $watch('filters.status', () => $data.doFetch());
+                        $watch('filters.search', () => $data.doFetch());
+                    "
+                    {{-- Escucha el evento del hijo cuando se selecciona/limpia un producto --}}
+                    x-on:product-selected.window="
+                        filters.product_id = $event.detail.id;
+                        productLabel       = $event.detail.name;
+                        $data.doFetch();
+                    "
+                >
+                    <!-- ── Fila de filtros ── -->
+                    <div class="p-6 bg-gray-50 border-b border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                            <!-- Búsqueda general -->
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -84,221 +167,190 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                         </svg>
                                     </div>
-                                    <input type="text" 
-                                           name="search" 
-                                           value="{{ request('search') }}"
-                                           class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                                           placeholder="EPC, Serial, Lote...">
+                                    <input
+                                        type="text"
+                                        x-model="filters.search"
+                                        placeholder="EPC, Serial, Lote..."
+                                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                    {{-- El $watch en x-init dispara doFetch() automáticamente --}}
                                 </div>
                             </div>
 
-                            <!-- Filtro por Producto -->
-                            <div>
+                            <!-- Producto con búsqueda AJAX -->
+                            <div
+                                x-data="{
+                                    open:          false,
+                                    search:        '',
+                                    results:       [],
+                                    loadingSearch: false,
+                                    debounce:      null,
+
+                                    init() {
+                                        // Inicializa el texto del input con el label del padre (si hay filtro activo en la URL)
+                                        const parentLabel = this.$el.closest('[x-data]').__x
+                                            ? null
+                                            : null;
+                                        // Escucha evento de limpieza desde el padre (chips)
+                                        window.addEventListener('clear-product', () => {
+                                            this.search  = '';
+                                            this.open    = false;
+                                            this.results = [];
+                                        });
+                                    },
+
+                                    fetchProducts() {
+                                        clearTimeout(this.debounce);
+                                        this.debounce = setTimeout(async () => {
+                                            if (!this.search.trim()) {
+                                                this.results = [];
+                                                this.open    = false;
+                                                return;
+                                            }
+                                            this.loadingSearch = true;
+                                            const res = await fetch(
+                                                `{{ route('product-units.search-products') }}?q=${encodeURIComponent(this.search)}`,
+                                                { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+                                            );
+                                            this.results       = await res.json();
+                                            this.open          = this.results.length > 0;
+                                            this.loadingSearch = false;
+                                        }, 300);
+                                    },
+
+                                    selectProduct(product) {
+                                        this.search  = product.name;
+                                        this.open    = false;
+                                        this.results = [];
+                                        // Comunica al padre vía evento global
+                                        window.dispatchEvent(new CustomEvent('product-selected', {
+                                            detail: { id: product.id, name: product.name }
+                                        }));
+                                    },
+
+                                    clear() {
+                                        this.search  = '';
+                                        this.open    = false;
+                                        this.results = [];
+                                        window.dispatchEvent(new CustomEvent('product-selected', {
+                                            detail: { id: '', name: '' }
+                                        }));
+                                    }
+                                }"
+                                x-init="
+                                    // Si la página cargó con product_id en la URL, mostrar el label
+                                    @if(request('product_id') && $products->firstWhere('id', request('product_id')))
+                                        search = '{{ addslashes($products->firstWhere('id', request('product_id'))->name) }}';
+                                    @endif
+                                "
+                                x-on:click.outside="open = false"
+                                class="relative"
+                            >
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Producto</label>
-                                <select name="product_id" 
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Todos los productos</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}" {{ request('product_id') == $product->id ? 'selected' : '' }}>
-                                            {{ $product->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+
+                                <div class="relative">
+                                    <input
+                                        type="text"
+                                        x-model="search"
+                                        x-on:input="fetchProducts()"
+                                        placeholder="Buscar producto..."
+                                        autocomplete="off"
+                                        class="block w-full px-3 py-2.5 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                    <div class="absolute inset-y-0 right-2 flex items-center">
+                                        <template x-if="loadingSearch">
+                                            <svg class="animate-spin h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                            </svg>
+                                        </template>
+                                        <template x-if="!loadingSearch && search">
+                                            <button type="button" x-on:click="clear()" class="text-gray-400 hover:text-gray-600">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Dropdown de resultados -->
+                                <div
+                                    x-show="open"
+                                    x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-95"
+                                    class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                    style="display: none;"
+                                >
+                                    <template x-for="product in results" :key="product.id">
+                                        <button
+                                            type="button"
+                                            x-on:click="selectProduct(product)"
+                                            class="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
+                                        >
+                                            <span class="block text-sm font-medium text-gray-900" x-text="product.name"></span>
+                                            <span class="block text-xs text-gray-500" x-text="product.code"></span>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
 
-                            <!-- Filtro por Estado -->
+                            <!-- Estado -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                                <select name="status" 
-                                        class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <select
+                                    x-model="filters.status"
+                                    class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
                                     <option value="">Todos los estados</option>
-                                    <option value="available" {{ request('status') == 'available' ? 'selected' : '' }}>Disponible</option>
-                                    <option value="in_use" {{ request('status') == 'in_use' ? 'selected' : '' }}>En Uso</option>
-                                    <option value="reserved" {{ request('status') == 'reserved' ? 'selected' : '' }}>Reservado</option>
-                                    <option value="in_sterilization" {{ request('status') == 'in_sterilization' ? 'selected' : '' }}>En Esterilización</option>
-                                    <option value="maintenance" {{ request('status') == 'maintenance' ? 'selected' : '' }}>Mantenimiento</option>
-                                    <option value="damaged" {{ request('status') == 'damaged' ? 'selected' : '' }}>Dañado</option>
-                                    <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Caducado</option>
+                                    <option value="available">Disponible</option>
+                                    <option value="in_use">En Uso</option>
+                                    <option value="reserved">Reservado</option>
+                                    <option value="in_sterilization">En Esterilización</option>
+                                    <option value="maintenance">Mantenimiento</option>
+                                    <option value="damaged">Dañado</option>
+                                    <option value="expired">Caducado</option>
                                 </select>
                             </div>
+
+                        </div>{{-- /grid --}}
+
+                        <!-- Chips de filtros activos -->
+                        <div class="mt-3 flex flex-wrap gap-2" x-show="activeFilters.length > 0" x-cloak>
+                            <span class="text-xs text-gray-500 self-center">Filtros activos:</span>
+                            <template x-for="filter in activeFilters" :key="filter.key">
+                                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    <span x-text="filter.label"></span>
+                                    <button
+                                        type="button"
+                                        x-on:click="removeFilter(filter.key)"
+                                        class="ml-1 hover:text-blue-600 focus:outline-none"
+                                    >
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </span>
+                            </template>
                         </div>
 
-                       
+                    </div>{{-- /filtros --}}
 
-                            <!-- Botones de Filtro -->
-                            <div class="flex items-end space-x-2 md:col-span-3">
-                                <button type="submit" 
-                                        class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-all duration-200">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                                    </svg>
-                                    Filtrar
-                                </button>
-                                @if(request()->hasAny(['search', 'product_id', 'status', 'location_id']))
-                                    <a href="{{ route('product-units.index') }}" 
-                                       class="inline-flex items-center justify-center px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-all duration-200">
-                                        Limpiar
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Tabla -->
-                <div class="overflow-x-auto">
-                    @if($units->count() > 0)
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Identificador
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Producto
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Lote
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Estado
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Ubicación
-                                    </th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Caducidad
-                                    </th>
-                                    <th class="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                                        Acciones
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($units as $unit)
-                                    <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                        <!-- Identificador -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                                    @if($unit->epc)
-                                                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                                                        </svg>
-                                                    @else
-                                                        <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
-                                                        </svg>
-                                                    @endif
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-bold text-gray-900">{{ $unit->unique_identifier }}</div>
-                                                    <div class="text-xs text-gray-500">
-                                                        {{ $unit->epc ? 'RFID' : 'Serial' }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <!-- Producto -->
-                                        <td class="px-6 py-4">
-                                            <div class="text-sm font-medium text-gray-900">{{ $unit->product->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $unit->product->code }}</div>
-                                        </td>
-
-                                        <!-- Lote -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="text-sm text-gray-900">{{ $unit->batch_number ?? 'N/A' }}</span>
-                                        </td>
-
-                                        <!-- Estado -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                                {{ $unit->status_color === 'green' ? 'bg-green-100 text-green-800' : '' }}
-                                                {{ $unit->status_color === 'blue' ? 'bg-blue-100 text-blue-800' : '' }}
-                                                {{ $unit->status_color === 'yellow' ? 'bg-yellow-100 text-yellow-800' : '' }}
-                                                {{ $unit->status_color === 'purple' ? 'bg-purple-100 text-purple-800' : '' }}
-                                                {{ $unit->status_color === 'orange' ? 'bg-orange-100 text-orange-800' : '' }}
-                                                {{ $unit->status_color === 'red' ? 'bg-red-100 text-red-800' : '' }}
-                                                {{ $unit->status_color === 'gray' ? 'bg-gray-100 text-gray-800' : '' }}">
-                                                {{ $unit->status_label }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Ubicación -->
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center text-sm">
-                                                <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                </svg>
-                                                <span class="text-gray-900">
-                                                    {{ $unit->currentLocation ? $unit->currentLocation->code : 'Sin asignar' }}
-                                                </span>
-                                            </div>
-                                        </td>
-
-                                        <!-- Caducidad -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($unit->expiration_date)
-                                                <div class="text-sm">
-                                                    <div class="text-gray-900">{{ $unit->expiration_date->format('d/m/Y') }}</div>
-                                                    @if($unit->isExpired())
-                                                        <span class="text-xs text-red-600 font-semibold">¡Caducado!</span>
-                                                    @elseif($unit->isExpiringSoon())
-                                                        <span class="text-xs text-orange-600 font-semibold">Próximo a caducar</span>
-                                                    @else
-                                                        <span class="text-xs text-green-600">{{ $unit->days_until_expiration }} días</span>
-                                                    @endif
-                                                </div>
-                                            @else
-                                                <span class="text-sm text-gray-400">N/A</span>
-                                            @endif
-                                        </td>
-
-                                        <!-- Acciones -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="flex items-center justify-center space-x-3">
-                                                <a href="{{ route('product-units.show', $unit) }}" 
-                                                   title="Ver detalles"
-                                                   class="text-blue-600 hover:text-blue-900 transition-colors duration-150">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                                    </svg>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @else
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">No hay unidades registradas</h3>
-                            <p class="mt-1 text-sm text-gray-500">Comienza registrando la entrada de productos.</p>
-                            <div class="mt-6">
-                                <a href="{{ route('product-units.create') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    Registrar Primera Entrada
-                                </a>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Paginación -->
-                @if($units->count() > 0)
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                        {{ $units->links() }}
+                    <!-- Contenedor tabla — se reemplaza en cada fetch AJAX -->
+                    <div
+                        id="table-container"
+                        x-bind:class="loading ? 'opacity-50 pointer-events-none transition-opacity duration-200' : ''"
+                    >
+                        @include('product-units._table')
                     </div>
-                @endif
-            </div>
+
+                </div>{{-- /x-data filtros --}}
+
+            </div>{{-- /tarjeta --}}
         </div>
     </div>
 </x-app-layout>

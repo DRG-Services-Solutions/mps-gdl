@@ -17,35 +17,30 @@ class ProductUnitController extends Controller
     {
         $query = ProductUnit::with(['product', 'currentLocation']);
 
-        // Filtros
-        if ($request->has('product_id') && $request->product_id != '') {
+        if ($request->filled('product_id')) {
             $query->where('product_id', $request->product_id);
         }
-
-        if ($request->has('status') && $request->status != '') {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        if ($request->has('location_id') && $request->location_id != '') {
-            $query->where('current_location_id', $request->location_id);
-        }
-
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('epc', 'like', "%{$search}%")
-                  ->orWhere('serial_number', 'like', "%{$search}%")
-                  ->orWhere('batch_number', 'like', "%{$search}%");
+                ->orWhere('serial_number', 'like', "%{$search}%")
+                ->orWhere('batch_number', 'like', "%{$search}%");
             });
         }
 
-        $units = $query->orderBy('created_at', 'desc')->paginate(15);
-        
-        // Para los filtros
+        $units = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $products = Product::orderBy('name')->get();
-        //$locations = Location::orderBy('name')->get();
 
-        return view('product-units.index', compact('units', 'products', ));
+        // Respuesta AJAX → solo devuelve el partial
+        if ($request->ajax()) {
+            return view('product-units._table', compact('units'));
+        }
+
+        return view('product-units.index', compact('units', 'products'));
     }
 
     /**
@@ -145,5 +140,18 @@ class ProductUnitController extends Controller
         } while (ProductUnit::where('serial_number', $serial)->exists());
         
         return $serial;
+    }
+
+    public function searchProducts(Request $request)
+    {
+        $search = $request->get('q', '');
+        
+        $products = Product::where('name', 'like', "%{$search}%")
+            ->orWhere('code', 'like', "%{$search}%")
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id', 'name', 'code']);
+
+        return response()->json($products);
     }
 }

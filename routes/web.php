@@ -432,6 +432,9 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // ========================================
     // UNIDADES DE PRODUCTOS (INVENTARIO)
     // ========================================
+    Route::get('product-units/search-products', [ProductUnitController::class, 'searchProducts'])
+        ->name('product-units.search-products');
+
     Route::resource('product-units', ProductUnitController::class);
 
     // ========================================
