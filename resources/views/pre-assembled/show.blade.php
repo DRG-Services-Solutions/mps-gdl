@@ -38,7 +38,29 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Estado</p>
-                            <p class="text-xl font-bold text-600 mt-2">{{ ucfirst($preAssembled->status) }}</p>
+                            <p class="text-xl font-bold text-600 mt-2">
+                                @if ($preAssembled->status === 'available')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        Disponible
+                                    </span>
+                                @elseif ($preAssembled->status === 'in_preparation')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-tools mr-1"></i>
+                                        En Preparación
+                                    </span>
+                                @elseif ($preAssembled->status === 'in_surgery')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <i class="fas fa-procedures mr-1"></i>
+                                        En Cirugía
+                                    </span>
+                                @elseif ($preAssembled->status === 'maintenance')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i class="fas fa-wrench mr-1"></i>
+                                        Mantenimiento
+                                    </span>
+                                @endif
+                               
                         </div>
                         <div class="bg-100 rounded-full p-3">
                             <i class="fas fa-circle text-2xl text-600"></i>
@@ -135,8 +157,9 @@
                 </div>
             </div>
 
-            <!-- 🆕 FORMULARIO MEJORADO: Escaneo Individual -->
+            
             <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-lg shadow-sm overflow-hidden border border-green-200">
+                <!-- 🆕 FORMULARIO MEJORADO: Escaneo Individual 
                 <div class="px-6 py-4 bg-white bg-opacity-90 border-b border-green-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">
@@ -155,6 +178,7 @@
                         </div>
                     </div>
                 </div>
+                -->
                 
                 <form id="single-scan-form" action="{{ route('pre-assembled.add-product', $preAssembled) }}" method="POST" class="p-6">
                     @csrf
