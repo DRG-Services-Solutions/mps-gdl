@@ -71,8 +71,6 @@ class Product extends Model
         return $this->belongsTo(MedicalSpecialty::class, 'specialty_id');
     }
 
-   
-    
     public function supplier() 
     {
         return $this->belongsTo(Supplier::class);    

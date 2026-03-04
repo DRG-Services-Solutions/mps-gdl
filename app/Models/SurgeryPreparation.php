@@ -117,4 +117,6 @@ class SurgeryPreparation extends Model
     $doneItems = $items->whereIn('status', ['complete', 'in_package'])->count();
     return round(($doneItems / $totalItems) * 100);
 }
+
+
 }

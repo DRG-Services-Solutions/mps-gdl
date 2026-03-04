@@ -99,4 +99,23 @@ class SurgeryPreparationItem extends Model
             $this->update(['status' => 'complete']);
         }
     }
+    /**
+     * Atributo personalizado para obtener los condicionales del Checklist original
+     */
+    public function getConditionalsAttribute()
+    {
+        // 1. Navegamos hacia arriba para llegar al checklist original de esta preparación
+        $checklist = $this->preparation->preAssembledPackage->surgeryChecklist ?? null;
+
+        // Si por alguna razón no hay checklist, devolvemos una colección vacía
+        if (!$checklist) {
+            return collect(); 
+        }
+
+        // 2. Buscamos en el checklist original el ítem que tenga el mismo ID de producto
+        $checklistItem = $checklist->items->firstWhere('product_id', $this->product_id);
+
+        // 3. Si lo encontramos, devolvemos sus condicionales. Si no, una colección vacía.
+        return $checklistItem ? $checklistItem->conditionals : collect();
+    }
 }

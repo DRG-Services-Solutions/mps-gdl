@@ -396,7 +396,7 @@ class ProductUnit extends Model
                 WHEN expiration_date IS NOT NULL THEN expiration_date
                 ELSE COALESCE(manufacture_date, acquisition_date, created_at)
             END ASC
-        ')->first();
+        ');
     }
 
     // ==================== MÉTODOS DE VERIFICACIÓN ====================

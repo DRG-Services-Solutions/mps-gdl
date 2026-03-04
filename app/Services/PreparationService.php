@@ -105,11 +105,10 @@ class PreparationService
                 throw new Exception('EPC no encontrado en el sistema.');
             }
 
-            Log::info("ProductUnit encontrado: ID {$productUnit->id}, Status actual: {$productUnit->current_status}");
+            Log::info("ProductUnit encontrado: ID {$productUnit->id}, Status actual: {$productUnit->status}");
 
-            // FIX #2: También aceptar 'reserved' porque scanBarcode() reserva ANTES de llamar pickProduct
-            if (!in_array($productUnit->current_status, ['available', 'in_stock', 'reserved'])) {
-                throw new Exception("Esta unidad no está disponible (estado: {$productUnit->current_status}).");
+            if (!$productUnit->isAvailable() && $productUnit->status !== ProductUnit::STATUS_RESERVED) {
+            throw new Exception("Esta unidad no está disponible (estado: {$productUnit->status_label})");
             }
 
             $preparation = SurgeryPreparation::with('items', 'scheduledSurgery')->findOrFail($preparationId);
@@ -118,8 +117,6 @@ class PreparationService
                 throw new Exception('La preparación no está en estado de recolección.');
             }
 
-            // 4. Validar que no se haya escaneado previamente
-            // FIX #3: Validar tanto por package_id como por preparation_id para casos sin paquete
             if ($preparation->pre_assembled_package_id) {
                 $alreadyScanned = PackageContent::where('pre_assembled_package_id', $preparation->pre_assembled_package_id)
                     ->where('product_unit_id', $productUnit->id)
@@ -158,13 +155,11 @@ class PreparationService
             Log::info("Item actualizado: Picked={$prepItem->fresh()->quantity_picked}, Missing={$prepItem->fresh()->quantity_missing}");
 
             // 7. Actualizar ProductUnit
-            $productUnit->update([
-                'current_status' => 'reserved', 
-                'current_package_id' => $preparation->pre_assembled_package_id,
-                'current_surgery_id' => $preparation->scheduled_surgery_id,
-                'reserved_at' => now(),
-                'reserved_by' => $userId,
-            ]);
+            $productUnit->reserve(
+                $userId, 
+                $preparation->scheduled_surgery_id, 
+                $preparation->pre_assembled_package_id
+            );
 
             // 8. Registrar en contenidos del paquete (auditoría) - solo si hay paquete
             if ($preparation->pre_assembled_package_id) {

@@ -298,7 +298,7 @@
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Faltan</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Surtidos</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Requeridos</th>
-                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ubicación</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Condicionales</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Obligatorio</th>
                             </tr>
                         </thead>
@@ -331,14 +331,47 @@
                                     <td class="px-6 py-4 text-center">
                                         <span class="text-gray-600 font-medium">{{ $item->quantity_required }}</span>
                                     </td>
-                                    <td class="px-6 py-4">
-                                        @if($item->storageLocation)
-                                            <span class="text-sm text-indigo-600 font-semibold">
-                                                <i class="fas fa-map-marker-alt mr-1"></i> 
-                                                {{ $item->storageLocation->code }}
-                                            </span>
+                                    <td class="px-6 py-4 text-center">
+                                        @php
+                                            // Contamos cuántos condicionales tiene este item
+                                            $condCount = $item->conditionals ? $item->conditionals->count() : 0;
+                                        @endphp
+
+                                        @if($condCount > 0)
+                                            <button type="button" 
+                                                    onclick="openConditionalsModal('{{ $item->product->name }}', 'conditionals-data-{{ $item->id }}')" 
+                                                    class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-full font-bold text-xs transition-colors cursor-pointer">
+                                                <i class="fas fa-list-ul mr-1"></i> 
+                                                Ver {{ $condCount }}
+                                            </button>
+
+                                            <div id="conditionals-data-{{ $item->id }}" class="hidden">
+                                                @foreach($item->conditionals as $conditional)
+                                                    <div class="mb-3 p-3 bg-purple-50 rounded-lg border border-purple-100 text-left">
+                                                        
+                                                        <p class="text-sm font-bold text-purple-900 mb-1">
+                                                            <i class="fas fa-filter text-purple-600 mr-1"></i> Cuándo aplica:
+                                                        </p>
+                                                        <p class="text-sm text-gray-700 mb-2">
+                                                            {{ $conditional->getDescription() }}
+                                                        </p>
+                                                        
+                                                        <div class="mt-2 text-sm text-purple-800 bg-white inline-block px-3 py-1.5 rounded border border-purple-200 shadow-sm">
+                                                            <strong><i class="fas fa-bolt text-yellow-500 mr-1"></i> Acción:</strong> 
+                                                            {{ $conditional->getActionDescription() }}
+                                                        </div>
+
+                                                        @if($conditional->notes)
+                                                            <p class="mt-3 text-xs text-gray-500 italic border-t border-purple-100 pt-2">
+                                                                <i class="fas fa-comment-dots mr-1"></i> Nota: {{ $conditional->notes }}
+                                                            </p>
+                                                        @endif
+                                                        
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         @else
-                                            <span class="text-gray-400 text-xs italic">No definida</span>
+                                            <span class="text-gray-400 text-xs italic">Sin Condicional</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center">
@@ -439,6 +472,34 @@
             </div>
         </div>
     </div>
+    <div id="conditionalsModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center transition-opacity">
+    <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
+        
+        <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+            <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                <i class="fas fa-clipboard-list text-purple-600 mr-2"></i>
+                Condicionales
+            </h3>
+            <button onclick="closeConditionalsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="py-3">
+            <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Producto:</p>
+            <p id="modalProductName" class="text-md font-medium text-gray-800"></p>
+        </div>
+
+        <div id="modalConditionalsContent" class="mt-2 max-h-60 overflow-y-auto pr-1">
+            </div>
+
+        <div class="mt-5 pt-3 border-t border-gray-200 flex justify-end">
+            <button onclick="closeConditionalsModal()" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
 
     @push('styles')
     <style>
@@ -523,6 +584,39 @@
             function refreshPage() {
                 window.location.reload();
             }
+        </script>
+    @endpush
+
+    @push('scripts')
+        <script>
+            function openConditionalsModal(productName, dataContainerId) {
+                // 1. Obtener el contenedor del modal y sus elementos
+                const modal = document.getElementById('conditionalsModal');
+                const nameContainer = document.getElementById('modalProductName');
+                const contentContainer = document.getElementById('modalConditionalsContent');
+                
+                // 2. Extraer el HTML de los condicionales del contenedor oculto de la tabla
+                const hiddenData = document.getElementById(dataContainerId).innerHTML;
+
+                // 3. Llenar el modal con los datos
+                nameContainer.innerText = productName;
+                contentContainer.innerHTML = hiddenData;
+
+                // 4. Mostrar el modal
+                modal.classList.remove('hidden');
+            }
+
+            function closeConditionalsModal() {
+                const modal = document.getElementById('conditionalsModal');
+                modal.classList.add('hidden');
+            }
+
+            // Opcional: Cerrar el modal al hacer clic afuera de él
+            document.getElementById('conditionalsModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeConditionalsModal();
+                }
+            });
         </script>
     @endpush
 </x-app-layout>

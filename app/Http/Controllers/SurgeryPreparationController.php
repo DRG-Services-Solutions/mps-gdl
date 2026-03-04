@@ -192,7 +192,8 @@ class SurgeryPreparationController extends Controller
 
         $surgery->load([
             'preparation.items.product',
-            'preparation.items.storageLocation'
+            'preparation.items.storageLocation',
+            'preparation.preAssembledPackage.surgeryChecklist.items.conditionals' 
         ]);
         
         $preparation = $surgery->preparation;
@@ -210,7 +211,6 @@ class SurgeryPreparationController extends Controller
         // Obtener resumen usando el servicio
         $summary = $this->preparationService->getPreparationSummary($preparation->id);
 
-        // FIX: Usar quantity_missing > 0 consistentemente
         $pendingItems = $preparation->items->where('quantity_missing', '>', 0)->values();
 
         return view('surgeries.preparations.picking', compact(
@@ -523,7 +523,8 @@ class SurgeryPreparationController extends Controller
         }
 
         try {
-            $product = \App\Models\Product::findByCode($validated['barcode']);
+            // 1. Buscar el producto por código (Asegúrate que Product::findByCode exista)
+            $product = \App\Models\Product::where('code', $validated['barcode'])->first();
 
             if (!$product) {
                 return response()->json([
@@ -532,6 +533,7 @@ class SurgeryPreparationController extends Controller
                 ], 404);
             }
 
+            // 2. Verificar si este producto es requerido en la preparación
             $preparationItem = $preparation->items()
                 ->where('product_id', $product->id)
                 ->where('quantity_missing', '>', 0)
@@ -540,49 +542,42 @@ class SurgeryPreparationController extends Controller
             if (!$preparationItem) {
                 return response()->json([
                     'success' => false,
-                    'message' => "⚠️ Este producto no está en la lista de pendientes o ya fue completado."
+                    'message' => "⚠️ Este producto no es requerido o ya está completo."
                 ], 400);
             }
 
-            $unit = $product->getNextAvailableUnit();
+            // 3. Obtener la siguiente unidad disponible (FEFO/FIFO)
+            // Usamos el scope que ya definiste en el modelo ProductUnit
+            $unit = \App\Models\ProductUnit::nextAvailable($product->id)->first();
 
             if (!$unit) {
-                $otherUnits = $product->units()
-                    ->whereIn('status', ['in_use', 'reserved', 'in_sterilization'])
-                    ->with('currentLocation')
-                    ->get();
-
-                $statusInfo = $otherUnits->groupBy('status')->map(function($units, $status) {
-                    return [
-                        'count' => $units->count(),
-                        'status_label' => $units->first()->status_label ?? $status
-                    ];
-                });
-
                 return response()->json([
                     'success' => false,
-                    'message' => "❌ No hay unidades disponibles de {$product->name}",
-                    'other_units' => $statusInfo
+                    'message' => "❌ No hay unidades disponibles de {$product->name} en el inventario."
                 ], 404);
             }
 
+            // 4. Reservar la unidad físicamente
+            // El orden en tu modelo es: reserve($userId, $surgeryId = null, $packageId = null)
             $unit->reserve(
                 auth()->id(),
                 $surgery->id,
                 $preparation->pre_assembled_package_id
             );
 
+            // 5. Registrar el picking en el servicio (Esto actualiza contadores de la preparación)
             $result = $this->preparationService->pickProduct(
                 $preparation->id,
                 $unit->epc,
                 auth()->id()
             );
 
+            // 6. Obtener el item actualizado para la respuesta
             $item = $preparation->items()->find($result['item_id']);
 
             return response()->json([
                 'success' => true,
-                'message' => "✅ {$product->name} agregado automáticamente",
+                'message' => "✅ {$product->name} agregado (Unidad FEFO)",
                 'mode' => 'manual',
                 'data' => [
                     'item_id' => $result['item_id'],
@@ -591,7 +586,6 @@ class SurgeryPreparationController extends Controller
                         'epc' => $unit->epc,
                         'batch' => $unit->batch_number,
                         'expiration' => $unit->expiration_date?->format('Y-m-d'),
-                        'days_until_expiration' => $unit->days_until_expiration,
                         'location' => $unit->currentLocation?->code,
                     ],
                     'quantity_picked' => $item->quantity_picked,
@@ -602,11 +596,12 @@ class SurgeryPreparationController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Error al escanear barcode: " . $e->getMessage());
+            Log::error("Error en scanBarcode: " . $e->getMessage());
             return response()->json([
                 'success' => false,
+                // Enviamos el mensaje de la excepción porque suele ser descriptivo ("Esta unidad no está disponible", etc)
                 'message' => "Error: " . $e->getMessage()
-            ], 500);
+            ], 422); // 422 es más apropiado para errores de lógica de negocio
         }
     }
 
