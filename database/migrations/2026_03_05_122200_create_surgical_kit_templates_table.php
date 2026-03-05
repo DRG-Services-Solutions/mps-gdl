@@ -11,9 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('surgical_kits', function (Blueprint $table) {
+        Schema::create('surgical_kit_templates', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->string('code')->unique();
+            $table->string('surgery_type');
+            $table->string('description')->nullable();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softdeletes();
+            
         });
     }
 
@@ -22,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('surgical_kits');
+        Schema::dropIfExists('surgical_kit_templates');
     }
 };

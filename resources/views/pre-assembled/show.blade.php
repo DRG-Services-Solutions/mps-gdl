@@ -9,16 +9,8 @@
                 <p class="text-sm text-gray-600 mt-1">{{ $preAssembled->code }}</p>
             </div>
             <div class="flex items-center space-x-3">
-                <button onclick="openBulkScanModal()" 
-                   class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                    <i class="fas fa-barcode mr-2"></i>
-                    Escaneo Masivo
-                </button>
-                <a href="{{ route('pre-assembled.edit', $preAssembled) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                    <i class="fas fa-edit mr-2"></i>
-                    Editar
-                </a>
+                
+                
                 <a href="{{ route('pre-assembled.index') }}" 
                    class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                     <i class="fas fa-arrow-left mr-2"></i>
@@ -410,79 +402,7 @@
         </div>
     </div>
 
-    <!-- 🆕 MODAL: Escaneo Masivo -->
-    <div id="bulk-scan-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-2xl rounded-lg bg-white">
-            <!-- Header -->
-            <div class="flex items-center justify-between pb-4 border-b">
-                <h3 class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-barcode mr-2 text-indigo-600"></i>
-                    Escaneo Masivo de Productos
-                </h3>
-                <button onclick="closeBulkScanModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-
-            <!-- Body -->
-            <form id="bulk-scan-form" action="{{ route('pre-assembled.add-product', $preAssembled) }}" method="POST">
-                @csrf
-                <div class="mt-6 space-y-4">
-                    <!-- Lista de productos escaneados -->
-                    <div class="bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto" id="scanned-products-list">
-                        <p class="text-sm text-gray-500 text-center py-8">
-                            <i class="fas fa-barcode text-4xl text-gray-300 mb-2"></i><br>
-                            Comienza a escanear productos...
-                        </p>
-                    </div>
-
-                    <!-- Campo de escaneo -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Escanea aquí (se agregará automáticamente)
-                        </label>
-                        <input 
-                            type="text" 
-                            id="bulk_scan_input" 
-                            placeholder="Escanea EPC o código de barras..."
-                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-lg font-mono"
-                            autocomplete="off">
-                    </div>
-
-                    <!-- Contador -->
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-600">
-                            <i class="fas fa-box mr-1"></i>
-                            Productos escaneados: <strong id="scanned-count">0</strong>
-                        </span>
-                        <button 
-                            type="button"
-                            onclick="clearScannedProducts()"
-                            class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash mr-1"></i>
-                            Limpiar lista
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div class="mt-6 flex justify-end space-x-3 pt-4 border-t">
-                    <button 
-                        type="button"
-                        onclick="closeBulkScanModal()"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                        Cancelar
-                    </button>
-                    <button 
-                        type="submit"
-                        class="px-6 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
-                        <i class="fas fa-save mr-1"></i>
-                        Agregar Todos (<span id="submit-count">0</span>)
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+    
 
     @push('scripts')
     <script>

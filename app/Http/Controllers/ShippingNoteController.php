@@ -160,12 +160,11 @@ class ShippingNoteController extends Controller
                 ->get();
         }
 
-        // Kits disponibles para asignar
+        // Kits disponibles para asignar (¡Corregido!)
         $availableKits = collect();
         if ($shippingNote->isDraft()) {
             $assignedKitIds = $shippingNote->kits()->pluck('surgical_kit_id');
-            $availableKits = SurgicalKit::where('is_active', true)
-                ->whereNotIn('id', $assignedKitIds)
+            $availableKits = SurgicalKit::whereNotIn('id', $assignedKitIds)
                 ->get();
         }
 
@@ -180,7 +179,7 @@ class ShippingNoteController extends Controller
 
         return view('shipping-notes.show', array_merge($preview, [
             'availablePackages' => $availablePackages,
-            'availableKits' => $availableKits,
+            'availableKits'     => $availableKits,
             'availableProducts' => $availableProducts,
         ]));
     }
