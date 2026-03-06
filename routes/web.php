@@ -36,6 +36,7 @@ use App\Http\Controllers\ChecklistImportController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShippingNoteController;
+use App\Http\Controllers\SurgicalKitTemplateController;
 
 
 // ========================================
@@ -67,6 +68,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // RUTAS DE ADMINISTRADOR
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
+
+Route::resource('surgical-kit-templates', SurgicalKitTemplateController::class);
+
 
 Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->group(function () {
     

@@ -14,7 +14,13 @@ return new class extends Migration
         Schema::create('surgical_kit_template_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('surgical_kit_template_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->integer('quantity_required')->default(1);
+            $table->boolean('is_mandatory')->default(true);
+            $table->string('notes')->nullable();
+            $table->timestamps();$table->unique(['surgical_kit_template_id', 'product_id'], 'template_product_unique');
+
+
         });
     }
 

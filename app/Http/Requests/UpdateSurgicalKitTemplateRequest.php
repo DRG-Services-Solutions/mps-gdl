@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateSurgicalKitTemplateRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class UpdateSurgicalKitTemplateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,8 +22,19 @@ class UpdateSurgicalKitTemplateRequest extends FormRequest
      */
     public function rules(): array
     {
+
+        $template = $this->route('surgical_kit_template');
+        
         return [
-            //
+            'name' => 'required|string|max:255',
+            'code' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::unique('surgical_kit_templates', 'code')->ignore($template)
+            ],
+            'is_active' => 'boolean',
+            'description' => 'nullable|string',
         ];
     }
 }

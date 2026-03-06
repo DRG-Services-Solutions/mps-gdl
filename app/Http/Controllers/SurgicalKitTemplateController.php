@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurgicalKitTemplate;
+use Illuminate\Http\Request;
 use App\Http\Requests\StoreSurgicalKitTemplateRequest;
 use App\Http\Requests\UpdateSurgicalKitTemplateRequest;
+
 
 class SurgicalKitTemplateController extends Controller
 {
@@ -13,7 +15,8 @@ class SurgicalKitTemplateController extends Controller
      */
     public function index()
     {
-        //
+        $templates = SurgicalKitTemplate::with('items')->paginate(10);
+        return view('surgical_kit_templates.index', compact('templates'));
     }
 
     /**
@@ -21,7 +24,7 @@ class SurgicalKitTemplateController extends Controller
      */
     public function create()
     {
-        //
+        return view('surgical_kit_templates.create');
     }
 
     /**
@@ -29,7 +32,10 @@ class SurgicalKitTemplateController extends Controller
      */
     public function store(StoreSurgicalKitTemplateRequest $request)
     {
-        //
+        $validatedData = $request->validated();
+        $template = SurgicalKitTemplate::create($validatedData);
+
+        return redirect()->route('surgical-kit-templates.show', $template)->with('success', '¡Receta de kit quirúrgico creada con éxito!');
     }
 
     /**
@@ -37,7 +43,8 @@ class SurgicalKitTemplateController extends Controller
      */
     public function show(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        //
+        $surgicalKitTemplate->load('items');
+        return view('surgical_kit_templates.show', compact('surgicalKitTemplate'));
     }
 
     /**
@@ -45,7 +52,7 @@ class SurgicalKitTemplateController extends Controller
      */
     public function edit(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        //
+        return view('surgical_kit_templates.edit', compact('surgicalKitTemplate'));
     }
 
     /**
@@ -53,7 +60,10 @@ class SurgicalKitTemplateController extends Controller
      */
     public function update(UpdateSurgicalKitTemplateRequest $request, SurgicalKitTemplate $surgicalKitTemplate)
     {
-        //
+        $validatedData = $request->validated();
+        $surgicalKitTemplate->update($validatedData);
+
+        return redirect()->route('surgical-kit-templates.show', $surgicalKitTemplate)->with('success', '¡Receta de kit quirúrgico actualizada con éxito!');
     }
 
     /**
@@ -61,6 +71,7 @@ class SurgicalKitTemplateController extends Controller
      */
     public function destroy(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        //
+        $surgicalKitTemplate->delete();
+        return redirect()->route('surgical-kit-templates.index')->with('success', '¡Receta de kit quirúrgico eliminada con éxito!');
     }
 }

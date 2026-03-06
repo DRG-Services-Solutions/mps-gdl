@@ -11,7 +11,7 @@ class StoreSurgicalKitTemplateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,19 @@ class StoreSurgicalKitTemplateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:100|unique:surgical_kit_templates,code',
+            'is_active' => 'boolean',
+            'description' => 'nullable|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Oye, necesitas ponerle un nombre a esta receta de kit.',
+            'name.max' => 'El nombre está muy largo, trata de resumirlo un poco.',
+            'code.unique' => 'Este código ya está siendo usado por otro kit quirúrgico. Intenta con uno nuevo.',
         ];
     }
 }
