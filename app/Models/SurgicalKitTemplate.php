@@ -23,6 +23,6 @@ class SurgicalKitTemplate extends Model
 
     public function items()
     {
-        return $this->hasMany(SurgicalKitTemplateItem::class);
+        return $this->hasMany(SurgicalKitTemplateItems::class);
     }
 }

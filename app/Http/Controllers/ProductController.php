@@ -16,12 +16,9 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    // ==========================================================
-    // INDEX 
-    // ==========================================================
+    
    public function index(Request $request): View
     {
-        // Query base con relaciones
         $query = Product::with([
             'supplier', 
             'category',

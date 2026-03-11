@@ -4,11 +4,11 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-medkit mr-2 text-indigo-600"></i>
-                    {{ __('Kits Quirúrgicos (Recetas)') }}
+                    {{ __('Kits Instrumentales') }}
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">Gestiona las plantillas de los kits y su contenido predeterminado</p>
             </div>
-            <a href="{{ route('surgical-kit-templates.create') }}" 
+            <a href="{{ route('surgical_kit_templates.create') }}" 
                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
                 <i class="fas fa-plus mr-2"></i>
                 Nuevo Kit
@@ -26,7 +26,7 @@
             @endif
 
             <div class="bg-white rounded-lg shadow-sm p-6">
-                <form method="GET" action="{{ route('surgical-kit-templates.index') }}" class="space-y-4">
+                <form method="GET" action="{{ route('surgical_kit_templates.index') }}" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -55,7 +55,7 @@
                     </div>
 
                     <div class="flex items-center justify-end space-x-3">
-                        <a href="{{ route('surgical-kit-templates.index') }}" 
+                        <a href="{{ route('surgical_kit_templates.index') }}" 
                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             <i class="fas fa-times mr-1"></i>
                             Limpiar
@@ -127,17 +127,17 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium space-x-2">
-                                    <a href="{{ route('surgical-kit-templates.show', $template) }}" 
+                                    <a href="{{ route('surgical_kit_templates.show', $template) }}" 
                                        class="text-indigo-600 hover:text-indigo-900"
                                        title="Ver y gestionar artículos">
                                         <i class="fas fa-eye text-lg"></i>
                                     </a>
-                                    <a href="{{ route('surgical-kit-templates.edit', $template) }}" 
+                                    <a href="{{ route('surgical_kit_templates.edit', $template) }}" 
                                        class="text-blue-600 hover:text-blue-900"
                                        title="Editar detalles del kit">
                                         <i class="fas fa-edit text-lg"></i>
                                     </a>
-                                    <form action="{{ route('surgical-kit-templates.destroy', $template) }}" 
+                                    <form action="{{ route('surgical_kit_templates.destroy', $template) }}" 
                                           method="POST" 
                                           class="inline"
                                           onsubmit="return confirm('¿Eliminar esta receta? Se perderán los artículos asociados. Esta acción no se puede deshacer.')">
@@ -158,7 +158,7 @@
                                         <i class="fas fa-box-open text-5xl mb-4"></i>
                                         <p class="text-lg font-medium text-gray-900 mb-2">No hay kits registrados</p>
                                         <p class="text-sm text-gray-600 mb-4">Comienza creando tu primera receta de kit quirúrgico</p>
-                                        <a href="{{ route('surgical-kit-templates.create') }}" 
+                                        <a href="{{ route('surgical_kit_templates.create') }}" 
                                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
                                             <i class="fas fa-plus mr-2"></i>
                                             Crear Kit

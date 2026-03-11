@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\SurgicalKitTemplate;
+use App\Models\SurgicalChecklist;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreSurgicalKitTemplateRequest;
 use App\Http\Requests\UpdateSurgicalKitTemplateRequest;
@@ -24,7 +26,8 @@ class SurgicalKitTemplateController extends Controller
      */
     public function create()
     {
-        return view('surgical_kit_templates.create');
+        $checklists = SurgicalChecklist::with('items')->get();
+        return view('surgical_kit_templates.create', compact('checklists'));
     }
 
     /**
@@ -35,16 +38,17 @@ class SurgicalKitTemplateController extends Controller
         $validatedData = $request->validated();
         $template = SurgicalKitTemplate::create($validatedData);
 
-        return redirect()->route('surgical-kit-templates.show', $template)->with('success', '¡Receta de kit quirúrgico creada con éxito!');
+        return redirect()->route('surgical_kit_templates.show', $template)->with('success', 'Kit quirúrgico creada con éxito!');
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified resource
      */
     public function show(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        $surgicalKitTemplate->load('items');
-        return view('surgical_kit_templates.show', compact('surgicalKitTemplate'));
+        $surgicalKitTemplate->load('items.product');
+        $products = Product::select('id', 'name')->orderBy('name')->get();
+        return view('surgical_kit_templates.show', compact('surgicalKitTemplate', 'products'));
     }
 
     /**

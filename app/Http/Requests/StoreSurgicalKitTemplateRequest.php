@@ -24,6 +24,7 @@ class StoreSurgicalKitTemplateRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:100|unique:surgical_kit_templates,code',
+            'surgery_type' => 'nullable|string|max:255',
             'is_active' => 'boolean',
             'description' => 'nullable|string',
         ];

@@ -37,6 +37,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShippingNoteController;
 use App\Http\Controllers\SurgicalKitTemplateController;
+use App\Http\Controllers\SurgicalKitTemplateItemController;
 
 
 // ========================================
@@ -69,7 +70,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 Route::middleware(['auth', 'role:admin'])->group(function () {
 
-Route::resource('surgical-kit-templates', SurgicalKitTemplateController::class);
+Route::resource('surgical_kit_templates', SurgicalKitTemplateController::class);
+Route::resource('surgical_kit_template_items', SurgicalKitTemplateItemController::class);
 
 
 Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->group(function () {
