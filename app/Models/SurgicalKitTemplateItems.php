@@ -11,8 +11,10 @@ class SurgicalKitTemplateItems extends Model
     use HasFactory;
     protected $fillable = [
         'surgical_kit_template_id',
-        'item_id',
-        'quantity',
+        'product_id',               
+        'quantity_required',
+        'is_mandatory',
+        'notes',
     ];
 
     public function template()
@@ -22,6 +24,11 @@ class SurgicalKitTemplateItems extends Model
 
     public function product()
     {
-        return $this->belongsTo(Product::class, 'item_id');
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function conditionals()
+    {
+        return $this->hasMany(SurgicalKitTemplateItemConditional::class, 'surgical_kit_template_item_id');
     }
 }

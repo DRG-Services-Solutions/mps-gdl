@@ -19,19 +19,13 @@
                     <i class="fas fa-edit mr-2"></i>
                     Editar Lista
                 </a>
-                {{-- Nota: Este botón de agregar artículo lo conectaremos en el siguiente paso --}}
-                <button type="button" 
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm transition-colors">
-                    <i class="fas fa-plus mr-2"></i>
-                    Agregar Artículo
-                </button>
             </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            
+
             @if(session('success'))
                 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg shadow-sm" role="alert">
                     <p class="font-medium"><i class="fas fa-check-circle mr-2"></i>{{ session('success') }}</p>
@@ -39,12 +33,15 @@
             @endif
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
+                {{-- ============================================
+                     COLUMNA IZQUIERDA: Información General
+                     ============================================ --}}
                 <div class="bg-white rounded-lg shadow-sm p-6 h-fit">
                     <h3 class="text-lg font-semibold text-gray-900 border-b pb-3 mb-4">
                         <i class="fas fa-info-circle text-gray-400 mr-2"></i>Información General
                     </h3>
-                    
+
                     <dl class="space-y-4">
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Código de Referencia</dt>
@@ -91,104 +88,1137 @@
                     </dl>
                 </div>
 
+                {{-- ============================================
+                     COLUMNA DERECHA: Formulario + Tabla
+                     ============================================ --}}
                 <div class="lg:col-span-2 space-y-6">
-    
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-        <div class="p-4 bg-gray-50 border-b border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-700">
-                <i class="fas fa-plus-circle text-indigo-500 mr-1"></i> Agregar Instrumental
-            </h3>
+
+                    {{-- ============================================
+                         AGREGAR ARTÍCULO
+                         ============================================ --}}
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-blue-50">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>
+                                Agregar Instrumental al Kit
+                            </h3>
+                        </div>
+
+                        <form action="{{ route('surgical_kit_template_items.store') }}" method="POST" class="p-6">
+                            @csrf
+                            <input type="hidden" name="surgical_kit_template_id" value="{{ $surgicalKitTemplate->id }}">
+
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                {{-- Producto --}}
+                                <div class="md:col-span-2">
+                                    <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Instrumento / Artículo <span class="text-red-500">*</span>
+                                    </label>
+                                    <select id="product_id" name="product_id" required>
+                                        <option value="">Selecciona un artículo...</option>
+                                        @foreach($products as $product)
+                                            @if($product->code && $product->name)
+                                                <option
+                                                    value="{{ $product->id }}"
+                                                    data-name="{{ $product->name }}"
+                                                    data-code="{{ $product->code }}"
+                                                >
+                                                    {{ $product->code }} - {{ $product->name }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    @error('product_id')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Cantidad --}}
+                                <div>
+                                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Cantidad <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number"
+                                           name="quantity_required"
+                                           id="quantity"
+                                           min="1"
+                                           value="1"
+                                           class="w-full rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('quantity') border-red-500 @enderror"
+                                           required>
+                                    @error('quantity')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
+                                </div>
+
+                                {{-- Botones --}}
+                                <div class="flex items-end gap-3 md:col-span-2">
+                                    <button type="submit"
+                                            class="px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap">
+                                        <i class="fas fa-plus mr-1"></i>
+                                        Agregar
+                                    </button>
+                                    <button type="button"
+                                            @click="$dispatch('open-bulk-import-modal')"
+                                            class="px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
+                                        <i class="fas fa-file-upload mr-1"></i>
+                                        Carga Masiva
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    {{-- ============================================
+                         LISTA DE ARTÍCULOS
+                         ============================================ --}}
+                    <div class="bg-white rounded-lg shadow-sm">
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-list mr-2 text-indigo-600"></i>
+                                Contenido Actual ({{ $surgicalKitTemplate->items->count() }})
+                            </h3>
+                        </div>
+
+                        @if($surgicalKitTemplate->items->count() > 0)
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artículo / Instrumental</th>
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach($surgicalKitTemplate->items as $item)
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                                                    <i class="fas fa-tools text-indigo-600"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-semibold text-gray-900">
+                                                        {{ $item->product->code ?? '—' }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ $item->product->name ?? 'Producto eliminado del catálogo' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- Cantidad editable inline con autosubmit --}}
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <form action="{{ route('surgical_kit_template_items.update', $item) }}"
+                                                  method="POST"
+                                                  class="inline-flex items-center justify-center"
+                                                  onchange="this.submit()">
+                                                @csrf
+                                                @method('PUT')
+                                                <input type="hidden" name="surgical_kit_template_id" value="{{ $surgicalKitTemplate->id }}">
+                                                <input type="number"
+                                                       name="quantity_required"
+                                                       value="{{ $item->quantity_required  }}"
+                                                       min="1"
+                                                       class="w-20 text-center rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                            </form>
+                                        </td>
+
+                                        {{-- Acciones --}}
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <form action="{{ route('surgical_kit_template_items.destroy', $item) }}"
+                                                  method="POST"
+                                                  class="inline"
+                                                  onsubmit="return confirm('¿Quitar este artículo del kit quirúrgico?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                        class="text-red-600 hover:text-red-900 transition-colors"
+                                                        title="Quitar del kit">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        @else
+                        {{-- Estado vacío --}}
+                        <div class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center text-gray-400">
+                                <i class="fas fa-box-open text-4xl mb-3"></i>
+                                <p class="text-sm font-medium text-gray-900 mb-2">Kit vacío</p>
+                                <p class="text-xs text-gray-600">Agrega instrumental usando el formulario de arriba</p>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+
+                </div>{{-- fin lg:col-span-2 --}}
+            </div>{{-- fin grid --}}
         </div>
-        <div class="p-4">
-            {{-- Apuntaremos esta ruta al controlador del "Hijo" en el siguiente paso --}}
-            <form action="{{ route('surgical_kit_template_items.store') }}" method="POST" class="flex flex-col sm:flex-row gap-4 items-end">
-                @csrf
-                
-                {{-- Campo oculto para mandar el ID de la receta padre --}}
-                <input type="hidden" name="surgical_kit_template_id" value="{{ $surgicalKitTemplate->id }}">
+    </div>
 
-                <div class="flex-1 w-full">
-                    <label for="product_id" class="block text-xs font-medium text-gray-700 mb-1">Instrumento / Artículo</label>
-                    <select name="product_id" id="product_id" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-                        <option value="">-- Selecciona un artículo --</option>
-                        @foreach($products as $product)
-                            <option value="{{ $product->id }}">{{ $product->name }}</option>
-                        @endforeach
-                    </select>
+    {{-- ============================================
+         MODAL DE CARGA MASIVA - Alpine.js
+         ============================================ --}}
+    <div x-data="bulkImportModal()"
+         x-show="isOpen"
+         x-cloak
+         @open-bulk-import-modal.window="openModal()"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         style="display: none;">
+
+        {{-- Overlay --}}
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+             @click="closeModal()"></div>
+
+        {{-- Modal --}}
+        <div class="flex items-center justify-center min-h-screen px-4 py-8">
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
+                 @click.away="closeModal()">
+
+                {{-- Header --}}
+                <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center text-white">
+                            <i class="fas fa-file-upload mr-3 text-2xl"></i>
+                            <div>
+                                <h3 class="text-lg font-bold">Carga Masiva de Instrumental</h3>
+                                <p class="text-sm text-green-100">{{ $surgicalKitTemplate->code }} - {{ $surgicalKitTemplate->name }}</p>
+                            </div>
+                        </div>
+                        <button @click="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="w-full sm:w-32">
-                    <label for="quantity" class="block text-xs font-medium text-gray-700 mb-1">Cantidad</label>
-                    <input type="number" name="quantity" id="quantity" value="1" min="1" required
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                {{-- Body --}}
+                <div class="px-6 py-5 max-h-[70vh] overflow-y-auto">
+
+                    {{-- PASO 1: SUBIR ARCHIVO --}}
+                    <div x-show="step === 'upload'">
+
+                        {{-- Descargar plantilla --}}
+                        <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-semibold text-blue-900">Paso 1: Descarga la plantilla</p>
+                                    <p class="text-xs text-blue-700 mt-1">Llénala con los SKU y cantidades del instrumental</p>
+                                </div>
+                                <a href="{{ route('surgical_kit_template_items.bulk-template', $surgicalKitTemplate) }}"
+                                   class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                                    <i class="fas fa-download mr-1.5"></i>
+                                    Plantilla .xlsx
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- Drop zone --}}
+                        <div class="mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-2">Paso 2: Sube tu archivo</p>
+
+                            <div @dragover.prevent="isDragging = true"
+                                 @dragleave.prevent="isDragging = false"
+                                 @drop.prevent="handleDrop($event)"
+                                 @click="$refs.bulkFileInput.click()"
+                                 class="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200"
+                                 :class="isDragging ? 'border-green-400 bg-green-50' : (selectedFile ? 'border-green-400 bg-green-50' : 'border-gray-300 hover:border-green-400')">
+
+                                <div x-show="!selectedFile">
+                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-600">Arrastra tu archivo aquí o haz clic</p>
+                                    <p class="text-xs text-gray-400 mt-1">.xlsx o .xls (máx. 5MB)</p>
+                                </div>
+
+                                <div x-show="selectedFile">
+                                    <i class="fas fa-file-excel text-3xl text-green-500 mb-2"></i>
+                                    <p class="text-sm font-medium text-gray-800" x-text="selectedFile?.name"></p>
+                                    <p class="text-xs text-gray-500" x-text="selectedFile ? (selectedFile.size / 1024).toFixed(1) + ' KB' : ''"></p>
+                                </div>
+
+                                <input type="file"
+                                       x-ref="bulkFileInput"
+                                       @change="handleFileSelect($event)"
+                                       accept=".xlsx,.xls"
+                                       class="hidden">
+                            </div>
+                        </div>
+
+                        {{-- Formato esperado --}}
+                        <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p class="text-xs font-semibold text-gray-600 mb-2">
+                                <i class="fas fa-info-circle mr-1"></i> Formato esperado:
+                            </p>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="text-gray-500">
+                                            <th class="px-2 py-1 text-left font-semibold">product_sku</th>
+                                            <th class="px-2 py-1 text-left font-semibold">quantity</th>
+                                            <th class="px-2 py-1 text-left font-semibold">notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="text-gray-600">
+                                        <tr>
+                                            <td class="px-2 py-1 font-mono">INST-001</td>
+                                            <td class="px-2 py-1">5</td>
+                                            <td class="px-2 py-1">Opcional</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- PASO 2: PROCESANDO --}}
+                    <div x-show="step === 'processing'" class="text-center py-10">
+                        <i class="fas fa-spinner fa-spin text-4xl text-green-600 mb-4"></i>
+                        <p class="text-gray-700 font-medium">Procesando archivo...</p>
+                        <p class="text-sm text-gray-500 mt-1">Validando SKUs contra el catálogo de productos</p>
+                    </div>
+
+                    {{-- PASO 3: RESULTADOS --}}
+                    <div x-show="step === 'results'">
+
+                        <div class="grid grid-cols-3 gap-3 mb-5">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-bold text-green-600" x-text="result.created"></p>
+                                <p class="text-xs text-green-700">Agregados</p>
+                            </div>
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-bold text-yellow-600" x-text="result.skipped"></p>
+                                <p class="text-xs text-yellow-700">Omitidos</p>
+                            </div>
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-bold text-red-600" x-text="result.errors?.length || 0"></p>
+                                <p class="text-xs text-red-700">Errores</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 p-3 rounded-lg border"
+                             :class="result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'">
+                            <div class="flex items-start">
+                                <i class="fas mt-0.5 mr-2"
+                                   :class="result.success ? 'fa-check-circle text-green-600' : 'fa-times-circle text-red-600'"></i>
+                                <p class="text-sm"
+                                   :class="result.success ? 'text-green-800' : 'text-red-800'"
+                                   x-text="result.message"></p>
+                            </div>
+                        </div>
+
+                        <div x-show="result.preview && result.preview.length > 0" class="mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-2">Detalle:</p>
+                            <div class="max-h-48 overflow-y-auto border rounded-lg">
+                                <table class="w-full text-xs">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500">SKU</th>
+                                            <th class="px-3 py-2 text-center font-medium text-gray-500">Cant.</th>
+                                            <th class="px-3 py-2 text-left font-medium text-gray-500">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <template x-for="(item, i) in result.preview" :key="i">
+                                            <tr :class="{
+                                                'bg-green-50': item.status === 'created',
+                                                'bg-yellow-50': item.status === 'skipped',
+                                                'bg-red-50': item.status === 'error'
+                                            }">
+                                                <td class="px-3 py-1.5 font-mono" x-text="item.sku"></td>
+                                                <td class="px-3 py-1.5 text-center" x-text="item.qty"></td>
+                                                <td class="px-3 py-1.5">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                                          :class="{
+                                                              'bg-green-100 text-green-800': item.status === 'created',
+                                                              'bg-yellow-100 text-yellow-800': item.status === 'skipped',
+                                                              'bg-red-100 text-red-800': item.status === 'error'
+                                                          }">
+                                                        <span x-text="item.reason"></span>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div x-show="result.errors && result.errors.length > 0">
+                            <p class="text-sm font-semibold text-red-700 mb-2">Errores:</p>
+                            <div class="max-h-32 overflow-y-auto p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <template x-for="(err, i) in result.errors" :key="i">
+                                    <p class="text-xs text-red-700 mb-1" x-text="err"></p>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div>
-                    <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
-                        Agregar
+                {{-- Footer --}}
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3">
+                    <button @click="closeModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <span x-text="step === 'results' ? 'Cerrar' : 'Cancelar'"></span>
+                    </button>
+
+                    <button x-show="step === 'upload'"
+                            @click="uploadFile()"
+                            :disabled="!selectedFile"
+                            class="px-5 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-upload mr-1.5"></i>
+                        Importar
+                    </button>
+
+                    <button x-show="step === 'results' && result.success && result.created > 0"
+                            @click="window.location.reload()"
+                            class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
+                        <i class="fas fa-sync mr-1.5"></i>
+                        Recargar Página
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div class="p-4 border-b border-gray-100 flex justify-between items-center">
-            <h3 class="text-lg font-semibold text-gray-900">
-                <i class="fas fa-list-ul text-gray-400 mr-2"></i>Contenido Actual
-            </h3>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artículo / Instrumental</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($surgicalKitTemplate->items as $item)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900">
-                                    {{ $item->product->name ?? 'Producto Eliminado del Catálogo' }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                    {{ $item->quantity }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium space-x-3">
-                                {{-- Estos formularios los conectaremos después para actualizar y eliminar --}}
-                                <button class="text-blue-600 hover:text-blue-900" title="Editar cantidad">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="text-red-600 hover:text-red-900" title="Quitar del kit">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="px-6 py-12 text-center">
-                                <div class="flex flex-col items-center justify-center text-gray-400">
-                                    <i class="fas fa-box-open text-4xl mb-3"></i>
-                                    <p class="text-base font-medium text-gray-900 mb-1">Receta Vacía</p>
-                                    <p class="text-sm text-gray-500">Usa el formulario de arriba para agregar instrumental a este kit.</p>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
             </div>
         </div>
     </div>
+
+    {{-- x-cloak --}}
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
+@push('styles')
+<style>
+    /* ========================================
+       TOM SELECT
+       ======================================== */
+    .ts-wrapper { position: relative !important; }
+
+    .ts-control {
+        min-height: 42px !important;
+        padding: 0.5rem 0.75rem !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 0.5rem !important;
+        background-color: white !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5rem !important;
+        transition: all 0.15s ease !important;
+    }
+    .ts-control:hover { border-color: #9ca3af !important; }
+    .ts-control.focus {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+        outline: none !important;
+    }
+    .ts-control input { color: #111827 !important; font-size: 0.875rem !important; }
+    .ts-control input::placeholder { color: #9ca3af !important; }
+    .ts-control .item {
+        color: #111827 !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 0.875rem !important;
+    }
+    .ts-dropdown {
+        position: absolute !important;
+        z-index: 10000 !important;
+        margin-top: 0.25rem !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        background-color: white !important;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05) !important;
+    }
+    .ts-dropdown .option {
+        padding: 0.75rem 1rem !important;
+        cursor: pointer !important;
+        border-bottom: 1px solid #f3f4f6 !important;
+        transition: background-color 0.15s ease !important;
+    }
+    .ts-dropdown .option:last-child { border-bottom: none !important; }
+    .ts-dropdown .option.active { background-color: #f9fafb !important; color: #111827 !important; }
+    .ts-dropdown .option.selected { background-color: #6366f1 !important; color: white !important; }
+    .ts-dropdown .option.selected.active { background-color: #4f46e5 !important; }
+    .ts-dropdown .no-results {
+        padding: 1rem !important;
+        color: #6b7280 !important;
+        text-align: center !important;
+        font-size: 0.875rem !important;
+    }
+    .ts-wrapper.single .ts-control::after {
+        border-color: #6b7280 transparent transparent transparent !important;
+        border-width: 5px 5px 0 5px !important;
+        margin-top: -3px !important;
+    }
+    .ts-wrapper.single.dropdown-active .ts-control::after {
+        border-color: transparent transparent #6b7280 transparent !important;
+        border-width: 0 5px 5px 5px !important;
+        margin-top: -2px !important;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<script>
+// ==========================================
+// TOM SELECT - Inicialización
+// ==========================================
+document.addEventListener('DOMContentLoaded', function () {
+    new TomSelect('#product_id', {
+        placeholder: 'Selecciona un artículo...',
+        allowEmptyOption: true,
+        items: [],
+
+        shouldLoad: function(query) {
+            return query.length > 0;
+        },
+
+        render: {
+            option: function (data, escape) {
+                if (!data.code || !data.name) return '';
+                return `
+                    <div>
+                        <div style="font-weight:600">${escape(data.code)}</div>
+                        <div style="font-size:0.875rem;color:#6b7280">${escape(data.name)}</div>
+                    </div>
+                `;
+            },
+            item: function (data, escape) {
+                if (!data.code || !data.name) return '';
+                return `<div>${escape(data.code)} - ${escape(data.name)}</div>`;
+            }
+        },
+
+        
+        
+    });
+});
+
+// ==========================================
+// ALPINE.JS - Modal de Carga Masiva
+// ==========================================
+function bulkImportModal() {
+    return {
+        isOpen: false,
+        step: 'upload', // upload | processing | results
+        isDragging: false,
+        selectedFile: null,
+        result: {},
+
+        openModal() {
+            this.isOpen = true;
+            this.step = 'upload';
+            this.selectedFile = null;
+            this.result = {};
+        },
+
+        closeModal() {
+            if (this.result.success && this.result.created > 0) {
+                window.location.reload();
+                return;
+            }
+            this.isOpen = false;
+        },
+
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) this.selectedFile = file;
+        },
+
+        handleDrop(event) {
+            this.isDragging = false;
+            const file = event.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                this.selectedFile = file;
+            }
+        },
+
+        async uploadFile() {
+            if (!this.selectedFile) return;
+
+            this.step = 'processing';
+
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+
+            try {
+                const response = await fetch('{{ route("surgical_kit_template_items.bulk-import", $surgicalKitTemplate) }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                this.result = await response.json();
+                this.step = 'results';
+
+            } catch (error) {
+                this.result = {
+                    success: false,
+                    message: 'Error de conexión: ' + error.message,
+                    created: 0,
+                    skipped: 0,
+                    errors: [],
+                    preview: [],
+                };
+                this.step = 'results';
+            }
+        },
+    }
+}
+</script>
+{{-- ============================================================
+     MODAL DE CONDICIONALES DEL KIT — Alpine.js
+     Pegar justo antes del cierre </x-app-layout> en show.blade.php
+     ============================================================ --}}
+
+<div x-data="kitConditionalsModal()"
+     x-show="isOpen"
+     x-cloak
+     @open-kit-conditionals-modal.window="openModal($event.detail)"
+     class="fixed inset-0 z-50 overflow-y-auto"
+     style="display: none;">
+
+    {{-- Overlay --}}
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+         @click="closeModal()"></div>
+
+    {{-- Modal --}}
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+        <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full"
+             @click.away="closeModal()">
+
+            {{-- ===== HEADER ===== --}}
+            <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center text-white">
+                        <i class="fas fa-filter mr-3 text-2xl"></i>
+                        <div>
+                            <h3 class="text-lg font-bold">Gestionar Condicionales</h3>
+                            <p class="text-sm text-indigo-100" x-text="itemName"></p>
+                        </div>
+                    </div>
+                    <button @click="closeModal()" class="text-white hover:text-gray-200 transition-colors">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- ===== BODY ===== --}}
+            <div class="bg-white px-6 py-4 max-h-[70vh] overflow-y-auto">
+
+                {{-- Info del item --}}
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-blue-900">Cantidad Base del Kit</p>
+                            <p class="text-3xl font-bold text-blue-600" x-text="baseQuantity"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-blue-700">Condicionales Activos</p>
+                            <p class="text-2xl font-bold text-indigo-600" x-text="conditionals.length"></p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Loading --}}
+                <div x-show="loading" class="text-center py-8">
+                    <i class="fas fa-spinner fa-spin text-4xl text-indigo-600 mb-3"></i>
+                    <p class="text-gray-600">Cargando condicionales...</p>
+                </div>
+
+                {{-- ===== LISTA DE CONDICIONALES ===== --}}
+                <div x-show="!loading" class="mb-6">
+                    <h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">
+                        <i class="fas fa-list mr-2 text-indigo-600"></i>
+                        Condicionales Configurados
+                    </h4>
+
+                    <template x-if="conditionals.length === 0">
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                            <i class="fas fa-inbox text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600 text-sm">No hay condicionales configurados</p>
+                            <p class="text-gray-500 text-xs mt-1">Agrega uno usando el formulario de abajo</p>
+                        </div>
+                    </template>
+
+                    <div class="space-y-3">
+                        <template x-for="(cond, index) in conditionals" :key="cond.id">
+                            <div class="p-4 rounded-lg border-2 transition-all hover:shadow-md"
+                                 :class="{
+                                     'bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-300':   cond.action_type === 'adjust_quantity',
+                                     'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300':  cond.action_type === 'add_product',
+                                     'bg-gradient-to-r from-red-50 to-rose-50 border-red-300':         cond.action_type === 'exclude',
+                                     'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300':  cond.action_type === 'replace',
+                                     'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300':       cond.action_type === 'add_dependency'
+                                 }">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+
+                                        {{-- Badges --}}
+                                        <div class="mb-3 flex flex-wrap items-center gap-2">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
+                                                :class="{
+                                                    'bg-indigo-600 text-white':  cond.action_type === 'adjust_quantity',
+                                                    'bg-green-600 text-white':   cond.action_type === 'add_product',
+                                                    'bg-red-600 text-white':     cond.action_type === 'exclude',
+                                                    'bg-orange-600 text-white':  cond.action_type === 'replace',
+                                                    'bg-blue-600 text-white':    cond.action_type === 'add_dependency'
+                                                }">
+                                                <i class="fas mr-1.5"
+                                                    :class="{
+                                                        'fa-edit':         cond.action_type === 'adjust_quantity',
+                                                        'fa-plus-circle':  cond.action_type === 'add_product',
+                                                        'fa-times-circle': cond.action_type === 'exclude',
+                                                        'fa-exchange-alt': cond.action_type === 'replace',
+                                                        'fa-link':         cond.action_type === 'add_dependency'
+                                                    }"></i>
+                                                <span x-text="cond.action_description"></span>
+                                            </span>
+
+                                            <template x-if="cond.exclude_from_invoice">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                                                    <i class="fas fa-file-invoice mr-1"></i> No remisionar
+                                                </span>
+                                            </template>
+
+                                            <template x-if="cond.requires_approval">
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300">
+                                                    <i class="fas fa-user-shield mr-1"></i> Requiere aprobación
+                                                </span>
+                                            </template>
+                                        </div>
+
+                                        {{-- Criterios --}}
+                                        <p class="text-sm font-bold text-gray-900 mb-2" x-text="cond.description"></p>
+
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div><span class="text-gray-600">Doctor:</span> <span class="font-semibold" x-text="cond.doctor_name"></span></div>
+                                            <div><span class="text-gray-600">Hospital:</span> <span class="font-semibold" x-text="cond.hospital_name"></span></div>
+                                            <div><span class="text-gray-600">Modalidad:</span> <span class="font-semibold" x-text="cond.modality_name"></span></div>
+                                            <div><span class="text-gray-600">Razón Social:</span> <span class="font-semibold" x-text="cond.legal_entity_name"></span></div>
+                                        </div>
+
+                                        <template x-if="cond.target_product_name">
+                                            <div class="mt-3 p-2 bg-white bg-opacity-60 rounded border border-gray-300">
+                                                <p class="text-xs font-semibold text-gray-700">
+                                                    <i class="fas fa-box-open mr-1"></i>
+                                                    <span x-text="cond.action_type === 'replace' ? 'Reemplazar por:' : 'Requiere:'"></span>
+                                                    <span class="text-indigo-700" x-text="cond.target_product_name"></span>
+                                                </p>
+                                            </div>
+                                        </template>
+
+                                        <template x-if="cond.notes">
+                                            <p class="text-xs text-gray-600 mt-2 italic bg-white bg-opacity-40 p-2 rounded">
+                                                <i class="fas fa-sticky-note mr-1"></i>
+                                                <span x-text="cond.notes"></span>
+                                            </p>
+                                        </template>
+
+                                        <div class="mt-2">
+                                            <span class="text-xs text-gray-500">Especificidad:
+                                                <span class="font-bold" x-text="cond.specificity_level"></span>/4
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {{-- Eliminar --}}
+                                    <button @click="deleteConditional(cond.id)"
+                                            class="ml-4 text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-lg transition-all"
+                                            title="Eliminar condicional">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- ===== FORMULARIO NUEVO CONDICIONAL ===== --}}
+                <div x-show="!loading" class="border-t-2 border-gray-200 pt-6">
+                    <h4 class="text-md font-bold text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-plus-circle mr-2 text-green-600"></i>
+                        Agregar Nuevo Condicional
+                    </h4>
+
+                    <form @submit.prevent="submitConditional()" class="space-y-4">
+
+                        {{-- Criterios --}}
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h5 class="text-sm font-bold text-gray-700 mb-3">
+                                <i class="fas fa-filter mr-1"></i> Criterios de Aplicación (al menos uno)
+                            </h5>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Doctor (opcional)</label>
+                                    <select x-model="form.doctor_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">-- Todos los doctores --</option>
+                                        <template x-for="d in formData.doctors" :key="d.id">
+                                            <option :value="d.id" x-text="d.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Hospital (opcional)</label>
+                                    <select x-model="form.hospital_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">-- Todos los hospitales --</option>
+                                        <template x-for="h in formData.hospitals" :key="h.id">
+                                            <option :value="h.id" x-text="h.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad (opcional)</label>
+                                    <select x-model="form.modality_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">-- Todas las modalidades --</option>
+                                        <template x-for="m in formData.modalities" :key="m.id">
+                                            <option :value="m.id" x-text="m.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Razón Social (opcional)</label>
+                                    <select x-model="form.legal_entity_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">-- Todas las entidades --</option>
+                                        <template x-for="e in formData.legal_entities" :key="e.id">
+                                            <option :value="e.id" x-text="e.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Tipo de acción --}}
+                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">
+                                <i class="fas fa-cog mr-1"></i> Tipo de Acción <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="form.action_type === 'adjust_quantity' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" x-model="form.action_type" value="adjust_quantity" class="mt-1 text-indigo-600">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold"><i class="fas fa-edit text-indigo-600 mr-1"></i> Ajustar Cantidad</div>
+                                        <p class="text-xs text-gray-600 mt-1">Reemplaza la cantidad base del kit</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="form.action_type === 'add_product' ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" x-model="form.action_type" value="add_product" class="mt-1 text-green-600">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold"><i class="fas fa-plus-circle text-green-600 mr-1"></i> Agregar Adicional</div>
+                                        <p class="text-xs text-gray-600 mt-1">Suma unidades extras al instrumental</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="form.action_type === 'exclude' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" x-model="form.action_type" value="exclude" class="mt-1 text-red-600">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold"><i class="fas fa-times-circle text-red-600 mr-1"></i> Excluir Instrumental</div>
+                                        <p class="text-xs text-gray-600 mt-1">No incluir este item en el kit</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
+                                       :class="form.action_type === 'replace' ? 'border-orange-500 bg-orange-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" x-model="form.action_type" value="replace" class="mt-1 text-orange-600">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold"><i class="fas fa-exchange-alt text-orange-600 mr-1"></i> Reemplazar</div>
+                                        <p class="text-xs text-gray-600 mt-1">Sustituir por otro instrumental</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md col-span-full"
+                                       :class="form.action_type === 'add_dependency' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'">
+                                    <input type="radio" x-model="form.action_type" value="add_dependency" class="mt-1 text-blue-600">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold"><i class="fas fa-link text-blue-600 mr-1"></i> Agregar Dependencia</div>
+                                        <p class="text-xs text-gray-600 mt-1">Este instrumental requiere otro para funcionar (ej: broca → taladro)</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Campos dinámicos según action_type --}}
+
+                        <div x-show="form.action_type === 'adjust_quantity'" x-transition class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Cantidad <span class="text-red-500">*</span></label>
+                            <input type="number" x-model.number="form.quantity_override" min="0"
+                                   class="w-full rounded-lg border-gray-300 focus:border-indigo-500" placeholder="Ej: 5">
+                        </div>
+
+                        <div x-show="form.action_type === 'add_product'" x-transition class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad Adicional <span class="text-red-500">*</span></label>
+                            <input type="number" x-model.number="form.additional_quantity" min="1"
+                                   class="w-full rounded-lg border-gray-300 focus:border-green-500" placeholder="Ej: 3">
+                        </div>
+
+                        <div x-show="form.action_type === 'exclude'" x-transition class="bg-red-50 p-4 rounded-lg border border-red-200">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-red-600 mt-0.5 mr-2"></i>
+                                <p class="text-sm text-gray-700">El instrumental <strong>no se incluirá</strong> en el kit cuando se cumplan los criterios.</p>
+                            </div>
+                        </div>
+
+                        <div x-show="form.action_type === 'replace'" x-transition class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Instrumental de Reemplazo <span class="text-red-500">*</span></label>
+                            <select x-model="form.target_product_id" class="w-full rounded-lg border-gray-300 focus:border-orange-500">
+                                <option value="">-- Selecciona un instrumental --</option>
+                                <template x-for="p in formData.products" :key="p.id">
+                                    <option :value="p.id" x-text="p.label"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div x-show="form.action_type === 'add_dependency'" x-transition class="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Instrumental Requerido <span class="text-red-500">*</span></label>
+                                <select x-model="form.target_product_id" class="w-full rounded-lg border-gray-300 focus:border-blue-500">
+                                    <option value="">-- Selecciona el instrumental dependiente --</option>
+                                    <template x-for="p in formData.products" :key="p.id">
+                                        <option :value="p.id" x-text="p.label"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad Requerida <span class="text-red-500">*</span></label>
+                                <input type="number" x-model.number="form.dependency_quantity" min="1"
+                                       class="w-full rounded-lg border-gray-300 focus:border-blue-500" placeholder="Ej: 1">
+                            </div>
+                        </div>
+
+                        {{-- Modificadores --}}
+                        <div class="rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
+                            <div class="px-4 py-3 bg-gray-100 border-b border-gray-300 flex items-center justify-between">
+                                <span class="text-sm font-bold text-gray-700"><i class="fas fa-sliders-h mr-2 text-gray-500"></i>Modificadores adicionales</span>
+                                <span class="text-xs text-gray-500 italic">Aplican independientemente del tipo de acción</span>
+                            </div>
+                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
+                                       :class="form.exclude_from_invoice ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'">
+                                    <input type="checkbox" x-model="form.exclude_from_invoice" class="mt-0.5 rounded text-amber-500">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-file-invoice text-amber-500 text-sm"></i>
+                                            <span class="text-sm font-semibold">No agregar en remisión</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5">Se despacha físicamente pero no aparece en la remisión.</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
+                                       :class="form.requires_approval ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-white hover:border-gray-300'">
+                                    <input type="checkbox" x-model="form.requires_approval" class="mt-0.5 rounded text-violet-500">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-user-shield text-violet-500 text-sm"></i>
+                                            <span class="text-sm font-semibold">Requiere aprobación manual</span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 mt-0.5">Debe ser revisado por un supervisor antes de surtirse.</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- Notas --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                            <textarea x-model="form.notes" rows="2"
+                                      class="w-full rounded-lg border-gray-300 focus:border-indigo-500"
+                                      placeholder="Ej: Dr. García requiere instrumental adicional para procedimientos complejos"></textarea>
+                        </div>
+
+                        {{-- Errores / Warnings --}}
+                        <div x-show="errorMessage" x-transition class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5 mr-2"></i>
+                                <p class="text-sm text-red-800" x-text="errorMessage"></p>
+                            </div>
+                        </div>
+                        <div x-show="warnings.length > 0" x-transition class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm font-semibold text-yellow-800">Advertencias:</p>
+                            <template x-for="w in warnings" :key="w">
+                                <p class="text-xs text-yellow-700 mt-1" x-text="'• ' + w"></p>
+                            </template>
+                        </div>
+
+                        {{-- Botones --}}
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" @click="closeModal()"
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Cerrar
+                            </button>
+                            <button type="submit" :disabled="isSubmitting"
+                                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                <template x-if="isSubmitting">
+                                    <span><i class="fas fa-spinner fa-spin mr-2"></i>Guardando...</span>
+                                </template>
+                                <template x-if="!isSubmitting">
+                                    <span><i class="fas fa-save mr-2"></i>Guardar Condicional</span>
+                                </template>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>{{-- /body --}}
+        </div>
+    </div>
+</div>
+
+{{-- ============================================================
+     SCRIPT Alpine.js — pegar dentro del @push('scripts')
+     ============================================================ --}}
+<script>
+function kitConditionalsModal() {
+    return {
+        isOpen:       false,
+        loading:      false,
+        isSubmitting: false,
+        errorMessage: '',
+        warnings:     [],
+
+        itemId:       null,
+        itemName:     '',
+        baseQuantity: 0,
+        conditionals: [],
+
+        formData: { doctors: [], hospitals: [], modalities: [], legal_entities: [], products: [] },
+
+        form: {
+            doctor_id:           '',
+            hospital_id:         '',
+            modality_id:         '',
+            legal_entity_id:     '',
+            action_type:         'adjust_quantity',
+            quantity_override:   null,
+            additional_quantity: null,
+            target_product_id:   '',
+            dependency_quantity: 1,
+            exclude_from_invoice: false,
+            requires_approval:   false,
+            notes:               '',
+        },
+
+        async openModal(data) {
+            this.itemId       = data.itemId;
+            this.itemName     = data.itemName;
+            this.baseQuantity = data.baseQuantity;
+            this.isOpen       = true;
+            this.errorMessage = '';
+            this.warnings     = [];
+            await this.loadFormData();
+            await this.loadConditionals();
+        },
+
+        closeModal() {
+            this.isOpen = false;
+            this.resetForm();
+        },
+
+        async loadFormData() {
+            try {
+                const res    = await fetch('{{ route("surgical-kit-template-conditional-form-data") }}');
+                const result = await res.json();
+                if (result.success) this.formData = result.data;
+            } catch (e) { console.error('Error cargando form data:', e); }
+        },
+
+        async loadConditionals() {
+            this.loading = true;
+            try {
+                const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals`);
+                const result = await res.json();
+                if (result.success) this.conditionals = result.data;
+            } catch (e) { console.error('Error cargando condicionales:', e); }
+            finally { this.loading = false; }
+        },
+
+        async submitConditional() {
+            this.isSubmitting = true;
+            this.errorMessage = '';
+            this.warnings     = [];
+
+            try {
+                const payload = {
+                    doctor_id:            this.form.doctor_id        || null,
+                    hospital_id:          this.form.hospital_id      || null,
+                    modality_id:          this.form.modality_id      || null,
+                    legal_entity_id:      this.form.legal_entity_id  || null,
+                    action_type:          this.form.action_type,
+                    quantity_override:    this.form.action_type === 'adjust_quantity'  ? this.form.quantity_override   : null,
+                    additional_quantity:  this.form.action_type === 'add_product'      ? this.form.additional_quantity : null,
+                    target_product_id:    ['replace','add_dependency'].includes(this.form.action_type) ? this.form.target_product_id : null,
+                    dependency_quantity:  this.form.action_type === 'add_dependency'   ? this.form.dependency_quantity : null,
+                    exclude_from_invoice: this.form.exclude_from_invoice,
+                    requires_approval:    this.form.requires_approval,
+                    notes:                this.form.notes || null,
+                };
+
+                const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body:    JSON.stringify(payload),
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    if (result.warnings?.length) this.warnings = result.warnings;
+                    alert('✓ ' + result.message);
+                    this.resetForm();
+                    await this.loadConditionals();
+                    if (!this.warnings.length) setTimeout(() => window.location.reload(), 800);
+                } else {
+                    this.errorMessage = result.message;
+                }
+            } catch (e) {
+                this.errorMessage = 'Error: ' + e.message;
+            } finally {
+                this.isSubmitting = false;
+            }
+        },
+
+        async deleteConditional(conditionalId) {
+            if (!confirm('¿Eliminar este condicional?')) return;
+            try {
+                const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals/${conditionalId}`, {
+                    method:  'DELETE',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                });
+                const result = await res.json();
+                if (result.success) {
+                    await this.loadConditionals();
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    alert('✗ ' + result.message);
+                }
+            } catch (e) { alert('✗ Error al eliminar'); }
+        },
+
+        resetForm() {
+            this.form = {
+                doctor_id: '', hospital_id: '', modality_id: '', legal_entity_id: '',
+                action_type: 'adjust_quantity', quantity_override: null,
+                additional_quantity: null, target_product_id: '',
+                dependency_quantity: 1, exclude_from_invoice: false,
+                requires_approval: false, notes: '',
+            };
+            this.errorMessage = '';
+            this.warnings     = [];
+        },
+    };
+}
+</script>
+@endpush
+
 </x-app-layout>

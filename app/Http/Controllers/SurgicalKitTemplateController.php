@@ -47,7 +47,7 @@ class SurgicalKitTemplateController extends Controller
     public function show(SurgicalKitTemplate $surgicalKitTemplate)
     {
         $surgicalKitTemplate->load('items.product');
-        $products = Product::select('id', 'name')->orderBy('name')->get();
+        $products = Product::select('id', 'name','code')->orderBy('name')->get();
         return view('surgical_kit_templates.show', compact('surgicalKitTemplate', 'products'));
     }
 

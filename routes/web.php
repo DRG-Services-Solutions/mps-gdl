@@ -37,7 +37,8 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ShippingNoteController;
 use App\Http\Controllers\SurgicalKitTemplateController;
-use App\Http\Controllers\SurgicalKitTemplateItemController;
+use App\Http\Controllers\SurgicalKitTemplateItemsController;
+use App\Http\Controllers\SurgicalKitTemplateItemConditionalController;
 
 
 // ========================================
@@ -68,10 +69,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ========================================
 // RUTAS DE ADMINISTRADOR
 // ========================================
-Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::middleware(['auth', 'role:admin'])->group(function () {
 
-Route::resource('surgical_kit_templates', SurgicalKitTemplateController::class);
-Route::resource('surgical_kit_template_items', SurgicalKitTemplateItemController::class);
+
+    Route::get(
+        'surgical-kit-template-conditional-form-data',
+        [SurgicalKitTemplateItemConditionalController::class, 'formData']
+    )->name('surgical-kit-template-conditional-form-data');
+
+    // CRUD de condicionales anidado bajo el item
+    Route::prefix('surgical_kit_template_items/{surgicalKitTemplateItem}/conditionals')
+        ->name('kit-template-conditionals.')
+        ->group(function () {
+
+            Route::get('/',
+                [SurgicalKitTemplateItemConditionalController::class, 'index']
+            )->name('index');
+
+            Route::post('/',
+                [SurgicalKitTemplateItemConditionalController::class, 'store']
+            )->name('store');
+
+            Route::delete('/{conditional}',
+                [SurgicalKitTemplateItemConditionalController::class, 'destroy']
+            )->name('destroy');
+        });
+
+    Route::resource('surgical_kit_templates', SurgicalKitTemplateController::class);
+
+    Route::post(
+        'surgical_kit_templates/{surgical_kit_template}/toggle-active',
+        [SurgicalKitTemplateController::class, 'toggleActive']
+    )->name('surgical_kit_templates.toggle-active');
+
+    Route::post(
+        'surgical_kit_templates/{surgical_kit_template}/duplicate',
+        [SurgicalKitTemplateController::class, 'duplicate']
+    )->name('surgical_kit_templates.duplicate');
+
+    Route::get(
+        'surgical_kit_templates/{surgical_kit_template}/check-stock',
+        [SurgicalKitTemplateController::class, 'checkStock']
+    )->name('surgical_kit_templates.check-stock');
+
+    // ── Items ──────────────────────────────────────────────────────────────
+    Route::post(
+        'surgical_kit_template_items',
+        [SurgicalKitTemplateItemsController::class, 'store']
+    )->name('surgical_kit_template_items.store');
+
+    Route::put(
+        'surgical_kit_template_items/{surgicalKitTemplateItems}',
+        [SurgicalKitTemplateItemsController::class, 'update']
+    )->name('surgical_kit_template_items.update');
+
+    Route::delete(
+        'surgical_kit_template_items/{surgicalKitTemplateItems}',
+        [SurgicalKitTemplateItemsController::class, 'destroy']
+    )->name('surgical_kit_template_items.destroy');
+
+    Route::get(
+        'surgical_kit_template_items/{surgical_kit_template}/bulk-template',
+        [SurgicalKitTemplateItemsController::class, 'bulkTemplate']
+    )->name('surgical_kit_template_items.bulk-template');
+
+    Route::post(
+        'surgical_kit_template_items/{surgical_kit_template}/bulk-import',
+        [SurgicalKitTemplateItemsController::class, 'bulkImport']
+    )->name('surgical_kit_template_items.bulk-import');
 
 
 Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->group(function () {

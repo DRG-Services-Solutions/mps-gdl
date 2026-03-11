@@ -11,7 +11,7 @@ class StoreSurgicalKitTemplateItemsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class StoreSurgicalKitTemplateItemsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'surgical_kit_template_id' => 'required|exists:surgical_kit_templates,id',
+            'product_id'               => 'required|exists:products,id',
+            'quantity_required'        => 'required|integer|min:1',
         ];
     }
 }
