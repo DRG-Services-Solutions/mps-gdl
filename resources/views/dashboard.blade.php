@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="font-bold text-2xl text-gray-800 leading-tight">
-                    {{ __('Material Para la Salud') }}
+                   Material Para la Salud
                 </h2>
                 <p class="text-sm mt-1 text-blue-600 font-medium">Bienvenido de vuelta, <span class="font-semibold">{{ Auth::user()->name }}</span></p>
             </div>
@@ -21,14 +21,20 @@
                     <div class="p-6">
                         <div class="flex items-center justify-between">
                             <div class="flex-1">
+                                
                                 <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Inventario Total</p>
-                                <p class="text-3xl font-bold text-gray-900 mt-2">1,247</p>
+                                    Productos Registrados
+                                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">{{ $products->count() }}</p>
+                                    Con stock de:
+                                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $units->count() }}</p>
+                            
+                                    <div class="flex items
+
                                 <div class="flex items-center mt-2">
                                     <svg class="h-4 w-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                     </svg>
-                                    <span class="text-sm text-green-600 font-semibold">+12%</span>
-                                    <span class="text-xs text-gray-500 ml-1">vs mes anterior</span>
+                                  
                                 </div>
                             </div>
                             <div class="flex-shrink-0">

@@ -39,7 +39,7 @@ use App\Http\Controllers\ShippingNoteController;
 use App\Http\Controllers\SurgicalKitTemplateController;
 use App\Http\Controllers\SurgicalKitTemplateItemsController;
 use App\Http\Controllers\SurgicalKitTemplateItemConditionalController;
-
+use App\Http\Controllers\DashboardController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -53,10 +53,6 @@ Route::get('/', function () {
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
     
-    // Dashboard
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
 
     // Perfil de usuario
     Route::prefix('profile')->name('profile.')->group(function () {
@@ -429,18 +425,9 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
 
     });
 
-      Route::get('/dashboard', function () {
-        // Datos del dashboard
-        $availablePackages = \App\Models\PreAssembledPackage::available()->count();
-        $activeChecklists = \App\Models\SurgicalChecklist::active()->count();
-        $pendingInvoices = \App\Models\Invoice::where('status', 'draft')->count();
-
-        return view('dashboard', compact(
-            'availablePackages',
-            'activeChecklists',
-            'pendingInvoices'
-        ));
-    })->name('dashboard');
+      Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard'); 
+     
+    
 
     // ========================================
     // Tipos de Productos
