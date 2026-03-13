@@ -6,68 +6,55 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('surgical_kit_template_item_conditionals', function (Blueprint $table) {
-            // ── Relación con el item del kit ──────────────────────────────
-            $table->foreignId('surgical_kit_template_item_id')
-                  ->constrained('surgical_kit_template_items')
+            $table->id();
+
+            // ── Relación con el item ──────────────────────────────────────
+            $table->unsignedBigInteger('surgical_kit_template_item_id');
+            $table->foreign('surgical_kit_template_item_id', 'skt_cond_item_fk')
+                  ->references('id')->on('surgical_kit_template_items')
                   ->cascadeOnDelete();
 
-            // ── Criterios de aplicación (todos opcionales) ────────────────
-            $table->foreignId('doctor_id')
-                  ->nullable()
-                  ->constrained('doctors')
+            // ── Criterios de aplicación ───────────────────────────────────
+            // Solo doctor y hospital (al menos uno requerido)
+            $table->unsignedBigInteger('doctor_id')->nullable();
+            $table->foreign('doctor_id', 'skt_cond_doctor_fk')
+                  ->references('id')->on('doctors')
                   ->nullOnDelete();
 
-            $table->foreignId('hospital_id')
-                  ->nullable()
-                  ->constrained('hospitals')
-                  ->nullOnDelete();
-
-            $table->foreignId('modality_id')
-                  ->nullable()
-                  ->constrained('modalities')
-                  ->nullOnDelete();
-
-            $table->foreignId('legal_entity_id')
-                  ->nullable()
-                  ->constrained('legal_entities')
+            $table->unsignedBigInteger('hospital_id')->nullable();
+            $table->foreign('hospital_id', 'skt_cond_hospital_fk')
+                  ->references('id')->on('hospitals')
                   ->nullOnDelete();
 
             // ── Tipo de acción ────────────────────────────────────────────
+            // adjust_quantity | replace | add_dependency
             $table->string('action_type', 30);
 
             // ── Valores según action_type ─────────────────────────────────
-            $table->unsignedInteger('quantity_override')->nullable();   
-            $table->unsignedInteger('additional_quantity')->nullable(); 
-            $table->foreignId('target_product_id')                      
-                  ->nullable()
-                  ->constrained('products')
-                  ->nullOnDelete();
-            $table->unsignedInteger('dependency_quantity')->nullable(); 
+            $table->unsignedInteger('quantity_override')->nullable();   // adjust_quantity
 
-            // ── Modificadores transversales ───────────────────────────────
-            $table->boolean('exclude_from_invoice')->default(false);
-            $table->boolean('requires_approval')->default(false);
+            $table->unsignedBigInteger('target_product_id')->nullable(); // replace | add_dependency
+            $table->foreign('target_product_id', 'skt_cond_target_product_fk')
+                  ->references('id')->on('products')
+                  ->nullOnDelete();
+
+            $table->unsignedInteger('dependency_quantity')->nullable();  // add_dependency
 
             // ── Meta ──────────────────────────────────────────────────────
             $table->string('notes')->nullable();
-            $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
+
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->foreign('created_by', 'skt_cond_created_by_fk')
+                  ->references('id')->on('users')
                   ->nullOnDelete();
 
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('surgical_kit_template_item_conditionals');

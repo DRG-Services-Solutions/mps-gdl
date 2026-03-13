@@ -149,8 +149,8 @@
                                             <i class="fas fa-box text-indigo-600"></i>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $item->product->name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $item->product->code }}</div>
+                                            <div class="text-sm font-semibold text-gray-900">{{ $item->product->code }}</div>
+                                            <div class="text-xs text-gray-500">{{ $item->product->name }}</div>
                                         </div>
                                     </div>
                                 </td>

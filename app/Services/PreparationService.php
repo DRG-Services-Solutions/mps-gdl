@@ -33,7 +33,7 @@ class PreparationService
             // 2. Crear el registro de preparación
             $preparation = SurgeryPreparation::create([
                 'scheduled_surgery_id' => $surgery->id,
-                'pre_assembled_package_id' => $packageId, // puede ser null
+                'pre_assembled_package_id' => $packageId, 
                 'status' => 'picking',
                 'prepared_by' => $userId,
                 'started_at' => now(),

@@ -21,7 +21,7 @@ class BrandController extends Controller
      */
     public function create()
     {
-        //
+        return view('brands.create');
     }
 
     /**
@@ -29,7 +29,7 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        
     }
 
     /**

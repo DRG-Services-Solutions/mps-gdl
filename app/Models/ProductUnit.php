@@ -249,7 +249,13 @@ class ProductUnit extends Model
      */
     public function getUniqueIdentifierAttribute(): string
     {
-        return $this->epc ?? $this->serial_number ?? 'N/A';
+        if ($this->epc) {
+            return $this->epc;
+        }
+        if ($this->serial_number) {
+            return $this->serial_number;
+        }
+        return $this->product->code ?? 'N/A';
     }
 
     /**

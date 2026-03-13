@@ -52,6 +52,7 @@ class ScheduledSurgery extends Model
         return $this->belongsTo(SurgicalChecklist::class, 'checklist_id');
     }
     
+    
 
     /**
      * Doctor asignado

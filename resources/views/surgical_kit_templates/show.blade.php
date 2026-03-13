@@ -186,6 +186,7 @@
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artículo / Instrumental</th>
                                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
+                                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Condicionales</th>
                                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -224,6 +225,24 @@
                                                        class="w-20 text-center rounded border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                                             </form>
                                         </td>
+                                        <!-- Condicionales -->
+                                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                                            <button type="button"
+                                                    @click="$dispatch('open-kit-conditionals-modal', {
+                                                        itemId: {{ $item->id }},
+                                                        itemName: '{{ addslashes($item->product->name ?? '') }}',
+                                                        baseQuantity: {{ $item->quantity_required }}
+                                                    })"
+                                                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                                                        {{ $item->conditionals->count() > 0
+                                                            ? 'bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 hover:from-indigo-200 hover:to-blue-200 border border-indigo-300'
+                                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-300' }}">
+                                                <i class="fas fa-filter mr-1.5"></i>
+                                                <span class="font-bold">{{ $item->conditionals->count() }}</span>
+                                                <span class="ml-1">{{ $item->conditionals->count() === 1 ? 'condicional' : 'condicionales' }}</span>
+                                            </button>
+                                        </td>
+
 
                                         {{-- Acciones --}}
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -686,22 +705,19 @@ function bulkImportModal() {
      class="fixed inset-0 z-50 overflow-y-auto"
      style="display: none;">
 
-    {{-- Overlay --}}
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-         @click="closeModal()"></div>
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="closeModal()"></div>
 
-    {{-- Modal --}}
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
-        <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full"
+        <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
              @click.away="closeModal()">
 
-            {{-- ===== HEADER ===== --}}
+            {{-- HEADER --}}
             <div class="bg-gradient-to-r from-indigo-600 to-blue-600 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center text-white">
                         <i class="fas fa-filter mr-3 text-2xl"></i>
                         <div>
-                            <h3 class="text-lg font-bold">Gestionar Condicionales</h3>
+                            <h3 class="text-lg font-bold">Condicionales del Instrumental</h3>
                             <p class="text-sm text-indigo-100" x-text="itemName"></p>
                         </div>
                     </div>
@@ -711,366 +727,285 @@ function bulkImportModal() {
                 </div>
             </div>
 
-            {{-- ===== BODY ===== --}}
-            <div class="bg-white px-6 py-4 max-h-[70vh] overflow-y-auto">
+            {{-- BODY --}}
+            <div class="bg-white px-6 py-4 max-h-[75vh] overflow-y-auto">
 
                 {{-- Info del item --}}
-                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-blue-900">Cantidad Base del Kit</p>
-                            <p class="text-3xl font-bold text-blue-600" x-text="baseQuantity"></p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs text-blue-700">Condicionales Activos</p>
-                            <p class="text-2xl font-bold text-indigo-600" x-text="conditionals.length"></p>
-                        </div>
+                <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Cantidad base del kit</p>
+                        <p class="text-3xl font-bold text-blue-600" x-text="baseQuantity"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Condicionales</p>
+                        <p class="text-3xl font-bold text-indigo-600" x-text="conditionals.length"></p>
                     </div>
                 </div>
 
                 {{-- Loading --}}
-                <div x-show="loading" class="text-center py-8">
+                <div x-show="loading" class="text-center py-10">
                     <i class="fas fa-spinner fa-spin text-4xl text-indigo-600 mb-3"></i>
-                    <p class="text-gray-600">Cargando condicionales...</p>
+                    <p class="text-gray-500 text-sm">Cargando condicionales...</p>
                 </div>
 
-                {{-- ===== LISTA DE CONDICIONALES ===== --}}
-                <div x-show="!loading" class="mb-6">
-                    <h4 class="text-md font-bold text-gray-900 mb-3 flex items-center">
-                        <i class="fas fa-list mr-2 text-indigo-600"></i>
-                        Condicionales Configurados
+                <div x-show="!loading">
+
+                    {{-- LISTA --}}
+                    <h4 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-list mr-2 text-indigo-500"></i> Condicionales configurados
                     </h4>
 
                     <template x-if="conditionals.length === 0">
-                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                            <i class="fas fa-inbox text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-gray-600 text-sm">No hay condicionales configurados</p>
-                            <p class="text-gray-500 text-xs mt-1">Agrega uno usando el formulario de abajo</p>
+                        <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 mb-6">
+                            <i class="fas fa-inbox text-3xl text-gray-400 mb-2"></i>
+                            <p class="text-sm text-gray-500">No hay condicionales. Agrega uno abajo.</p>
                         </div>
                     </template>
 
-                    <div class="space-y-3">
-                        <template x-for="(cond, index) in conditionals" :key="cond.id">
+                    <div class="space-y-3 mb-6">
+                        <template x-for="cond in conditionals" :key="cond.id">
                             <div class="p-4 rounded-lg border-2 transition-all hover:shadow-md"
                                  :class="{
-                                     'bg-gradient-to-r from-indigo-50 to-blue-50 border-indigo-300':   cond.action_type === 'adjust_quantity',
-                                     'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300':  cond.action_type === 'add_product',
-                                     'bg-gradient-to-r from-red-50 to-rose-50 border-red-300':         cond.action_type === 'exclude',
-                                     'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-300':  cond.action_type === 'replace',
-                                     'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300':       cond.action_type === 'add_dependency'
+                                     'bg-indigo-50 border-indigo-300': cond.action_type === 'adjust_quantity',
+                                     'bg-orange-50 border-orange-300': cond.action_type === 'replace',
+                                     'bg-blue-50 border-blue-300':    cond.action_type === 'add_dependency'
                                  }">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex-1 min-w-0">
 
-                                        {{-- Badges --}}
-                                        <div class="mb-3 flex flex-wrap items-center gap-2">
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-                                                :class="{
-                                                    'bg-indigo-600 text-white':  cond.action_type === 'adjust_quantity',
-                                                    'bg-green-600 text-white':   cond.action_type === 'add_product',
-                                                    'bg-red-600 text-white':     cond.action_type === 'exclude',
-                                                    'bg-orange-600 text-white':  cond.action_type === 'replace',
-                                                    'bg-blue-600 text-white':    cond.action_type === 'add_dependency'
-                                                }">
-                                                <i class="fas mr-1.5"
-                                                    :class="{
-                                                        'fa-edit':         cond.action_type === 'adjust_quantity',
-                                                        'fa-plus-circle':  cond.action_type === 'add_product',
-                                                        'fa-times-circle': cond.action_type === 'exclude',
-                                                        'fa-exchange-alt': cond.action_type === 'replace',
-                                                        'fa-link':         cond.action_type === 'add_dependency'
-                                                    }"></i>
-                                                <span x-text="cond.action_description"></span>
-                                            </span>
-
-                                            <template x-if="cond.exclude_from_invoice">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                                                    <i class="fas fa-file-invoice mr-1"></i> No remisionar
-                                                </span>
-                                            </template>
-
-                                            <template x-if="cond.requires_approval">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-800 border border-violet-300">
-                                                    <i class="fas fa-user-shield mr-1"></i> Requiere aprobación
-                                                </span>
-                                            </template>
-                                        </div>
+                                        {{-- Badge acción --}}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold mb-3"
+                                              :class="{
+                                                  'bg-indigo-600 text-white': cond.action_type === 'adjust_quantity',
+                                                  'bg-orange-600 text-white': cond.action_type === 'replace',
+                                                  'bg-blue-600 text-white':   cond.action_type === 'add_dependency'
+                                              }">
+                                            <i class="fas mr-1.5"
+                                               :class="{
+                                                   'fa-edit':         cond.action_type === 'adjust_quantity',
+                                                   'fa-exchange-alt': cond.action_type === 'replace',
+                                                   'fa-link':         cond.action_type === 'add_dependency'
+                                               }"></i>
+                                            <span x-text="cond.action_description"></span>
+                                        </span>
 
                                         {{-- Criterios --}}
-                                        <p class="text-sm font-bold text-gray-900 mb-2" x-text="cond.description"></p>
-
-                                        <div class="grid grid-cols-2 gap-2 text-xs">
-                                            <div><span class="text-gray-600">Doctor:</span> <span class="font-semibold" x-text="cond.doctor_name"></span></div>
-                                            <div><span class="text-gray-600">Hospital:</span> <span class="font-semibold" x-text="cond.hospital_name"></span></div>
-                                            <div><span class="text-gray-600">Modalidad:</span> <span class="font-semibold" x-text="cond.modality_name"></span></div>
-                                            <div><span class="text-gray-600">Razón Social:</span> <span class="font-semibold" x-text="cond.legal_entity_name"></span></div>
+                                        <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-xs mb-2">
+                                            <div>
+                                                <span class="text-gray-500">Doctor:</span>
+                                                <span class="font-semibold text-gray-800 ml-1" x-text="cond.doctor_name"></span>
+                                            </div>
+                                            <div>
+                                                <span class="text-gray-500">Hospital:</span>
+                                                <span class="font-semibold text-gray-800 ml-1" x-text="cond.hospital_name"></span>
+                                            </div>
                                         </div>
 
+                                        {{-- Producto objetivo (replace / add_dependency) --}}
                                         <template x-if="cond.target_product_name">
-                                            <div class="mt-3 p-2 bg-white bg-opacity-60 rounded border border-gray-300">
-                                                <p class="text-xs font-semibold text-gray-700">
-                                                    <i class="fas fa-box-open mr-1"></i>
-                                                    <span x-text="cond.action_type === 'replace' ? 'Reemplazar por:' : 'Requiere:'"></span>
-                                                    <span class="text-indigo-700" x-text="cond.target_product_name"></span>
-                                                </p>
+                                            <div class="mt-2 px-3 py-2 bg-white bg-opacity-70 rounded border border-gray-300 text-xs">
+                                                <i class="fas fa-box-open mr-1 text-gray-400"></i>
+                                                <span class="font-medium text-gray-600"
+                                                      x-text="cond.action_type === 'replace' ? 'Reemplazar por:' : 'Requiere:'">
+                                                </span>
+                                                <span class="font-bold text-indigo-700 ml-1" x-text="cond.target_product_name"></span>
+                                                <template x-if="cond.dependency_quantity">
+                                                    <span class="ml-2 text-gray-500">
+                                                        × <span class="font-bold" x-text="cond.dependency_quantity"></span>
+                                                    </span>
+                                                </template>
                                             </div>
                                         </template>
 
+                                        {{-- Notas --}}
                                         <template x-if="cond.notes">
-                                            <p class="text-xs text-gray-600 mt-2 italic bg-white bg-opacity-40 p-2 rounded">
+                                            <p class="mt-2 text-xs text-gray-500 italic">
                                                 <i class="fas fa-sticky-note mr-1"></i>
                                                 <span x-text="cond.notes"></span>
                                             </p>
                                         </template>
 
-                                        <div class="mt-2">
-                                            <span class="text-xs text-gray-500">Especificidad:
-                                                <span class="font-bold" x-text="cond.specificity_level"></span>/4
-                                            </span>
-                                        </div>
+                                        <p class="mt-2 text-xs text-gray-400">
+                                            Especificidad: <span class="font-bold" x-text="cond.specificity_level"></span>/2
+                                        </p>
                                     </div>
 
                                     {{-- Eliminar --}}
                                     <button @click="deleteConditional(cond.id)"
-                                            class="ml-4 text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-lg transition-all"
+                                            class="flex-shrink-0 text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-lg transition-all"
                                             title="Eliminar condicional">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash text-sm"></i>
                                     </button>
                                 </div>
                             </div>
                         </template>
                     </div>
-                </div>
 
-                {{-- ===== FORMULARIO NUEVO CONDICIONAL ===== --}}
-                <div x-show="!loading" class="border-t-2 border-gray-200 pt-6">
-                    <h4 class="text-md font-bold text-gray-900 mb-4 flex items-center">
-                        <i class="fas fa-plus-circle mr-2 text-green-600"></i>
-                        Agregar Nuevo Condicional
-                    </h4>
+                    {{-- FORMULARIO --}}
+                    <div class="border-t-2 border-gray-200 pt-5">
+                        <h4 class="text-sm font-bold text-gray-700 mb-4 flex items-center">
+                            <i class="fas fa-plus-circle mr-2 text-green-500"></i> Agregar nuevo condicional
+                        </h4>
 
-                    <form @submit.prevent="submitConditional()" class="space-y-4">
+                        <form @submit.prevent="submitConditional()" class="space-y-4">
 
-                        {{-- Criterios --}}
-                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <h5 class="text-sm font-bold text-gray-700 mb-3">
-                                <i class="fas fa-filter mr-1"></i> Criterios de Aplicación (al menos uno)
-                            </h5>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Doctor (opcional)</label>
-                                    <select x-model="form.doctor_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="">-- Todos los doctores --</option>
-                                        <template x-for="d in formData.doctors" :key="d.id">
-                                            <option :value="d.id" x-text="d.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Hospital (opcional)</label>
-                                    <select x-model="form.hospital_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="">-- Todos los hospitales --</option>
-                                        <template x-for="h in formData.hospitals" :key="h.id">
-                                            <option :value="h.id" x-text="h.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Modalidad (opcional)</label>
-                                    <select x-model="form.modality_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="">-- Todas las modalidades --</option>
-                                        <template x-for="m in formData.modalities" :key="m.id">
-                                            <option :value="m.id" x-text="m.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Razón Social (opcional)</label>
-                                    <select x-model="form.legal_entity_id" class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="">-- Todas las entidades --</option>
-                                        <template x-for="e in formData.legal_entities" :key="e.id">
-                                            <option :value="e.id" x-text="e.name"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Tipo de acción --}}
-                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                            <label class="block text-sm font-bold text-gray-700 mb-3">
-                                <i class="fas fa-cog mr-1"></i> Tipo de Acción <span class="text-red-500">*</span>
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-
-                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
-                                       :class="form.action_type === 'adjust_quantity' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 bg-white'">
-                                    <input type="radio" x-model="form.action_type" value="adjust_quantity" class="mt-1 text-indigo-600">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-bold"><i class="fas fa-edit text-indigo-600 mr-1"></i> Ajustar Cantidad</div>
-                                        <p class="text-xs text-gray-600 mt-1">Reemplaza la cantidad base del kit</p>
-                                    </div>
-                                </label>
-
-                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
-                                       :class="form.action_type === 'add_product' ? 'border-green-500 bg-green-50' : 'border-gray-300 bg-white'">
-                                    <input type="radio" x-model="form.action_type" value="add_product" class="mt-1 text-green-600">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-bold"><i class="fas fa-plus-circle text-green-600 mr-1"></i> Agregar Adicional</div>
-                                        <p class="text-xs text-gray-600 mt-1">Suma unidades extras al instrumental</p>
-                                    </div>
-                                </label>
-
-                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
-                                       :class="form.action_type === 'exclude' ? 'border-red-500 bg-red-50' : 'border-gray-300 bg-white'">
-                                    <input type="radio" x-model="form.action_type" value="exclude" class="mt-1 text-red-600">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-bold"><i class="fas fa-times-circle text-red-600 mr-1"></i> Excluir Instrumental</div>
-                                        <p class="text-xs text-gray-600 mt-1">No incluir este item en el kit</p>
-                                    </div>
-                                </label>
-
-                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md"
-                                       :class="form.action_type === 'replace' ? 'border-orange-500 bg-orange-50' : 'border-gray-300 bg-white'">
-                                    <input type="radio" x-model="form.action_type" value="replace" class="mt-1 text-orange-600">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-bold"><i class="fas fa-exchange-alt text-orange-600 mr-1"></i> Reemplazar</div>
-                                        <p class="text-xs text-gray-600 mt-1">Sustituir por otro instrumental</p>
-                                    </div>
-                                </label>
-
-                                <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md col-span-full"
-                                       :class="form.action_type === 'add_dependency' ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'">
-                                    <input type="radio" x-model="form.action_type" value="add_dependency" class="mt-1 text-blue-600">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-bold"><i class="fas fa-link text-blue-600 mr-1"></i> Agregar Dependencia</div>
-                                        <p class="text-xs text-gray-600 mt-1">Este instrumental requiere otro para funcionar (ej: broca → taladro)</p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        {{-- Campos dinámicos según action_type --}}
-
-                        <div x-show="form.action_type === 'adjust_quantity'" x-transition class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nueva Cantidad <span class="text-red-500">*</span></label>
-                            <input type="number" x-model.number="form.quantity_override" min="0"
-                                   class="w-full rounded-lg border-gray-300 focus:border-indigo-500" placeholder="Ej: 5">
-                        </div>
-
-                        <div x-show="form.action_type === 'add_product'" x-transition class="bg-green-50 p-4 rounded-lg border border-green-200">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad Adicional <span class="text-red-500">*</span></label>
-                            <input type="number" x-model.number="form.additional_quantity" min="1"
-                                   class="w-full rounded-lg border-gray-300 focus:border-green-500" placeholder="Ej: 3">
-                        </div>
-
-                        <div x-show="form.action_type === 'exclude'" x-transition class="bg-red-50 p-4 rounded-lg border border-red-200">
-                            <div class="flex items-start">
-                                <i class="fas fa-info-circle text-red-600 mt-0.5 mr-2"></i>
-                                <p class="text-sm text-gray-700">El instrumental <strong>no se incluirá</strong> en el kit cuando se cumplan los criterios.</p>
-                            </div>
-                        </div>
-
-                        <div x-show="form.action_type === 'replace'" x-transition class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Instrumental de Reemplazo <span class="text-red-500">*</span></label>
-                            <select x-model="form.target_product_id" class="w-full rounded-lg border-gray-300 focus:border-orange-500">
-                                <option value="">-- Selecciona un instrumental --</option>
-                                <template x-for="p in formData.products" :key="p.id">
-                                    <option :value="p.id" x-text="p.label"></option>
-                                </template>
-                            </select>
-                        </div>
-
-                        <div x-show="form.action_type === 'add_dependency'" x-transition class="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Instrumental Requerido <span class="text-red-500">*</span></label>
-                                <select x-model="form.target_product_id" class="w-full rounded-lg border-gray-300 focus:border-blue-500">
-                                    <option value="">-- Selecciona el instrumental dependiente --</option>
-                                    <template x-for="p in formData.products" :key="p.id">
-                                        <option :value="p.id" x-text="p.label"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad Requerida <span class="text-red-500">*</span></label>
-                                <input type="number" x-model.number="form.dependency_quantity" min="1"
-                                       class="w-full rounded-lg border-gray-300 focus:border-blue-500" placeholder="Ej: 1">
-                            </div>
-                        </div>
-
-                        {{-- Modificadores --}}
-                        <div class="rounded-lg border-2 border-dashed border-gray-300 overflow-hidden">
-                            <div class="px-4 py-3 bg-gray-100 border-b border-gray-300 flex items-center justify-between">
-                                <span class="text-sm font-bold text-gray-700"><i class="fas fa-sliders-h mr-2 text-gray-500"></i>Modificadores adicionales</span>
-                                <span class="text-xs text-gray-500 italic">Aplican independientemente del tipo de acción</span>
-                            </div>
-                            <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <label class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
-                                       :class="form.exclude_from_invoice ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-white hover:border-gray-300'">
-                                    <input type="checkbox" x-model="form.exclude_from_invoice" class="mt-0.5 rounded text-amber-500">
+                            {{-- Criterios --}}
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">
+                                    <i class="fas fa-filter mr-1"></i> Criterios de aplicación (al menos uno)
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <div class="flex items-center gap-2">
-                                            <i class="fas fa-file-invoice text-amber-500 text-sm"></i>
-                                            <span class="text-sm font-semibold">No agregar en remisión</span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-0.5">Se despacha físicamente pero no aparece en la remisión.</p>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Doctor</label>
+                                        <select x-model="form.doctor_id"
+                                                class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="">-- Todos los doctores --</option>
+                                            <template x-for="d in formData.doctors" :key="d.id">
+                                                <option :value="d.id" x-text="d.name"></option>
+                                            </template>
+                                        </select>
                                     </div>
-                                </label>
-                                <label class="flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all"
-                                       :class="form.requires_approval ? 'border-violet-400 bg-violet-50' : 'border-gray-200 bg-white hover:border-gray-300'">
-                                    <input type="checkbox" x-model="form.requires_approval" class="mt-0.5 rounded text-violet-500">
                                     <div>
-                                        <div class="flex items-center gap-2">
-                                            <i class="fas fa-user-shield text-violet-500 text-sm"></i>
-                                            <span class="text-sm font-semibold">Requiere aprobación manual</span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 mt-0.5">Debe ser revisado por un supervisor antes de surtirse.</p>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Hospital</label>
+                                        <select x-model="form.hospital_id"
+                                                class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            <option value="">-- Todos los hospitales --</option>
+                                            <template x-for="h in formData.hospitals" :key="h.id">
+                                                <option :value="h.id" x-text="h.name"></option>
+                                            </template>
+                                        </select>
                                     </div>
+                                </div>
+                            </div>
+
+                            {{-- Tipo de acción --}}
+                            <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                <p class="text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">
+                                    <i class="fas fa-cog mr-1"></i> Tipo de acción <span class="text-red-500">*</span>
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                                    <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-sm"
+                                           :class="form.action_type === 'adjust_quantity'
+                                               ? 'border-indigo-500 bg-white shadow-sm'
+                                               : 'border-gray-200 bg-white'">
+                                        <input type="radio" x-model="form.action_type" value="adjust_quantity" class="mt-0.5 text-indigo-600">
+                                        <div class="ml-2">
+                                            <p class="text-sm font-bold text-indigo-700">
+                                                <i class="fas fa-edit mr-1"></i> Ajustar Cantidad
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-0.5">Cambia la cantidad base del kit</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-sm"
+                                           :class="form.action_type === 'replace'
+                                               ? 'border-orange-500 bg-white shadow-sm'
+                                               : 'border-gray-200 bg-white'">
+                                        <input type="radio" x-model="form.action_type" value="replace" class="mt-0.5 text-orange-600">
+                                        <div class="ml-2">
+                                            <p class="text-sm font-bold text-orange-700">
+                                                <i class="fas fa-exchange-alt mr-1"></i> Reemplazar
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-0.5">Sustituir por otro instrumental</p>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-sm"
+                                           :class="form.action_type === 'add_dependency'
+                                               ? 'border-blue-500 bg-white shadow-sm'
+                                               : 'border-gray-200 bg-white'">
+                                        <input type="radio" x-model="form.action_type" value="add_dependency" class="mt-0.5 text-blue-600">
+                                        <div class="ml-2">
+                                            <p class="text-sm font-bold text-blue-700">
+                                                <i class="fas fa-link mr-1"></i> Dependencia
+                                            </p>
+                                            <p class="text-xs text-gray-500 mt-0.5">Requiere otro instrumental (ej: broca → taladro)</p>
+                                        </div>
+                                    </label>
+
+                                </div>
+                            </div>
+
+                            {{-- Campo: Nueva cantidad (adjust_quantity) --}}
+                            <div x-show="form.action_type === 'adjust_quantity'" x-transition
+                                 class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Nueva Cantidad <span class="text-red-500">*</span>
                                 </label>
+                                <input type="number" x-model.number="form.quantity_override" min="0"
+                                       class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500"
+                                       placeholder="Ej: 5">
                             </div>
-                        </div>
 
-                        {{-- Notas --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
-                            <textarea x-model="form.notes" rows="2"
-                                      class="w-full rounded-lg border-gray-300 focus:border-indigo-500"
-                                      placeholder="Ej: Dr. García requiere instrumental adicional para procedimientos complejos"></textarea>
-                        </div>
+                            {{-- Campo: Producto objetivo (replace / add_dependency) --}}
+                            <div x-show="form.action_type === 'replace' || form.action_type === 'add_dependency'"
+                                 x-transition
+                                 class="p-4 rounded-lg border"
+                                 :class="form.action_type === 'replace'
+                                     ? 'bg-orange-50 border-orange-200'
+                                     : 'bg-blue-50 border-blue-200'">
 
-                        {{-- Errores / Warnings --}}
-                        <div x-show="errorMessage" x-transition class="p-3 bg-red-50 border border-red-200 rounded-lg">
-                            <div class="flex items-start">
-                                <i class="fas fa-exclamation-triangle text-red-600 mt-0.5 mr-2"></i>
-                                <p class="text-sm text-red-800" x-text="errorMessage"></p>
+                                <div class="mb-3">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        <span x-text="form.action_type === 'replace'
+                                            ? 'Instrumental de Reemplazo'
+                                            : 'Instrumental Requerido'">
+                                        </span>
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <select x-model="form.target_product_id"
+                                            class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500">
+                                        <option value="">-- Selecciona un instrumental --</option>
+                                        <template x-for="p in formData.products" :key="p.id">
+                                            <option :value="p.id" x-text="p.label"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                {{-- Cantidad de dependencia --}}
+                                <div x-show="form.action_type === 'add_dependency'" x-transition>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Cantidad Requerida <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="number" x-model.number="form.dependency_quantity" min="1"
+                                           class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500"
+                                           placeholder="Ej: 1">
+                                </div>
                             </div>
-                        </div>
-                        <div x-show="warnings.length > 0" x-transition class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p class="text-sm font-semibold text-yellow-800">Advertencias:</p>
-                            <template x-for="w in warnings" :key="w">
-                                <p class="text-xs text-yellow-700 mt-1" x-text="'• ' + w"></p>
-                            </template>
-                        </div>
 
-                        {{-- Botones --}}
-                        <div class="flex justify-end space-x-3 pt-4 border-t">
-                            <button type="button" @click="closeModal()"
-                                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                                Cerrar
-                            </button>
-                            <button type="submit" :disabled="isSubmitting"
-                                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <template x-if="isSubmitting">
-                                    <span><i class="fas fa-spinner fa-spin mr-2"></i>Guardando...</span>
-                                </template>
-                                <template x-if="!isSubmitting">
-                                    <span><i class="fas fa-save mr-2"></i>Guardar Condicional</span>
-                                </template>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                            {{-- Notas --}}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                                <textarea x-model="form.notes" rows="2"
+                                          class="w-full rounded-lg border-gray-300 text-sm focus:border-indigo-500"
+                                          placeholder="Ej: El Dr. García requiere taladro adicional en procedimientos de cadera"></textarea>
+                            </div>
 
+                            {{-- Error --}}
+                            <div x-show="errorMessage" x-transition
+                                 class="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <i class="fas fa-exclamation-triangle text-red-500 mt-0.5 flex-shrink-0"></i>
+                                <p class="text-sm text-red-700" x-text="errorMessage"></p>
+                            </div>
+
+                            {{-- Botones --}}
+                            <div class="flex justify-end gap-3 pt-2 border-t border-gray-200">
+                                <button type="button" @click="closeModal()"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                    Cerrar
+                                </button>
+                                <button type="submit" :disabled="isSubmitting"
+                                        class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fas mr-1.5"
+                                       :class="isSubmitting ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                                    <span x-text="isSubmitting ? 'Guardando...' : 'Guardar Condicional'"></span>
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>{{-- /!loading --}}
             </div>{{-- /body --}}
         </div>
     </div>
@@ -1086,27 +1021,21 @@ function kitConditionalsModal() {
         loading:      false,
         isSubmitting: false,
         errorMessage: '',
-        warnings:     [],
 
         itemId:       null,
         itemName:     '',
         baseQuantity: 0,
         conditionals: [],
 
-        formData: { doctors: [], hospitals: [], modalities: [], legal_entities: [], products: [] },
+        formData: { doctors: [], hospitals: [], products: [] },
 
         form: {
             doctor_id:           '',
             hospital_id:         '',
-            modality_id:         '',
-            legal_entity_id:     '',
             action_type:         'adjust_quantity',
             quantity_override:   null,
-            additional_quantity: null,
             target_product_id:   '',
             dependency_quantity: 1,
-            exclude_from_invoice: false,
-            requires_approval:   false,
             notes:               '',
         },
 
@@ -1116,7 +1045,7 @@ function kitConditionalsModal() {
             this.baseQuantity = data.baseQuantity;
             this.isOpen       = true;
             this.errorMessage = '';
-            this.warnings     = [];
+            this.resetForm();
             await this.loadFormData();
             await this.loadConditionals();
         },
@@ -1131,7 +1060,9 @@ function kitConditionalsModal() {
                 const res    = await fetch('{{ route("surgical-kit-template-conditional-form-data") }}');
                 const result = await res.json();
                 if (result.success) this.formData = result.data;
-            } catch (e) { console.error('Error cargando form data:', e); }
+            } catch (e) {
+                console.error('Error cargando form data:', e);
+            }
         },
 
         async loadConditionals() {
@@ -1140,49 +1071,51 @@ function kitConditionalsModal() {
                 const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals`);
                 const result = await res.json();
                 if (result.success) this.conditionals = result.data;
-            } catch (e) { console.error('Error cargando condicionales:', e); }
-            finally { this.loading = false; }
+            } catch (e) {
+                console.error('Error cargando condicionales:', e);
+            } finally {
+                this.loading = false;
+            }
         },
 
         async submitConditional() {
             this.isSubmitting = true;
             this.errorMessage = '';
-            this.warnings     = [];
 
             try {
                 const payload = {
-                    doctor_id:            this.form.doctor_id        || null,
-                    hospital_id:          this.form.hospital_id      || null,
-                    modality_id:          this.form.modality_id      || null,
-                    legal_entity_id:      this.form.legal_entity_id  || null,
-                    action_type:          this.form.action_type,
-                    quantity_override:    this.form.action_type === 'adjust_quantity'  ? this.form.quantity_override   : null,
-                    additional_quantity:  this.form.action_type === 'add_product'      ? this.form.additional_quantity : null,
-                    target_product_id:    ['replace','add_dependency'].includes(this.form.action_type) ? this.form.target_product_id : null,
-                    dependency_quantity:  this.form.action_type === 'add_dependency'   ? this.form.dependency_quantity : null,
-                    exclude_from_invoice: this.form.exclude_from_invoice,
-                    requires_approval:    this.form.requires_approval,
-                    notes:                this.form.notes || null,
+                    doctor_id:           this.form.doctor_id       || null,
+                    hospital_id:         this.form.hospital_id     || null,
+                    action_type:         this.form.action_type,
+                    quantity_override:   this.form.action_type === 'adjust_quantity'
+                                            ? this.form.quantity_override : null,
+                    target_product_id:   ['replace', 'add_dependency'].includes(this.form.action_type)
+                                            ? this.form.target_product_id : null,
+                    dependency_quantity: this.form.action_type === 'add_dependency'
+                                            ? this.form.dependency_quantity : null,
+                    notes:               this.form.notes || null,
                 };
 
                 const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals`, {
                     method:  'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                    body:    JSON.stringify(payload),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept':       'application/json',
+                    },
+                    body: JSON.stringify(payload),
                 });
+
                 const result = await res.json();
 
                 if (result.success) {
-                    if (result.warnings?.length) this.warnings = result.warnings;
-                    alert('✓ ' + result.message);
+                    this.conditionals.unshift(result.data);
                     this.resetForm();
-                    await this.loadConditionals();
-                    if (!this.warnings.length) setTimeout(() => window.location.reload(), 800);
                 } else {
                     this.errorMessage = result.message;
                 }
             } catch (e) {
-                this.errorMessage = 'Error: ' + e.message;
+                this.errorMessage = 'Error de conexión: ' + e.message;
             } finally {
                 this.isSubmitting = false;
             }
@@ -1191,33 +1124,39 @@ function kitConditionalsModal() {
         async deleteConditional(conditionalId) {
             if (!confirm('¿Eliminar este condicional?')) return;
             try {
-                const res    = await fetch(`/surgical_kit_template_items/${this.itemId}/conditionals/${conditionalId}`, {
-                    method:  'DELETE',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                });
+                const res    = await fetch(
+                    `/surgical_kit_template_items/${this.itemId}/conditionals/${conditionalId}`,
+                    {
+                        method:  'DELETE',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    }
+                );
                 const result = await res.json();
                 if (result.success) {
-                    await this.loadConditionals();
-                    setTimeout(() => window.location.reload(), 800);
+                    this.conditionals = this.conditionals.filter(c => c.id !== conditionalId);
                 } else {
                     alert('✗ ' + result.message);
                 }
-            } catch (e) { alert('✗ Error al eliminar'); }
+            } catch (e) {
+                alert('✗ Error al eliminar');
+            }
         },
 
         resetForm() {
             this.form = {
-                doctor_id: '', hospital_id: '', modality_id: '', legal_entity_id: '',
-                action_type: 'adjust_quantity', quantity_override: null,
-                additional_quantity: null, target_product_id: '',
-                dependency_quantity: 1, exclude_from_invoice: false,
-                requires_approval: false, notes: '',
+                doctor_id:           '',
+                hospital_id:         '',
+                action_type:         'adjust_quantity',
+                quantity_override:   null,
+                target_product_id:   '',
+                dependency_quantity: 1,
+                notes:               '',
             };
             this.errorMessage = '';
-            this.warnings     = [];
         },
     };
 }
+
 </script>
 @endpush
 

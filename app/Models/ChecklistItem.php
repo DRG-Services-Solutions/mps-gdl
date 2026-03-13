@@ -32,7 +32,7 @@ class ChecklistItem extends Model
      */
     public function checklist()
     {
-        return $this->belongsTo(SurgicalChecklist::class, 'checklist_id'); // ✅ CORRECTO
+        return $this->belongsTo(SurgicalChecklist::class, 'checklist_id');
     }
 
     /**
