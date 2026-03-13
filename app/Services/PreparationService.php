@@ -196,7 +196,6 @@ class PreparationService
     /**
      * Verificar si la preparación está completa
      * 
-     * FIX #4: Usar quantity_missing en lugar de solo status para mayor precisión
      */
     protected function checkPreparationCompletion(SurgeryPreparation $preparation)
     {
@@ -207,7 +206,7 @@ class PreparationService
 
         if (!$pendingMandatory) {
             // Solo marcar como complete si NO hay mandatorios pendientes
-            Log::info("✅ Todos los items obligatorios completos. Marcando preparación como complete.");
+            Log::info("Todos los items obligatorios completos. Marcando preparación como complete.");
             
             $preparation->update([
                 'status' => 'complete',
