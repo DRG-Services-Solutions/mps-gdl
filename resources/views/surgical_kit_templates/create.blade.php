@@ -7,9 +7,9 @@
                         <i class="fas fa-arrow-left"></i>
                     </a>
                     <i class="fas fa-box-open mr-2 text-indigo-600"></i>
-                    {{ __('Crear Nueva Receta de Kit') }}
+                    Nuevo Checklist De Instrumental
                 </h2>
-                <p class="text-sm text-gray-600 mt-1 ml-9">Define los detalles generales del nuevo kit quirúrgico</p>
+                <p class="text-sm text-gray-600 mt-1 ml-9">Nuevo Instrumental</p>
             </div>
         </div>
     </x-slot>
@@ -44,7 +44,7 @@
                             @enderror
                         </div>
 
-                        <div>
+                        <div class="md:col-span-2">
                             <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
                                 Código de Referencia <span class="text-gray-400 font-normal">(Opcional)</span>
                             </label>
@@ -64,22 +64,7 @@
                             @enderror
                         </div>
 
-                        <div>
-                            <label for="is_active" class="block text-sm font-medium text-gray-700 mb-1">
-                                Estado Inicial
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-toggle-on text-gray-400"></i>
-                                </div>
-                                <select name="is_active" 
-                                        id="is_active" 
-                                        class="pl-10 w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="1" {{ old('is_active', '1') == '1' ? 'selected' : '' }}>Activo (Disponible para usar)</option>
-                                    <option value="0" {{ old('is_active') == '0' ? 'selected' : '' }}>Inactivo (Borrador / No disponible)</option>
-                                </select>
-                            </div>
-                        </div>
+                        
 
                         <!-- Checklist al que se asociará el kit -->
 

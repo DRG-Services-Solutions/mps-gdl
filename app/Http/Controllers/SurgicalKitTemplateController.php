@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SurgicalKitTemplate;
 use App\Models\SurgicalChecklist;
 use App\Models\Product;
+use App\Models\ProductUnit;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreSurgicalKitTemplateRequest;
 use App\Http\Requests\UpdateSurgicalKitTemplateRequest;
@@ -46,8 +47,16 @@ class SurgicalKitTemplateController extends Controller
      */
     public function show(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        $surgicalKitTemplate->load('items.product', 'items.conditionals');
-        $products = Product::select('id', 'name','code')->orderBy('name')->get();
+        // 1. Filtramos las relaciones del Kit Quirúrgico
+        $surgicalKitTemplate->load([
+            'items' => function ($query) {
+                $query->whereHas('product', function ($q) {
+                    $q->where('product_type_id', 1); 
+                })->with(['product', 'conditionals']); 
+            }
+        ]);
+
+        $products = ProductUnit::with('product')->get();
         return view('surgical_kit_templates.show', compact('surgicalKitTemplate', 'products'));
     }
 
@@ -67,7 +76,7 @@ class SurgicalKitTemplateController extends Controller
         $validatedData = $request->validated();
         $surgicalKitTemplate->update($validatedData);
 
-        return redirect()->route('surgical-kit-templates.show', $surgicalKitTemplate)->with('success', '¡Receta de kit quirúrgico actualizada con éxito!');
+        return redirect()->route('surgical_kit_templates.show', $surgicalKitTemplate)->with('success', '¡Receta de kit quirúrgico actualizada con éxito!');
     }
 
     /**
@@ -76,6 +85,6 @@ class SurgicalKitTemplateController extends Controller
     public function destroy(SurgicalKitTemplate $surgicalKitTemplate)
     {
         $surgicalKitTemplate->delete();
-        return redirect()->route('surgical-kit-templates.index')->with('success', '¡Receta de kit quirúrgico eliminada con éxito!');
+        return redirect()->route('surgical_kit_templates.index')->with('success', '¡Receta de kit quirúrgico eliminada con éxito!');
     }
 }

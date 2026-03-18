@@ -111,13 +111,20 @@
                             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                                 {{-- Producto --}}
                                 <div class="md:col-span-2">
+                                
+                                  
+                                 
                                     <label for="product_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Instrumento / Artículo <span class="text-red-500">*</span>
+
+                                        Instrumento / Artículo <span class="text-red-500">*</span> 
                                     </label>
+                                  
+                                  
                                     <select id="product_id" name="product_id" required>
                                         <option value="">Selecciona un artículo...</option>
+                                        
                                         @foreach($products as $product)
-                                            @if($product->code && $product->name)
+                                            
                                                 <option
                                                     value="{{ $product->id }}"
                                                     data-name="{{ $product->name }}"
@@ -125,7 +132,7 @@
                                                 >
                                                     {{ $product->code }} - {{ $product->name }}
                                                 </option>
-                                            @endif
+                                        
                                         @endforeach
                                     </select>
                                     @error('product_id')
@@ -277,8 +284,8 @@
                         @endif
                     </div>
 
-                </div>{{-- fin lg:col-span-2 --}}
-            </div>{{-- fin grid --}}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1012,7 +1019,7 @@ function bulkImportModal() {
 </div>
 
 {{-- ============================================================
-     SCRIPT Alpine.js — pegar dentro del @push('scripts')
+     SCRIPT Alpine.js
      ============================================================ --}}
 <script>
 function kitConditionalsModal() {

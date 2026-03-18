@@ -10,9 +10,17 @@ return new class extends Migration
     {
         Schema::create('surgery_preparation_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId();
             $table->foreignId('preparation_id')->constrained('surgery_preparations')->onDelete('cascade')->comment('Preparación a la que pertenece');
 
             $table->foreignId('product_id')->constrained('products')->comment('Producto requerido');
+
+            $table->foreignId('checklist_item_id')
+                    ->nullable()
+                    ->constrained()
+                    ->nullOnDelete();
+
+
             
             // Cantidades del Check List
             $table->integer('quantity_required')->comment('Cantidad requerida según check list (con condicionales)');

@@ -24,16 +24,14 @@
                                 
                                 <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Inventario Total</p>
                                     Productos Registrados
-                                    <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">{{ $products->count() }}</p>
+                                    <p class="text-3xl font-bold text-gray-600 uppercase tracking-wide">{{ $products->count() }}</p>
                                     Con stock de:
-                                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $units->count() }}</p>
+                                    <p class="text-3xl font-medium text-gray-900 mt-2">{{ $units->count() }} Piezas</p>
                             
                                     <div class="flex items
 
                                 <div class="flex items-center mt-2">
-                                    <svg class="h-4 w-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                    </svg>
+                                   
                                   
                                 </div>
                             </div>
