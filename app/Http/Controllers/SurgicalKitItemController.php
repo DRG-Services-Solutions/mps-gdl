@@ -11,12 +11,11 @@ use App\Http\Requests\StoreSurgicalKitTemplateRequest;
 use App\Http\Requests\UpdateSurgicalKitTemplateRequest;
 use Illuminate\Support\Facades\DB;
 
-class SurgicalKitTemplateController extends Controller
+class SurgicalKitItemController extends Controller
 {
     // ═══════════════════════════════════════════════════════════
     // CRUD BÁSICO
-    // ═══════════════════════════════════════════════════════════
-
+    // ══════════════════════════════════════════════════════════
     public function index(Request $request)
     {
         $query = SurgicalKitTemplate::with('items');
