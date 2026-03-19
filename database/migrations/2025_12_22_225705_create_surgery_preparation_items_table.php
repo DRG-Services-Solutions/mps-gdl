@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('surgery_preparation_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId();
+            
             $table->foreignId('preparation_id')->constrained('surgery_preparations')->onDelete('cascade')->comment('Preparación a la que pertenece');
 
             $table->foreignId('product_id')->constrained('products')->comment('Producto requerido');
