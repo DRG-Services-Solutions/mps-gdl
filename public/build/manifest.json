@@ -1,0 +1,39 @@
+{
+  "_RFIDCallbacks-R4uarqB9.js": {
+    "file": "assets/RFIDCallbacks-R4uarqB9.js",
+    "name": "RFIDCallbacks"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-rO9wFcDd.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-yvOtQSdR.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/pages/pre-assembled/rfid-compare.js": {
+    "file": "assets/rfid-compare-DcUzrzbR.js",
+    "name": "rfid-compare",
+    "src": "resources/js/pages/pre-assembled/rfid-compare.js",
+    "isEntry": true,
+    "imports": [
+      "_RFIDCallbacks-R4uarqB9.js"
+    ]
+  },
+  "resources/js/pages/surgeries/picking-rfid.js": {
+    "file": "assets/picking-rfid-CZikRh9B.js",
+    "name": "picking-rfid",
+    "src": "resources/js/pages/surgeries/picking-rfid.js",
+    "isEntry": true,
+    "imports": [
+      "_RFIDCallbacks-R4uarqB9.js"
+    ]
+  }
+}
