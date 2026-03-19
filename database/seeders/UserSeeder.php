@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Contraseña predeterminada para todos los usuarios, a ser reemplazada.
-        $defaultPassword = Hash::make('password');
+        $defaultPassword = Hash::make('admin123!-');
 
         // --- 1. Dirección y Admin ---
         $adminUser = User::firstOrCreate(
