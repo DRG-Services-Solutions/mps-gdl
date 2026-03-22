@@ -64,7 +64,6 @@ class ChecklistItem extends Model
     {
         $baseQuantity = $this->quantity;
         
-        // Buscar condicional aplicable (más específico primero)
         $conditional = $this->findApplicableConditional($surgery);
         
         if (!$conditional) {
@@ -77,31 +76,75 @@ class ChecklistItem extends Model
             ];
         }
         
-        // Aplicar condicional según su tipo
-        if ($conditional->is_additional_product) {
-            $finalQuantity = $conditional->additional_quantity ?? 0;
+        switch ($conditional->action_type) {
             
-            return [
-                'final_quantity' => $finalQuantity,
-                'base_quantity' => $baseQuantity,
-                'has_conditional' => true,
-                'conditional' => $conditional,
-                'conditional_description' => "Producto adicional: {$conditional->getDescription()}",
-            ];
+            case 'exclude':
+                return [
+                    'final_quantity' => 0,  // ← esto es lo que faltaba
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => true,
+                    'conditional' => $conditional,
+                    'conditional_description' => "Excluido: {$conditional->getDescription()}",
+                ];
+            
+            case 'replace':
+                // El producto original se excluye (el reemplazo llega por getAdditionalProducts)
+                return [
+                    'final_quantity' => 0,
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => true,
+                    'conditional' => $conditional,
+                    'conditional_description' => "Reemplazado por: {$conditional->targetProduct?->name}",
+                ];
+            
+            case 'adjust_quantity':
+                $finalQuantity = $conditional->quantity_override ?? $baseQuantity;
+                return [
+                    'final_quantity' => $finalQuantity,
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => $finalQuantity !== $baseQuantity,
+                    'conditional' => $conditional,
+                    'conditional_description' => $finalQuantity !== $baseQuantity 
+                        ? $conditional->getDescription() 
+                        : null,
+                ];
+            
+            case 'add_product':
+                $finalQuantity = $conditional->additional_quantity ?? 0;
+                return [
+                    'final_quantity' => $finalQuantity,
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => true,
+                    'conditional' => $conditional,
+                    'conditional_description' => "Producto adicional: {$conditional->getDescription()}",
+                ];
+            
+            case 'add_dependency':
+                // El producto base mantiene su cantidad, la dependencia se agrega aparte
+                return [
+                    'final_quantity' => $baseQuantity,
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => true,
+                    'conditional' => $conditional,
+                    'conditional_description' => "Requiere: {$conditional->targetProduct?->name} ×{$conditional->dependency_quantity}",
+                ];
+            
+            default:
+                // Fallback: lógica legacy con is_additional_product
+                if ($conditional->is_additional_product) {
+                    $finalQuantity = $conditional->additional_quantity ?? 0;
+                } else {
+                    $finalQuantity = $conditional->quantity_override ?? $baseQuantity;
+                }
+                
+                return [
+                    'final_quantity' => $finalQuantity,
+                    'base_quantity' => $baseQuantity,
+                    'has_conditional' => true,
+                    'conditional' => $conditional,
+                    'conditional_description' => $conditional->getDescription(),
+                ];
         }
-        
-        // Reemplazar cantidad base
-        $finalQuantity = $conditional->quantity_override ?? $baseQuantity;
-        
-        return [
-            'final_quantity' => $finalQuantity,
-            'base_quantity' => $baseQuantity,
-            'has_conditional' => $finalQuantity !== $baseQuantity,
-            'conditional' => $conditional,
-            'conditional_description' => $finalQuantity !== $baseQuantity 
-                ? $conditional->getDescription() 
-                : null,
-        ];
     }
 
     /**

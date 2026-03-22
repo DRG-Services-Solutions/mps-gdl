@@ -75,6 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (confirmData.data.preparation_complete) {
                             PickingUI.showCompletionAlert();
                         }
+                        if (confirmData.data?.conditional_actions?.length > 0) {
+                            confirmData.data.conditional_actions.forEach(action => {
+                                ToastNotification.warning(action.message);
+                            });
+                            setTimeout(() => window.location.reload(), 1800);
+                        }
                     }
                 } else {
                     // ❌ TAG INCORRECTO - Registrar y alertar
@@ -247,6 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.data.preparation_complete) {
                         PickingUI.showCompletionAlert();
                     }
+                    if (data.data?.conditional_actions?.length > 0) {
+                        data.data.conditional_actions.forEach(action => {
+                            ToastNotification.warning(action.message);
+                        });
+                        setTimeout(() => window.location.reload(), 1800);
+                    }
+
                 } else {
                     PickingUI.showError(data.message, 'barcodeResult');
                 }

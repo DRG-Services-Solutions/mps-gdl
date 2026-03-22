@@ -133,6 +133,7 @@ class SurgeryPreparationController extends Controller
         $surgery->load([
             'preparation.preAssembledPackage.storageLocation',
             'preparation.items.product',
+            'preparation.items.checklistItem.conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'targetProduct']),
             'preparation.items.storageLocation',
         ]);
 
@@ -191,9 +192,11 @@ class SurgeryPreparationController extends Controller
         Log::info("Accediendo a picking para Cirugía ID: {$surgery->id}");
 
         $surgery->load([
-            'preparation.items.product',
-            'preparation.items.storageLocation',
-            'preparation.preAssembledPackage.surgeryChecklist.items.conditionals' 
+                'preparation.items.product',
+                'preparation.items.storageLocation',
+                'preparation.items.checklistItem.conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'targetProduct']),
+                'preparation.preAssembledPackage.surgeryChecklist.items.conditionals',
+                'preparation.preAssembledPackage.storageLocation',
         ]);
         
         $preparation = $surgery->preparation;
@@ -203,13 +206,15 @@ class SurgeryPreparationController extends Controller
                 ->with('error', 'No se encontró una preparación activa para esta cirugía.');
         }
 
-        // FIX: Solo cambiar a picking si está en un estado que lo permita
         if (in_array($preparation->status, ['scheduled', 'comparing'])) {
             $preparation->update(['status' => 'picking']);
         }
 
         // Obtener resumen usando el servicio
         $summary = $this->preparationService->getPreparationSummary($preparation->id);
+        
+        $this->preparationService->reevaluateAllConditionals($preparation);
+
 
         $pendingItems = $preparation->items->where('quantity_missing', '>', 0)->values();
 
@@ -675,14 +680,10 @@ class SurgeryPreparationController extends Controller
             $unit = \App\Models\ProductUnit::findByEPC($validated['epc']);
 
             if (!$unit) {
-                return response()->json(['success' => false, 'message' => "❌ Unidad no disponible"], 404);
+                return response()->json(['success' => false, 'message' => " Unidad no disponible"], 404);
             }
 
-            $unit->reserve(
-                auth()->id(),
-                $surgery->id,
-                $preparation->pre_assembled_package_id
-            );
+            
 
             $result = $this->preparationService->pickProduct(
                 $preparation->id,

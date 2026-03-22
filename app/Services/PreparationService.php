@@ -80,6 +80,7 @@ class PreparationService
 
                 $preparation->items()->create([
                     'product_id' => $productId,
+                    'checklist_item_id'   => $checklistItem->id,
                     'quantity_required' => $requiredQty,
                     'quantity_in_package' => $inPackageQty,
                     'quantity_picked' => 0,
@@ -146,6 +147,11 @@ class PreparationService
             // 6. Actualizar cantidades del ítem
             $prepItem->increment('quantity_picked');
             $prepItem->decrement('quantity_missing');
+
+            $conditionalActions = [];
+            if ($prepItem->fresh()->quantity_missing <= 0) {
+                $conditionalActions = $this->evaluateItemConditionals($preparation, $prepItem->fresh());
+            }
             
             // Actualizar estado si se completó
             if ($prepItem->fresh()->quantity_missing <= 0) {
@@ -183,6 +189,7 @@ class PreparationService
 
             return [
                 'success' => true,
+                'conditional_actions' => $conditionalActions,
                 'product_name' => $productUnit->product->name,
                 'item_id' => $prepItem->id,
                 'quantity_missing' => $prepItem->quantity_missing,
@@ -192,6 +199,150 @@ class PreparationService
             ];
         });
     }
+
+    protected function evaluateItemConditionals(SurgeryPreparation $preparation, SurgeryPreparationItem $item): array
+{
+    $actions = [];
+    $applicable = $item->getApplicableConditional();
+    if (!$applicable) return $actions;
+
+    Log::info("Condicional aplicable para item {$item->id}: {$applicable->action_type}");
+
+    switch ($applicable->action_type) {
+
+        case 'adjust_quantity':
+            $targetQty = $applicable->quantity_override;
+            if ($targetQty !== null && $item->quantity_required !== $targetQty) {
+                $diff      = $targetQty - $item->quantity_required;
+                $newMissing = max(0, $item->quantity_missing + $diff);
+                $item->update([
+                    'quantity_required' => $targetQty,
+                    'quantity_missing'  => $newMissing,
+                    'status'            => $newMissing <= 0 ? 'complete' : 'pending',
+                ]);
+                $actions[] = [
+                    'type'    => 'quantity_adjusted',
+                    'item_id' => $item->id,
+                    'message' => "Cantidad ajustada a {$targetQty} por condicional.",
+                ];
+            }
+            break;
+
+        case 'add_dependency':
+            if ($applicable->target_product_id) {
+                $action = $this->ensureDependencyExists($preparation, $applicable);
+                if ($action) $actions[] = $action;
+            }
+            break;
+
+        case 'exclude':
+            $item->update([
+                'quantity_required' => 0,
+                'quantity_missing'  => 0,
+                'status'            => 'complete',
+            ]);
+            $actions[] = [
+                'type'    => 'excluded',
+                'item_id' => $item->id,
+                'message' => 'Producto excluido por condicional.',
+            ];
+            break;
+
+        case 'replace':
+            $action = $this->applyReplacementConditional($preparation, $item, $applicable);
+            if ($action) $actions[] = $action;
+            break;
+    }
+
+    return $actions;
+}
+
+protected function ensureDependencyExists(SurgeryPreparation $preparation, \App\Models\ChecklistConditional $conditional): ?array
+{
+    $targetProductId = $conditional->target_product_id;
+    $requiredQty     = $conditional->dependency_quantity ?? 1;
+    $productName     = $conditional->targetProduct?->name ?? "Producto ID {$targetProductId}";
+
+    $existing = $preparation->items()->where('product_id', $targetProductId)->first();
+
+    if ($existing) {
+        if ($existing->quantity_required >= $requiredQty) return null;
+
+        $diff = $requiredQty - $existing->quantity_required;
+        $existing->update([
+            'quantity_required' => $requiredQty,
+            'quantity_missing'  => $existing->quantity_missing + $diff,
+            'status'            => 'pending',
+        ]);
+
+        return [
+            'type'         => 'dependency_updated',
+            'product_name' => $productName,
+            'message'      => "⚠️ Dependencia actualizada: {$requiredQty}x {$productName}",
+        ];
+    }
+
+    $preparation->items()->create([
+        'product_id'          => $targetProductId,
+        'quantity_required'   => $requiredQty,
+        'quantity_in_package' => 0,
+        'quantity_picked'     => 0,
+        'quantity_missing'    => $requiredQty,
+        'is_mandatory'        => false,
+        'status'              => 'pending',
+    ]);
+
+    return [
+        'type'         => 'dependency_added',
+        'product_name' => $productName,
+        'message'      => "Dependencia agregada: {$requiredQty}x {$productName}",
+    ];
+}
+
+    protected function applyReplacementConditional(SurgeryPreparation $preparation, SurgeryPreparationItem $item, \App\Models\ChecklistConditional $conditional): ?array
+        {
+            if (!$conditional->target_product_id) return null;
+
+            $replacementName = $conditional->targetProduct?->name ?? "ID {$conditional->target_product_id}";
+
+            if ($preparation->items()->where('product_id', $conditional->target_product_id)->exists()) return null;
+
+            $preparation->items()->create([
+                'product_id'          => $conditional->target_product_id,
+                'quantity_required'   => $item->quantity_required,
+                'quantity_in_package' => 0,
+                'quantity_picked'     => 0,
+                'quantity_missing'    => $item->quantity_required,
+                'is_mandatory'        => $item->is_mandatory,
+                'status'              => 'pending',
+            ]);
+
+            return [
+                'type'         => 'replaced',
+                'product_name' => $replacementName,
+                'message'      => "🔄 Reemplazado por: {$replacementName}",
+            ];
+        }
+
+    public function reevaluateAllConditionals(SurgeryPreparation $preparation): array
+        {
+            $allActions = [];
+
+            $completedItems = $preparation->items()
+                ->whereIn('status', ['complete', 'in_package'])
+                ->with([
+                    'preparation.scheduledSurgery.hospitalModalityConfig',
+                    'preparation.scheduledSurgery.hospital',
+                ])
+                ->get();
+
+            foreach ($completedItems as $item) {
+                $actions = $this->evaluateItemConditionals($preparation, $item);
+                if (!empty($actions)) $allActions = array_merge($allActions, $actions);
+            }
+
+            return $allActions;
+        }
 
     /**
      * Verificar si la preparación está completa

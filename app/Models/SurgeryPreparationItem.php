@@ -19,6 +19,7 @@ class SurgeryPreparationItem extends Model
         'status',
         'storage_location_id',
         'notes',
+        'checklist_item_id ',
     ];
 
     protected $casts = [
@@ -38,6 +39,12 @@ class SurgeryPreparationItem extends Model
     {
         return $this->belongsTo(SurgeryPreparation::class, 'preparation_id');
     }
+    
+    public function checklistItem()
+    {
+        return $this->belongsTo(\App\Models\ChecklistItem::class, 'checklist_item_id');
+    }
+
 
     // Producto
     public function product()
@@ -104,18 +111,41 @@ class SurgeryPreparationItem extends Model
      */
     public function getConditionalsAttribute()
     {
-        // 1. Navegamos hacia arriba para llegar al checklist original de esta preparación
-        $checklist = $this->preparation->preAssembledPackage->surgeryChecklist ?? null;
-
-        // Si por alguna razón no hay checklist, devolvemos una colección vacía
-        if (!$checklist) {
-            return collect(); 
+        if ($this->checklist_item_id) {
+            return \App\Models\ChecklistItem::find($this->checklist_item_id)
+                ?->conditionals()->with('targetProduct')->get() ?? collect();
         }
 
-        // 2. Buscamos en el checklist original el ítem que tenga el mismo ID de producto
-        $checklistItem = $checklist->items->firstWhere('product_id', $this->product_id);
+        $surgery = $this->preparation->scheduledSurgery ?? null;
+        if (!$surgery?->checklist_id) return collect();
 
-        // 3. Si lo encontramos, devolvemos sus condicionales. Si no, una colección vacía.
-        return $checklistItem ? $checklistItem->conditionals : collect();
+        $checklistItem = \App\Models\ChecklistItem::where('checklist_id', $surgery->checklist_id)
+            ->where('product_id', $this->product_id)
+            ->first();
+
+        return $checklistItem?->conditionals()->with('targetProduct')->get() ?? collect();
+    }
+
+    public function getApplicableConditional(): ?\App\Models\ChecklistConditional
+    {
+        $surgery = $this->preparation->scheduledSurgery;
+        if (!$surgery) return null;
+
+        $context = [
+            'doctor_id'       => $surgery->doctor_id,
+            'hospital_id'     => $surgery->hospital_id,
+            'modality_id'     => $surgery->hospitalModalityConfig?->modality_id,
+            'legal_entity_id' => $surgery->hospital?->legal_entity_id,
+        ];
+
+        $matching = $this->conditionals->filter(function ($conditional) use ($context) {
+            if ($conditional->doctor_id       !== null && $conditional->doctor_id       != $context['doctor_id'])       return false;
+            if ($conditional->hospital_id     !== null && $conditional->hospital_id     != $context['hospital_id'])     return false;
+            if ($conditional->modality_id     !== null && $conditional->modality_id     != $context['modality_id'])     return false;
+            if ($conditional->legal_entity_id !== null && $conditional->legal_entity_id != $context['legal_entity_id']) return false;
+            return true;
+        });
+
+        return $matching->sortByDesc(fn($c) => $c->getSpecificityLevel())->first();
     }
 }

@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('scheduled_surgeries', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique()->comment('Código único de cirugía');
-            $table->foreignId('product_unit_id')->constrained('product_units')->comment('Unidades de producto asociada a la cirugía');
 
             
             $table->foreignId('checklist_id')->constrained('surgical_checklists')->comment('Check list a utilizar');

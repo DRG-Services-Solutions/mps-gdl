@@ -8,31 +8,33 @@
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">{{ $surgery->code }} - {{ $surgery->patient->name ?? $surgery->patient_name }}</p>
             </div>
-            <div class="flex items-center space-x-3">
+                        <div class="flex flex-wrap items-center gap-2 mt-3 md:mt-0">
                 @if($summary['mandatory_pending'] == 0)
                     <a href="{{ route('surgeries.preparations.verify', $surgery) }}" 
-                       class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">
-                        <i class="fas fa-check-double mr-2"></i>
-                        Verificar y Completar
+                    class="inline-flex items-center px-3 py-2 md:px-4 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 text-sm">
+                        <i class="fas fa-check-double mr-1 md:mr-2"></i>
+                        <span class="hidden sm:inline">Verificar y Completar</span>
+                        <span class="sm:hidden">Verificar</span>
                     </a>
                 @else
                     <button disabled
-                            class="inline-flex items-center px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg shadow-md cursor-not-allowed opacity-60">
-                        <i class="fas fa-check-double mr-2"></i>
-                        Verificar ({{ $summary['mandatory_pending'] }} pendientes)
+                            class="inline-flex items-center px-3 py-2 md:px-4 bg-gray-400 text-white font-semibold rounded-lg shadow-md cursor-not-allowed opacity-60 text-sm">
+                        <i class="fas fa-check-double mr-1 md:mr-2"></i>
+                        <span class="hidden sm:inline">Verificar ({{ $summary['mandatory_pending'] }} pendientes)</span>
+                        <span class="sm:hidden">{{ $summary['mandatory_pending'] }} pend.</span>
                     </button>
                 @endif
                 
                 <a href="{{ route('surgeries.preparations.compare', $surgery) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">
-                    <i class="fas fa-arrow-left mr-2"></i>
-                    Volver
+                class="inline-flex items-center px-3 py-2 md:px-4 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 text-sm">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    <span class="hidden sm:inline">Volver</span>
                 </a>
 
                 <button onclick="openCancelModal()" 
-                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200">
-                    <i class="fas fa-times mr-2"></i>
-                    Cancelar
+                        class="inline-flex items-center px-3 py-2 md:px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 text-sm">
+                    <i class="fas fa-times mr-1"></i>
+                    <span class="hidden sm:inline">Cancelar</span>
                 </button>
             </div>
         </div>
@@ -43,10 +45,10 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             {{-- Barra de Progreso Global --}}
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg shadow-lg p-6 text-white">
-                <div class="flex items-center justify-between mb-4">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg shadow-lg p-4 md:p-6 text-white">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                     <div>
-                        <h3 class="text-lg font-semibold mb-1">Progreso Total de Surtido</h3>
+                        <h3 class="text-base md:text-lg font-semibold mb-1">Progreso Total de Surtido</h3>
                         <p class="text-sm text-blue-100">
                             <span id="required-quantity">{{ $summary['total_quantity_required'] }}</span> Unidades Totales
                         </p>
@@ -62,8 +64,8 @@
                             Productos Diferentes Faltantes: <strong id="mandatory-pending">{{ $summary['mandatory_pending'] }}</strong>
                         </p>
                     </div>
-                    <div class="text-right">
-                        <p id="progress-percentage" class="text-4xl font-bold">{{ number_format($summary['completion_percentage'], 0) }}%</p>
+                    <div class="text-left sm:text-right">
+                        <p id="progress-percentage" class="text-3xl md:text-4xl font-bold">{{ number_format($summary['completion_percentage'], 0) }}%</p>
                         <p class="text-xs text-blue-200 mt-1">Completitud</p>
                     </div>
                 </div>
@@ -92,21 +94,21 @@
             </div>
 
             {{-- Toggle de Modo (Manual / RFID) --}}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center justify-center space-x-4">
-                    <button id="manualModeBtn" 
-                            onclick="switchMode('manual')"
-                            class="mode-btn active flex items-center px-6 py-3 rounded-lg font-semibold transition-all duration-200">
-                        <i class="fas fa-barcode mr-2"></i>
-                        Modo Manual (Barcode)
-                    </button>
-                    <button id="rfidModeBtn" 
-                            onclick="switchMode('rfid')"
-                            class="mode-btn flex items-center px-6 py-3 rounded-lg font-semibold transition-all duration-200">
-                        <i class="fas fa-broadcast-tower mr-2"></i>
-                        Modo RFID
-                    </button>
-                </div>
+            <div class="flex items-center justify-center gap-2 md:gap-4">
+                <button id="manualModeBtn" 
+                        onclick="switchMode('manual')"
+                        class="mode-btn active flex items-center px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold transition-all duration-200 text-sm md:text-base">
+                    <i class="fas fa-barcode mr-1.5 md:mr-2"></i>
+                    <span class="hidden sm:inline">Modo Manual (Barcode)</span>
+                    <span class="sm:hidden">Manual</span>
+                </button>
+                <button id="rfidModeBtn" 
+                        onclick="switchMode('rfid')"
+                        class="mode-btn flex items-center px-4 py-2.5 md:px-6 md:py-3 rounded-lg font-semibold transition-all duration-200 text-sm md:text-base">
+                    <i class="fas fa-broadcast-tower mr-1.5 md:mr-2"></i>
+                    <span class="hidden sm:inline">Modo RFID</span>
+                    <span class="sm:hidden">RFID</span>
+                </button>
             </div>
 
 
@@ -154,7 +156,8 @@
             {{-- MODO MANUAL: Escaneo de Barcode --}}
             <div id="manualModeSection" class="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div class="p-6">
-                    <form id="barcodeForm" class="flex items-end space-x-4">
+                    <form id="barcodeForm" class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+
                         @csrf
                         <div class="flex-1">
                             <label for="barcode_scan" class="block text-sm font-medium text-gray-700 mb-2">
@@ -173,7 +176,7 @@
                         </div>
                         <button type="submit" 
                                 id="barcodeButton"
-                                class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                class="w-full sm:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="fas fa-plus mr-2"></i>
                             AGREGAR
                         </button>
@@ -205,7 +208,7 @@
                         </div>
                         
                         {{-- Botones de Control --}}
-                        <div class="flex flex-wrap gap-2">
+                        <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                             <button type="button" 
                                     id="rfid-connect-btn"
                                     onclick="connectRFIDReader()"
@@ -292,19 +295,31 @@
                 
                 <div id="pendingItemsTable" class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gray-50 hidden md:table-header-group">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Faltan</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Surtidos</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-indigo-500 uppercase tracking-wider">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>Ubicación
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-blue-500 uppercase tracking-wider">
+                                    <i class="fas fa-box mr-1"></i>En Paquete
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-green-500 uppercase tracking-wider">Surtidos</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-red-500 uppercase tracking-wider">Faltan</th>
                                 <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Requeridos</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Condicionales</th>
-                                <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Obligatorio</th>
+                                <th class="px-6 py-3 text-center text-xs font-bold text-purple-500 uppercase tracking-wider">Condicionales</th>
                             </tr>
                         </thead>
+
                         <tbody class="divide-y divide-gray-200">
                             @forelse($pendingItems as $item)
-                                <tr class="hover:bg-red-50 transition-colors" id="item-row-{{ $item->id }}">
+                                @php
+                                    $condCount = $item->conditionals ? $item->conditionals->count() : 0;
+                                @endphp
+                                {{-- ═══════════ DESKTOP: fila de tabla normal ═══════════ --}}
+                                <tr class="hover:bg-red-50 transition-colors hidden md:table-row" id="item-row-{{ $item->id }}">
+                                    
+                                    {{-- Producto --}}
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
                                             @if($item->is_mandatory)
@@ -316,27 +331,50 @@
                                             </div>
                                         </div>
                                     </td>
+
+                                    {{-- Ubicación --}}
                                     <td class="px-6 py-4 text-center">
-                                        <span id="missing-{{ $item->id }}" 
-                                              class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold text-sm">
-                                            {{ $item->quantity_missing }}
+                                        @if($item->storageLocation)
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                <i class="fas fa-map-marker-alt mr-1"></i>
+                                                {{ $item->storageLocation->code }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs text-gray-300 italic">— Sin ubicación —</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- En Paquete --}}
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full font-bold text-sm
+                                            {{ $item->quantity_in_package > 0 ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-400' }}">
+                                            {{ $item->quantity_in_package }}
                                         </span>
                                     </td>
+
+                                    {{-- Surtidos --}}
                                     <td class="px-6 py-4 text-center">
                                         <span id="picked-{{ $item->id }}" 
-                                              class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold text-sm">
+                                            class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full font-bold text-sm">
                                             {{ $item->quantity_picked }}
                                         </span>
                                     </td>
+
+                                    {{-- Faltan --}}
+                                    <td class="px-6 py-4 text-center">
+                                        <span id="missing-{{ $item->id }}" 
+                                            class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold text-sm animate-pulse">
+                                            {{ $item->quantity_missing }}
+                                        </span>
+                                    </td>
+
+                                    {{-- Requeridos --}}
                                     <td class="px-6 py-4 text-center">
                                         <span class="text-gray-600 font-medium">{{ $item->quantity_required }}</span>
                                     </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @php
-                                            // Contamos cuántos condicionales tiene este item
-                                            $condCount = $item->conditionals ? $item->conditionals->count() : 0;
-                                        @endphp
 
+                                    {{-- Condicionales --}}
+                                    <td class="px-6 py-4 text-center">
                                         @if($condCount > 0)
                                             <button type="button" 
                                                     onclick="openConditionalsModal('{{ $item->product->name }}', 'conditionals-data-{{ $item->id }}')" 
@@ -344,49 +382,100 @@
                                                 <i class="fas fa-list-ul mr-1"></i> 
                                                 Ver {{ $condCount }}
                                             </button>
-
-                                            <div id="conditionals-data-{{ $item->id }}" class="hidden">
-                                                @foreach($item->conditionals as $conditional)
-                                                    <div class="mb-3 p-3 bg-purple-50 rounded-lg border border-purple-100 text-left">
-                                                        
-                                                        <p class="text-sm font-bold text-purple-900 mb-1">
-                                                            <i class="fas fa-filter text-purple-600 mr-1"></i> Cuándo aplica:
-                                                        </p>
-                                                        <p class="text-sm text-gray-700 mb-2">
-                                                            {{ $conditional->getDescription() }}
-                                                        </p>
-                                                        
-                                                        <div class="mt-2 text-sm text-purple-800 bg-white inline-block px-3 py-1.5 rounded border border-purple-200 shadow-sm">
-                                                            <strong><i class="fas fa-bolt text-yellow-500 mr-1"></i> Acción:</strong> 
-                                                            {{ $conditional->getActionDescription() }}
-                                                        </div>
-
-                                                        @if($conditional->notes)
-                                                            <p class="mt-3 text-xs text-gray-500 italic border-t border-purple-100 pt-2">
-                                                                <i class="fas fa-comment-dots mr-1"></i> Nota: {{ $conditional->notes }}
-                                                            </p>
-                                                        @endif
-                                                        
-                                                    </div>
-                                                @endforeach
-                                            </div>
                                         @else
                                             <span class="text-gray-400 text-xs italic">Sin Condicional</span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-center">
-                                        @if($item->is_mandatory)
-                                            <span class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-bold">
-                                                SÍ
-                                            </span>
-                                        @else
-                                            <span class="text-gray-400 text-xs">No</span>
-                                        @endif
+                                </tr>
+
+                                {{-- ═══════════ MÓVIL: card layout ═══════════ --}}
+                                <tr class="md:hidden" id="item-row-mobile-{{ $item->id }}">
+                                    <td colspan="7" class="px-4 py-3">
+                                        <div class="bg-white border border-red-100 rounded-xl p-4 shadow-sm space-y-3">
+                                            
+                                            {{-- Header: Producto + Obligatorio --}}
+                                            <div class="flex items-start justify-between">
+                                                <div class="flex items-center flex-1 min-w-0">
+                                                    @if($item->is_mandatory)
+                                                        <i class="fas fa-star text-yellow-500 mr-2 flex-shrink-0" title="Obligatorio"></i>
+                                                    @endif
+                                                    <div class="min-w-0">
+                                                        <p class="font-bold text-gray-900 text-sm truncate">{{ $item->product->name }}</p>
+                                                        <p class="text-xs text-gray-500 font-mono">{{ $item->product->code }}</p>
+                                                    </div>
+                                                </div>
+                                                @if($condCount > 0)
+                                                    <button type="button" 
+                                                            onclick="openConditionalsModal('{{ $item->product->name }}', 'conditionals-data-{{ $item->id }}')" 
+                                                            class="ml-2 flex-shrink-0 inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-bold text-[10px]">
+                                                        <i class="fas fa-filter mr-1"></i> {{ $condCount }}
+                                                    </button>
+                                                @endif
+                                            </div>
+
+                                            {{-- Ubicación --}}
+                                            @if($item->storageLocation)
+                                                <div class="flex items-center">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                                        {{ $item->storageLocation->code }}
+                                                    </span>
+                                                </div>
+                                            @endif
+
+                                            {{-- Grid de cantidades --}}
+                                            <div class="grid grid-cols-4 gap-2">
+                                                <div class="text-center p-2 rounded-lg bg-blue-50">
+                                                    <p class="text-lg font-black text-blue-600">{{ $item->quantity_in_package }}</p>
+                                                    <p class="text-[9px] font-bold text-blue-400 uppercase">Paquete</p>
+                                                </div>
+                                                <div class="text-center p-2 rounded-lg bg-green-50">
+                                                    <p id="picked-mobile-{{ $item->id }}" class="text-lg font-black text-green-600">{{ $item->quantity_picked }}</p>
+                                                    <p class="text-[9px] font-bold text-green-400 uppercase">Surtidos</p>
+                                                </div>
+                                                <div class="text-center p-2 rounded-lg bg-red-50">
+                                                    <p id="missing-mobile-{{ $item->id }}" class="text-lg font-black text-red-600 animate-pulse">{{ $item->quantity_missing }}</p>
+                                                    <p class="text-[9px] font-bold text-red-400 uppercase">Faltan</p>
+                                                </div>
+                                                <div class="text-center p-2 rounded-lg bg-gray-50">
+                                                    <p class="text-lg font-black text-gray-600">{{ $item->quantity_required }}</p>
+                                                    <p class="text-[9px] font-bold text-gray-400 uppercase">Total</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
+
+                                {{-- Datos ocultos de condicionales (compartido desktop/móvil) --}}
+                                @if($condCount > 0)
+                                    <tr class="hidden"><td colspan="7">
+                                        <div id="conditionals-data-{{ $item->id }}">
+                                            @foreach($item->conditionals as $conditional)
+                                                <div class="mb-3 p-3 bg-purple-50 rounded-lg border border-purple-100 text-left">
+                                                    <p class="text-sm font-bold text-purple-900 mb-1">
+                                                        <i class="fas fa-filter text-purple-600 mr-1"></i> Cuándo aplica:
+                                                    </p>
+                                                    <p class="text-sm text-gray-700 mb-2">
+                                                        {{ $conditional->getDescription() }}
+                                                    </p>
+                                                    <div class="mt-2 text-sm text-purple-800 bg-white inline-block px-3 py-1.5 rounded border border-purple-200 shadow-sm">
+                                                        <strong><i class="fas fa-bolt text-yellow-500 mr-1"></i> Acción:</strong> 
+                                                        {{ $conditional->getActionDescription() }}
+                                                    </div>
+                                                    @if($conditional->notes)
+                                                        <p class="mt-3 text-xs text-gray-500 italic border-t border-purple-100 pt-2">
+                                                            <i class="fas fa-comment-dots mr-1"></i> Nota: {{ $conditional->notes }}
+                                                        </p>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </td></tr>
+                                @endif
+
                             @empty
                                 <tr id="empty-state">
-                                    <td colspan="6" class="px-6 py-10 text-center">
+                                    <td colspan="7" class="px-6 py-10 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <i class="fas fa-check-circle text-green-500 text-5xl mb-3"></i>
                                             <p class="text-gray-700 font-semibold text-lg">¡Excelente trabajo!</p>

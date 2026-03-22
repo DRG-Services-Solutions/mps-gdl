@@ -244,6 +244,10 @@
                                     <i class="fas fa-exclamation-circle mr-1"></i>
                                     Faltante
                                 </th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-purple-600 uppercase tracking-wider">
+                                    <i class="fas fa-filter mr-1"></i>
+                                    Condicional
+                                </th>
                                 <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     Estado
                                 </th>
@@ -268,10 +272,10 @@
                                             @endif
                                             <div>
                                                 <div class="text-sm font-bold text-gray-900 leading-tight">
-                                                    {{ $item->product->name }}
+                                                     {{ $item->product->code }}
                                                 </div>
                                                 <div class="text-xs font-mono text-gray-500 mt-1">
-                                                    {{ $item->product->code }}
+                                                   {{ $item->product->name }} 
                                                 </div>
                                                 @if($item->storageLocation)
                                                     <div class="text-xs text-indigo-600 mt-1">
@@ -314,6 +318,92 @@
                                             <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">
                                                 0
                                             </span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Condicional aplicado --}}
+                                    <td class="px-6 py-4">
+                                        @php
+                                            $applicable = $item->getApplicableConditional();
+                                        @endphp
+
+                                        @if($applicable)
+                                            <div class="w-full max-w-xs mx-auto">
+                                                <div class="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg
+                                                    @switch($applicable->action_type)
+                                                        @case('exclude')        bg-red-50 border border-red-200 @break
+                                                        @case('adjust_quantity') bg-amber-50 border border-amber-200 @break
+                                                        @case('add_product')     bg-purple-50 border border-purple-200 @break
+                                                        @case('replace')         bg-orange-50 border border-orange-200 @break
+                                                        @case('add_dependency')  bg-blue-50 border border-blue-200 @break
+                                                        @default                 bg-gray-50 border border-gray-200
+                                                    @endswitch
+                                                ">
+                                                    <div class="min-w-0">
+                                                        <p class="text-[10px] font-bold uppercase tracking-wide leading-tight
+                                                            @switch($applicable->action_type)
+                                                                @case('exclude')        text-red-700 @break
+                                                                @case('adjust_quantity') text-amber-700 @break
+                                                                @case('add_product')     text-purple-700 @break
+                                                                @case('replace')         text-orange-700 @break
+                                                                @case('add_dependency')  text-blue-700 @break
+                                                                @default                 text-gray-700
+                                                            @endswitch
+                                                        ">
+                                                            @switch($applicable->action_type)
+                                                                @case('adjust_quantity')
+                                                                    <i class="fas fa-edit mr-0.5"></i> Ajuste: {{ $applicable->quantity_override }} uds.
+                                                                    @break
+                                                                @case('add_product')
+                                                                    <i class="fas fa-plus-circle mr-0.5"></i> +{{ $applicable->additional_quantity }} uds.
+                                                                    @break
+                                                                @case('exclude')
+                                                                    <i class="fas fa-times-circle mr-0.5"></i> Excluido
+                                                                    @break
+                                                                @case('replace')
+                                                                    <i class="fas fa-exchange-alt mr-0.5"></i> Reemplazar
+                                                                    @break
+                                                                @case('add_dependency')
+                                                                    <i class="fas fa-link mr-0.5"></i> Dependencia ×{{ $applicable->dependency_quantity }}
+                                                                    @break
+                                                            @endswitch
+                                                        </p>
+
+                                                        {{-- Criterios --}}
+                                                        <p class="text-[10px] mt-0.5 leading-tight truncate text-gray-500">
+                                                            @if($applicable->doctor)
+                                                                Dr. {{ $applicable->doctor->first_name }} {{ $applicable->doctor->last_name }}
+                                                            @endif
+                                                            @if($applicable->hospital)
+                                                                @if($applicable->doctor) · @endif
+                                                                {{ $applicable->hospital->name }}
+                                                            @endif
+                                                            @if($applicable->modality)
+                                                                @if($applicable->doctor || $applicable->hospital) · @endif
+                                                                {{ $applicable->modality->name }}
+                                                            @endif
+                                                        </p>
+
+                                                        {{-- Producto objetivo --}}
+                                                        @if($applicable->targetProduct)
+                                                            <p class="text-[10px] mt-0.5 truncate italic text-gray-400">
+                                                                → {{ $applicable->targetProduct->name }}
+                                                            </p>
+                                                        @endif
+
+                                                        {{-- Badge cortesía --}}
+                                                        @if($applicable->exclude_from_invoice)
+                                                            <span class="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-100 text-green-700">
+                                                                <i class="fas fa-gift mr-0.5"></i> Sin cargo
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="text-center">
+                                                <span class="text-xs text-gray-300 italic">— Estándar —</span>
+                                            </div>
                                         @endif
                                     </td>
 

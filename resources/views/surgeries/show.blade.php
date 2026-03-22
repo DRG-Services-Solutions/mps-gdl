@@ -180,7 +180,7 @@
                                     $qty           = $data['adjusted_quantity'];
                                     $isConditional = ($data['source'] === 'conditional' || $data['source'] === 'extra');
                                     $conditionals  = $item->conditionals ?? collect();
-                                    $stock         = $item->product->stock ?? 0;
+                                    $stock         = $item->product->units->count() ?? 0;
                                     $stockSuficiente = $stock >= $qty;
                                 @endphp
                                 <tr class="hover:bg-blue-50/30 transition-colors">
@@ -218,15 +218,12 @@
                                         @endif
                                     </td>
 
-                                    {{-- ══════════════════════════════════════
-                                         NUEVA COLUMNA: Condicionales (solo lectura, rojo)
-                                         ══════════════════════════════════════ --}}
+                                    {{-- Condicionales (solo lectura, rojo) --}}
                                     <td class="px-6 py-4">
                                         @if($conditionals->count() > 0)
                                             <div class="flex flex-col gap-1.5 items-center">
                                                 @foreach($conditionals as $cond)
                                                     <div class="w-full max-w-xs">
-                                                        {{-- Badge principal --}}
                                                         <div class="flex items-start gap-1.5 px-2.5 py-1.5 bg-red-50 border border-red-200 rounded-lg">
                                                             <i class="fas fa-exclamation-circle text-red-500 text-xs mt-0.5 flex-shrink-0"></i>
                                                             <div class="min-w-0">
@@ -285,16 +282,14 @@
                                         @endif
                                     </td>
 
-                                    {{-- ══════════════════════════════════════
-                                         NUEVA COLUMNA: Existencia (clickeable → modal)
-                                         ══════════════════════════════════════ --}}
+                                    {{-- Existencia --}}
                                     <td class="px-6 py-4 text-center">
                                         <button
                                             type="button"
                                             @click="openModal({
                                                 productId:   {{ $item->product->id }},
                                                 productName: '{{ addslashes($item->product->name) }}',
-                                                productSku:  '{{ $item->product->sku ?? '' }}',
+                                                productSku:  '{{ $item->product->code ?? '' }}',
                                                 stock:       {{ $stock }},
                                                 required:    {{ $qty }}
                                             })"
@@ -447,7 +442,7 @@
                     </div>
                 </div>
 
-            </div>{{-- /x-data="stockModal()" --}}
+            </div>
 
             <!-- Preparación (si existe) -->
             @if($surgery->preparation)

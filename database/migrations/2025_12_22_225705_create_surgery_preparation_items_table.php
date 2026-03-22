@@ -15,10 +15,7 @@ return new class extends Migration
 
             $table->foreignId('product_id')->constrained('products')->comment('Producto requerido');
 
-            $table->foreignId('checklist_item_id')
-                    ->nullable()
-                    ->constrained()
-                    ->nullOnDelete();
+            $table->foreignId('checklist_item_id')->nullable()->constrained('checklist_items')->nullOnDelete();
 
 
             
