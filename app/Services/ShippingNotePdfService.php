@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\Models\ShippingNote;
 use App\Helpers\NumberToWordsHelper;
-use setasign\Fpdf\Fpdf;
+
+// FPDF instalado manualmente en app/Libs/fpdf/fpdf.php
+// Descargar de: http://www.fpdf.org/en/dl.php?v=186&f=tgz
+require_once app_path('Libs/fpdf/fpdf.php');
+
+use FPDF;
 
 class ShippingNotePdfService
 {
-    private Fpdf $pdf;
+    private FPDF $pdf;
     private ShippingNote $note;
     private float $pageWidth = 210;  // A4 mm
     private float $marginLeft = 12;
@@ -44,7 +49,7 @@ class ShippingNotePdfService
 
         $this->contentWidth = $this->pageWidth - $this->marginLeft - $this->marginRight;
 
-        $this->pdf = new Fpdf('P', 'mm', 'A4');
+        $this->pdf = new FPDF('P', 'mm', 'A4');
         $this->pdf->SetAutoPageBreak(true, 20);
         $this->pdf->SetMargins($this->marginLeft, 10, $this->marginRight);
         $this->pdf->AddPage();
@@ -93,7 +98,7 @@ class ShippingNotePdfService
 
         $this->contentWidth = $this->pageWidth - $this->marginLeft - $this->marginRight;
 
-        $this->pdf = new Fpdf('P', 'mm', 'A4');
+        $this->pdf = new FPDF('P', 'mm', 'A4');
         $this->pdf->SetAutoPageBreak(true, 20);
         $this->pdf->SetMargins($this->marginLeft, 10, $this->marginRight);
         $this->pdf->AddPage();
