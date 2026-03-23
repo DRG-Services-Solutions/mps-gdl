@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
-class SubWareHouse extends Model
+class SubWarehouse extends Model
 {
     protected $fillable = [
         'legal_entity_id',
@@ -20,6 +20,9 @@ class SubWareHouse extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $table = 'sub_warehouses';
+
+    
     public function purchaseOrders(): HasMany
     {   
         return $this->hasMany(PurchaseOrder::class);

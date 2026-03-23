@@ -13,7 +13,7 @@ use App\Services\PurchaseOrderService;
 use App\Models\InventoryMovement;
 use App\Models\ProductUnit;
 use App\Models\LegalEntity;
-use App\Models\SubWareHouse;
+use App\Models\SubWarehouse;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\QueryException;
@@ -101,7 +101,7 @@ class PurchaseOrderController extends Controller
     {
         $suppliers = Supplier::orderBy('name')->get();
         $legalEntities = LegalEntity::active()->orderBy('name')->get(); 
-        $subWarehouses = SubWareHouse::with('legalEntity')->where('is_active', true)->orderBy('name')->get()->groupBy('legal_entity_id');
+        $subWarehouses = SubWarehouse::with('legalEntity')->where('is_active', true)->orderBy('name')->get()->groupBy('legal_entity_id');
 
         return view('purchase-orders.create', compact('suppliers', 'legalEntities', 'subWarehouses'));
     }
