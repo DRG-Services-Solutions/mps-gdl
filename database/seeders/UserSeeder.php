@@ -24,6 +24,23 @@ class UserSeeder extends Seeder
              'password' => $defaultPassword,
             ]
         );
+        $davidUser = User::firstOrCreate(
+            ['username' => 'David'],
+            ['email' => 'dnicasio@mps.com',
+                'name' => 'David Nicasio', 
+                'password' => $defaultPassword,
+                ]
+        );
+
+        $miguelUser = User::firstOrCreate(
+            ['username' => 'Miguel'],
+            ['email' => 'mangel@mps.com',
+                'name' => 'Miguel Padilla', 
+                'password' => $defaultPassword,
+                ]
+        );
+        $davidUser->assignRole('admin');
+        $miguelUser->assignRole('admin');
         $adminUser->assignRole('admin');
 
         // Puesto: Dirección Operaciones
