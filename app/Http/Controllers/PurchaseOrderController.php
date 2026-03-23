@@ -21,7 +21,6 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\RfidLabelService;
-
 use App\Services\InventoryService;
 
 class PurchaseOrderController extends Controller
