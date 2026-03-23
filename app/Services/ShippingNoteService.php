@@ -73,7 +73,16 @@ class ShippingNoteService
                 'created_by' => auth()->id(),
             ]);
 
-            Log::info("Remisión {$shippingNote->shipping_number} creada desde cirugía {$surgery->code}");
+            // 5. Crear items de la remisión desde el checklist evaluado
+            //    (solo productos con cantidad > 0, los excluidos no generan items)
+            $this->createItemsFromChecklist($shippingNote, $evaluatedItems);
+
+            // 6. Recalcular totales financieros
+            $shippingNote->recalculateTotals();
+
+            Log::info("Remisión {$shippingNote->shipping_number} creada desde cirugía {$surgery->code}", [
+                'items_created' => $shippingNote->items()->count(),
+            ]);
 
             return $shippingNote;
         });
@@ -644,6 +653,64 @@ class ShippingNoteService
     // ═══════════════════════════════════════════════════════════
     // MÉTODOS PRIVADOS: CREACIÓN DE ITEMS
     // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Crear items de la remisión directamente desde el checklist evaluado.
+     * Se ejecuta al crear la remisión para que tenga items desde el inicio,
+     * sin necesidad de asignar un paquete primero.
+     * 
+     * Los items se crean como 'standalone' sin product_unit asignado (pendiente de picking/RFID).
+     * Si después se asigna un paquete, se pueden cruzar/actualizar.
+     */
+    private function createItemsFromChecklist(
+        ShippingNote $shippingNote,
+        \Illuminate\Support\Collection $evaluatedItems
+    ): void {
+        foreach ($evaluatedItems as $data) {
+            $checklistItem = $data['item'] ?? null;
+            $conditional = $data['conditional'] ?? null;
+            $productId = $data['product_id'];
+            $quantity = $data['adjusted_quantity'];
+
+            // No crear items con cantidad 0 (excluidos)
+            if ($quantity <= 0) {
+                continue;
+            }
+
+            // Obtener precio de lista del producto
+            $product = $checklistItem?->product;
+            $unitPrice = (float) ($product?->list_price ?? 0);
+
+            // Determinar origen
+            $origin = ($data['source'] ?? 'base') === 'additional' ? 'conditional' : 'standalone';
+
+            // Determinar billing mode (condicionales con exclude_from_invoice → no_charge)
+            $excludeFromInvoice = $conditional?->exclude_from_invoice ?? false;
+            $billingMode = $excludeFromInvoice ? 'no_charge' : 'sale';
+
+            ShippingNoteItem::create([
+                'shipping_note_id' => $shippingNote->id,
+                'shipping_note_package_id' => null,
+                'shipping_note_kit_id' => null,
+                'item_origin' => $origin,
+                'product_id' => $productId,
+                'product_unit_id' => null, // Se asigna después por RFID/picking
+                'checklist_item_id' => $checklistItem?->id,
+                'checklist_conditional_id' => $conditional?->id ?? null,
+                'conditional_description' => $data['conditional_description'] ?? null,
+                'quantity_required' => $quantity,
+                'billing_mode' => $billingMode,
+                'exclude_from_invoice' => $excludeFromInvoice,
+                'unit_price' => $unitPrice,
+                'total_price' => $unitPrice * $quantity,
+                'status' => 'pending',
+            ]);
+        }
+
+        Log::info("Items creados desde checklist para remisión {$shippingNote->shipping_number}", [
+            'total_items' => $shippingNote->items()->count(),
+        ]);
+    }
 
     /**
      * Crear items de la remisión desde el contenido de un paquete pre-armado.

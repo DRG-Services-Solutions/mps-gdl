@@ -285,6 +285,14 @@ class ShippingNotePdfService
             return ($order[$item->item_origin] ?? 4) . '_' . ($item->product->code ?? '');
         });
 
+        if ($items->isEmpty()) {
+            $this->pdf->SetFont('Helvetica', 'I', 8);
+            $this->setColor($this->grayText);
+            $this->pdf->Cell(array_sum($colWidths), 12, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'No hay productos asignados a esta remisión'), 'LRB', 1, 'C');
+            $this->pdf->Ln(2);
+            return;
+        }
+
         $currentOrigin = null;
 
         foreach ($items as $item) {
@@ -443,6 +451,11 @@ class ShippingNotePdfService
 
     private function drawConditionalsSummary(): void
     {
+        // No mostrar condicionales si la remisión no tiene items reales
+        if ($this->note->items->isEmpty()) {
+            return;
+        }
+
         $evaluation = $this->note->checklist_evaluation ?? [];
         $conditionals = collect($evaluation)->where('has_conditional', true);
 
