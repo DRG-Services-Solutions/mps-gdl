@@ -276,6 +276,86 @@
                 </div>
             </div>
 
+            {{-- Productos Excluidos/Modificados por Condicionales --}}
+            @if(!empty($excludedByConditionals))
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <button onclick="toggleExcluded()" 
+                        class="w-full px-6 py-4 flex justify-between items-center hover:bg-gray-50 transition-colors bg-gray-50 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center">
+                        <i class="fas fa-ban text-red-400 mr-2"></i>
+                        Productos No Incluidos por Condicional ({{ count($excludedByConditionals) }})
+                    </h3>
+                    <i id="toggle-excluded-icon" class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+                </button>
+                
+                <div id="excluded-section" class="hidden">
+                    <div class="p-4 bg-amber-50 border-b border-amber-100">
+                        <p class="text-xs text-amber-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Estos productos están en el checklist base pero fueron excluidos o reemplazados por condicionales específicos de esta cirugía. No es necesario surtirlos.
+                        </p>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        @foreach($excludedByConditionals as $excluded)
+                            <div class="px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 {{ $excluded['action_type'] === 'replace' ? 'bg-orange-50' : 'bg-red-50' }}">
+                                {{-- Producto --}}
+                                <div class="flex items-center flex-1 min-w-0">
+                                    @if($excluded['action_type'] === 'exclude')
+                                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-ban text-red-500 text-sm"></i>
+                                        </span>
+                                    @elseif($excluded['action_type'] === 'replace')
+                                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-exchange-alt text-orange-500 text-sm"></i>
+                                        </span>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-bold text-gray-900 truncate line-through decoration-red-400">
+                                            {{ $excluded['product_name'] }}
+                                        </p>
+                                        <p class="text-xs text-gray-500 font-mono">{{ $excluded['product_code'] }}</p>
+                                    </div>
+                                </div>
+
+                                {{-- Cantidad original --}}
+                                <div class="flex-shrink-0 text-center">
+                                    <span class="inline-flex items-center px-2 py-1 rounded bg-gray-200 text-gray-500 text-xs font-bold line-through">
+                                        {{ $excluded['base_quantity'] }} uds.
+                                    </span>
+                                </div>
+
+                                {{-- Badge de acción --}}
+                                <div class="flex-shrink-0">
+                                    @if($excluded['action_type'] === 'exclude')
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">
+                                            <i class="fas fa-ban"></i> EXCLUIDO
+                                        </span>
+                                    @elseif($excluded['action_type'] === 'replace')
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                                            <i class="fas fa-exchange-alt"></i> REEMPLAZADO
+                                        </span>
+                                    @endif
+                                </div>
+
+                                {{-- Razón / Target --}}
+                                <div class="flex-1 min-w-0 text-right sm:text-left">
+                                    @if($excluded['target_product'])
+                                        <p class="text-xs text-orange-700 font-medium">
+                                            <i class="fas fa-arrow-right mr-1"></i>
+                                            Usar en su lugar: <strong>{{ $excluded['target_product'] }}</strong>
+                                        </p>
+                                    @endif
+                                    <p class="text-[10px] text-gray-500 mt-0.5 truncate">
+                                        {{ $excluded['criteria'] }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- Tabla de Productos Pendientes --}}
             <div class="bg-white rounded-lg shadow-sm border border-red-100 overflow-hidden">
                 <div class="px-6 py-4 bg-red-50 border-b border-red-100 flex justify-between items-center">
@@ -328,6 +408,15 @@
                                             <div>
                                                 <div class="font-medium text-gray-900">{{ $item->product->name }}</div>
                                                 <div class="text-xs text-gray-500 font-mono">{{ $item->product->code }}</div>
+                                                @if($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
+                                                    <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
+                                                        <i class="fas fa-link"></i> {{ $item->notes }}
+                                                    </span>
+                                                @elseif($item->notes && str_starts_with($item->notes, 'Reemplazo de:'))
+                                                    <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-700">
+                                                        <i class="fas fa-exchange-alt"></i> {{ $item->notes }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
@@ -402,6 +491,15 @@
                                                     <div class="min-w-0">
                                                         <p class="font-bold text-gray-900 text-sm truncate">{{ $item->product->name }}</p>
                                                         <p class="text-xs text-gray-500 font-mono">{{ $item->product->code }}</p>
+                                                        @if($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
+                                                            <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
+                                                                <i class="fas fa-link"></i> {{ $item->notes }}
+                                                            </span>
+                                                        @elseif($item->notes && str_starts_with($item->notes, 'Reemplazo de:'))
+                                                            <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-700">
+                                                                <i class="fas fa-exchange-alt"></i> {{ $item->notes }}
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 </div>
                                                 @if($condCount > 0)
@@ -515,6 +613,15 @@
                                             <span class="text-green-600">• Surtido</span>
                                         @endif
                                     </p>
+                                    @if($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
+                                        <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
+                                            <i class="fas fa-link"></i> {{ $item->notes }}
+                                        </span>
+                                    @elseif($item->notes && str_starts_with($item->notes, 'Reemplazo de:'))
+                                        <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-700">
+                                            <i class="fas fa-exchange-alt"></i> {{ $item->notes }}
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
@@ -664,6 +771,15 @@
             function toggleCompleted() {
                 const section = document.getElementById('completed-section');
                 const icon = document.getElementById('toggle-icon');
+                section.classList.toggle('hidden');
+                icon.classList.toggle('fa-chevron-down');
+                icon.classList.toggle('fa-chevron-up');
+            }
+
+            // Toggle productos excluidos
+            function toggleExcluded() {
+                const section = document.getElementById('excluded-section');
+                const icon = document.getElementById('toggle-excluded-icon');
                 section.classList.toggle('hidden');
                 icon.classList.toggle('fa-chevron-down');
                 icon.classList.toggle('fa-chevron-up');

@@ -6,6 +6,7 @@ use App\Models\ScheduledSurgery;
 use App\Models\SurgeryPreparation;
 use App\Models\PreAssembledPackage;
 use App\Models\PackageContent;
+use App\Models\ChecklistItem;
 use App\Services\PreparationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -225,14 +226,18 @@ class SurgeryPreparationController extends Controller
         
         $this->preparationService->reevaluateAllConditionals($preparation);
 
-
         $pendingItems = $preparation->items->where('quantity_missing', '>', 0)->values();
+
+        // Obtener productos excluidos/reemplazados por condicionales
+        // (no están en la preparación porque su final_quantity = 0)
+        $excludedByConditionals = $this->getExcludedByConditionals($surgery);
 
         return view('surgeries.preparations.picking', compact(
             'surgery',
             'preparation',
             'pendingItems',
-            'summary'
+            'summary',
+            'excludedByConditionals'
         ));
     }
 
@@ -726,5 +731,48 @@ class SurgeryPreparationController extends Controller
             Log::error("Error al confirmar RFID: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => "Error: " . $e->getMessage()], 500);
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HELPERS PRIVADOS
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Obtener productos excluidos o reemplazados por condicionales.
+     * Estos no están en la preparación (final_quantity = 0) pero el operador
+     * necesita saber que existen y por qué no los va a surtir.
+     */
+    private function getExcludedByConditionals(ScheduledSurgery $surgery): array
+    {
+        if (!$surgery->checklist_id) {
+            return [];
+        }
+
+        $baseItems = ChecklistItem::where('checklist_id', $surgery->checklist_id)
+            ->with(['product', 'conditionals.targetProduct', 'conditionals.doctor', 'conditionals.hospital', 'conditionals.modality'])
+            ->ordered()
+            ->get();
+
+        $excluded = [];
+
+        foreach ($baseItems as $item) {
+            $adjustedData = $item->getAdjustedQuantity($surgery);
+
+            if ($adjustedData['final_quantity'] === 0 && $adjustedData['has_conditional']) {
+                $conditional = $adjustedData['conditional'];
+                $excluded[] = [
+                    'product_name' => $item->product->name,
+                    'product_code' => $item->product->code,
+                    'base_quantity' => $adjustedData['base_quantity'],
+                    'action_type' => $conditional?->action_type,
+                    'description' => $adjustedData['conditional_description'],
+                    'target_product' => $conditional?->targetProduct?->name,
+                    'criteria' => $conditional?->getDescription() ?? '',
+                    'is_mandatory' => $item->is_mandatory,
+                ];
+            }
+        }
+
+        return $excluded;
     }
 }
