@@ -25,11 +25,16 @@ class ShippingNote extends Model
         'surgery_date',
         'billing_legal_entity_id',
         'checklist_evaluation',
+        'subtotal',
+        'tax_rate',
+        'tax_amount',
+        'grand_total',
         'status',
         'notes',
         'created_by',
         'confirmed_by',
         'confirmed_at',
+        'printed_at',
         'sent_at',
         'surgery_started_at',
         'returned_at',
@@ -40,7 +45,12 @@ class ShippingNote extends Model
     protected $casts = [
         'surgery_date' => 'date',
         'checklist_evaluation' => 'array',
+        'subtotal' => 'decimal:2',
+        'tax_rate' => 'decimal:4',
+        'tax_amount' => 'decimal:2',
+        'grand_total' => 'decimal:2',
         'confirmed_at' => 'datetime',
+        'printed_at' => 'datetime',
         'sent_at' => 'datetime',
         'surgery_started_at' => 'datetime',
         'returned_at' => 'datetime',
@@ -441,6 +451,65 @@ class ShippingNote extends Model
         }
 
         Log::info("Remisión {$this->shipping_number} cancelada. Razón: {$reason}");
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CÁLCULOS FINANCIEROS
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Recalcular subtotal, IVA y total.
+     * Llamar cada vez que se modifiquen items, kits o conceptos de renta.
+     */
+    public function recalculateTotals(): void
+    {
+        $itemsSubtotal = (float) $this->items()
+            ->where('exclude_from_invoice', false)
+            ->where('billing_mode', '!=', 'no_charge')
+            ->sum('total_price');
+
+        $kitsSubtotal = (float) $this->kits()
+            ->where('exclude_from_invoice', false)
+            ->sum('rental_price');
+
+        $rentalSubtotal = (float) $this->rentalConcepts()
+            ->where('exclude_from_invoice', false)
+            ->sum('total_price');
+
+        $subtotal = $itemsSubtotal + $kitsSubtotal + $rentalSubtotal;
+        $taxRate = (float) ($this->tax_rate ?? 0.16);
+        $taxAmount = round($subtotal * $taxRate, 2);
+        $grandTotal = round($subtotal + $taxAmount, 2);
+
+        $this->update([
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'grand_total' => $grandTotal,
+        ]);
+    }
+
+    /**
+     * Obtener importe con letra
+     */
+    public function getAmountInWordsAttribute(): string
+    {
+        return \App\Helpers\NumberToWordsHelper::convert((float) $this->grand_total);
+    }
+
+    /**
+     * ¿Ya fue impresa al menos una vez?
+     */
+    public function isPrinted(): bool
+    {
+        return $this->printed_at !== null;
+    }
+
+    /**
+     * Marcar como impresa
+     */
+    public function markAsPrinted(): void
+    {
+        $this->update(['printed_at' => now()]);
     }
 
     // ═══════════════════════════════════════════════════════════

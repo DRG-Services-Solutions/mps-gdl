@@ -27,6 +27,20 @@
                 </div>
             </div>
             <div class="flex gap-2">
+                {{-- PDF --}}
+                <a href="{{ route('shipping-notes.pdf', $shipping_note) }}" target="_blank"
+                    class="inline-flex items-center px-3 py-2 bg-red-600 rounded-lg text-xs font-medium text-white hover:bg-red-700 transition">
+                    <i class="fas fa-file-pdf mr-1"></i>Ver PDF
+                </a>
+                <a href="{{ route('shipping-notes.pdf.download', $shipping_note) }}"
+                    class="inline-flex items-center px-3 py-2 bg-red-100 rounded-lg text-xs font-medium text-red-700 hover:bg-red-200 transition">
+                    <i class="fas fa-download mr-1"></i>Descargar
+                </a>
+                @if ($shipping_note->isPrinted())
+                    <span class="inline-flex items-center px-2 py-1 text-xs text-green-700 bg-green-100 rounded-full">
+                        <i class="fas fa-print mr-1"></i>Impresa {{ $shipping_note->printed_at->format('d/m H:i') }}
+                    </span>
+                @endif
                 @if ($shipping_note->canBeEdited())
                     <a href="{{ route('shipping-notes.edit', $shipping_note) }}"
                         class="inline-flex items-center px-3 py-2 bg-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-300 transition">
@@ -41,7 +55,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6" x-data="{ showCancelModal: false, showAddItem: false, showAddKit: false, showAddConcept: false }">
+    <div class="py-6" x-data="{ showCancelModal: false, showAddItem: false, showAddKit: false, showAddConcept: false, showAddUrgency: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Alertas --}}
@@ -205,13 +219,21 @@
                  EVALUACIÓN DEL CHECKLIST
                  ═══════════════════════════════════════════════════════ --}}
             @if (!empty($checklist_evaluation))
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-data="{ open: false }">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-data="{ open: true }">
                     <button @click="open = !open"
                         class="w-full px-6 py-4 flex items-center justify-between bg-gray-50 hover:bg-gray-100 transition">
                         <h3 class="text-lg font-semibold text-gray-900">
                             <i class="fas fa-clipboard-check mr-2 text-green-500"></i>
                             Evaluación del Checklist
                             <span class="text-sm text-gray-500 font-normal ml-2">({{ count($checklist_evaluation) }} productos)</span>
+                            @php
+                                $condCount = collect($checklist_evaluation)->where('has_conditional', true)->count();
+                            @endphp
+                            @if ($condCount > 0)
+                                <span class="ml-2 inline-flex px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700">
+                                    {{ $condCount }} condicional{{ $condCount > 1 ? 'es' : '' }}
+                                </span>
+                            @endif
                         </h3>
                         <i class="fas fa-chevron-down text-gray-400 transition-transform" :class="open && 'rotate-180'"></i>
                     </button>
@@ -220,39 +242,73 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Base</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Final</th>
-                                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Condicional</th>
-                                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Tipo</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-20">Base</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-20">Final</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-28">Acción</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Criterio / Descripción</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
                                     @foreach ($checklist_evaluation as $eval)
-                                        <tr class="{{ ($eval['has_conditional'] ?? false) ? 'bg-amber-50' : '' }}">
-                                            <td class="px-6 py-3 text-sm text-gray-900">
+                                        @php
+                                            $hasCond = $eval['has_conditional'] ?? false;
+                                            $action = $eval['action_type'] ?? null;
+                                            $rowClass = match($action) {
+                                                'exclude' => 'bg-red-50',
+                                                'replace' => 'bg-purple-50',
+                                                'add_dependency' => 'bg-blue-50',
+                                                'add_product' => 'bg-green-50',
+                                                'adjust_quantity' => 'bg-amber-50',
+                                                default => $hasCond ? 'bg-amber-50' : '',
+                                            };
+                                            $actionBadge = match($action) {
+                                                'exclude' => ['bg-red-100 text-red-700', 'fa-ban', 'Excluido'],
+                                                'replace' => ['bg-purple-100 text-purple-700', 'fa-exchange-alt', 'Reemplazo'],
+                                                'add_dependency' => ['bg-blue-100 text-blue-700', 'fa-link', 'Dependencia'],
+                                                'add_product' => ['bg-green-100 text-green-700', 'fa-plus-circle', 'Adicional'],
+                                                'adjust_quantity' => ['bg-amber-100 text-amber-700', 'fa-sliders-h', 'Ajuste Cant.'],
+                                                default => $hasCond ? ['bg-gray-100 text-gray-600', 'fa-cog', 'Modificado'] : null,
+                                            };
+                                        @endphp
+                                        <tr class="{{ $rowClass }}">
+                                            <td class="px-4 py-3 text-sm text-gray-900">
                                                 {{ $eval['product_name'] ?? 'N/A' }}
                                                 @if ($eval['is_mandatory'] ?? true)
                                                     <i class="fas fa-asterisk text-xs text-red-400 ml-1" title="Obligatorio"></i>
                                                 @endif
-                                            </td>
-                                            <td class="px-6 py-3 text-sm text-gray-600 text-center">{{ $eval['base_quantity'] ?? 0 }}</td>
-                                            <td class="px-6 py-3 text-center">
-                                                <span class="inline-flex px-2 py-0.5 text-sm font-bold rounded {{ ($eval['has_conditional'] ?? false) ? 'bg-amber-200 text-amber-800' : 'text-gray-900' }}">
-                                                    {{ $eval['final_quantity'] ?? 0 }}
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-3 text-xs text-amber-700">
-                                                {{ $eval['conditional_description'] ?? '—' }}
-                                            </td>
-                                            <td class="px-6 py-3 text-center">
                                                 @if (($eval['source'] ?? 'base') === 'additional')
-                                                    <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Adicional</span>
-                                                @elseif ($eval['has_conditional'] ?? false)
-                                                    <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Ajustado</span>
-                                                @else
-                                                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">Base</span>
+                                                    <span class="ml-1 text-xs text-purple-600">(adicional)</span>
+                                                @elseif (($eval['source'] ?? 'base') === 'excluded')
+                                                    <span class="ml-1 text-xs text-red-500 line-through">(excluido)</span>
                                                 @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600 text-center">{{ $eval['base_quantity'] ?? 0 }}</td>
+                                            <td class="px-4 py-3 text-center">
+                                                @if ($hasCond && ($eval['base_quantity'] ?? 0) !== ($eval['final_quantity'] ?? 0))
+                                                    <span class="inline-flex items-center gap-1">
+                                                        <span class="line-through text-gray-400 text-xs">{{ $eval['base_quantity'] ?? 0 }}</span>
+                                                        <i class="fas fa-arrow-right text-xs text-gray-400"></i>
+                                                        <span class="px-2 py-0.5 text-sm font-bold rounded bg-amber-200 text-amber-800">
+                                                            {{ $eval['final_quantity'] ?? 0 }}
+                                                        </span>
+                                                    </span>
+                                                @else
+                                                    <span class="text-sm font-medium text-gray-900">{{ $eval['final_quantity'] ?? 0 }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                @if ($actionBadge)
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full {{ $actionBadge[0] }}">
+                                                        <i class="fas {{ $actionBadge[1] }} text-[10px]"></i>
+                                                        {{ $actionBadge[2] }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-xs text-gray-400">Base</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-4 py-3 text-xs text-gray-600">
+                                                {{ $eval['conditional_description'] ?? '—' }}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -502,9 +558,16 @@
                                         $originColor = $originColors[$item->item_origin] ?? 'gray';
                                     @endphp
                                     <tr x-show="tab === 'all' || tab === '{{ $item->item_origin }}'"
-                                        class="{{ $item->exclude_from_invoice ? 'bg-yellow-50' : '' }}">
+                                        class="{{ $item->is_urgency ? 'bg-orange-50 border-l-4 border-orange-400' : ($item->exclude_from_invoice ? 'bg-yellow-50' : '') }}">
                                         <td class="px-6 py-3">
-                                            <div class="text-sm text-gray-900 font-medium">{{ $item->product->name ?? 'N/A' }}</div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="text-sm text-gray-900 font-medium">{{ $item->product->name ?? 'N/A' }}</div>
+                                                @if ($item->is_urgency)
+                                                    <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-200 text-orange-800 uppercase">
+                                                        <i class="fas fa-bolt"></i> Urgencia
+                                                    </span>
+                                                @endif
+                                            </div>
                                             @if ($item->productUnit)
                                                 <div class="text-xs text-gray-500">EPC: {{ $item->productUnit->epc ?? '—' }}</div>
                                             @elseif ($item->status === 'pending')
@@ -513,6 +576,11 @@
                                             @if ($item->conditional_description)
                                                 <div class="text-xs text-amber-600 mt-0.5">
                                                     <i class="fas fa-sliders-h mr-1"></i>{{ $item->conditional_description }}
+                                                </div>
+                                            @endif
+                                            @if ($item->is_urgency && $item->urgency_reason)
+                                                <div class="text-xs text-orange-600 mt-0.5">
+                                                    <i class="fas fa-comment-medical mr-1"></i>{{ $item->urgency_reason }}
                                                 </div>
                                             @endif
                                         </td>
@@ -645,13 +713,32 @@
             </div>
 
             {{-- ═══════════════════════════════════════════════════════
-                 TOTALES
+                 TOTALES FINANCIEROS
                  ═══════════════════════════════════════════════════════ --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-calculator mr-2 text-green-500"></i>Totales
-                </h3>
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-calculator mr-2 text-green-500"></i>Totales Financieros
+                    </h3>
+                    <div class="flex gap-2">
+                        @if ($shipping_note->canBeEdited())
+                            <form method="POST" action="{{ route('shipping-notes.recalculate', $shipping_note) }}" class="inline">
+                                @csrf
+                                <button type="submit"
+                                    class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition">
+                                    <i class="fas fa-sync-alt mr-1"></i>Recalcular
+                                </button>
+                            </form>
+                            <button @click="showAddUrgency = true"
+                                class="px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg text-xs font-medium hover:bg-orange-200 transition">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>Agregar Urgencia
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Desglose por tipo --}}
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                     <div class="bg-green-50 rounded-lg p-4 text-center">
                         <span class="block text-xs text-green-600 font-medium uppercase">Ventas</span>
                         <span class="text-xl font-bold text-green-800">${{ number_format($totals['sales'], 2) }}</span>
@@ -668,9 +755,65 @@
                         <span class="block text-xs text-yellow-600 font-medium uppercase">Conceptos Renta</span>
                         <span class="text-xl font-bold text-yellow-800">${{ number_format($totals['rental_concepts'], 2) }}</span>
                     </div>
-                    <div class="bg-indigo-50 rounded-lg p-4 text-center border-2 border-indigo-200">
-                        <span class="block text-xs text-indigo-600 font-medium uppercase">Total General</span>
-                        <span class="text-2xl font-bold text-indigo-800">${{ number_format($totals['grand_total'], 2) }}</span>
+                    <div class="bg-gray-50 rounded-lg p-4 text-center">
+                        <span class="block text-xs text-gray-600 font-medium uppercase">Items Urgencia</span>
+                        <span class="text-xl font-bold text-orange-700">{{ $shipping_note->items()->urgency()->count() }}</span>
+                    </div>
+                </div>
+
+                {{-- Subtotal + IVA + Total --}}
+                <div class="flex justify-end">
+                    <div class="w-full max-w-sm space-y-2">
+                        {{-- Subtotal --}}
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <span class="text-sm font-medium text-gray-600">Subtotal</span>
+                            <span class="text-lg font-semibold text-gray-900">${{ number_format((float) $shipping_note->subtotal, 2) }}</span>
+                        </div>
+
+                        {{-- IVA editable --}}
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200"
+                             x-data="{ editing: false, rate: {{ (float) $shipping_note->tax_rate * 100 }} }">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-medium text-gray-600">I.V.A.</span>
+                                @if ($shipping_note->canBeEdited())
+                                    <template x-if="!editing">
+                                        <button @click="editing = true" class="text-xs text-cyan-600 hover:underline">
+                                            (<span x-text="rate"></span>%) <i class="fas fa-pencil-alt ml-0.5"></i>
+                                        </button>
+                                    </template>
+                                    <template x-if="editing">
+                                        <form method="POST" action="{{ route('shipping-notes.update-tax-rate', $shipping_note) }}"
+                                              class="flex items-center gap-1">
+                                            @csrf @method('PUT')
+                                            <input type="number" name="tax_rate_pct" x-model="rate"
+                                                   class="w-16 text-xs rounded border-gray-300 py-1 px-2" step="0.01" min="0" max="100">
+                                            <span class="text-xs text-gray-500">%</span>
+                                            <input type="hidden" name="tax_rate" :value="rate / 100">
+                                            <button type="submit" class="text-xs text-green-600 hover:text-green-800">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" @click="editing = false" class="text-xs text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    </template>
+                                @else
+                                    <span class="text-xs text-gray-500">({{ round((float) $shipping_note->tax_rate * 100) }}%)</span>
+                                @endif
+                            </div>
+                            <span class="text-lg font-semibold text-gray-900">${{ number_format((float) $shipping_note->tax_amount, 2) }}</span>
+                        </div>
+
+                        {{-- Total --}}
+                        <div class="flex justify-between items-center py-3 bg-cyan-50 rounded-lg px-4 border-2 border-cyan-200">
+                            <span class="text-sm font-bold text-cyan-800 uppercase">Total</span>
+                            <span class="text-2xl font-bold text-cyan-800">${{ number_format((float) $shipping_note->grand_total, 2) }}</span>
+                        </div>
+
+                        {{-- Importe con letra --}}
+                        <p class="text-xs text-gray-500 italic pt-1">
+                            {{ $shipping_note->amount_in_words }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -871,6 +1014,88 @@
                         <button type="submit"
                             class="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-semibold hover:bg-yellow-600 transition">
                             Agregar Concepto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- Modal: Agregar Item de Urgencia --}}
+        <div x-show="showAddUrgency" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @keydown.escape="showAddUrgency = false">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6" @click.outside="showAddUrgency = false"
+                 x-data="productSearch()">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>Agregar Item de Urgencia
+                </h3>
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+                    <p class="text-xs text-orange-700">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Los items de urgencia se marcan visualmente en la remisión y el PDF. Usa esto para productos solicitados de última hora.
+                    </p>
+                </div>
+                <form method="POST" action="{{ route('shipping-notes.add-item', $shipping_note) }}">
+                    @csrf
+                    <input type="hidden" name="is_urgency" value="1">
+                    <input type="hidden" name="product_unit_id" x-model="selectedProductId">
+
+                    <div class="space-y-4">
+                        {{-- Búsqueda de producto --}}
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Producto</label>
+                            <input type="text" x-model="searchQuery" @input.debounce.300ms="search()"
+                                class="w-full rounded-lg border-gray-300 text-sm"
+                                placeholder="Buscar por nombre o código...">
+                            <div x-show="results.length > 0"
+                                class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-40 overflow-y-auto">
+                                <template x-for="product in results" :key="product.id">
+                                    <button type="button" @click="selectProduct(product)"
+                                        class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100">
+                                        <span class="font-medium" x-text="product.code"></span> —
+                                        <span x-text="product.name"></span>
+                                        <span class="text-xs text-gray-400 ml-1" x-text="'$' + product.list_price"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                                <input type="number" name="quantity" value="1" min="1"
+                                    class="w-full rounded-lg border-gray-300 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Precio Unitario</label>
+                                <input type="number" name="unit_price" step="0.01" min="0"
+                                    class="w-full rounded-lg border-gray-300 text-sm"
+                                    :value="selectedProduct?.list_price ?? 0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Modo de cobro</label>
+                            <select name="billing_mode" class="w-full rounded-lg border-gray-300 text-sm">
+                                <option value="sale">Venta</option>
+                                <option value="rental">Renta</option>
+                                <option value="no_charge">Sin Cargo</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Motivo de urgencia</label>
+                            <textarea name="urgency_reason" rows="2"
+                                class="w-full rounded-lg border-gray-300 text-sm"
+                                placeholder="Ej: Solicitado por el Dr. durante preparación..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-5">
+                        <button type="button" @click="showAddUrgency = false"
+                            class="px-4 py-2 bg-gray-200 rounded-lg text-sm text-gray-700">Cancelar</button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-semibold hover:bg-orange-600 transition">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>Agregar Urgencia
                         </button>
                     </div>
                 </form>

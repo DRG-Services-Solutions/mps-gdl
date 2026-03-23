@@ -19,7 +19,7 @@ class SurgeryPreparationItem extends Model
         'status',
         'storage_location_id',
         'notes',
-        'checklist_item_id ',
+        'checklist_item_id',
     ];
 
     protected $casts = [

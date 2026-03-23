@@ -156,6 +156,8 @@ class SurgeryPreparationController extends Controller
 
         // Contenido del paquete (solo si existe)
         $packageContents = collect();
+        $packageExtras = collect();
+
         if ($preparation->pre_assembled_package_id) {
             $packageContents = PackageContent::where('pre_assembled_package_id', $preparation->pre_assembled_package_id)
                 ->with('product')
@@ -168,6 +170,13 @@ class SurgeryPreparationController extends Controller
                         'units' => $items->pluck('product_unit_id')->filter()->values(),
                     ];
                 });
+
+            // Detectar productos en el paquete que NO están en la preparación
+            $prepProductIds = $preparation->items->pluck('product_id')->unique()->toArray();
+
+            $packageExtras = $packageContents->filter(function($content, $productId) use ($prepProductIds) {
+                return !in_array($productId, $prepProductIds);
+            });
         }
 
         return view('surgeries.preparations.compare', compact(
@@ -176,7 +185,8 @@ class SurgeryPreparationController extends Controller
             'summary',
             'itemsComplete',
             'itemsPending',
-            'packageContents'
+            'packageContents',
+            'packageExtras'
         ));
     }
 

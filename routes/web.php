@@ -211,6 +211,18 @@ Route::prefix('shipping-notes')->name('shipping-notes.')->middleware(['auth'])->
         ->name('reevaluate');
 
     // ═══════════════════════════════════════════════════════════
+    // PDF Y FINANCIEROS
+    // ═══════════════════════════════════════════════════════════
+    Route::get('/{shippingNote}/pdf', [ShippingNoteController::class, 'generatePdf'])
+        ->name('pdf');
+    Route::get('/{shippingNote}/pdf/download', [ShippingNoteController::class, 'downloadPdf'])
+        ->name('pdf.download');
+    Route::put('/{shippingNote}/tax-rate', [ShippingNoteController::class, 'updateTaxRate'])
+        ->name('update-tax-rate');
+    Route::post('/{shippingNote}/recalculate', [ShippingNoteController::class, 'recalculateTotals'])
+        ->name('recalculate');
+
+    // ═══════════════════════════════════════════════════════════
     // API (AJAX para Alpine.js)
     // ═══════════════════════════════════════════════════════════
     Route::get('/api/search-products', [ShippingNoteController::class, 'searchAvailableProducts'])

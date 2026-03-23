@@ -42,16 +42,22 @@ class ShippingNoteService
 
         return DB::transaction(function () use ($surgery, $billingLegalEntityId, $notes) {
 
-            // 1. Evaluar checklist con condicionales
+            // 1. Evaluar checklist con condicionales (solo items con qty > 0)
             $evaluatedItems = $surgery->getChecklistItemsWithConditionals();
-            $checklistSnapshot = $this->buildChecklistSnapshot($evaluatedItems);
+
+            // 2. Capturar también items excluidos/reemplazados para auditoría
+            $excludedItems = $this->getExcludedItems($surgery);
+
+            // 3. Construir snapshot completo (incluye excluidos)
+            $checklistSnapshot = $this->buildChecklistSnapshot($evaluatedItems, $excludedItems);
 
             Log::info("Checklist evaluado para cirugía {$surgery->code}", [
                 'total_items' => $evaluatedItems->count(),
                 'with_conditionals' => $evaluatedItems->where('has_conditional', true)->count(),
+                'excluded_items' => $excludedItems->count(),
             ]);
 
-            // 2. Crear la remisión
+            // 4. Crear la remisión
             $shippingNote = ShippingNote::create([
                 'scheduled_surgery_id' => $surgery->id,
                 'hospital_id' => $surgery->hospital_id,
@@ -107,7 +113,7 @@ class ShippingNoteService
             throw new \Exception("El paquete {$package->code} ya está asignado a esta remisión.");
         }
 
-        return DB::transaction(function () use ($shippingNote, $package) {
+        $result = DB::transaction(function () use ($shippingNote, $package) {
 
             // 1. Crear registro del paquete en la remisión
             $notePackage = ShippingNotePackage::create([
@@ -136,6 +142,11 @@ class ShippingNoteService
 
             return $notePackage->fresh();
         });
+
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
+
+        return $result;
     }
 
     /**
@@ -159,6 +170,9 @@ class ShippingNoteService
 
             Log::info("Paquete removido de remisión {$shippingNote->shipping_number}");
         });
+
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -196,7 +210,7 @@ class ShippingNoteService
             throw new \Exception("El kit {$kit->code} ya está asignado a esta remisión.");
         }
 
-        return DB::transaction(function () use ($shippingNote, $kit, $rentalPrice, $excludeFromInvoice) {
+        $result = DB::transaction(function () use ($shippingNote, $kit, $rentalPrice, $excludeFromInvoice) {
 
             // 1. Crear registro del kit en la remisión
             $noteKit = ShippingNoteKit::create([
@@ -217,6 +231,11 @@ class ShippingNoteService
 
             return $noteKit->fresh();
         });
+
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
+
+        return $result;
     }
 
     /**
@@ -236,6 +255,9 @@ class ShippingNoteService
 
             Log::info("Kit removido de remisión {$shippingNote->shipping_number}");
         });
+
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -252,7 +274,9 @@ class ShippingNoteService
         string $billingMode = 'sale',
         float $unitPrice = 0,
         ?int $productUnitId = null,
-        bool $excludeFromInvoice = false
+        bool $excludeFromInvoice = false,
+        bool $isUrgency = false,
+        ?string $urgencyReason = null
     ): ShippingNoteItem {
         $this->validateCanEdit($shippingNote);
 
@@ -268,6 +292,8 @@ class ShippingNoteService
             'unit_price' => $unitPrice,
             'total_price' => $unitPrice * $quantity,
             'exclude_from_invoice' => $excludeFromInvoice,
+            'is_urgency' => $isUrgency,
+            'urgency_reason' => $urgencyReason,
             'status' => 'pending',
         ];
 
@@ -280,9 +306,13 @@ class ShippingNoteService
 
         $item = ShippingNoteItem::create($data);
 
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
+
         Log::info("Item standalone agregado a remisión {$shippingNote->shipping_number}", [
             'product_id' => $productId,
             'quantity' => $quantity,
+            'is_urgency' => $isUrgency,
         ]);
 
         return $item;
@@ -301,11 +331,14 @@ class ShippingNoteService
 
         $item->delete();
 
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
+
         Log::info("Item {$item->id} removido de remisión {$shippingNote->shipping_number}");
     }
 
     /**
-     * Actualizar un item (cantidad, precio, billing_mode)
+     * Actualizar un item (cantidad, precio, billing_mode, urgencia)
      * Solo en estado draft
      */
     public function updateItem(
@@ -325,6 +358,8 @@ class ShippingNoteService
             'unit_price',
             'exclude_from_invoice',
             'product_unit_id',
+            'is_urgency',
+            'urgency_reason',
         ];
 
         $updateData = array_intersect_key($data, array_flip($allowedFields));
@@ -345,7 +380,21 @@ class ShippingNoteService
 
         $item->update($updateData);
 
+        // Recalcular totales financieros
+        $shippingNote->recalculateTotals();
+
         return $item->fresh();
+    }
+
+    /**
+     * Actualizar tasa de IVA de la remisión
+     */
+    public function updateTaxRate(ShippingNote $shippingNote, float $taxRate): void
+    {
+        $this->validateCanEdit($shippingNote);
+
+        $shippingNote->update(['tax_rate' => $taxRate]);
+        $shippingNote->recalculateTotals();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -365,15 +414,19 @@ class ShippingNoteService
     ): ShippingNoteRentalConcept {
         $this->validateCanEdit($shippingNote);
 
-        return ShippingNoteRentalConcept::create([
+        $result = ShippingNoteRentalConcept::create([
             'shipping_note_id' => $shippingNote->id,
             'concept' => $concept,
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'total_price' => $quantity * $unitPrice, // boot lo recalcula, pero por claridad
+            'total_price' => $quantity * $unitPrice,
             'exclude_from_invoice' => $excludeFromInvoice,
             'notes' => $notes,
         ]);
+
+        $shippingNote->recalculateTotals();
+
+        return $result;
     }
 
     /**
@@ -388,6 +441,8 @@ class ShippingNoteService
         }
 
         $concept->delete();
+
+        $shippingNote->recalculateTotals();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -515,7 +570,8 @@ class ShippingNoteService
 
         $surgery = $shippingNote->scheduledSurgery;
         $evaluatedItems = $surgery->getChecklistItemsWithConditionals();
-        $snapshot = $this->buildChecklistSnapshot($evaluatedItems);
+        $excludedItems = $this->getExcludedItems($surgery);
+        $snapshot = $this->buildChecklistSnapshot($evaluatedItems, $excludedItems);
 
         $shippingNote->update(['checklist_evaluation' => $snapshot]);
 
@@ -776,10 +832,11 @@ class ShippingNoteService
     /**
      * Construir snapshot JSON de la evaluación del checklist.
      * Se guarda en shipping_notes.checklist_evaluation para auditoría.
+     * Incluye items excluidos/reemplazados para visibilidad completa.
      */
-    private function buildChecklistSnapshot(Collection $evaluatedItems): array
+    private function buildChecklistSnapshot(Collection $evaluatedItems, ?Collection $excludedItems = null): array
     {
-        return $evaluatedItems->map(function ($item) {
+        $snapshot = $evaluatedItems->map(function ($item) {
             $checklistItem = $item['item'] ?? null;
             $conditional = $item['conditional'] ?? null;
 
@@ -797,6 +854,68 @@ class ShippingNoteService
                 'is_mandatory' => $item['is_mandatory'],
                 'source' => $item['source'],
             ];
-        })->values()->toArray();
+        });
+
+        // Agregar items excluidos/reemplazados para auditoría
+        if ($excludedItems && $excludedItems->isNotEmpty()) {
+            $excluded = $excludedItems->map(function ($item) {
+                return [
+                    'checklist_item_id' => $item['checklist_item_id'],
+                    'product_id' => $item['product_id'],
+                    'product_name' => $item['product_name'],
+                    'base_quantity' => $item['base_quantity'],
+                    'final_quantity' => 0,
+                    'has_conditional' => true,
+                    'conditional_id' => $item['conditional_id'] ?? null,
+                    'conditional_description' => $item['conditional_description'],
+                    'action_type' => $item['action_type'],
+                    'exclude_from_invoice' => true,
+                    'is_mandatory' => $item['is_mandatory'],
+                    'source' => 'excluded',
+                ];
+            });
+            $snapshot = $snapshot->concat($excluded);
+        }
+
+        return $snapshot->values()->toArray();
+    }
+
+    /**
+     * Obtener items que fueron excluidos o reemplazados por condicionales.
+     * Estos no aparecen en getChecklistItemsWithConditionals() porque tienen final_quantity = 0.
+     */
+    private function getExcludedItems(ScheduledSurgery $surgery): Collection
+    {
+        if (!$surgery->checklist_id) {
+            return collect();
+        }
+
+        $baseItems = ChecklistItem::where('checklist_id', $surgery->checklist_id)
+            ->with(['product', 'conditionals.targetProduct'])
+            ->ordered()
+            ->get();
+
+        $excluded = collect();
+
+        foreach ($baseItems as $item) {
+            $adjustedData = $item->getAdjustedQuantity($surgery);
+
+            // Solo nos interesan items con final_quantity = 0 que tengan condicional
+            if ($adjustedData['final_quantity'] === 0 && $adjustedData['has_conditional']) {
+                $conditional = $adjustedData['conditional'];
+                $excluded->push([
+                    'checklist_item_id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product->name,
+                    'base_quantity' => $adjustedData['base_quantity'],
+                    'conditional_id' => $conditional?->id,
+                    'conditional_description' => $adjustedData['conditional_description'],
+                    'action_type' => $conditional?->action_type,
+                    'is_mandatory' => $item->is_mandatory ?? true,
+                ]);
+            }
+        }
+
+        return $excluded;
     }
 }

@@ -8,6 +8,7 @@ use App\Models\SurgeryPreparation;
 use App\Models\SurgeryPreparationItem;
 use App\Models\ProductUnit;
 use App\Models\PackageContent;
+use App\Models\ChecklistItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -90,8 +91,103 @@ class PreparationService
                 ]);
             }
 
+            // 7. Procesar condicionales que generan productos adicionales
+            //    (dependencias y reemplazos) para que aparezcan desde el inicio
+            $this->processConditionalProducts($preparation, $surgery, $packageContents);
+
             return $preparation;
         });
+    }
+
+    /**
+     * Procesar condicionales que generan productos adicionales al crear la preparación.
+     * 
+     * getChecklistItemsWithConditionals() filtra items con final_quantity = 0
+     * (exclude, replace) y no agrega los target_product de dependencias.
+     * Este método recorre TODOS los items base del checklist para detectar:
+     *   - add_dependency → crea prep item para el producto dependencia
+     *   - replace → crea prep item para el producto reemplazo
+     *   - exclude → marca visibilidad (no crea item, qty = 0)
+     */
+    protected function processConditionalProducts(
+        SurgeryPreparation $preparation,
+        ScheduledSurgery $surgery,
+        $packageContents
+    ): void {
+        $baseItems = ChecklistItem::where('checklist_id', $surgery->checklist_id)
+            ->with(['product', 'conditionals.targetProduct'])
+            ->ordered()
+            ->get();
+
+        $createdProductIds = $preparation->items()->pluck('product_id')->toArray();
+
+        foreach ($baseItems as $item) {
+            $adjustedData = $item->getAdjustedQuantity($surgery);
+            $conditional = $adjustedData['conditional'] ?? null;
+
+            if (!$conditional) continue;
+
+            switch ($conditional->action_type) {
+
+                case 'add_dependency':
+                    // El producto base ya está en la preparación.
+                    // Crear el producto DEPENDENCIA (target_product) si no existe.
+                    if (!$conditional->target_product_id) break;
+                    if (in_array($conditional->target_product_id, $createdProductIds)) break;
+
+                    $depQty = $conditional->dependency_quantity ?? 1;
+                    $inPkg = $packageContents instanceof \Illuminate\Support\Collection
+                        ? $packageContents->get($conditional->target_product_id, 0)
+                        : 0;
+                    $missing = max(0, $depQty - $inPkg);
+
+                    $preparation->items()->create([
+                        'product_id'          => $conditional->target_product_id,
+                        'checklist_item_id'   => $item->id,
+                        'quantity_required'    => $depQty,
+                        'quantity_in_package'  => $inPkg,
+                        'quantity_picked'      => 0,
+                        'quantity_missing'     => $missing,
+                        'is_mandatory'         => false,
+                        'status'              => $missing <= 0 ? 'in_package' : 'pending',
+                        'notes'               => "Dependencia de: {$item->product->name}",
+                    ]);
+
+                    $createdProductIds[] = $conditional->target_product_id;
+
+                    Log::info("Dependencia creada al inicio: {$conditional->targetProduct?->name} ×{$depQty} (desde {$item->product->name})");
+                    break;
+
+                case 'replace':
+                    // El producto original fue excluido (qty=0, no está en preparación).
+                    // Crear el producto REEMPLAZO (target_product) si no existe.
+                    if (!$conditional->target_product_id) break;
+                    if (in_array($conditional->target_product_id, $createdProductIds)) break;
+
+                    $replaceQty = $adjustedData['base_quantity']; // misma cantidad que el original
+                    $inPkg = $packageContents instanceof \Illuminate\Support\Collection
+                        ? $packageContents->get($conditional->target_product_id, 0)
+                        : 0;
+                    $missing = max(0, $replaceQty - $inPkg);
+
+                    $preparation->items()->create([
+                        'product_id'          => $conditional->target_product_id,
+                        'checklist_item_id'   => $item->id,
+                        'quantity_required'    => $replaceQty,
+                        'quantity_in_package'  => $inPkg,
+                        'quantity_picked'      => 0,
+                        'quantity_missing'     => $missing,
+                        'is_mandatory'         => $item->is_mandatory ?? true,
+                        'status'              => $missing <= 0 ? 'in_package' : 'pending',
+                        'notes'               => "Reemplazo de: {$item->product->name}",
+                    ]);
+
+                    $createdProductIds[] = $conditional->target_product_id;
+
+                    Log::info("Reemplazo creado al inicio: {$conditional->targetProduct?->name} ×{$replaceQty} (reemplaza a {$item->product->name})");
+                    break;
+            }
+        }
     }
 
     /**

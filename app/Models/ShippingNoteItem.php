@@ -30,6 +30,8 @@ class ShippingNoteItem extends Model
         'quantity_used',
         'billing_mode',
         'exclude_from_invoice',
+        'is_urgency',
+        'urgency_reason',
         'unit_price',
         'total_price',
         'status',
@@ -45,6 +47,7 @@ class ShippingNoteItem extends Model
         'unit_price' => 'decimal:2',
         'total_price' => 'decimal:2',
         'exclude_from_invoice' => 'boolean',
+        'is_urgency' => 'boolean',
         'sent_at' => 'datetime',
         'returned_at' => 'datetime',
     ];
@@ -148,6 +151,11 @@ class ShippingNoteItem extends Model
     public function scopeFromConditional(Builder $query): Builder
     {
         return $query->where('item_origin', 'conditional');
+    }
+
+    public function scopeUrgency(Builder $query): Builder
+    {
+        return $query->where('is_urgency', true);
     }
 
     // — Por billing
@@ -335,6 +343,14 @@ class ShippingNoteItem extends Model
     public function hasConditional(): bool
     {
         return $this->checklist_conditional_id !== null;
+    }
+
+    /**
+     * ¿Fue agregado como urgencia?
+     */
+    public function isUrgency(): bool
+    {
+        return (bool) $this->is_urgency;
     }
 
     // ═══════════════════════════════════════════════════════════

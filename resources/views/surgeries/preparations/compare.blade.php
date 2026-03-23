@@ -217,6 +217,14 @@
                             <i class="fas fa-exclamation-circle mr-1"></i>
                             Pendientes ({{ $itemsPending->count() }})
                         </button>
+                        @if($packageExtras->isNotEmpty())
+                        <button @click="tab = 'extras'" 
+                                :class="tab === 'extras' ? 'border-yellow-600 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors">
+                            <i class="fas fa-box-open mr-1"></i>
+                            Sobrantes en Paquete ({{ $packageExtras->count() }})
+                        </button>
+                        @endif
                     </nav>
                 </div>
 
@@ -277,6 +285,19 @@
                                                 <div class="text-xs font-mono text-gray-500 mt-1">
                                                    {{ $item->product->name }} 
                                                 </div>
+                                                @if($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
+                                                    <div class="mt-1">
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
+                                                            <i class="fas fa-link"></i> {{ $item->notes }}
+                                                        </span>
+                                                    </div>
+                                                @elseif($item->notes && str_starts_with($item->notes, 'Reemplazo de:'))
+                                                    <div class="mt-1">
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-700">
+                                                            <i class="fas fa-exchange-alt"></i> {{ $item->notes }}
+                                                        </span>
+                                                    </div>
+                                                @endif
                                                 @if($item->storageLocation)
                                                     <div class="text-xs text-indigo-600 mt-1">
                                                         <i class="fas fa-map-marker-alt mr-1"></i>
@@ -423,6 +444,62 @@
                                     </td>
                                 </tr>
                             @endforeach
+
+                            {{-- Sobrantes del paquete (productos que no están en el checklist) --}}
+                            @if($packageExtras->isNotEmpty())
+                                @foreach($packageExtras as $productId => $extra)
+                                    <tr class="bg-yellow-50 hover:bg-yellow-100 transition-colors"
+                                        x-show="tab === 'all' || tab === 'extras'">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-start">
+                                                <i class="fas fa-box-open text-yellow-500 mr-2 mt-1" title="Sobrante en paquete"></i>
+                                                <div>
+                                                    <div class="text-sm font-bold text-gray-900 leading-tight">
+                                                        {{ $extra['product']->code ?? '-' }}
+                                                    </div>
+                                                    <div class="text-xs font-mono text-gray-500 mt-1">
+                                                        {{ $extra['product']->name ?? 'Producto desconocido' }}
+                                                    </div>
+                                                    <div class="mt-1">
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-yellow-200 text-yellow-800">
+                                                            <i class="fas fa-info-circle"></i> No requerido por checklist
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 text-gray-400 font-black text-lg">
+                                                0
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-yellow-100 text-yellow-700 font-black text-lg">
+                                                {{ $extra['total_quantity'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">
+                                                0
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">
+                                                0
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="text-xs text-yellow-600 italic">Sobrante</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                                <i class="fas fa-box-open mr-1"></i>
+                                                Extra
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         </tbody>
                     </table>
                 </div>

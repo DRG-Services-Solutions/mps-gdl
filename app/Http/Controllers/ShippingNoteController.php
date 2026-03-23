@@ -15,6 +15,7 @@ use App\Models\Doctor;
 use App\Models\LegalEntity;
 use App\Models\ProductUnit;
 use App\Services\ShippingNoteService;
+use App\Services\ShippingNotePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -371,6 +372,8 @@ class ShippingNoteController extends Controller
             'billing_mode' => 'required|in:sale,rental,no_charge',
             'unit_price' => 'required|numeric|min:0',
             'exclude_from_invoice' => 'nullable|boolean',
+            'is_urgency' => 'nullable|boolean',
+            'urgency_reason' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -383,12 +386,15 @@ class ShippingNoteController extends Controller
                 $validated['billing_mode'],
                 (float) $validated['unit_price'],
                 $productUnit->id,
-                (bool) ($validated['exclude_from_invoice'] ?? false)
+                (bool) ($validated['exclude_from_invoice'] ?? false),
+                (bool) ($validated['is_urgency'] ?? false),
+                $validated['urgency_reason'] ?? null
             );
 
+            $label = ($validated['is_urgency'] ?? false) ? 'urgencia' : 'producto';
             return redirect()
                 ->route('shipping-notes.show', $shippingNote)
-                ->with('success', "Producto {$productUnit->product->name} agregado.");
+                ->with('success', ucfirst($label) . " {$productUnit->product->name} agregado.");
 
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -405,6 +411,8 @@ class ShippingNoteController extends Controller
             'billing_mode' => 'nullable|in:sale,rental,no_charge',
             'unit_price' => 'nullable|numeric|min:0',
             'exclude_from_invoice' => 'nullable|boolean',
+            'is_urgency' => 'nullable|boolean',
+            'urgency_reason' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -657,6 +665,104 @@ class ShippingNoteController extends Controller
             return redirect()
                 ->route('shipping-notes.show', $shippingNote)
                 ->with('success', 'Checklist re-evaluado con los datos actuales de la cirugía.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PDF Y FINANCIEROS
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Generar y descargar PDF de la remisión
+     */
+    public function generatePdf(ShippingNote $shippingNote)
+    {
+        try {
+            // Recalcular totales antes de generar
+            $shippingNote->recalculateTotals();
+
+            $pdfService = app(ShippingNotePdfService::class);
+            $content = $pdfService->generateForDownload($shippingNote);
+
+            // Marcar como impresa
+            $shippingNote->markAsPrinted();
+
+            $filename = 'Remision_' . $shippingNote->shipping_number . '.pdf';
+
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+                'Content-Length' => strlen($content),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error al generar PDF: " . $e->getMessage());
+            return back()->with('error', 'Error al generar PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Descargar PDF (forzar descarga)
+     */
+    public function downloadPdf(ShippingNote $shippingNote)
+    {
+        try {
+            $shippingNote->recalculateTotals();
+
+            $pdfService = app(ShippingNotePdfService::class);
+            $content = $pdfService->generateForDownload($shippingNote);
+
+            $shippingNote->markAsPrinted();
+
+            $filename = 'Remision_' . $shippingNote->shipping_number . '.pdf';
+
+            return response($content, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Content-Length' => strlen($content),
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error al descargar PDF: " . $e->getMessage());
+            return back()->with('error', 'Error al generar PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualizar tasa de IVA
+     */
+    public function updateTaxRate(Request $request, ShippingNote $shippingNote)
+    {
+        $validated = $request->validate([
+            'tax_rate' => 'required|numeric|min:0|max:1',
+        ]);
+
+        try {
+            $this->service->updateTaxRate($shippingNote, (float) $validated['tax_rate']);
+
+            return redirect()
+                ->route('shipping-notes.show', $shippingNote)
+                ->with('success', 'Tasa de IVA actualizada.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Recalcular totales manualmente
+     */
+    public function recalculateTotals(ShippingNote $shippingNote)
+    {
+        try {
+            $shippingNote->recalculateTotals();
+
+            return redirect()
+                ->route('shipping-notes.show', $shippingNote)
+                ->with('success', 'Totales recalculados.');
 
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
