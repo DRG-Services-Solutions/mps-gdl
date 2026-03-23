@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 
-class SubWarehouse extends Model
+class SubWareHouse extends Model
 {
     protected $fillable = [
         'legal_entity_id',
