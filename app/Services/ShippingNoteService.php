@@ -88,6 +88,82 @@ class ShippingNoteService
         });
     }
 
+    /**
+     * Crear remisión con items editados por el usuario.
+     * El usuario modifica precios, cantidades y modos de cobro antes de crear.
+     */
+    public function createFromSurgeryWithItems(
+        ScheduledSurgery $surgery,
+        int $billingLegalEntityId,
+        array $userItems,
+        float $taxRate = 0.16,
+        ?string $notes = null
+    ): ShippingNote {
+        $this->validateSurgeryForShipping($surgery);
+
+        return DB::transaction(function () use ($surgery, $billingLegalEntityId, $userItems, $taxRate, $notes) {
+
+            // 1. Evaluar checklist (para snapshot de auditoría)
+            $evaluatedItems = $surgery->getChecklistItemsWithConditionals();
+            $excludedItems = $this->getExcludedItems($surgery);
+            $checklistSnapshot = $this->buildChecklistSnapshot($evaluatedItems, $excludedItems);
+
+            // 2. Crear la remisión
+            $shippingNote = ShippingNote::create([
+                'scheduled_surgery_id' => $surgery->id,
+                'hospital_id' => $surgery->hospital_id,
+                'doctor_id' => $surgery->doctor_id,
+                'surgical_checklist_id' => $surgery->checklist_id,
+                'hospital_modality_config_id' => $surgery->hospital_modality_config_id,
+                'surgery_type' => $surgery->checklist->surgery_type ?? 'No especificada',
+                'surgery_date' => $surgery->surgery_datetime->toDateString(),
+                'billing_legal_entity_id' => $billingLegalEntityId,
+                'checklist_evaluation' => $checklistSnapshot,
+                'tax_rate' => $taxRate,
+                'status' => 'draft',
+                'notes' => $notes,
+                'created_by' => auth()->id(),
+            ]);
+
+            // 3. Crear items con los valores editados por el usuario
+            foreach ($userItems as $itemData) {
+                $qty = (int) ($itemData['quantity'] ?? 0);
+                if ($qty <= 0) continue; // Saltar items con cantidad 0
+
+                $unitPrice = (float) ($itemData['unit_price'] ?? 0);
+                $billingMode = $itemData['billing_mode'] ?? 'sale';
+                $exclude = filter_var($itemData['exclude_from_invoice'] ?? false, FILTER_VALIDATE_BOOLEAN);
+                $source = $itemData['source'] ?? 'base';
+                $origin = in_array($source, ['additional', 'conditional']) ? 'conditional' : 'standalone';
+
+                ShippingNoteItem::create([
+                    'shipping_note_id' => $shippingNote->id,
+                    'item_origin' => $origin,
+                    'product_id' => $itemData['product_id'],
+                    'checklist_item_id' => $itemData['checklist_item_id'] ?? null,
+                    'checklist_conditional_id' => $itemData['conditional_id'] ?? null,
+                    'conditional_description' => $itemData['conditional_description'] ?? null,
+                    'quantity_required' => $qty,
+                    'billing_mode' => $billingMode,
+                    'exclude_from_invoice' => $exclude,
+                    'unit_price' => $unitPrice,
+                    'total_price' => $unitPrice * $qty,
+                    'status' => 'pending',
+                ]);
+            }
+
+            // 4. Recalcular totales
+            $shippingNote->recalculateTotals();
+
+            Log::info("Remisión {$shippingNote->shipping_number} creada con items editados", [
+                'items_created' => $shippingNote->items()->count(),
+                'subtotal' => $shippingNote->subtotal,
+            ]);
+
+            return $shippingNote;
+        });
+    }
+
     // ═══════════════════════════════════════════════════════════
     // ASIGNAR PAQUETE PRE-ARMADO
     // ═══════════════════════════════════════════════════════════

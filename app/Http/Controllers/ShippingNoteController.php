@@ -114,28 +114,42 @@ class ShippingNoteController extends Controller
     }
 
     /**
-     * Crear la remisión
+     * Crear la remisión con items editados por el usuario
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'scheduled_surgery_id' => 'required|exists:scheduled_surgeries,id',
             'billing_legal_entity_id' => 'required|exists:legal_entities,id',
+            'tax_rate' => 'nullable|numeric|min:0|max:1',
             'notes' => 'nullable|string|max:2000',
+            // Items editados por el usuario
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|integer|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:0',
+            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.billing_mode' => 'required|in:sale,rental,no_charge',
+            'items.*.exclude_from_invoice' => 'nullable',
+            'items.*.checklist_item_id' => 'nullable|integer',
+            'items.*.conditional_id' => 'nullable|integer',
+            'items.*.conditional_description' => 'nullable|string',
+            'items.*.source' => 'nullable|string',
         ]);
 
         try {
             $surgery = ScheduledSurgery::findOrFail($validated['scheduled_surgery_id']);
 
-            $shippingNote = $this->service->createFromSurgery(
+            $shippingNote = $this->service->createFromSurgeryWithItems(
                 $surgery,
                 $validated['billing_legal_entity_id'],
+                $validated['items'],
+                $validated['tax_rate'] ?? 0.16,
                 $validated['notes'] ?? null
             );
 
             return redirect()
                 ->route('shipping-notes.show', $shippingNote)
-                ->with('success', "Remisión {$shippingNote->shipping_number} creada. Ahora asigne paquetes y kits.");
+                ->with('success', "Remisión {$shippingNote->shipping_number} creada exitosamente.");
 
         } catch (\Exception $e) {
             Log::error("Error al crear remisión: " . $e->getMessage());
@@ -865,10 +879,13 @@ class ShippingNoteController extends Controller
 
             // ✅ Info del condicional aplicado
             $conditional = $item['conditional'] ?? null;
+            $checklistItem = $item['item'] ?? null;
 
             return [
                 'product_id' => $productId,
                 'product_name' => $item['product_name'],
+                'product_code' => $checklistItem?->product?->code ?? '',
+                'list_price' => (float) ($checklistItem?->product?->list_price ?? 0),
                 'base_quantity' => $item['base_quantity'],
                 'adjusted_quantity' => $required,
                 'in_package' => $inPackage,
@@ -878,7 +895,10 @@ class ShippingNoteController extends Controller
                 'conditional_description' => $item['conditional_description'],
                 'is_mandatory' => $item['is_mandatory'],
                 'source' => $item['source'],
-                // ✅ Info de acción y dependencias
+                'checklist_item_id' => $checklistItem?->id ?? null,
+                'conditional_id' => $conditional?->id ?? null,
+                'exclude_from_invoice' => $conditional?->exclude_from_invoice ?? false,
+                // Info de acción y dependencias
                 'action_type' => $conditional?->action_type ?? null,
                 'target_product_name' => $conditional?->targetProduct?->name ?? null,
                 'dependency_quantity' => $conditional?->dependency_quantity ?? null,
