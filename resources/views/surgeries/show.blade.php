@@ -24,6 +24,21 @@
                     class="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all transform hover:scale-105">
                         <i class="fas fa-play-circle mr-2 text-lg"></i> INICIAR PREPARACIÓN
                     </a>
+                @elseif($surgery->status === 'in_preparation' && $surgery->preparation)
+                    @php
+                        $prepRoute = match($surgery->preparation->status) {
+                            'picking' => 'surgeries.preparations.picking',
+                            default => 'surgeries.preparations.compare',
+                        };
+                    @endphp
+                    <a href="{{ route($prepRoute, $surgery) }}" 
+                    class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all transform hover:scale-105">
+                        <i class="fas fa-arrow-circle-right mr-2 text-lg"></i> CONTINUAR PREPARACIÓN
+                    </a>
+                @elseif($surgery->status === 'ready')
+                    <span class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 text-sm font-bold rounded-lg">
+                        <i class="fas fa-check-circle mr-2"></i> PREPARACIÓN LISTA
+                    </span>
                 @endif
                 
                 @if($surgery->canBeEdited())
@@ -157,9 +172,16 @@
                             Basado en protocolos de {{ $surgery->hospital->name }}
                         </p>
                     </div>
-                    <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md">
-                        {{ count($checklistItems) }} ÍTEMS EN TOTAL
-                    </span>
+                    <div class="flex items-center gap-2">
+                        @if($excludedItems->isNotEmpty())
+                            <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded-md">
+                                {{ $excludedItems->count() }} EXCLUIDO{{ $excludedItems->count() > 1 ? 'S' : '' }}
+                            </span>
+                        @endif
+                        <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md">
+                            {{ count($checklistItems) }} ÍTEMS REQUERIDOS
+                        </span>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -167,117 +189,144 @@
                         <thead>
                             <tr class="bg-white">
                                 <th class="px-6 py-4 text-left   text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción del Producto</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Cant.</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo de Requisito</th>
-                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Condicionales</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Base</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Final</th>
+                                <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Condicional Aplicado</th>
                                 <th class="px-6 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Existencia</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
+
+                            {{-- ═══ ITEMS REQUERIDOS (qty > 0) ═══ --}}
                             @forelse($checklistItems as $data)
                                 @php
                                     $item          = $data['item'];
+                                    $baseQty       = $data['base_quantity'];
                                     $qty           = $data['adjusted_quantity'];
-                                    $isConditional = ($data['source'] === 'conditional' || $data['source'] === 'extra');
-                                    $conditionals  = $item->conditionals ?? collect();
-                                    $stock         = $item->product->units->count() ?? 0;
-                                    $stockSuficiente = $stock >= $qty;
+                                    $hasCond       = $data['has_conditional'];
+                                    $appliedCond   = $data['conditional'] ?? null;
+                                    $source        = $data['source'] ?? 'base';
+                                    $isAdditional  = in_array($source, ['conditional', 'additional', 'extra']);
+                                    $stock         = \App\Models\ProductUnit::where('product_id', $data['product_id'])
+                                                        ->where('status', 'available')->count();
+                                    $stockOk       = $stock >= $qty;
+
+                                    // Color del fondo por tipo de condicional aplicado
+                                    $rowBg = '';
+                                    if ($appliedCond) {
+                                        $rowBg = match($appliedCond->action_type) {
+                                            'adjust_quantity' => 'bg-amber-50/50',
+                                            'add_dependency' => 'bg-blue-50/50',
+                                            'add_product' => 'bg-purple-50/50',
+                                            default => 'bg-gray-50/30',
+                                        };
+                                    }
                                 @endphp
-                                <tr class="hover:bg-blue-50/30 transition-colors">
+                                <tr class="hover:bg-blue-50/30 transition-colors {{ $rowBg }}">
 
                                     {{-- Producto --}}
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-9 w-9 {{ $isConditional ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600' }} rounded-lg flex items-center justify-center border {{ $isConditional ? 'border-purple-100' : 'border-blue-100' }}">
-                                                <i class="fas {{ $isConditional ? 'fa-hand-holding-medical' : 'fa-box' }} text-sm"></i>
+                                            <div class="flex-shrink-0 h-9 w-9 {{ $isAdditional ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-blue-50 text-blue-600 border-blue-100' }} rounded-lg flex items-center justify-center border">
+                                                <i class="fas {{ $isAdditional ? 'fa-hand-holding-medical' : 'fa-box' }} text-sm"></i>
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-bold text-gray-900">{{ $item->product->code }}</div>
                                                 <div class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ $item->product->name }}</div>
+                                                @if($isAdditional)
+                                                    <span class="text-[10px] text-purple-600 font-medium">(Producto adicional)</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>
 
-                                    {{-- Cantidad --}}
+                                    {{-- Cantidad Base --}}
                                     <td class="px-6 py-4 text-center">
-                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-black text-gray-700 border border-gray-200">
-                                            {{ $qty }}
-                                        </span>
+                                        <span class="text-sm text-gray-400">{{ $baseQty }}</span>
                                     </td>
 
-                                    {{-- Tipo de Requisito --}}
+                                    {{-- Cantidad Final --}}
                                     <td class="px-6 py-4 text-center">
-                                        @if($isConditional)
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase">
-                                                <i class="fas fa-filter mr-1"></i> Condicional
-                                            </span>
+                                        @if($hasCond && $baseQty !== $qty)
+                                            <div class="flex items-center justify-center gap-1">
+                                                <span class="text-xs text-gray-400 line-through">{{ $baseQty }}</span>
+                                                <i class="fas fa-arrow-right text-[10px] text-gray-300"></i>
+                                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-sm font-black text-amber-700 border border-amber-200">
+                                                    {{ $qty }}
+                                                </span>
+                                            </div>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase">
-                                                <i class="fas fa-check-double mr-1"></i> Estándar
+                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-sm font-black text-gray-700 border border-gray-200">
+                                                {{ $qty }}
                                             </span>
                                         @endif
                                     </td>
 
-                                    {{-- Condicionales (solo lectura, rojo) --}}
+                                    {{-- Condicional APLICADO (solo el que matchea, no todos) --}}
                                     <td class="px-6 py-4">
-                                        @if($conditionals->count() > 0)
-                                            <div class="flex flex-col gap-1.5 items-center">
-                                                @foreach($conditionals as $cond)
-                                                    <div class="w-full max-w-xs">
-                                                        <div class="flex items-start gap-1.5 px-2.5 py-1.5 bg-red-50 border border-red-200 rounded-lg">
-                                                            <i class="fas fa-exclamation-circle text-red-500 text-xs mt-0.5 flex-shrink-0"></i>
-                                                            <div class="min-w-0">
-                                                                {{-- Tipo de acción --}}
-                                                                <p class="text-[10px] font-bold text-red-700 uppercase tracking-wide leading-tight">
-                                                                    @switch($cond->action_type)
-                                                                        @case('adjust_quantity')
-                                                                            <i class="fas fa-edit mr-0.5"></i> Ajuste: {{ $cond->quantity_override }} uds.
-                                                                            @break
-                                                                        @case('add_product')
-                                                                            <i class="fas fa-plus-circle mr-0.5"></i> +{{ $cond->additional_quantity }} uds. adicionales
-                                                                            @break
-                                                                        @case('exclude')
-                                                                            <i class="fas fa-times-circle mr-0.5"></i> Excluido
-                                                                            @break
-                                                                        @case('replace')
-                                                                            <i class="fas fa-exchange-alt mr-0.5"></i> Reemplazar
-                                                                            @break
-                                                                        @case('add_dependency')
-                                                                            <i class="fas fa-link mr-0.5"></i> Dependencia ×{{ $cond->dependency_quantity }}
-                                                                            @break
-                                                                    @endswitch
-                                                                </p>
-                                                                {{-- Criterios --}}
-                                                                <p class="text-[10px] text-red-500 mt-0.5 leading-tight truncate">
-                                                                    @if($cond->doctor)
-                                                                        <span>Dr. {{ $cond->doctor->first_name }} {{ $cond->doctor->last_name }}</span>
-                                                                    @endif
-                                                                    @if($cond->hospital)
-                                                                        @if($cond->doctor) · @endif
-                                                                        <span>{{ $cond->hospital->name }}</span>
-                                                                    @endif
-                                                                    @if(isset($cond->modality) && $cond->modality)
-                                                                        @if($cond->doctor || $cond->hospital) · @endif
-                                                                        <span>{{ $cond->modality->name }}</span>
-                                                                    @endif
-                                                                    @if(isset($cond->legalEntity) && $cond->legalEntity)
-                                                                        · <span>{{ $cond->legalEntity->name }}</span>
-                                                                    @endif
-                                                                </p>
-                                                                {{-- Producto objetivo --}}
-                                                                @if($cond->targetProduct)
-                                                                    <p class="text-[10px] text-red-400 mt-0.5 truncate italic">
-                                                                        → {{ $cond->targetProduct->name }}
-                                                                    </p>
-                                                                @endif
-                                                            </div>
-                                                        </div>
+                                        @if($appliedCond)
+                                            @php
+                                                $condStyle = match($appliedCond->action_type) {
+                                                    'adjust_quantity' => ['bg-amber-50 border-amber-200', 'text-amber-700'],
+                                                    'add_product'     => ['bg-purple-50 border-purple-200', 'text-purple-700'],
+                                                    'add_dependency'  => ['bg-blue-50 border-blue-200', 'text-blue-700'],
+                                                    'replace'         => ['bg-orange-50 border-orange-200', 'text-orange-700'],
+                                                    'exclude'         => ['bg-red-50 border-red-200', 'text-red-700'],
+                                                    default           => ['bg-gray-50 border-gray-200', 'text-gray-700'],
+                                                };
+                                            @endphp
+                                            <div class="w-full max-w-xs mx-auto">
+                                                <div class="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg border {{ $condStyle[0] }}">
+                                                    <div class="min-w-0">
+                                                        <p class="text-[10px] font-bold uppercase tracking-wide leading-tight {{ $condStyle[1] }}">
+                                                            @switch($appliedCond->action_type)
+                                                                @case('adjust_quantity')
+                                                                    <i class="fas fa-edit mr-0.5"></i> Ajuste: {{ $appliedCond->quantity_override }} uds.
+                                                                    @break
+                                                                @case('add_product')
+                                                                    <i class="fas fa-plus-circle mr-0.5"></i> +{{ $appliedCond->additional_quantity }} uds.
+                                                                    @break
+                                                                @case('add_dependency')
+                                                                    <i class="fas fa-link mr-0.5"></i> Dependencia ×{{ $appliedCond->dependency_quantity }}
+                                                                    @break
+                                                                @case('replace')
+                                                                    <i class="fas fa-exchange-alt mr-0.5"></i> Reemplazado
+                                                                    @break
+                                                                @case('exclude')
+                                                                    <i class="fas fa-times-circle mr-0.5"></i> Excluido
+                                                                    @break
+                                                            @endswitch
+                                                        </p>
+                                                        {{-- Criterios que activaron el condicional --}}
+                                                        <p class="text-[10px] mt-0.5 leading-tight truncate text-gray-500">
+                                                            @if($appliedCond->doctor)
+                                                                Dr. {{ $appliedCond->doctor->first_name }} {{ $appliedCond->doctor->last_name }}
+                                                            @endif
+                                                            @if($appliedCond->hospital)
+                                                                @if($appliedCond->doctor) · @endif
+                                                                {{ $appliedCond->hospital->name }}
+                                                            @endif
+                                                            @if($appliedCond->modality)
+                                                                @if($appliedCond->doctor || $appliedCond->hospital) · @endif
+                                                                {{ $appliedCond->modality->name }}
+                                                            @endif
+                                                        </p>
+                                                        @if($appliedCond->targetProduct)
+                                                            <p class="text-[10px] mt-0.5 truncate italic text-gray-400">
+                                                                → {{ $appliedCond->targetProduct->name }}
+                                                            </p>
+                                                        @endif
+                                                        @if($appliedCond->exclude_from_invoice)
+                                                            <span class="inline-flex items-center mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-100 text-green-700">
+                                                                <i class="fas fa-gift mr-0.5"></i> Sin cargo
+                                                            </span>
+                                                        @endif
                                                     </div>
-                                                @endforeach
+                                                </div>
                                             </div>
                                         @else
                                             <div class="text-center">
-                                                <span class="text-xs text-gray-300 italic">— Sin condicionales —</span>
+                                                <span class="text-xs text-gray-300 italic">— Estándar —</span>
                                             </div>
                                         @endif
                                     </td>
@@ -296,17 +345,15 @@
                                             class="group inline-flex flex-col items-center gap-0.5 transition-all hover:scale-105 focus:outline-none"
                                             title="Ver detalle de existencia"
                                         >
-                                            {{-- Número de existencia --}}
                                             <span class="inline-flex items-center justify-center min-w-[2.5rem] h-9 px-2 rounded-lg text-sm font-black border-2 transition-all
-                                                {{ $stockSuficiente
+                                                {{ $stockOk
                                                     ? 'bg-green-50 text-green-700 border-green-300 group-hover:bg-green-100'
                                                     : 'bg-red-50 text-red-700 border-red-300 group-hover:bg-red-100 animate-pulse' }}">
                                                 {{ $stock }}
                                             </span>
-                                            {{-- Label --}}
                                             <span class="text-[9px] font-semibold uppercase tracking-wide
-                                                {{ $stockSuficiente ? 'text-green-500' : 'text-red-400' }}">
-                                                {{ $stockSuficiente ? 'OK' : 'BAJO' }}
+                                                {{ $stockOk ? 'text-green-500' : 'text-red-400' }}">
+                                                {{ $stockOk ? 'OK' : 'BAJO' }}
                                             </span>
                                         </button>
                                     </td>
@@ -320,6 +367,70 @@
                                     </td>
                                 </tr>
                             @endforelse
+
+                            {{-- ═══ ITEMS EXCLUIDOS/REEMPLAZADOS (qty = 0 por condicional) ═══ --}}
+                            @if($excludedItems->isNotEmpty())
+                                <tr class="bg-gray-50">
+                                    <td colspan="5" class="px-6 py-2">
+                                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                            <i class="fas fa-ban mr-1 text-red-400"></i>
+                                            Productos Excluidos por Condicionales
+                                        </span>
+                                    </td>
+                                </tr>
+                                @foreach($excludedItems as $excl)
+                                    @php
+                                        $exclItem = $excl['item'];
+                                        $exclCond = $excl['conditional'];
+                                    @endphp
+                                    <tr class="bg-red-50/40 opacity-70">
+                                        <td class="px-6 py-3">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-9 w-9 bg-red-50 text-red-400 border-red-100 rounded-lg flex items-center justify-center border">
+                                                    <i class="fas fa-ban text-sm"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-bold text-gray-500 line-through">{{ $exclItem->product->code }}</div>
+                                                    <div class="text-[11px] text-gray-400 font-mono tracking-tighter line-through">{{ $exclItem->product->name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-3 text-center">
+                                            <span class="text-sm text-gray-400 line-through">{{ $excl['base_quantity'] }}</span>
+                                        </td>
+                                        <td class="px-6 py-3 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100 text-sm font-black text-red-500 border border-red-200">
+                                                0
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <div class="w-full max-w-xs mx-auto">
+                                                <div class="flex items-start gap-1.5 px-2.5 py-1.5 rounded-lg border bg-red-50 border-red-200">
+                                                    <div class="min-w-0">
+                                                        <p class="text-[10px] font-bold text-red-700 uppercase">
+                                                            @if($exclCond?->action_type === 'replace')
+                                                                <i class="fas fa-exchange-alt mr-0.5"></i> REEMPLAZADO
+                                                            @else
+                                                                <i class="fas fa-ban mr-0.5"></i> EXCLUIDO
+                                                            @endif
+                                                        </p>
+                                                        <p class="text-[10px] text-red-500 mt-0.5 truncate">{{ $excl['conditional_description'] }}</p>
+                                                        @if($exclCond?->targetProduct)
+                                                            <p class="text-[10px] mt-0.5 italic text-orange-600">
+                                                                → Usar: {{ $exclCond->targetProduct->name }}
+                                                            </p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-3 text-center">
+                                            <span class="text-xs text-gray-300">N/A</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
+
                         </tbody>
                     </table>
                 </div>

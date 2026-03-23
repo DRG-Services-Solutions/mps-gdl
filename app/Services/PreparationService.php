@@ -273,6 +273,17 @@ class PreparationService
                     'added_at' => now(),
                     'added_by' => $userId,
                 ]);
+            } else {
+                // Sin paquete: registrar en tabla de escaneos de preparación
+                DB::table('preparation_scanned_units')->insert([
+                    'surgery_preparation_id' => $preparation->id,
+                    'product_unit_id' => $productUnit->id,
+                    'product_id' => $productUnit->product_id,
+                    'scanned_by' => $userId,
+                    'scanned_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
             }
 
             Log::info("PackageContent creado para tracking");

@@ -201,18 +201,43 @@ class ScheduledSurgeryController extends Controller
     public function show(ScheduledSurgery $surgery)
     {
         $surgery->load([
-            'checklist.items.product',
+            'checklist.items.product.productUnits',
+            'checklist.items.conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'legalEntity', 'targetProduct']),
             'doctor',
             'scheduler',
             'preparation.preAssembledPackage',
             'preparation.items.product',
-            'invoice'
+            'invoice',
+            'hospital',
+            'hospitalModalityConfig.modality',
         ]);
 
-        $checklistItems = $surgery->getChecklistItemsWithConditionals();
-     
+        // Items evaluados (qty > 0) — deduplicados por product_id
+        $rawItems = $surgery->getChecklistItemsWithConditionals();
+        $checklistItems = $rawItems->unique('product_id')->values();
 
-        return view('surgeries.show', compact('surgery', 'checklistItems'));
+        // Items excluidos/reemplazados (qty = 0 por condicional)
+        $excludedItems = collect();
+        if ($surgery->checklist_id) {
+            $baseItems = \App\Models\ChecklistItem::where('checklist_id', $surgery->checklist_id)
+                ->with(['product.productUnits', 'conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'targetProduct'])])
+                ->ordered()
+                ->get();
+
+            foreach ($baseItems as $item) {
+                $adjustedData = $item->getAdjustedQuantity($surgery);
+                if ($adjustedData['final_quantity'] === 0 && $adjustedData['has_conditional']) {
+                    $excludedItems->push([
+                        'item' => $item,
+                        'base_quantity' => $adjustedData['base_quantity'],
+                        'conditional' => $adjustedData['conditional'],
+                        'conditional_description' => $adjustedData['conditional_description'],
+                    ]);
+                }
+            }
+        }
+
+        return view('surgeries.show', compact('surgery', 'checklistItems', 'excludedItems'));
     }
 
     /**

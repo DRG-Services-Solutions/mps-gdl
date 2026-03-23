@@ -51,7 +51,21 @@ class SurgeryPreparationController extends Controller
     {
         Log::info("Accediendo a vista de selección de paquete para Cirugía ID: {$surgery->id}");
         
-        $surgery->load('checklist');
+        $surgery->load(['checklist', 'preparation']);
+
+        // Si ya tiene una preparación activa, redirigir al paso correspondiente
+        $existingPreparation = $surgery->preparation;
+        if ($existingPreparation && !in_array($existingPreparation->status, ['cancelled'])) {
+            $redirectRoute = match($existingPreparation->status) {
+                'picking'    => 'surgeries.preparations.picking',
+                'comparing'  => 'surgeries.preparations.compare',
+                'complete', 'verified' => 'surgeries.preparations.compare',
+                default      => 'surgeries.preparations.compare',
+            };
+
+            return redirect()->route($redirectRoute, $surgery)
+                ->with('info', "Esta cirugía ya tiene una preparación en estado: {$existingPreparation->status}. Continuando desde donde quedó.");
+        }
 
         try {
             $availablePackages = PreAssembledPackage::available()

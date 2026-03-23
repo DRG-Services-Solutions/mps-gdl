@@ -534,17 +534,16 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Origen</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Requerido</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Enviado</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Retornado</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Usado</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Modo</th>
-                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Precio</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Origen</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cant.</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Modo</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">P. Unit.</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Importe</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cortesía</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
                                     @if ($shipping_note->canBeEdited())
-                                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase"></th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-24">Acciones</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -556,10 +555,24 @@
                                         $statusItemLabels = \App\Models\ShippingNoteItem::getStatusLabels();
                                         $originColors = ['package' => 'blue', 'kit' => 'teal', 'standalone' => 'gray', 'conditional' => 'amber'];
                                         $originColor = $originColors[$item->item_origin] ?? 'gray';
+                                        $modeColors = ['sale' => 'green', 'rental' => 'blue', 'no_charge' => 'gray'];
                                     @endphp
-                                    <tr x-show="tab === 'all' || tab === '{{ $item->item_origin }}'"
-                                        class="{{ $item->is_urgency ? 'bg-orange-50 border-l-4 border-orange-400' : ($item->exclude_from_invoice ? 'bg-yellow-50' : '') }}">
-                                        <td class="px-6 py-3">
+
+                                    {{-- ═══ FILA CON EDICIÓN INLINE (Alpine.js) ═══ --}}
+                                    <tr x-data="{
+                                            editing: false,
+                                            qty: {{ $item->quantity_required }},
+                                            price: {{ (float) $item->unit_price }},
+                                            mode: '{{ $item->billing_mode }}',
+                                            exclude: {{ $item->exclude_from_invoice ? 'true' : 'false' }},
+                                            get importe() { return (this.qty * this.price).toFixed(2); }
+                                        }"
+                                        x-show="tab === 'all' || tab === '{{ $item->item_origin }}'"
+                                        class="{{ $item->is_urgency ? 'bg-orange-50 border-l-4 border-orange-400' : ($item->exclude_from_invoice ? 'bg-yellow-50' : '') }}"
+                                        :class="editing && 'ring-2 ring-cyan-300 bg-cyan-50/30'">
+
+                                        {{-- Producto --}}
+                                        <td class="px-4 py-3">
                                             <div class="flex items-center gap-2">
                                                 <div class="text-sm text-gray-900 font-medium">{{ $item->product->name ?? 'N/A' }}</div>
                                                 @if ($item->is_urgency)
@@ -568,10 +581,9 @@
                                                     </span>
                                                 @endif
                                             </div>
+                                            <div class="text-xs text-gray-500 font-mono">{{ $item->product->code ?? '' }}</div>
                                             @if ($item->productUnit)
-                                                <div class="text-xs text-gray-500">EPC: {{ $item->productUnit->epc ?? '—' }}</div>
-                                            @elseif ($item->status === 'pending')
-                                                <div class="text-xs text-amber-600"><i class="fas fa-exclamation-triangle mr-1"></i>Sin unidad asignada</div>
+                                                <div class="text-xs text-gray-400">EPC: {{ $item->productUnit->epc ?? '—' }}</div>
                                             @endif
                                             @if ($item->conditional_description)
                                                 <div class="text-xs text-amber-600 mt-0.5">
@@ -584,46 +596,131 @@
                                                 </div>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-3 text-center">
+
+                                        {{-- Origen --}}
+                                        <td class="px-4 py-3 text-center">
                                             <span class="text-xs px-2 py-0.5 rounded-full bg-{{ $originColor }}-100 text-{{ $originColor }}-700">
                                                 {{ $originLabels[$item->item_origin] ?? $item->item_origin }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 text-center">{{ $item->quantity_required }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 text-center">{{ $item->quantity_sent }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-700 text-center">{{ $item->quantity_returned }}</td>
-                                        <td class="px-6 py-3 text-sm text-center font-medium {{ $item->quantity_used > 0 ? 'text-red-600' : 'text-gray-400' }}">
-                                            {{ $item->quantity_used }}
+
+                                        {{-- Cantidad --}}
+                                        <td class="px-4 py-3 text-center">
+                                            <template x-if="!editing">
+                                                <span class="text-sm text-gray-700 font-medium" x-text="qty"></span>
+                                            </template>
+                                            <template x-if="editing">
+                                                <input type="number" x-model.number="qty" min="1"
+                                                    class="w-16 text-center text-sm rounded border-gray-300 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                                            </template>
                                         </td>
-                                        <td class="px-6 py-3 text-center">
-                                            @php
-                                                $modeColors = ['sale' => 'green', 'rental' => 'blue', 'no_charge' => 'gray'];
-                                            @endphp
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-{{ $modeColors[$item->billing_mode] ?? 'gray' }}-100 text-{{ $modeColors[$item->billing_mode] ?? 'gray' }}-700">
-                                                {{ $billingLabels[$item->billing_mode] ?? $item->billing_mode }}
+
+                                        {{-- Modo de cobro --}}
+                                        <td class="px-4 py-3 text-center">
+                                            <template x-if="!editing">
+                                                <span class="text-xs px-2 py-0.5 rounded-full"
+                                                    :class="{
+                                                        'bg-green-100 text-green-700': mode === 'sale',
+                                                        'bg-blue-100 text-blue-700': mode === 'rental',
+                                                        'bg-gray-100 text-gray-500': mode === 'no_charge'
+                                                    }"
+                                                    x-text="mode === 'sale' ? 'Venta' : mode === 'rental' ? 'Renta' : 'Sin Cargo'">
+                                                </span>
+                                            </template>
+                                            <template x-if="editing">
+                                                <select x-model="mode"
+                                                    class="text-xs rounded border-gray-300 py-1 pr-7 focus:ring-cyan-500 focus:border-cyan-500">
+                                                    <option value="sale">Venta</option>
+                                                    <option value="rental">Renta</option>
+                                                    <option value="no_charge">Sin Cargo</option>
+                                                </select>
+                                            </template>
+                                        </td>
+
+                                        {{-- Precio unitario --}}
+                                        <td class="px-4 py-3 text-right">
+                                            <template x-if="!editing">
+                                                <span class="text-sm text-gray-900" x-text="'$' + parseFloat(price).toFixed(2)"></span>
+                                            </template>
+                                            <template x-if="editing">
+                                                <input type="number" x-model.number="price" min="0" step="0.01"
+                                                    class="w-24 text-right text-sm rounded border-gray-300 py-1 focus:ring-cyan-500 focus:border-cyan-500">
+                                            </template>
+                                        </td>
+
+                                        {{-- Importe --}}
+                                        <td class="px-4 py-3 text-right">
+                                            <span class="text-sm font-semibold"
+                                                :class="exclude ? 'text-gray-400 line-through' : 'text-gray-900'"
+                                                x-text="'$' + importe">
                                             </span>
-                                            @if ($item->exclude_from_invoice)
-                                                <span class="text-xs text-amber-600 block mt-0.5"><i class="fas fa-gift"></i> Cortesía</span>
-                                            @endif
                                         </td>
-                                        <td class="px-6 py-3 text-sm text-gray-900 text-right">${{ number_format($item->total_price, 2) }}</td>
-                                        <td class="px-6 py-3 text-center">
+
+                                        {{-- Cortesía --}}
+                                        <td class="px-4 py-3 text-center">
+                                            <template x-if="!editing">
+                                                <span x-show="exclude" class="text-xs text-amber-600"><i class="fas fa-gift"></i> Sí</span>
+                                            </template>
+                                            <template x-if="editing">
+                                                <label class="inline-flex items-center gap-1 cursor-pointer">
+                                                    <input type="checkbox" x-model="exclude"
+                                                        class="rounded border-gray-300 text-amber-500 focus:ring-amber-500">
+                                                    <span class="text-xs text-gray-600"><i class="fas fa-gift"></i></span>
+                                                </label>
+                                            </template>
+                                        </td>
+
+                                        {{-- Estado --}}
+                                        <td class="px-4 py-3 text-center">
                                             <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
                                                 {{ $statusItemLabels[$item->status] ?? $item->status }}
                                             </span>
                                         </td>
+
+                                        {{-- Acciones --}}
                                         @if ($shipping_note->canBeEdited())
-                                            <td class="px-6 py-3 text-right">
-                                                @if ($item->item_origin === 'standalone')
-                                                    <form method="POST"
-                                                        action="{{ route('shipping-notes.remove-item', [$shipping_note, $item]) }}"
-                                                        onsubmit="return confirm('¿Remover este producto?')">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">
-                                                            <i class="fas fa-trash"></i>
+                                            <td class="px-4 py-3 text-center">
+                                                {{-- Modo vista: botón editar --}}
+                                                <template x-if="!editing">
+                                                    <button @click="editing = true"
+                                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition"
+                                                        title="Editar precio, cantidad o modo de cobro">
+                                                        <i class="fas fa-pencil-alt"></i>
+                                                    </button>
+                                                </template>
+                                                {{-- Modo edición: guardar + cancelar + eliminar --}}
+                                                <template x-if="editing">
+                                                    <div class="flex items-center justify-center gap-1">
+                                                        <form method="POST"
+                                                            action="{{ route('shipping-notes.update-item', [$shipping_note, $item]) }}">
+                                                            @csrf @method('PUT')
+                                                            <input type="hidden" name="quantity_required" :value="qty">
+                                                            <input type="hidden" name="unit_price" :value="price">
+                                                            <input type="hidden" name="billing_mode" :value="mode">
+                                                            <input type="hidden" name="exclude_from_invoice" :value="exclude ? 1 : 0">
+                                                            <button type="submit"
+                                                                class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition"
+                                                                title="Guardar cambios">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </form>
+                                                        <button @click="editing = false; qty = {{ $item->quantity_required }}; price = {{ (float) $item->unit_price }}; mode = '{{ $item->billing_mode }}'; exclude = {{ $item->exclude_from_invoice ? 'true' : 'false' }}"
+                                                            class="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
+                                                            title="Cancelar">
+                                                            <i class="fas fa-times"></i>
                                                         </button>
-                                                    </form>
-                                                @endif
+                                                        <form method="POST"
+                                                            action="{{ route('shipping-notes.remove-item', [$shipping_note, $item]) }}"
+                                                            onsubmit="return confirm('¿Remover este producto de la remisión?')">
+                                                            @csrf @method('DELETE')
+                                                            <button type="submit"
+                                                                class="p-1.5 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                                                                title="Eliminar item">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </template>
                                             </td>
                                         @endif
                                     </tr>
