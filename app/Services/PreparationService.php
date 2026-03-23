@@ -193,118 +193,117 @@ class PreparationService
     /**
      * Registrar producto escaneado por RFID
      */
-    public function pickProduct($preparationId, $epc, $userId)
+    public function pickProduct($preparationId, $code, $userId)
     {
-        return DB::transaction(function () use ($preparationId, $epc, $userId) {
-            $productUnit = ProductUnit::where('epc', $epc)->first();
+        return DB::transaction(function () use ($preparationId, $code, $userId) {
 
-            if (!$productUnit) {
-                throw new Exception('EPC no encontrado en el sistema.');
+            Log::info("SCAN INPUT", ['code' => $code]);
+
+            $productUnit = ProductUnit::where('epc', $code)->first();
+
+            if ($productUnit) {
+                return $this->pickByEpc($preparationId, $productUnit, $userId);
             }
 
-            Log::info("ProductUnit encontrado: ID {$productUnit->id}, Status actual: {$productUnit->status}");
-
-            if (!$productUnit->isAvailable() && $productUnit->status !== ProductUnit::STATUS_RESERVED) {
-            throw new Exception("Esta unidad no está disponible (estado: {$productUnit->status_label})");
-            }
-
-            $preparation = SurgeryPreparation::with('items', 'scheduledSurgery')->findOrFail($preparationId);
-
-            if ($preparation->status !== 'picking') {
-                throw new Exception('La preparación no está en estado de recolección.');
-            }
-
-            if ($preparation->pre_assembled_package_id) {
-                $alreadyScanned = PackageContent::where('pre_assembled_package_id', $preparation->pre_assembled_package_id)
-                    ->where('product_unit_id', $productUnit->id)
-                    ->exists();
-            } else {
-                // Sin paquete: verificar por la preparación directamente
-                $alreadyScanned = DB::table('preparation_scanned_units')
-                    ->where('surgery_preparation_id', $preparation->id)
-                    ->where('product_unit_id', $productUnit->id)
-                    ->exists();
-            }
-
-            if ($alreadyScanned) {
-                throw new Exception('Esta unidad ya fue escaneada para esta preparación.');
-            }
-
-            // 5. Localizar el ítem pendiente en la preparación
-            $prepItem = $preparation->items()
-                ->where('product_id', $productUnit->product_id)
-                ->where('quantity_missing', '>', 0)
+            $product = \App\Models\Product::where('barcode', $code)
+                ->orWhere('sku', $code)
                 ->first();
 
-            if (!$prepItem) {
-                throw new Exception('Este producto no es requerido o ya está completo.');
+            if (!$product) {
+                throw new Exception('Código no reconocido.');
             }
 
-            // 6. Actualizar cantidades del ítem
-            $prepItem->increment('quantity_picked');
-            $prepItem->decrement('quantity_missing');
-
-            $conditionalActions = [];
-            if ($prepItem->fresh()->quantity_missing <= 0) {
-                $conditionalActions = $this->evaluateItemConditionals($preparation, $prepItem->fresh());
-            }
-            
-            // Actualizar estado si se completó
-            if ($prepItem->fresh()->quantity_missing <= 0) {
-                $prepItem->update(['status' => 'complete']);
-            }
-
-            Log::info("Item actualizado: Picked={$prepItem->fresh()->quantity_picked}, Missing={$prepItem->fresh()->quantity_missing}");
-
-            // 7. Actualizar ProductUnit
-            $productUnit->reserve(
-                $userId, 
-                $preparation->scheduled_surgery_id, 
-                $preparation->pre_assembled_package_id
-            );
-
-            // 8. Registrar en contenidos del paquete (auditoría) - solo si hay paquete
-            if ($preparation->pre_assembled_package_id) {
-                PackageContent::create([
-                    'pre_assembled_package_id' => $preparation->pre_assembled_package_id,
-                    'product_id' => $productUnit->product_id,
-                    'product_unit_id' => $productUnit->id,
-                    'quantity' => 1,
-                    'added_at' => now(),
-                    'added_by' => $userId,
-                ]);
-            } else {
-                // Sin paquete: registrar en tabla de escaneos de preparación
-                DB::table('preparation_scanned_units')->insert([
-                    'surgery_preparation_id' => $preparation->id,
-                    'product_unit_id' => $productUnit->id,
-                    'product_id' => $productUnit->product_id,
-                    'scanned_by' => $userId,
-                    'scanned_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            Log::info("PackageContent creado para tracking");
-
-            // 9. Verificar si la preparación está completa
-            $this->checkPreparationCompletion($preparation);
-
-            // Refrescar para obtener datos actualizados
-            $prepItem->refresh();
-
-            return [
-                'success' => true,
-                'conditional_actions' => $conditionalActions,
-                'product_name' => $productUnit->product->name,
-                'item_id' => $prepItem->id,
-                'quantity_missing' => $prepItem->quantity_missing,
-                'quantity_picked' => $prepItem->quantity_picked,
-                'item_status' => $prepItem->status,
-                'preparation_complete' => $preparation->fresh()->status === 'complete',
-            ];
+            return $this->pickByQuantity($preparationId, $product, $userId);
         });
+    }
+
+    private function pickByEpc($preparationId, ProductUnit $productUnit, $userId)
+    {
+        Log::info("Picking por EPC", [
+            'unit_id' => $productUnit->id,
+            'status' => $productUnit->status
+        ]);
+
+        if (!$productUnit->isAvailable()) {
+            throw new Exception("Esta unidad no está disponible (estado: {$productUnit->status_label})");
+        }
+
+        $preparation = SurgeryPreparation::with('items', 'scheduledSurgery')->findOrFail($preparationId);
+
+        $prepItem = $preparation->items()
+            ->where('product_id', $productUnit->product_id)
+            ->where('quantity_missing', '>', 0)
+            ->first();
+
+        if (!$prepItem) {
+            throw new Exception('Este producto no es requerido o ya está completo.');
+        }
+
+        // actualizar cantidades
+        $prepItem->increment('quantity_picked');
+        $prepItem->decrement('quantity_missing');
+
+        if ($prepItem->fresh()->quantity_missing <= 0) {
+            $prepItem->update(['status' => 'complete']);
+        }
+
+        // reservar unidad
+        $productUnit->reserve(
+            $userId,
+            $preparation->scheduled_surgery_id,
+            $preparation->pre_assembled_package_id
+        );
+
+        return [
+            'success' => true,
+            'product_name' => $productUnit->product->name,
+            'item_id' => $prepItem->id,
+            'quantity_missing' => $prepItem->quantity_missing,
+        ];
+    }
+
+    private function pickByQuantity($preparationId, \App\Models\Product $product, $userId)
+    {
+        Log::info("Picking por cantidad", [
+            'product_id' => $product->id,
+            'tracking_type' => $product->tracking_type
+        ]);
+
+        $preparation = SurgeryPreparation::with('items')->findOrFail($preparationId);
+
+        $prepItem = $preparation->items()
+            ->where('product_id', $product->id)
+            ->where('quantity_missing', '>', 0)
+            ->first();
+
+        if (!$prepItem) {
+            throw new Exception('Producto no requerido o ya completo.');
+        }
+
+        // 🔥 solo cantidades (NO ProductUnit)
+        $prepItem->increment('quantity_picked');
+        $prepItem->decrement('quantity_missing');
+
+        if ($prepItem->fresh()->quantity_missing <= 0) {
+            $prepItem->update(['status' => 'complete']);
+        }
+
+        // registrar auditoría (opcional pero recomendado)
+        DB::table('preparation_scanned_units')->insert([
+            'surgery_preparation_id' => $preparation->id,
+            'product_id' => $product->id,
+            'scanned_by' => $userId,
+            'scanned_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return [
+            'success' => true,
+            'product_name' => $product->name,
+            'item_id' => $prepItem->id,
+            'quantity_missing' => $prepItem->quantity_missing,
+        ];
     }
 
     protected function evaluateItemConditionals(SurgeryPreparation $preparation, SurgeryPreparationItem $item): array

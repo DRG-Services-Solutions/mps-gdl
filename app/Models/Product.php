@@ -38,6 +38,21 @@ class Product extends Model
         'list_price',
         'requires_temperature',
     ];
+    const TRACKING_RFID = 'rfid';
+    const TRACKING_QUANTITY  = 'quantity';
+    const TRACKING_CODE = 'code';
+    const TRACKING_NONE = 'none';
+
+    public function isRfid(): bool
+    {
+        return $this->tracking_type === self::TRACKING_RFID;
+    }
+
+    public function isQuantity(): bool
+    {
+        return $this->tracking_type === self::TRACKING_CODE;
+    }
+    
 
     protected $casts = [
 
@@ -45,8 +60,6 @@ class Product extends Model
         'requires_sterilization' => 'boolean',
         'requires_temperature' => 'boolean',
         'list_price' => 'decimal:2',
-
-        
     ];
 
     // ==================== RELACIONES ====================

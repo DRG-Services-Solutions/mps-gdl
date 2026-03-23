@@ -35,7 +35,6 @@ class ProductUnitController extends Controller
         $units = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
         $products = Product::orderBy('name')->get();
 
-        // Respuesta AJAX → solo devuelve el partial
         if ($request->ajax()) {
             return view('product-units._table', compact('units'));
         }

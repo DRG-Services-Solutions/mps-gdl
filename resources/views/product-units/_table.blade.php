@@ -31,6 +31,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach ($units as $unit)
+                @if ($unit->epc)
                     <tr class="hover:bg-gray-50 transition-colors duration-150">
 
                         <!-- Identificador -->
@@ -132,7 +133,9 @@
                         </td>
 
                     </tr>
+                    @endif
                 @endforeach
+                
             </tbody>
         </table>
     @else

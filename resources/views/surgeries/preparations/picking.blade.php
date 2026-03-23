@@ -171,7 +171,7 @@
                                    placeholder="Escanea el código de barras del producto..." 
                                    autofocus>
                             <p class="text-xs text-gray-500 mt-1">
-                                💡 El sistema seleccionará automáticamente la unidad más próxima a caducar (FEFO) o más antigua (FIFO)
+                                💡 El sistema seleccionará automáticamente la unidad más próxima a caducar o más antigua (PEPS)
                             </p>
                         </div>
                         <button type="submit" 
