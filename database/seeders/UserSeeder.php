@@ -34,10 +34,10 @@ class UserSeeder extends Seeder
 
         $miguelUser = User::firstOrCreate(
             ['username' => 'Miguel'],
-            ['email' => 'mangel@mps.com',
-                'name' => 'Miguel Padilla', 
-                'password' => $defaultPassword,
-                ]
+            ['email' => 'mpadilla@mps.com',
+            'name' => 'Miguel Padilla', 
+            'password' => $defaultPassword,
+            ]
         );
         $davidUser->assignRole('admin');
         $miguelUser->assignRole('admin');
