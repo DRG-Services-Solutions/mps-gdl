@@ -16,7 +16,6 @@ class PreAssembledPackage extends Model
         'name',
         'surgery_checklist_id',
         'package_epc',
-        'status',
         'storage_location_id',
         'last_used_at',
         'times_used',

@@ -207,6 +207,29 @@ class HospitalController extends Controller
         
 
     /**
+     * Búsqueda para Tom Select (cirugías, cotizaciones, etc.)
+     */
+    public function select2(Request $request)
+    {
+        $query = Hospital::active();
+
+        if ($request->filled('search')) {
+            $query->search($request->search);
+        }
+
+        $hospitals = $query->orderBy('name')->limit(20)->get();
+
+        return response()->json([
+            'results' => $hospitals->map(function ($hospital) {
+                return [
+                    'id' => $hospital->id,
+                    'text' => $hospital->name,
+                ];
+            }),
+        ]);
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)

@@ -184,7 +184,7 @@ class DoctorController extends Controller
             'results' => $doctors->map(function ($doctor) {
                 return [
                     'id' => $doctor->id,
-                    'text' => $doctor->name_with_specialty,
+                    'text' => $doctor->full_name,
                 ];
             }),
         ]);

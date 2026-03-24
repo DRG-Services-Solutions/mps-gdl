@@ -19,10 +19,7 @@ use Illuminate\Support\Facades\Log;
 
 class ShippingNoteService
 {
-    // ═══════════════════════════════════════════════════════════
-    // CREAR REMISIÓN DESDE CIRUGÍA PROGRAMADA
-    // ═══════════════════════════════════════════════════════════
-
+   
     /**
      * Crear una remisión a partir de una cirugía programada.
      * Evalúa el checklist con condicionales y genera el borrador.

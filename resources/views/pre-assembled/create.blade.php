@@ -125,23 +125,7 @@
                                     @enderror
                                 </div>
 
-                                <!-- Estado -->
-                                <div>
-                                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Estado <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="status" 
-                                            id="status"
-                                            class="w-full rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500 @error('status') border-red-500 @enderror"
-                                            required>
-                                        <option value="available" {{ old('status', 'available') === 'available' ? 'selected' : '' }}>Disponible</option>
-                                        <option value="in_preparation" {{ old('status') === 'in_preparation' ? 'selected' : '' }}>En Preparación</option>
-                                        <option value="maintenance" {{ old('status') === 'maintenance' ? 'selected' : '' }}>Mantenimiento</option>
-                                    </select>
-                                    @error('status')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                                
 
                                 <!-- Notas -->
                                 <div class="md:col-span-2">

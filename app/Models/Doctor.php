@@ -62,11 +62,21 @@ class Doctor extends Model
     {
         return $query->where(function ($q) use ($search) {
             $q->where('first_name', 'like', "%{$search}%")
-              ->orWhere('first_name', 'like', "%{$search}%")
-              ->orWhere('last_name', 'like', "%{$search}%")
-              ->orWhere('specialty', 'like', "%{$search}%")
-              ->orWhere('license_number', 'like', "%{$search}%");
+              ->orWhere('last_name', 'like', "%{$search}%");
         });
+    }
+
+    public function getFullNameAttribute()
+    {
+        $name = $this->first_name;
+
+        if ($this->middle_name) {
+            $name .= ' ' . $this->middle_name;
+        }
+
+        $name .= ' ' . $this->last_name;
+
+        return $name;
     }
 
     /**
@@ -83,6 +93,30 @@ class Doctor extends Model
     public function scopeByHospital($query, $hospitalId)
     {
         return $query->where('primary_hospital_id', $hospitalId);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ACCESSORS
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Nombre completo con especialidad para selects de búsqueda
+     */
+    public function getNameWithSpecialtyAttribute(): string
+    {
+        $name = 'Dr. ' . $this->first_name;
+
+        if ($this->middle_name) {
+            $name .= ' ' . $this->middle_name;
+        }
+
+        $name .= ' ' . $this->last_name;
+
+        if ($this->specialty) {
+            $name .= ' - ' . $this->specialty;
+        }
+
+        return $name;
     }
 
     // ═══════════════════════════════════════════════════════════

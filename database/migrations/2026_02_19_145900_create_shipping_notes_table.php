@@ -63,42 +63,24 @@ return new class extends Migration
                 ->comment('Razón social que factura');
 
             // ═══════════════════════════════════════════════════════════
-            // EVALUACIÓN DEL CHECKLIST (snapshot para auditoría)
+            // EVALUACIÓN DEL CHECKLIST
             // Almacena la evaluación completa de condicionales al crear
             // ═══════════════════════════════════════════════════════════
             $table->json('checklist_evaluation')->nullable()
                 ->comment('JSON: productos evaluados con cantidades ajustadas y condicionales aplicados');
-            /*
-             * Estructura del JSON:
-             * [
-             *   {
-             *     "checklist_item_id": 15,
-             *     "product_id": 42,
-             *     "product_name": "Tornillo 4.0x30mm",
-             *     "base_quantity": 2,
-             *     "final_quantity": 4,
-             *     "has_conditional": true,
-             *     "conditional_id": 8,
-             *     "conditional_description": "Doctor: Dr. Ramírez → Ajustar cantidad a 4",
-             *     "action_type": "adjust_quantity",
-             *     "exclude_from_invoice": false,
-             *     "is_mandatory": true
-             *   },
-             *   ...
-             * ]
-             */
+           
 
             // ═══════════════════════════════════════════════════════════
             // ESTADO
             // ═══════════════════════════════════════════════════════════
             $table->enum('status', [
-                'draft',        // Borrador - evaluación del checklist, asignación de paquetes/kits
-                'confirmed',    // Confirmada - todo listo para enviar
-                'sent',         // Material salió del almacén
-                'in_surgery',   // Material está en cirugía
-                'returned',     // Material regresó (pendiente de revisión)
-                'completed',    // Retorno revisado, listo para facturar
-                'cancelled',    // Cancelada
+                'draft',        
+                'confirmed',   
+                'sent',         
+                'in_surgery',   
+                'returned',     
+                'completed',    
+                'cancelled',    
             ])->default('draft');
 
             // ═══════════════════════════════════════════════════════════

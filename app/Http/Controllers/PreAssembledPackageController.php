@@ -88,7 +88,6 @@ class PreAssembledPackageController extends Controller
             'surgery_checklist_id' => 'required|exists:surgical_checklists,id',
             'package_epc' => 'nullable|string|max:255|unique:pre_assembled_packages,package_epc',
             'storage_location_id' => 'required|exists:storage_locations,id',
-            'status' => 'required|in:available,in_preparation,in_surgery,maintenance',
             'notes' => 'nullable|string',
         ]);
 

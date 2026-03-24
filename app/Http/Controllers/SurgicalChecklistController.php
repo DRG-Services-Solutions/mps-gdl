@@ -152,6 +152,33 @@ class SurgicalChecklistController extends Controller
     /**
      * Duplicar check list
      */
+    /**
+     * Búsqueda para Tom Select (cirugías)
+     */
+    public function select2(Request $request)
+    {
+        $query = SurgicalChecklist::active();
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                  ->orWhere('surgery_type', 'like', "%{$search}%");
+            });
+        }
+
+        $checklists = $query->orderBy('surgery_type')->limit(20)->get();
+
+        return response()->json([
+            'results' => $checklists->map(function ($checklist) {
+                return [
+                    'id' => $checklist->id,
+                    'text' => $checklist->code . ' (' . $checklist->surgery_type . ')',
+                ];
+            }),
+        ]);
+    }
+
     public function duplicate(SurgicalChecklist $checklist)
     {
         $newChecklist = $checklist->replicate();

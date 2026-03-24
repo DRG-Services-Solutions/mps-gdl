@@ -598,6 +598,14 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     Route::get('/api/doctors/select2', [DoctorController::class, 'select2'])
         ->name('api.doctors.select2');
 
+    // API para Select2 de Hospitales
+    Route::get('/api/hospitals/select2', [HospitalController::class, 'select2'])
+        ->name('api.hospitals.select2');
+
+    // API para Select2 de Check Lists
+    Route::get('/api/checklists/select2', [SurgicalChecklistController::class, 'select2'])
+        ->name('api.checklists.select2');
+
     // ========================================
     // COTIZACIONES ⭐ PRINCIPAL
     // ========================================

@@ -16,12 +16,12 @@
             integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" 
             crossorigin="anonymous" 
             referrerpolicy="no-referrer" />
-        <!-- Tom Select -->
-        <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
-
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <!-- Tom Select CSS (DESPUÉS de Vite/Tailwind para que no lo sobreescriba) -->
+        <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
 
         <!-- Alpine.js -->
         <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -139,6 +139,8 @@
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
         <!-- Scripts Stack -->
         @stack('scripts')
 
@@ -165,7 +167,6 @@
                 </div>
             </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 
     </body>
 </html>

@@ -1,4 +1,79 @@
 <x-app-layout>
+    @push('styles')
+    <style>
+        /* =============================================
+         * Tom Select - Fix conflicto con @tailwindcss/forms
+         * El plugin forms resetea TODOS los <select> e <input>,
+         * lo que rompe el markup interno de Tom Select.
+         * ============================================= */
+
+        /* Wrapper principal: ancho completo */
+        .ts-wrapper {
+            width: 100% !important;
+        }
+
+        /* El control (caja visible donde se escribe) */
+        .ts-wrapper .ts-control {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            padding: 0.5rem 0.75rem !important;
+            background-image: none !important;
+            min-height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: text !important;
+        }
+
+        /* Neutralizar el reset de @tailwindcss/forms en el input interno */
+        .ts-wrapper .ts-control input[type="text"],
+        .ts-wrapper .ts-control > input {
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: transparent !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+            min-height: auto !important;
+            width: auto !important;
+            flex: 1 1 auto !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+        }
+
+        /* Focus state */
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper .ts-control:focus-within {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 1px #6366f1 !important;
+        }
+
+        /* Dropdown */
+        .ts-wrapper .ts-dropdown {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            margin-top: 4px !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.1) !important;
+            z-index: 9999 !important;
+        }
+
+        .ts-wrapper .ts-dropdown .option {
+            padding: 8px 12px !important;
+        }
+
+        .ts-wrapper .ts-dropdown .active {
+            background-color: #eef2ff !important;
+            color: #4f46e5 !important;
+        }
+
+        /* Ocultar el select original que Tom Select esconde */
+        .ts-wrapper + select,
+        select.tomselected {
+            display: none !important;
+        }
+    </style>
+    @endpush
+
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
@@ -37,14 +112,8 @@
                                     </label>
                                     <select name="checklist_id" 
                                             id="checklist_id"
-                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('checklist_id') border-red-500 @enderror"
+                                            placeholder="Escribe para buscar un check list..."
                                             required>
-                                        <option value="">Selecciona el tipo de cirugía...</option>
-                                        @foreach($checklists as $checklist)
-                                            <option value="{{ $checklist->id }}" {{ old('checklist_id') == $checklist->id ? 'selected' : '' }}>
-                                                {{ $checklist->name }} ({{ $checklist->surgery_type }})
-                                            </option>
-                                        @endforeach
                                     </select>
                                     @error('checklist_id')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -77,60 +146,49 @@
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <br>
                             </div>
 
-                                <!-- Hospital y Configuración -->
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
-                                        <i class="fas fa-hospital mr-2 text-indigo-600"></i>
-                                        Hospital y Configuración
-                                    </h3>
+                            <!-- Hospital y Configuración -->
+                            <div class="mt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                    <i class="fas fa-hospital mr-2 text-indigo-600"></i>
+                                    Hospital y Configuración
+                                </h3>
 
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <!-- Hospital -->
-                                        <div>
-                                            <label for="hospital_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Hospital <span class="text-red-500">*</span>
-                                            </label>
-                                            <select name="hospital_id_temp" 
-                                                    id="hospital_id"
-                                                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                                    required>
-                                                <option value="">Selecciona el hospital...</option>
-                                                @foreach($hospitals as $hospital)
-                                                    <option value="{{ $hospital->id }}" {{ old('hospital_id_temp') == $hospital->id ? 'selected' : '' }}>
-                                                        {{ $hospital->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-
-                                        <!-- Configuración (Modalidad + Legal Entity) -->
-                                        <div>
-                                            <label for="hospital_modality_config_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                                Modalidad y Facturación <span class="text-red-500">*</span>
-                                            </label>
-                                            <select name="hospital_modality_config_id" 
-                                                    id="hospital_modality_config_id"
-                                                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('hospital_modality_config_id') border-red-500 @enderror"
-                                                    disabled
-                                                    required>
-                                                <option value="">Primero selecciona un hospital...</option>
-                                            </select>
-                                            @error('hospital_modality_config_id')
-                                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                            @enderror
-                                            <p class="mt-1 text-xs text-gray-500">
-                                                <i class="fas fa-info-circle mr-1"></i>
-                                                Define quién factura y bajo qué modalidad
-                                            </p>
-                                        </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <!-- Hospital -->
+                                    <div>
+                                        <label for="hospital_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Hospital <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="hospital_id_temp" 
+                                                id="hospital_id"
+                                                placeholder="Escribe para buscar un hospital..."
+                                                required>
+                                        </select>
                                     </div>
-                                
 
-                              
-                                
+                                    <!-- Configuración (Modalidad + Legal Entity) -->
+                                    <div>
+                                        <label for="hospital_modality_config_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                            Modalidad y Facturación <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="hospital_modality_config_id" 
+                                                id="hospital_modality_config_id"
+                                                class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('hospital_modality_config_id') border-red-500 @enderror"
+                                                disabled
+                                                required>
+                                            <option value="">Primero selecciona un hospital...</option>
+                                        </select>
+                                        @error('hospital_modality_config_id')
+                                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                        @enderror
+                                        <p class="mt-1 text-xs text-gray-500">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Define quién factura y bajo qué modalidad
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -148,21 +206,8 @@
                                     </label>
                                     <select name="doctor_id" 
                                             id="doctor_id"
-                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('doctor_id') border-red-500 @enderror"
+                                            placeholder="Escribe para buscar un doctor..."
                                             required>
-                                        <option value="">Selecciona el doctor...</option>
-                                        @foreach($doctors as $doctor)
-                                            <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
-                                                @if($doctor->middle_name)
-                                                    Dr. {{ $doctor->first_name }} {{ $doctor->middle_name }} {{ $doctor->last_name }}
-                                                @else
-                                                    Dr. {{ $doctor->first_name }} {{ $doctor->last_name }}
-                                                @endif
-                                                @if($doctor->specialty)
-                                                    - {{ $doctor->specialty }}
-                                                @endif
-                                            </option>
-                                        @endforeach
                                     </select>
                                     @error('doctor_id')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -264,76 +309,179 @@
     </div>
 
     @push('scripts')
-<script>
-    // Cargar configuraciones cuando se selecciona hospital
-    document.getElementById('hospital_id').addEventListener('change', function() {
-        const hospitalId = this.value;
-        const configSelect = document.getElementById('hospital_modality_config_id');
-        
-        if (!hospitalId) {
-            configSelect.innerHTML = '<option value="">Primero selecciona un hospital...</option>';
-            configSelect.disabled = true;
-            return;
-        }
-        
-        // Mostrar loading
-        configSelect.innerHTML = '<option value="">Cargando configuraciones...</option>';
-        configSelect.disabled = true;
-        
+    <script>
+        // ==========================================
+        // TOM SELECT - Check List (búsqueda remota)
+        // ==========================================
+        new TomSelect('#checklist_id', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            placeholder: 'Escribe para buscar un check list...',
+            openOnFocus: false,
+
+            shouldLoad: function(query) {
+                return query.length > 0;
+            },
+
+            load: function(query, callback) {
+                fetch(`/api/checklists/select2?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+
+            render: {
+                option: function(data, escape) {
+                    return `<div class="py-2 px-3">${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function() {
+                    return '<div class="no-results" style="padding:10px;text-align:center;color:#6b7280;">No se encontraron check lists</div>';
+                },
+            },
+        });
+
+        // ==========================================
+        // TOM SELECT - Hospital (búsqueda remota)
+        // ==========================================
+        const hospitalSelect = new TomSelect('#hospital_id', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            placeholder: 'Escribe para buscar un hospital...',
+            openOnFocus: false,
+
+            shouldLoad: function(query) {
+                return query.length > 0;
+            },
+
+            load: function(query, callback) {
+                fetch(`/api/hospitals/select2?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+
+            render: {
+                option: function(data, escape) {
+                    return `<div class="py-2 px-3">${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function() {
+                    return '<div class="no-results" style="padding:10px;text-align:center;color:#6b7280;">No se encontraron hospitales</div>';
+                },
+            },
+
+            onChange: function(hospitalId) {
+                loadHospitalConfigs(hospitalId);
+            },
+        });
+
+        // ==========================================
         // Cargar configuraciones del hospital
-        fetch(`/api/hospitals/${hospitalId}/configs`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error al cargar configuraciones');
-                }
-                return response.json();
-            })
-            .then(configs => {
-                configSelect.innerHTML = '<option value="">Selecciona modalidad y facturación...</option>';
-                
-                if (configs.length === 0) {
-                    configSelect.innerHTML = '<option value="">Este hospital no tiene configuraciones disponibles</option>';
-                    return;
-                }
-                
-                configs.forEach(config => {
-                    const option = document.createElement('option');
-                    option.value = config.id;
+        // ==========================================
+        function loadHospitalConfigs(hospitalId) {
+            const configSelect = document.getElementById('hospital_modality_config_id');
+            
+            if (!hospitalId) {
+                configSelect.innerHTML = '<option value="">Primero selecciona un hospital...</option>';
+                configSelect.disabled = true;
+                return;
+            }
+            
+            configSelect.innerHTML = '<option value="">Cargando configuraciones...</option>';
+            configSelect.disabled = true;
+            
+            fetch(`/api/hospitals/${hospitalId}/configs`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar configuraciones');
+                    }
+                    return response.json();
+                })
+                .then(configs => {
+                    configSelect.innerHTML = '<option value="">Selecciona modalidad y facturación...</option>';
                     
-                    // Formato: "Particular - Factura: Legal Entity 1"
-                    option.text = `${config.modality.name} - Factura: ${config.legal_entity.name}`;
-                    
-                    // Si solo hay una config, auto-seleccionarla
-                    if (configs.length === 1) {
-                        option.selected = true;
+                    if (configs.length === 0) {
+                        configSelect.innerHTML = '<option value="">Este hospital no tiene configuraciones disponibles</option>';
+                        return;
                     }
                     
-                    configSelect.add(option);
+                    configs.forEach(config => {
+                        const option = document.createElement('option');
+                        option.value = config.id;
+                        option.text = `${config.modality.name} - Factura: ${config.legal_entity.name}`;
+                        
+                        if (configs.length === 1) {
+                            option.selected = true;
+                        }
+                        
+                        configSelect.add(option);
+                    });
+                    
+                    configSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    configSelect.innerHTML = '<option value="">Error al cargar configuraciones</option>';
+                    alert('Error al cargar las configuraciones del hospital. Por favor, recarga la página.');
                 });
-                
-                configSelect.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                configSelect.innerHTML = '<option value="">Error al cargar configuraciones</option>';
-                alert('Error al cargar las configuraciones del hospital. Por favor, recarga la página.');
-            });
-    });
-    
-    // Combinar fecha y hora en un solo campo datetime
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const date = document.getElementById('surgery_date').value;
-        const time = document.getElementById('surgery_time').value;
-        
-        if (date && time) {
-            // Crear input hidden con datetime combinado
-            const datetimeInput = document.createElement('input');
-            datetimeInput.type = 'hidden';
-            datetimeInput.name = 'surgery_datetime';
-            datetimeInput.value = date + ' ' + time;
-            this.appendChild(datetimeInput);
         }
-    });
-</script>
-@endpush
+
+        // ==========================================
+        // TOM SELECT - Doctor (búsqueda remota)
+        // ==========================================
+        new TomSelect('#doctor_id', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            placeholder: 'Escribe para buscar un doctor...',
+            openOnFocus: false,
+
+            shouldLoad: function(query) {
+                return query.length > 0;
+            },
+
+            load: function(query, callback) {
+                fetch(`/api/doctors/select2?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+
+            render: {
+                option: function(data, escape) {
+                    return `<div class="py-2 px-3">${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function() {
+                    return '<div class="no-results" style="padding:10px;text-align:center;color:#6b7280;">No se encontraron doctores</div>';
+                },
+            },
+        });
+
+        // ==========================================
+        // Combinar fecha y hora en datetime
+        // ==========================================
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const date = document.getElementById('surgery_date').value;
+            const time = document.getElementById('surgery_time').value;
+            
+            if (date && time) {
+                const datetimeInput = document.createElement('input');
+                datetimeInput.type = 'hidden';
+                datetimeInput.name = 'surgery_datetime';
+                datetimeInput.value = date + ' ' + time;
+                this.appendChild(datetimeInput);
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>
