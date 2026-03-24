@@ -4,9 +4,9 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-plus-circle mr-2 text-indigo-600"></i>
-                    {{ __('Nuevo Check List') }}
+                    Nuevo Check List
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">Crea una nueva plantilla de check list quirúrgico</p>
+                <p class="text-sm text-gray-600 mt-1">Crea un nuevo Check List</p>
             </div>
             <a href="{{ route('checklists.index') }}" 
                class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
@@ -27,25 +27,21 @@
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
                                 <i class="fas fa-info-circle mr-2 text-indigo-600"></i>
-                                Información Básica
+                                Detalle de Check List
                             </h3>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Código -->
+                                <!-- Código (autogenerado) -->
                                 <div>
-                                    <label for="code" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Código <span class="text-red-500">*</span>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Código
+                                        <span class="ml-1 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                                            Autogenerado
+                                        </span>
                                     </label>
-                                    <input type="text" 
-                                           name="code" 
-                                           id="code" 
-                                           value="{{ old('code') }}"
-                                           placeholder="Ej: CHK-ORTOPEDIA-001"
-                                           class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('code') border-red-500 @enderror"
-                                           required>
-                                    @error('code')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
+                                    <div class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 italic">
+                                        Se generará automáticamente al guardar
+                                    </div>
                                 </div>
 
                                 <!-- Tipo de Cirugía -->
@@ -54,30 +50,13 @@
                                         Tipo de Cirugía <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" 
-                                           name ="surgery_type" 
+                                           name="surgery_type" 
                                            id="surgery_type" 
                                            value="{{ old('surgery_type') }}"
                                            placeholder="Ej: Ortopedia, Cardiovascular"
                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('surgery_type') border-red-500 @enderror"
                                            required>
                                     @error('surgery_type')
-                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Estado -->
-                                <div class="md:col-span-2">
-                                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Estado <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="status" 
-                                            id="status"
-                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-500 @enderror"
-                                            required>
-                                        <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Activo</option>
-                                        <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactivo</option>
-                                    </select>
-                                    @error('status')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>

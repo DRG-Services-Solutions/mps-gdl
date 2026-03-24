@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SurgicalChecklist;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SurgicalChecklistController extends Controller
 {
@@ -52,12 +53,14 @@ class SurgicalChecklistController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|unique:surgical_checklists,code|max:50',
+            
             'surgery_type' => 'required|string|max:100',
-            'status' => 'required|in:active,inactive',
+           
         ]);
 
-        $checklist = SurgicalChecklist::create($validated);
+        $checklist = DB::transaction(function () use ($validated) {
+            return SurgicalChecklist::create($validated);
+        });
 
         return redirect()
             ->route('checklists.show', $checklist)

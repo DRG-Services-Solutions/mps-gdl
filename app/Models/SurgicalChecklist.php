@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+
 
 class SurgicalChecklist extends Model
 {
@@ -13,7 +15,6 @@ class SurgicalChecklist extends Model
     protected $fillable = [
         'code',
         'surgery_type',
-        'status',
     ];
 
     protected $casts = [
@@ -98,5 +99,27 @@ class SurgicalChecklist extends Model
     public function isComplete()
     {
         return $this->items()->count() > 0;
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (self $checklist) {
+            $words = explode(' ', trim($checklist->surgery_type));
+            $lastWord = end($words);
+            $prefix = mb_strtoupper(mb_substr($lastWord, 0, 3)); 
+
+            $prefix = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $prefix);
+            $prefix = strtoupper($prefix);
+
+            $pattern = "CHK-{$prefix}-%";
+
+            $lastNumber = static::where('code', 'like', $pattern)
+                ->lockForUpdate()
+                ->max(DB::raw("CAST(SUBSTRING_INDEX(code, '-', -1) AS UNSIGNED)"));
+
+            $checklist->code = sprintf('CHK-%s-%03d', $prefix, ($lastNumber ?? 0) + 1);
+        });
     }
 }

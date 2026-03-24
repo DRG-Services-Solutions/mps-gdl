@@ -139,7 +139,7 @@
                                 </div>
                                 <span class="truncate transition-opacity duration-300" 
                                     :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
-                                    {{ __('Cirugías') }}
+                                    Cirugías
                                 </span>
                             </div>
                             <div class="flex-shrink-0 transition-all duration-300" 
@@ -158,6 +158,13 @@
                             x-transition:leave-start="opacity-100 translate-y-0"
                             x-transition:leave-end="opacity-0 -translate-y-2"
                             class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
+
+                            <!-- CIRUGÍAS PROGRAMADAS - NUEVO -->
+                            <a href="{{ route('surgeries.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-calendar-check fa-fw text-sm"></i>
+                                <span class="truncate">{{ __('Programadas') }}</span>
+                            </a>
                             
                             <!-- CHECK LISTS - NUEVO -->
                             <a href="{{ route('checklists.index') }}" 
@@ -173,12 +180,7 @@
                                 <span class="truncate">{{ __('Pre-Armados') }}</span>
                             </a>
 
-                            <!-- CIRUGÍAS PROGRAMADAS - NUEVO -->
-                            <a href="{{ route('surgeries.index') }}" 
-                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgeries.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                                <i class="fas fa-calendar-check fa-fw text-sm"></i>
-                                <span class="truncate">{{ __('Programadas') }}</span>
-                            </a>
+                            
 
                             <!-- Remisiones -->
                             <a href="{{ route('shipping-notes.index') }}" 

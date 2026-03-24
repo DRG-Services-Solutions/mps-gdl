@@ -591,22 +591,15 @@ class SurgeryPreparationController extends Controller
                 ], 404);
             }
 
-            // 4. Reservar la unidad físicamente
-            // El orden en tu modelo es: reserve($userId, $surgeryId = null, $packageId = null)
-            $unit->reserve(
-                auth()->id(),
-                $surgery->id,
-                $preparation->pre_assembled_package_id
-            );
-
-            // 5. Registrar el picking en el servicio (Esto actualiza contadores de la preparación)
+            // 4. Llamar al servicio de picking (reserva + asigna al paquete + actualiza contadores)
+            //    pickProduct() maneja todo dentro de una transacción atómica
             $result = $this->preparationService->pickProduct(
                 $preparation->id,
                 $unit->epc,
                 auth()->id()
             );
 
-            // 6. Obtener el item actualizado para la respuesta
+            // 5. Obtener el item actualizado para la respuesta
             $item = $preparation->items()->find($result['item_id']);
 
             return response()->json([
@@ -626,6 +619,7 @@ class SurgeryPreparationController extends Controller
                     'quantity_missing' => $result['quantity_missing'],
                     'item_status' => $result['item_status'],
                     'preparation_complete' => $result['preparation_complete'],
+                    'conditional_actions' => $result['conditional_actions'] ?? [],
                 ]
             ]);
 

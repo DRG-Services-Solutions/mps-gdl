@@ -4,9 +4,9 @@
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-clipboard-list mr-2 text-indigo-600"></i>
-                    {{ __('Check Lists Quirúrgicos') }}
+                    Check Lists Quirúrgicos
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">Gestiona las plantillas de check lists para cirugías</p>
+                <p class="text-sm text-gray-600 mt-1">Gestion de Check Luists</p>
             </div>
             <a href="{{ route('checklists.create') }}" 
                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
