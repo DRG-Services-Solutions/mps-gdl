@@ -54,7 +54,7 @@
                                            id="surgery_type" 
                                            value="{{ old('surgery_type') }}"
                                            placeholder="Ej: Ortopedia, Cardiovascular"
-                                           class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('surgery_type') border-red-500 @enderror"
+                                           class="w-full rounded-lg focus:border-indigo-500 focus:ring-indigo-500 @error('surgery_type') border-red-500 @enderror"
                                            required>
                                     @error('surgery_type')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
