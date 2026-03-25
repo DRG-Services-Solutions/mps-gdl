@@ -109,4 +109,21 @@ class Hospital extends Model
             ->get();
     }
 
+    // Agregar esta relación al modelo Hospital
+
+    /**
+     * Cirugías programadas en este hospital (a través de configs)
+     */
+    public function surgeries()
+    {
+        return $this->hasManyThrough(
+            ScheduledSurgery::class,
+            HospitalModalityConfig::class,
+            'hospital_id',              // FK en hospital_modality_configs
+            'hospital_modality_config_id', // FK en scheduled_surgeries
+            'id',                       // PK en hospitals
+            'id'                        // PK en hospital_modality_configs
+        );
+    }
+
 }

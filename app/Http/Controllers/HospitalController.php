@@ -14,13 +14,54 @@ class HospitalController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $hospitals = Hospital::with(['configs.modality', 'configs.legalEntity'])
-                ->latest()
-                ->paginate(10);
+        $query = Hospital::with(['configs.modality', 'configs.legalEntity'])
+            ->withCount('surgeries');
 
-        return view('hospitals.index', compact('hospitals'));    
+        // Filtro: Búsqueda (nombre, RFC)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('rfc', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtro: Estado
+        if ($request->filled('status')) {
+            match($request->status) {
+                'active'    => $query->where('is_active', true),
+                'inactive'  => $query->where('is_active', false),
+                'no_config' => $query->doesntHave('configs'),
+                default     => null,
+            };
+        }
+
+        // Filtro: Modalidad
+        if ($request->filled('modality_id')) {
+            $query->whereHas('configs', function ($q) use ($request) {
+                $q->where('modality_id', $request->modality_id);
+            });
+        }
+
+        $hospitals = $query->orderBy('name')->paginate(15)->withQueryString();
+
+        // Contadores (una sola consulta agrupada)
+        $activeCount   = Hospital::where('is_active', true)->count();
+        $inactiveCount = Hospital::where('is_active', false)->count();
+        $noConfigCount = Hospital::doesntHave('configs')->count();
+
+        // Modalidades para el filtro
+        $modalities = \App\Models\Modality::orderBy('name')->get();
+
+        return view('hospitals.index', compact(
+            'hospitals',
+            'activeCount',
+            'inactiveCount',
+            'noConfigCount',
+            'modalities'
+        ));
     }
 
     /**
