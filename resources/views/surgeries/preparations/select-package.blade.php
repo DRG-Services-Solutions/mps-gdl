@@ -1,4 +1,3 @@
-{{-- resources/views/surgeries/preparations/select-package.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -8,7 +7,7 @@
                     Seleccionar Paquete Pre-Armado
                 </h2>
                 <p class="text-sm text-gray-600 mt-1">
-                    {{ $surgery->code }} - {{ $surgery->patient->name ?? $surgery->patient_name }}
+                    {{ $surgery->code }} - {{ $surgery->patient_name }}
                 </p>
             </div>
             <a href="{{ route('surgeries.show', $surgery) }}" 
@@ -39,7 +38,7 @@
                     </div>
                     <div>
                         <p class="text-sm text-indigo-100">Modalidad</p>
-                        <p class="text-lg font-semibold">{{ $surgery->modality->name }}</p>
+                        <p class="text-lg font-semibold">{{ $surgery->hospitalModalityConfig->modality->name ?? 'Sin modalidad' }}</p>
                     </div>
                 </div>
             </div>
@@ -137,6 +136,17 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($availablePackages as $package)
+                            @php
+                                $completeness = $package->completeness ?? 0;
+                                $hasExpired = $package->has_expired ?? false;
+
+                                // FIX: Clases completas para que Tailwind las detecte en producción
+                                $colorClasses = match(true) {
+                                    $completeness >= 80 => ['text' => 'text-green-700', 'bg' => 'bg-green-500'],
+                                    $completeness >= 50 => ['text' => 'text-yellow-700', 'bg' => 'bg-yellow-500'],
+                                    default             => ['text' => 'text-red-700', 'bg' => 'bg-red-500'],
+                                };
+                            @endphp
                             <tr class="hover:bg-green-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
@@ -166,14 +176,10 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    @php
-                                        $completeness = $package->completeness ?? $package->getCompletenessPercentage($surgery->checklist_id);
-                                        $color = $completeness >= 80 ? 'green' : ($completeness >= 50 ? 'yellow' : 'red');
-                                    @endphp
                                     <div class="flex items-center justify-center">
                                         <div class="w-full max-w-xs">
                                             <div class="flex items-center justify-between mb-1">
-                                                <span class="text-sm font-bold text-{{ $color }}-700">
+                                                <span class="text-sm font-bold {{ $colorClasses['text'] }}">
                                                     {{ number_format($completeness, 1) }}%
                                                 </span>
                                                 @if($completeness >= 80)
@@ -185,7 +191,7 @@
                                                 @endif
                                             </div>
                                             <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                                <div class="bg-{{ $color }}-500 h-2.5 rounded-full transition-all duration-300 shadow-sm" 
+                                                <div class="{{ $colorClasses['bg'] }} h-2.5 rounded-full transition-all duration-300 shadow-sm" 
                                                      style="width: {{ $completeness }}%"></div>
                                             </div>
                                         </div>
@@ -209,7 +215,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    @if($package->has_expired ?? $package->hasExpiredProducts())
+                                    @if($hasExpired)
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                             <i class="fas fa-exclamation-triangle mr-1"></i>
                                             Productos vencidos
@@ -227,7 +233,7 @@
                                         <input type="hidden" name="package_id" value="{{ $package->id }}">
                                         <button type="submit" 
                                                 class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-md hover:shadow-lg transition-all duration-200"
-                                                @if($package->has_expired ?? $package->hasExpiredProducts())
+                                                @if($hasExpired)
                                                     onclick="return confirm('Este paquete contiene productos vencidos. ¿Deseas continuar de todos modos?')"
                                                 @endif>
                                             <i class="fas fa-check-circle mr-2"></i>
@@ -316,15 +322,28 @@
         </div>
     </div>
 
+    {{-- Toasts con auto-dismiss usando Alpine.js --}}
     @if(session('success'))
-    <div class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-bounce">
+    <div x-data="{ show: true }" 
+         x-show="show" 
+         x-init="setTimeout(() => show = false, 3000)"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
         <i class="fas fa-check-circle mr-2"></i>
         {{ session('success') }}
     </div>
     @endif
 
     @if(session('error'))
-    <div class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+    <div x-data="{ show: true }" 
+         x-show="show" 
+         x-init="setTimeout(() => show = false, 5000)"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
         <i class="fas fa-exclamation-circle mr-2"></i>
         {{ session('error') }}
     </div>

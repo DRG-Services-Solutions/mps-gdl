@@ -10,7 +10,7 @@
                 <p class="text-sm text-gray-600 mt-1">
                     <span class="font-mono bg-gray-100 px-2 py-0.5 rounded text-indigo-600">{{ $surgery->code }}</span> 
                     <span class="mx-2">|</span> 
-                    <i class="fas fa-user-injured mr-1"></i> {{ $surgery->patient->name ?? $surgery->patient_name }}
+                    <i class="fas fa-user-injured mr-1"></i> {{ $surgery->patient_name }}
                 </p>
             </div>
             <div class="flex items-center space-x-3">
@@ -91,7 +91,7 @@
                 </div>
             </div>
 
-            {{-- Tarjetas de Resumen Mejoradas --}}
+            {{-- Tarjetas de Resumen --}}
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {{-- Total Requerido --}}
                 <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-gray-400">
@@ -225,6 +225,14 @@
                             Sobrantes en Paquete ({{ $packageExtras->count() }})
                         </button>
                         @endif
+                        @if(count($excludedByConditionals) > 0)
+                        <button @click="tab = 'excluded'" 
+                                :class="tab === 'excluded' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors">
+                            <i class="fas fa-ban mr-1"></i>
+                            Excluidos ({{ count($excludedByConditionals) }})
+                        </button>
+                        @endif
                     </nav>
                 </div>
 
@@ -265,7 +273,6 @@
                             @foreach($preparation->items as $item)
                                 @php
                                     $isComplete = $item->quantity_missing <= 0;
-                                    $showInAll = true;
                                     $showInComplete = $isComplete;
                                     $showInPending = !$isComplete;
                                 @endphp
@@ -445,7 +452,7 @@
                                 </tr>
                             @endforeach
 
-                            {{-- Sobrantes del paquete (productos que no están en el checklist) --}}
+                            {{-- Sobrantes del paquete --}}
                             @if($packageExtras->isNotEmpty())
                                 @foreach($packageExtras as $productId => $extra)
                                     <tr class="bg-yellow-50 hover:bg-yellow-100 transition-colors"
@@ -469,32 +476,123 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 text-gray-400 font-black text-lg">
-                                                0
-                                            </span>
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 text-gray-400 font-black text-lg">0</span>
                                         </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-yellow-100 text-yellow-700 font-black text-lg">
-                                                {{ $extra['total_quantity'] }}
-                                            </span>
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-yellow-100 text-yellow-700 font-black text-lg">{{ $extra['total_quantity'] }}</span>
                                         </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">
-                                                0
-                                            </span>
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">0</span>
                                         </td>
                                         <td class="px-6 py-4 text-center">
-                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">
-                                                0
-                                            </span>
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-400 font-black text-lg">0</span>
                                         </td>
                                         <td class="px-6 py-4 text-center">
                                             <span class="text-xs text-yellow-600 italic">Sobrante</span>
                                         </td>
                                         <td class="px-6 py-4 text-center">
                                             <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
-                                                <i class="fas fa-box-open mr-1"></i>
-                                                Extra
+                                                <i class="fas fa-box-open mr-1"></i> Extra
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endif
+
+                            {{-- Productos Excluidos por Condicionales --}}
+                            @if(count($excludedByConditionals) > 0)
+                                @foreach($excludedByConditionals as $excluded)
+                                    @php
+                                        $actionStyle = match($excluded['action_type'] ?? '') {
+                                            'exclude' => [
+                                                'row'   => 'bg-red-50 hover:bg-red-100',
+                                                'badge' => 'bg-red-100 text-red-800 border-red-200',
+                                                'icon'  => 'fa-times-circle',
+                                                'label' => 'Excluido',
+                                            ],
+                                            'replace' => [
+                                                'row'   => 'bg-orange-50 hover:bg-orange-100',
+                                                'badge' => 'bg-orange-100 text-orange-800 border-orange-200',
+                                                'icon'  => 'fa-exchange-alt',
+                                                'label' => 'Reemplazado',
+                                            ],
+                                            default => [
+                                                'row'   => 'bg-gray-50 hover:bg-gray-100',
+                                                'badge' => 'bg-gray-100 text-gray-800 border-gray-200',
+                                                'icon'  => 'fa-ban',
+                                                'label' => 'Removido',
+                                            ],
+                                        };
+                                    @endphp
+                                    <tr class="{{ $actionStyle['row'] }} transition-colors"
+                                        x-show="tab === 'all' || tab === 'excluded'">
+                                        {{-- Producto --}}
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-start">
+                                                <i class="fas fa-ban text-orange-400 mr-2 mt-1" title="Excluido por condicional"></i>
+                                                <div>
+                                                    <div class="text-sm font-bold text-gray-900 leading-tight line-through opacity-60">
+                                                        {{ $excluded['product_code'] }}
+                                                    </div>
+                                                    <div class="text-xs font-mono text-gray-500 mt-1 line-through opacity-60">
+                                                        {{ $excluded['product_name'] }}
+                                                    </div>
+                                                    @if($excluded['target_product'])
+                                                        <div class="mt-1">
+                                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-700">
+                                                                <i class="fas fa-arrow-right"></i> Reemplazado por: {{ $excluded['target_product'] }}
+                                                            </span>
+                                                        </div>
+                                                    @endif
+                                                    @if($excluded['description'])
+                                                        <p class="text-[10px] text-gray-400 mt-1 italic">{{ $excluded['description'] }}</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- Cantidad Base (tachada) --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 text-gray-400 font-black text-lg line-through">
+                                                {{ $excluded['base_quantity'] }}
+                                            </span>
+                                        </td>
+
+                                        {{-- En Paquete --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-300 font-black text-lg">—</span>
+                                        </td>
+
+                                        {{-- Surtidas --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-300 font-black text-lg">—</span>
+                                        </td>
+
+                                        {{-- Faltante --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 text-gray-300 font-black text-lg">—</span>
+                                        </td>
+
+                                        {{-- Condicional --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <div class="w-full max-w-xs mx-auto">
+                                                <div class="px-2.5 py-1.5 rounded-lg border {{ $actionStyle['badge'] }}">
+                                                    <p class="text-[10px] font-bold uppercase tracking-wide">
+                                                        <i class="fas {{ $actionStyle['icon'] }} mr-0.5"></i>
+                                                        {{ $actionStyle['label'] }}
+                                                    </p>
+                                                    @if($excluded['criteria'])
+                                                        <p class="text-[10px] mt-0.5 text-gray-500 truncate">{{ $excluded['criteria'] }}</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- Estado --}}
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold {{ $actionStyle['badge'] }} border">
+                                                <i class="fas {{ $actionStyle['icon'] }} mr-1"></i>
+                                                {{ $actionStyle['label'] }}
                                             </span>
                                         </td>
                                     </tr>
@@ -542,50 +640,6 @@
                 </div>
             </div>
 
-            {{-- Debug Panel --}}
-            {{-- 
-            @if(config('app.debug'))
-            <div class="bg-gray-900 text-green-400 font-mono text-xs rounded-lg p-4 opacity-80 hover:opacity-100 transition-opacity">
-                <h4 class="border-b border-gray-700 mb-3 pb-2 text-white uppercase font-bold flex items-center">
-                    <i class="fas fa-bug mr-2"></i> Debug - Resumen de Preparación
-                </h4>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <p class="text-gray-500 text-[10px] mb-1">ITEMS</p>
-                        <p>> Total: <span class="text-yellow-400">{{ $summary['total_items'] }}</span></p>
-                        <p>> Completos: <span class="text-green-400">{{ $summary['completed_items'] }}</span></p>
-                        <p>> En Paquete: <span class="text-blue-400">{{ $summary['in_package_items'] }}</span></p>
-                        <p>> Pendientes: <span class="text-red-400">{{ $summary['pending_items'] }}</span></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-[10px] mb-1">CANTIDADES</p>
-                        <p>> Requeridas: <span class="text-yellow-400">{{ $summary['total_quantity_required'] }}</span></p>
-                        <p>> En Paquete: <span class="text-blue-400">{{ $summary['total_quantity_in_package'] }}</span></p>
-                        <p>> Surtidas: <span class="text-green-400">{{ $summary['total_quantity_picked'] }}</span></p>
-                        <p>> Faltantes: <span class="text-red-400">{{ $summary['total_quantity_missing'] }}</span></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-[10px] mb-1">ESTADOS</p>
-                        <p>> Prep Status: <span class="text-cyan-400">{{ $preparation->status }}</span></p>
-                        <p>> Completitud: <span class="text-cyan-400">{{ $summary['completion_percentage'] }}%</span></p>
-                        <p>> Obligatorios: <span class="text-orange-400">{{ $summary['mandatory_pending'] }}</span></p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-[10px] mb-1">PAQUETE</p>
-                        <p>> ID: <span class="text-purple-400">{{ $preparation->pre_assembled_package_id }}</span></p>
-                        <p>> Code: <span class="text-purple-400">{{ $preparation->preAssembledPackage->code ?? 'N/A' }}</span></p>
-                        <p>> Contents: <span class="text-purple-400">{{ $packageContents->count() }} productos</span></p>
-                    </div>
-                </div>
-            </div>
-            @endif
-             --}}
-
         </div>
     </div>
-
-    {{-- Alpine.js para tabs --}}
-    @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    @endpush
 </x-app-layout>

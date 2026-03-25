@@ -46,12 +46,15 @@ class SurgeryPreparationController extends Controller
 
     /**
      * Mostrar vista de selección de paquete
+     * 
+     * FIX N+1: Precalcula completitud y expiración usando colecciones
+     * en vez de ejecutar queries por cada paquete.
      */
     public function selectPackage(ScheduledSurgery $surgery)
     {
         Log::info("Accediendo a vista de selección de paquete para Cirugía ID: {$surgery->id}");
         
-        $surgery->load(['checklist', 'preparation']);
+        $surgery->load(['checklist', 'preparation', 'hospitalModalityConfig.modality']);
 
         // Si ya tiene una preparación activa, redirigir al paso correspondiente
         $existingPreparation = $surgery->preparation;
@@ -68,12 +71,34 @@ class SurgeryPreparationController extends Controller
         }
 
         try {
+            // UNA sola consulta para los items del checklist
+            $checklistItems = ChecklistItem::where('checklist_id', $surgery->checklist_id)->get();
+            $checklistProductIds = $checklistItems->pluck('product_id')->unique();
+            $totalItems = $checklistItems->count();
+
+            // Eager load paquetes CON contents.productUnit para evitar N+1
             $availablePackages = PreAssembledPackage::available()
-                ->with(['contents.product', 'storageLocation'])
+                ->with(['contents.product', 'contents.productUnit', 'storageLocation'])
                 ->get()
-                ->map(function($package) use ($surgery) {
-                    $package->completeness = $package->getCompletenessPercentage($surgery->checklist_id);
-                    $package->has_expired = $package->hasExpiredProducts();
+                ->map(function ($package) use ($checklistProductIds, $totalItems) {
+                    // Completitud: sin queries, pura colección
+                    if ($totalItems > 0) {
+                        $packageProductIds = $package->contents->pluck('product_id')->unique();
+                        $package->completeness = round(
+                            ($checklistProductIds->intersect($packageProductIds)->count() / $totalItems) * 100, 2
+                        );
+                    } else {
+                        $package->completeness = 0;
+                    }
+
+                    // Expiración: sin queries, usa la relación eager loaded
+                    $package->has_expired = $package->contents->contains(function ($content) {
+                        $unit = $content->productUnit;
+                        return $unit 
+                            && $unit->expiration_date !== null 
+                            && $unit->expiration_date->lt(now());
+                    });
+
                     return $package;
                 })
                 ->sortByDesc('completeness');
@@ -193,6 +218,8 @@ class SurgeryPreparationController extends Controller
                 return !in_array($productId, $prepProductIds);
             });
         }
+        $excludedByConditionals = $this->getExcludedByConditionals($surgery);
+
 
         return view('surgeries.preparations.compare', compact(
             'surgery',
@@ -201,7 +228,8 @@ class SurgeryPreparationController extends Controller
             'itemsComplete',
             'itemsPending',
             'packageContents',
-            'packageExtras'
+            'packageExtras',
+            'excludedByConditionals'
         ));
     }
 
@@ -243,7 +271,6 @@ class SurgeryPreparationController extends Controller
         $pendingItems = $preparation->items->where('quantity_missing', '>', 0)->values();
 
         // Obtener productos excluidos/reemplazados por condicionales
-        // (no están en la preparación porque su final_quantity = 0)
         $excludedByConditionals = $this->getExcludedByConditionals($surgery);
 
         return view('surgeries.preparations.picking', compact(
@@ -557,7 +584,7 @@ class SurgeryPreparationController extends Controller
         }
 
         try {
-            // 1. Buscar el producto por código (Asegúrate que Product::findByCode exista)
+            // 1. Buscar el producto por código
             $product = \App\Models\Product::where('code', $validated['barcode'])->first();
 
             if (!$product) {
@@ -581,7 +608,6 @@ class SurgeryPreparationController extends Controller
             }
 
             // 3. Obtener la siguiente unidad disponible (FEFO/FIFO)
-            // Usamos el scope que ya definiste en el modelo ProductUnit
             $unit = \App\Models\ProductUnit::nextAvailable($product->id)->first();
 
             if (!$unit) {
@@ -591,8 +617,7 @@ class SurgeryPreparationController extends Controller
                 ], 404);
             }
 
-            // 4. Llamar al servicio de picking (reserva + asigna al paquete + actualiza contadores)
-            //    pickProduct() maneja todo dentro de una transacción atómica
+            // 4. Llamar al servicio de picking
             $result = $this->preparationService->pickProduct(
                 $preparation->id,
                 $unit->epc,
@@ -627,9 +652,8 @@ class SurgeryPreparationController extends Controller
             Log::error("Error en scanBarcode: " . $e->getMessage());
             return response()->json([
                 'success' => false,
-                // Enviamos el mensaje de la excepción porque suele ser descriptivo ("Esta unidad no está disponible", etc)
                 'message' => "Error: " . $e->getMessage()
-            ], 422); // 422 es más apropiado para errores de lógica de negocio
+            ], 422);
         }
     }
 
@@ -706,8 +730,6 @@ class SurgeryPreparationController extends Controller
                 return response()->json(['success' => false, 'message' => " Unidad no disponible"], 404);
             }
 
-            
-
             $result = $this->preparationService->pickProduct(
                 $preparation->id,
                 $unit->epc,
@@ -747,8 +769,6 @@ class SurgeryPreparationController extends Controller
 
     /**
      * Obtener productos excluidos o reemplazados por condicionales.
-     * Estos no están en la preparación (final_quantity = 0) pero el operador
-     * necesita saber que existen y por qué no los va a surtir.
      */
     private function getExcludedByConditionals(ScheduledSurgery $surgery): array
     {

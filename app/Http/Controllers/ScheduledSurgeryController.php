@@ -62,6 +62,7 @@ class ScheduledSurgeryController extends Controller
         $inPreparationCount = ScheduledSurgery::where('status', 'in_preparation')->count();
         $readyCount = ScheduledSurgery::where('status', 'ready')->count();
         $inSurgeryCount = ScheduledSurgery::where('status', 'in_surgery')->count();
+        $checklist = SurgicalChecklist::select('id', 'code', 'surgery_type')->get()->keyBy('id');
 
         // Datos para filtros
         $hospitals = \App\Models\LegalEntity::orderBy('name')->get();
@@ -73,7 +74,8 @@ class ScheduledSurgeryController extends Controller
             'inPreparationCount',
             'readyCount',
             'inSurgeryCount',
-            'hospitals'
+            'hospitals',
+            'checklist'
         ));
     }
 

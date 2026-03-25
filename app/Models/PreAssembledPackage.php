@@ -33,7 +33,7 @@ class PreAssembledPackage extends Model
      * RELACIONES
      */
 
-    //Preparacion
+    // Preparación
     public function preparation()
     {
         return $this->belongsTo(SurgeryPreparation::class, 'preparation_id');
@@ -185,13 +185,29 @@ class PreAssembledPackage extends Model
         $this->update(['status' => $newStatus]);
     }
 
-    // Verificar si tiene productos caducados
+    /**
+     * Verificar si tiene productos caducados.
+     * 
+     * FIX N+1: Usa la colección eager loaded cuando está disponible,
+     * en vez de ejecutar un query por cada paquete.
+     */
     public function hasExpiredProducts()
     {
+        // Si contents y productUnit están eager loaded, usar la colección
+        if ($this->relationLoaded('contents')) {
+            return $this->contents->contains(function ($content) {
+                $unit = $content->productUnit;
+                return $unit 
+                    && $unit->expiration_date !== null 
+                    && $unit->expiration_date->lt(now());
+            });
+        }
+
+        // Fallback: query directo (si se llama sin eager loading)
         return $this->contents()
-            ->whereHas('productUnit', function($q) {
+            ->whereHas('productUnit', function ($q) {
                 $q->whereNotNull('expiration_date')
-                ->where('expiration_date', '<', now());
+                  ->where('expiration_date', '<', now());
             })
             ->exists();
     }
@@ -206,27 +222,36 @@ class PreAssembledPackage extends Model
             ->get();
     }
 
-    // Calcular porcentaje de completitud respecto a un check list
-    public function getCompletenessPercentage()
+    /**
+     * Calcular porcentaje de completitud respecto a un check list.
+     * 
+     * FIX N+1: Acepta $checklistId como parámetro y usa colecciones
+     * eager loaded cuando están disponibles.
+     */
+    public function getCompletenessPercentage($checklistId = null)
     {
-        if (!$this->surgeryChecklist) {
+        // Determinar qué product_ids requiere el checklist
+        if ($checklistId) {
+            $checklistItems = ChecklistItem::where('checklist_id', $checklistId)->get();
+        } elseif ($this->relationLoaded('surgeryChecklist') && $this->surgeryChecklist) {
+            $checklistItems = $this->surgeryChecklist->items;
+        } else {
             return 0;
         }
 
-        $totalItems = $this->surgeryChecklist->items->count();
-        
+        $totalItems = $checklistItems->count();
+
         if ($totalItems === 0) {
             return 0;
         }
 
-        // Contar cuántos productos únicos del check list están en el paquete
-        $checklistProductIds = $this->surgeryChecklist->items->pluck('product_id')->unique();
-        
-        $availableProductIds = $this->contents()
-            ->pluck('product_id')
-            ->unique();
-        
-        // Contar cuántos productos del check list están disponibles
+        $checklistProductIds = $checklistItems->pluck('product_id')->unique();
+
+        // Usar colección eager loaded si está disponible
+        $availableProductIds = $this->relationLoaded('contents')
+            ? $this->contents->pluck('product_id')->unique()
+            : $this->contents()->pluck('product_id')->unique();
+
         $completeItems = $checklistProductIds->intersect($availableProductIds)->count();
 
         return round(($completeItems / $totalItems) * 100, 2);
