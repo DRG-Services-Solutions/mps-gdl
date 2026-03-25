@@ -1,5 +1,43 @@
 {{-- resources/views/surgeries/index.blade.php --}}
 <x-app-layout>
+    @push('styles')
+    <style>
+        /* Tom Select - Fix conflicto con @tailwindcss/forms */
+        .ts-wrapper { width: 100% !important; }
+        .ts-wrapper .ts-control {
+            border: 1px solid #d1d5db !important;
+            border-radius: 0.5rem !important;
+            padding: 0.5rem 0.75rem !important;
+            background-image: none !important;
+            min-height: 42px !important;
+            display: flex !important;
+            align-items: center !important;
+            cursor: text !important;
+        }
+        .ts-wrapper .ts-control input[type="text"],
+        .ts-wrapper .ts-control > input {
+            border: none !important; padding: 0 !important; margin: 0 !important;
+            background: transparent !important; background-image: none !important;
+            box-shadow: none !important; outline: none !important;
+            min-height: auto !important; width: auto !important;
+            flex: 1 1 auto !important; appearance: none !important;
+        }
+        .ts-wrapper.focus .ts-control,
+        .ts-wrapper .ts-control:focus-within {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 1px #6366f1 !important;
+        }
+        .ts-wrapper .ts-dropdown {
+            border: 1px solid #d1d5db !important; border-radius: 0.5rem !important;
+            margin-top: 4px !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1) !important;
+            z-index: 9999 !important;
+        }
+        .ts-wrapper .ts-dropdown .option { padding: 8px 12px !important; }
+        .ts-wrapper .ts-dropdown .active { background-color: #eef2ff !important; color: #4f46e5 !important; }
+        .ts-wrapper + select, select.tomselected { display: none !important; }
+    </style>
+    @endpush
+
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
@@ -22,12 +60,11 @@
             
             <!-- Estadísticas Rápidas -->
             <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                <!-- Total Cirugías -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total</p>
-                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $surgeries->count() }}</p>
+                            <p class="text-3xl font-bold text-gray-900 mt-2">{{ $surgeries->total() }}</p>
                         </div>
                         <div class="bg-indigo-100 rounded-full p-3">
                             <i class="fas fa-calendar-alt text-2xl text-indigo-600"></i>
@@ -35,7 +72,6 @@
                     </div>
                 </div>
 
-                <!-- Agendadas -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -48,7 +84,6 @@
                     </div>
                 </div>
 
-                <!-- En Preparación -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-yellow-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -61,7 +96,6 @@
                     </div>
                 </div>
 
-                <!-- Listas -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-green-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -74,7 +108,6 @@
                     </div>
                 </div>
 
-                <!-- En Cirugía -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
                     <div class="flex items-center justify-between">
                         <div>
@@ -91,9 +124,9 @@
             <!-- Filtros -->
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <form method="GET" action="{{ route('surgeries.index') }}" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <!-- Búsqueda -->
-                        <div class="md:col-span-2">
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="fas fa-search mr-1"></i>
                                 Buscar
@@ -101,41 +134,25 @@
                             <input type="text" 
                                    name="search" 
                                    value="{{ request('search') }}"
-                                   placeholder="Código, paciente..."
+                                   placeholder="Código, paciente, tipo de cirugía..."
                                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
 
-                        <!-- Estado -->
+                        <!-- Doctor (Tom Select con búsqueda remota) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-filter mr-1"></i>
-                                Estado
+                                <i class="fas fa-user-md mr-1"></i>
+                                Doctor
                             </label>
-                            <select name="status" 
-                                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Todos</option>
-                                <option value="scheduled" {{ request('status') === 'scheduled' ? 'selected' : '' }}>Agendadas</option>
-                                <option value="in_preparation" {{ request('status') === 'in_preparation' ? 'selected' : '' }}>En Preparación</option>
-                                <option value="ready" {{ request('status') === 'ready' ? 'selected' : '' }}>Listas</option>
-                                <option value="in_surgery" {{ request('status') === 'in_surgery' ? 'selected' : '' }}>En Cirugía</option>
-                                <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completadas</option>
-                            </select>
-                        </div>
-
-                        <!-- Hospital -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-hospital mr-1"></i>
-                                Hospital
-                            </label>
-                            <select name="hospital_id" 
-                                    class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Todos</option>
-                                @foreach($hospitals as $hospital)
-                                    <option value="{{ $hospital->id }}" {{ request('hospital_id') == $hospital->id ? 'selected' : '' }}>
-                                        {{ $hospital->name }}
+                            <select name="doctor_id" 
+                                    id="doctor_filter"
+                                    placeholder="Buscar doctor...">
+                                {{-- Precargar opción si hay doctor seleccionado (persiste al recargar) --}}
+                                @if($selectedDoctor)
+                                    <option value="{{ $selectedDoctor->id }}" selected>
+                                        Dr. {{ $selectedDoctor->first_name }} {{ $selectedDoctor->middle_name ? $selectedDoctor->middle_name . ' ' : '' }}{{ $selectedDoctor->last_name }}
                                     </option>
-                                @endforeach
+                                @endif
                             </select>
                         </div>
 
@@ -185,28 +202,28 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Cirugía
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Paciente
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Hospital / Doctor
-                                </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha
-                                </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Estado
-                                </th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Acciones
-                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cirugía</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hospital / Doctor</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha De Cirugía</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($surgeries as $surgery)
+                            @php
+                                $statusConfig = match($surgery->status) {
+                                    'scheduled'      => ['classes' => 'bg-blue-100 text-blue-800', 'label' => 'Agendada', 'icon' => 'fa-calendar'],
+                                    'in_preparation' => ['classes' => 'bg-yellow-100 text-yellow-800', 'label' => 'En Preparación', 'icon' => 'fa-spinner fa-spin'],
+                                    'prepared'       => ['classes' => 'bg-green-100 text-green-800', 'label' => 'Preparada', 'icon' => 'fa-check-circle'],
+                                    'ready'          => ['classes' => 'bg-green-100 text-green-800', 'label' => 'Lista', 'icon' => 'fa-check-circle'],
+                                    'in_surgery'     => ['classes' => 'bg-purple-100 text-purple-800', 'label' => 'En Cirugía', 'icon' => 'fa-procedures'],
+                                    'completed'      => ['classes' => 'bg-gray-100 text-gray-800', 'label' => 'Completada', 'icon' => 'fa-check'],
+                                    'cancelled'      => ['classes' => 'bg-red-100 text-red-800', 'label' => 'Cancelada', 'icon' => 'fa-times-circle'],
+                                    default          => ['classes' => 'bg-gray-100 text-gray-800', 'label' => $surgery->status, 'icon' => 'fa-circle'],
+                                };
+                            @endphp
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
@@ -214,13 +231,13 @@
                                             <i class="fas fa-procedures text-indigo-600"></i>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $surgery->checklist->surgery_type }}</div>
+                                            <div class="text-sm font-semibold text-gray-900">{{ $surgery->checklist->surgery_type ?? 'Sin checklist' }}</div>
                                             <div class="text-xs text-gray-500">{{ $surgery->code }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900">{{ $surgery->patient_name }}</div>
+                                    <div class="text-sm font-medium text-gray-900">{{ $surgery->patient_name }}</div>
                                     <div class="text-xs text-gray-500">
                                         @if($surgery->hospitalModalityConfig && $surgery->hospitalModalityConfig->modality)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
@@ -251,11 +268,8 @@
                                     @if($surgery->doctor)
                                         <div class="text-xs text-gray-500">
                                             <i class="fas fa-user-md text-gray-400 mr-1"></i>
-                                            @if($surgery->doctor->middle_name)
-                                                Dr. {{ $surgery->doctor->first_name }} {{ $surgery->doctor->middle_name }} {{ $surgery->doctor->last_name }}
-                                            @else
-                                                Dr. {{ $surgery->doctor->first_name }} {{ $surgery->doctor->last_name }}
-                                            @endif
+                                            Dr. {{ $surgery->doctor->first_name }}
+                                            {{ $surgery->doctor->middle_name ? $surgery->doctor->middle_name . ' ' : '' }}{{ $surgery->doctor->last_name }}
                                         </div>
                                     @else
                                         <div class="text-xs text-gray-500 italic">
@@ -265,34 +279,20 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-center">
-                                    
-                                    <div class="text-xs text-gray-500">
-                                        {{ $surgery->surgery_datetime->format('H:i') }} Hrs
-                                    </div>
+                                    <div class="text-sm font-medium text-gray-900">{{ $surgery->surgery_datetime->format('d/m/Y') }}</div>
+                                    <div class="text-xs text-gray-500">{{ $surgery->surgery_datetime->format('H:i') }} Hrs</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col items-center">
-                                        @php
-                                            $statusConfig = [
-                                                'scheduled' => ['color' => 'blue', 'label' => 'Agendada', 'icon' => 'calendar'],
-                                                'in_preparation' => ['color' => 'yellow', 'label' => 'En Preparación', 'icon' => 'spinner'],
-                                                'ready' => ['color' => 'green', 'label' => 'Lista', 'icon' => 'check-circle'],
-                                                'in_surgery' => ['color' => 'purple', 'label' => 'En Cirugía', 'icon' => 'procedures'],
-                                                'completed' => ['color' => 'gray', 'label' => 'Completada', 'icon' => 'check'],
-                                                'cancelled' => ['color' => 'red', 'label' => 'Cancelada', 'icon' => 'times-circle'],
-                                            ];
-                                            $config = $statusConfig[$surgery->status] ?? ['color' => 'gray', 'label' => $surgery->status, 'icon' => 'circle'];
-                                        @endphp
-                                        
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $config['color'] }}-100 text-{{ $config['color'] }}-800">
-                                            <i class="fas fa-{{ $config['icon'] }} mr-1 {{ $surgery->status === 'in_preparation' ? 'fa-spin' : '' }}"></i>
-                                            {{ $config['label'] }}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusConfig['classes'] }}">
+                                            <i class="fas {{ $statusConfig['icon'] }} mr-1"></i>
+                                            {{ $statusConfig['label'] }}
                                         </span>
 
-                                        {{-- Barra de completitud visual si está en preparación --}}
                                         @if($surgery->status === 'in_preparation' && $surgery->preparation)
                                             @php
-                                                $progress = $surgery->preparation->getCompletenessPercentage();
+                                                $progress = $surgery->preparation->cached_progress ?? 0;
+                                                $progressColor = $progress == 100 ? 'bg-green-500' : 'bg-yellow-500';
                                             @endphp
                                             <div class="w-full mt-2 max-w-[100px]">
                                                 <div class="flex justify-between mb-1">
@@ -300,8 +300,7 @@
                                                     <span class="text-[10px] font-medium text-gray-500">{{ $progress }}%</span>
                                                 </div>
                                                 <div class="w-full bg-gray-200 rounded-full h-1">
-                                                    <div class="bg-{{ $progress == 100 ? 'green' : 'yellow' }}-500 h-1 rounded-full" 
-                                                        style="width: {{ $progress }}%"></div>
+                                                    <div class="{{ $progressColor }} h-1 rounded-full" style="width: {{ $progress }}%"></div>
                                                 </div>
                                             </div>
                                         @endif
@@ -309,7 +308,6 @@
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm font-medium">
                                     <div class="flex justify-end items-center space-x-2">
-                                        {{-- ACCIÓN PRINCIPAL (Botón con texto) --}}
                                         @if($surgery->status === 'scheduled')
                                             <form action="{{ route('surgeries.preparations.start', $surgery) }}" method="POST" class="inline" onsubmit="return confirm('¿Iniciar preparación?')">
                                                 @csrf
@@ -329,18 +327,15 @@
                                             @endif
                                         @endif
 
-                                        {{-- ACCIONES SECUNDARIAS (Iconos discretos) --}}
                                         <div class="flex items-center ml-2 border-l pl-2 space-x-2 border-gray-200">
                                             <a href="{{ route('surgeries.show', $surgery) }}" class="text-gray-400 hover:text-indigo-600" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            
                                             @if($surgery->canBeEdited())
                                                 <a href="{{ route('surgeries.edit', $surgery) }}" class="text-gray-400 hover:text-blue-600" title="Editar">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                             @endif
-
                                             @if($surgery->canBeCancelled())
                                                 <form action="{{ route('surgeries.cancel', $surgery) }}" method="POST" class="inline" onsubmit="return confirm('¿Cancelar cirugía?')">
                                                     @csrf
@@ -381,4 +376,41 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        // Tom Select para filtro de Doctor (búsqueda remota)
+        new TomSelect('#doctor_filter', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            placeholder: 'Buscar doctor...',
+            openOnFocus: false,
+            plugins: ['clear_button'],
+
+            shouldLoad: function(query) {
+                return query.length > 0;
+            },
+
+            load: function(query, callback) {
+                fetch(`/api/doctors/select2?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => callback(data.results))
+                    .catch(() => callback());
+            },
+
+            render: {
+                option: function(data, escape) {
+                    return `<div class="py-2 px-3">${escape(data.text)}</div>`;
+                },
+                item: function(data, escape) {
+                    return `<div>${escape(data.text)}</div>`;
+                },
+                no_results: function() {
+                    return '<div class="no-results" style="padding:10px;text-align:center;color:#6b7280;">No se encontraron doctores</div>';
+                },
+            },
+        });
+    </script>
+    @endpush
 </x-app-layout>

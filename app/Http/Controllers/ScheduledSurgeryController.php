@@ -20,53 +20,78 @@ class ScheduledSurgeryController extends Controller
      */
     public function index(Request $request)
     {
-        // Query base
+        
         $query = ScheduledSurgery::with([
             'checklist',
             'hospital',
             'doctor',
             'preparation.items',
-            'hospitalModalityConfig.hospital',     
-            'hospitalModalityConfig.modality',      
-            'hospitalModalityConfig.legalEntity',   
+            'hospitalModalityConfig.hospital',
+            'hospitalModalityConfig.modality',
+            'hospitalModalityConfig.legalEntity',
         ]);
 
-        // Filtros
+        // Filtro: Búsqueda general (código, paciente, tipo de cirugía)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('code', 'like', "%{$search}%")
-                ->orWhere('patient_name', 'like', "%{$search}%");
+                  ->orWhere('patient_name', 'like', "%{$search}%")
+                  ->orWhereHas('checklist', function ($q2) use ($search) {
+                      $q2->where('surgery_type', 'like', "%{$search}%");
+                  });
             });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        // Filtro: Doctor
+        if ($request->filled('doctor_id')) {
+            $query->where('doctor_id', $request->doctor_id);
         }
 
-        if ($request->filled('hospital_id')) {
-            $query->where('hospital_id', $request->hospital_id);
-        }
-
+        // Filtro: Fecha desde
         if ($request->filled('date_from')) {
             $query->whereDate('surgery_datetime', '>=', $request->date_from);
         }
 
+        // Filtro: Fecha hasta
         if ($request->filled('date_to')) {
             $query->whereDate('surgery_datetime', '<=', $request->date_to);
         }
 
-        // Obtener cirugías paginadas
-        $surgeries = $query->latest('surgery_datetime')->paginate(15);
-        $scheduledCount = ScheduledSurgery::where('status', 'scheduled')->count();
-        $inPreparationCount = ScheduledSurgery::where('status', 'in_preparation')->count();
-        $readyCount = ScheduledSurgery::where('status', 'ready')->count();
-        $inSurgeryCount = ScheduledSurgery::where('status', 'in_surgery')->count();
-        $checklist = SurgicalChecklist::select('id', 'code', 'surgery_type')->get()->keyBy('id');
+        // Obtener cirugías paginadas (preservar filtros en paginación)
+        $surgeries = $query->latest('surgery_datetime')->paginate(15)->withQueryString();
 
-        // Datos para filtros
-        $hospitals = \App\Models\LegalEntity::orderBy('name')->get();
+        // Contadores (una sola consulta agrupada)
+        $statusCounts = ScheduledSurgery::selectRaw("status, COUNT(*) as total")
+            ->whereIn('status', ['scheduled', 'in_preparation', 'ready', 'in_surgery'])
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
+        $scheduledCount     = $statusCounts['scheduled'] ?? 0;
+        $inPreparationCount = $statusCounts['in_preparation'] ?? 0;
+        $readyCount         = $statusCounts['ready'] ?? 0;
+        $inSurgeryCount     = $statusCounts['in_surgery'] ?? 0;
+
+        // Precalcular progreso para cirugías en preparación (fix N+1)
+        $surgeries->getCollection()->transform(function ($surgery) {
+            if ($surgery->status === 'in_preparation' && $surgery->preparation) {
+                $items = $surgery->preparation->items;
+                $totalRequired = $items->sum('quantity_required');
+                $totalSatisfied = $items->sum(function ($item) {
+                    return $item->quantity_in_package + $item->quantity_picked;
+                });
+                $surgery->preparation->cached_progress = $totalRequired > 0
+                    ? round(($totalSatisfied / $totalRequired) * 100, 1)
+                    : 0;
+            }
+            return $surgery;
+        });
+
+        // Doctor seleccionado para persistir en Tom Select al recargar
+        $selectedDoctor = null;
+        if ($request->filled('doctor_id')) {
+            $selectedDoctor = \App\Models\Doctor::find($request->doctor_id);
+        }
 
         return view('surgeries.index', compact(
             'surgeries',
@@ -74,8 +99,7 @@ class ScheduledSurgeryController extends Controller
             'inPreparationCount',
             'readyCount',
             'inSurgeryCount',
-            'hospitals',
-            'checklist'
+            'selectedDoctor'
         ));
     }
 
