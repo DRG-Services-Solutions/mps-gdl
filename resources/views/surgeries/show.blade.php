@@ -207,9 +207,8 @@
                                     $appliedCond   = $data['conditional'] ?? null;
                                     $source        = $data['source'] ?? 'base';
                                     $isAdditional  = in_array($source, ['conditional', 'additional', 'extra']);
-                                    $stock         = \App\Models\ProductUnit::where('product_id', $data['product_id'])
-                                                        ->where('status', 'available')->count();
-                                    $stockOk       = $stock >= $qty;
+                                    $stock   = $stockMap[$data['product_id']] ?? 0;
+                                    $stockOk = $stock >= $qty;
 
                                     // Color del fondo por tipo de condicional aplicado
                                     $rowBg = '';

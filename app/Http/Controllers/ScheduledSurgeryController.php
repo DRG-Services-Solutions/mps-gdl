@@ -229,7 +229,15 @@ class ScheduledSurgeryController extends Controller
             }
         }
 
-        return view('surgeries.show', compact('surgery', 'checklistItems', 'excludedItems'));
+        // Stock de todos los productos en una sola consulta (fix N+1)
+        $productIds = $checklistItems->pluck('product_id')->unique();
+        $stockMap = \App\Models\ProductUnit::whereIn('product_id', $productIds)
+            ->where('status', 'available')
+            ->groupBy('product_id')
+            ->selectRaw('product_id, COUNT(*) as total')
+            ->pluck('total', 'product_id');
+
+        return view('surgeries.show', compact('surgery', 'checklistItems', 'excludedItems', 'stockMap'));
     }
 
     /**
