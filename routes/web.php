@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\SurgicalKitTemplateController;
 use App\Http\Controllers\SurgicalKitTemplateItemsController;
 use App\Http\Controllers\SurgicalKitTemplateItemConditionalController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PriceListController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -52,8 +54,36 @@ Route::get('/', function () {
 // RUTAS AUTENTICADAS
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
-    
 
+Route::resource('price-lists', PriceListController::class);
+ 
+// Activar / Desactivar
+Route::post('price-lists/{price_list}/activate', [PriceListController::class, 'activate'])
+    ->name('price-lists.activate');
+Route::post('price-lists/{price_list}/deactivate', [PriceListController::class, 'deactivate'])
+    ->name('price-lists.deactivate');
+ 
+// Importación CSV (3 pasos: formulario → preview → ejecutar)
+Route::get('price-lists/{price_list}/import', [PriceListController::class, 'importForm'])
+    ->name('price-lists.import');
+Route::post('price-lists/{price_list}/import/preview', [PriceListController::class, 'importPreview'])
+    ->name('price-lists.import.preview');
+Route::post('price-lists/{price_list}/import/execute', [PriceListController::class, 'importExecute'])
+    ->name('price-lists.import.execute');
+ 
+// Gestión manual de items
+Route::post('price-lists/{price_list}/items', [PriceListController::class, 'addItem'])
+    ->name('price-lists.items.add');
+Route::put('price-lists/{price_list}/items/{item}', [PriceListController::class, 'updateItem'])
+    ->name('price-lists.items.update');
+Route::delete('price-lists/{price_list}/items/{item}', [PriceListController::class, 'removeItem'])
+    ->name('price-lists.items.remove');
+ 
+// API: búsqueda de productos (para Tom Select en el show)
+Route::get('price-lists/{price_list}/search-products', [PriceListController::class, 'searchProducts'])
+    ->name('price-lists.search-products');
+
+    
     // Perfil de usuario
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('edit');

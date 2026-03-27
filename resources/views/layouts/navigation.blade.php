@@ -195,21 +195,28 @@
                             <a href="{{ route('sales.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sales.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-dollar-sign fa-fw text-sm"></i>
-                                <span class="truncate">{{ __('Ventas') }}</span>
+                                <span class="truncate">Ventas</span>
                             </a>
 
                             <!-- Kits Quirúrgicos (existente) -->
                             <a href="{{ route('surgical_kit_templates.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-kit-medical fa-fw text-sm"></i>
-                                <span class="truncate">{{ __('Instrumentales') }}</span>
+                                <span class="truncate">Instrumentales</span>
                             </a>
 
-                            <!-- Hospitales (existente) -->
+                            <!-- Hospitales -->
                             <a href="{{ route('hospitals.index') }}" 
                             class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
                                 <i class="fas fa-hospital fa-fw text-sm"></i>
                                 <span class="truncate">Clientes/Hospitales</span>
+                            </a>
+
+                            <!-- Listas de Precios -->
+                            <a href="{{ route('price-lists.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('price-lists.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-tags fa-fw text-sm"></i>
+                                <span class="truncate">Listas de Precios</span>
                             </a>
 
                             <!-- Doctores (existente) -->
@@ -271,7 +278,13 @@
                             <a href="{{ route('hospitals.index') }}" 
                             class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('hospitals.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                                 <i class="fas fa-hospital fa-fw text-sm"></i>
-                                <span>{{ __('Hospitales') }}</span>
+                                <span>Hospitales</span>
+                            </a>
+
+                            <a href="{{ route('price-lists.index') }}" 
+                            class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('price-lists.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                                <i class="fas fa-tags fa-fw text-sm"></i>
+                                <span>Listas de Precios</span>
                             </a>
                             
                             <a href="{{ route('doctors.index') }}" 
