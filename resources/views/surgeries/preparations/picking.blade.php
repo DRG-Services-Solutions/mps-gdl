@@ -188,7 +188,6 @@
             </div>
 
             {{-- MODO RFID: Control del Lector RFD90 --}}
-            {{-- MODO RFID: Control del Lector RFD90 --}}
             <div id="rfidModeSection" class="bg-white rounded-lg shadow-sm border border-gray-200 hidden">
                 <div class="p-6">
                     {{-- Estado y Controles del Lector --}}
@@ -406,8 +405,8 @@
                                                 <i class="fas fa-star text-yellow-500 mr-2" title="Obligatorio"></i>
                                             @endif
                                             <div>
-                                                <div class="font-medium text-gray-900">{{ $item->product->name }}</div>
-                                                <div class="text-xs text-gray-500 font-mono">{{ $item->product->code }}</div>
+                                                <div class="font-medium text-gray-900">{{ $item->product->code }}</div>
+                                                <div class="text-xs text-gray-500 font-mono">{{ $item->product->name }}</div>
                                                 @if($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
                                                     <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
                                                         <i class="fas fa-link"></i> {{ $item->notes }}

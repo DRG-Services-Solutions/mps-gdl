@@ -42,6 +42,9 @@ use App\Http\Controllers\SurgicalKitTemplateItemsController;
 use App\Http\Controllers\SurgicalKitTemplateItemConditionalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PriceListController;
+use App\Http\Controllers\InstrumentController;
+use App\Http\Controllers\InstrumentKitController;
+ 
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -54,6 +57,23 @@ Route::get('/', function () {
 // RUTAS AUTENTICADAS
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
+
+Route::resource('instruments', InstrumentController::class);
+Route::post('instruments/{instrument}/status', [InstrumentController::class, 'updateStatus'])
+    ->name('instruments.update-status');
+ 
+// API: buscar instrumentos disponibles (para Tom Select en kits)
+Route::get('api/instruments/search-available', [InstrumentController::class, 'searchAvailable'])
+    ->name('api.instruments.search-available');
+ 
+// Kits de Instrumentos - CRUD
+Route::resource('instrument-kits', InstrumentKitController::class);
+ 
+// Asignar / remover instrumentos del kit
+Route::post('instrument-kits/{instrument_kit}/assign', [InstrumentKitController::class, 'assignInstrument'])
+    ->name('instrument-kits.assign');
+Route::delete('instrument-kits/{instrument_kit}/remove/{instrument}', [InstrumentKitController::class, 'removeInstrument'])
+    ->name('instrument-kits.remove');
 
 Route::resource('price-lists', PriceListController::class);
  
