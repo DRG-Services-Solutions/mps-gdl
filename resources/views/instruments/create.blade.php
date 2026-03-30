@@ -16,9 +16,9 @@
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
-                    <i class="fas fa-plus-circle mr-2 text-indigo-600"></i> Nuevo Instrumento
+                    <i class="fas fa-plus-circle mr-2 text-indigo-600"></i> Nuevo Instrumental
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">Registrar un nuevo instrumento, equipo o pieza quirúrgica</p>
+                <p class="text-sm text-gray-600 mt-1">Registrar un nuevo instrumental o equipo</p>
             </div>
             <a href="{{ route('instruments.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md transition-all">
                 <i class="fas fa-arrow-left mr-2"></i> Volver
@@ -93,17 +93,7 @@
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div>
-                                    <label for="condition" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Condición <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="condition" id="condition" required
-                                            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
-                                        <option value="good" {{ old('condition', 'good') === 'good' ? 'selected' : '' }}>Bueno</option>
-                                        <option value="fair" {{ old('condition') === 'fair' ? 'selected' : '' }}>Regular</option>
-                                        <option value="damaged" {{ old('condition') === 'damaged' ? 'selected' : '' }}>Dañado</option>
-                                    </select>
-                                </div>
+                                
                             </div>
                         </div>
 

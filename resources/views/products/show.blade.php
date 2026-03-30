@@ -252,11 +252,11 @@
                                 <div>
                                     <label class="text-sm font-medium text-gray-500 mb-1 block">
                                         <i class="fas fa-layer-group text-gray-400 mr-1"></i>
-                                        {{ __('Subcategoría') }}
+                                        Tipo de Producto
                                     </label>
-                                    @if($product->subcategory)
+                                    @if($product->productType)
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                                            {{ $product->subcategory->name }}
+                                            {{ $product->productType->name }}
                                         </span>
                                     @else
                                         <p class="text-base text-gray-400 italic">{{ __('Sin subcategoría') }}</p>
@@ -337,7 +337,7 @@
                         <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
                             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
                                 <i class="fas fa-satellite-dish text-indigo-600 mr-2"></i>
-                                {{ __('Control y Trazabilidad') }}
+                                Control y Trazabilidad
                             </h3>
                         </div>
                         <div class="p-6">
@@ -367,7 +367,7 @@
                                     </label>
                                     @switch($product->tracking_type)
                                         @case('code')
-                                            <p class="text-xl font-bold text-gray-900">{{ __('Code') }}</p>
+                                            <p class="text-xl font-bold text-gray-900">{{ __('Código') }}</p>
                                             <p class="text-sm text-gray-600">{{ __('Rastreo por lote - ideal para productos consumibles') }}</p>
                                             @break
                                         @case('rfid')
@@ -375,7 +375,7 @@
                                             <p class="text-sm text-gray-600">{{ __('Rastreo individual con tecnología RFID') }}</p>
                                             @break
                                         @case('serial')
-                                            <p class="text-xl font-bold text-gray-900">{{ __('Serial') }}</p>
+                                            <p class="text-xl font-bold text-gray-900">{{ __('No. de Serie') }}</p>
                                             <p class="text-sm text-gray-600">{{ __('Rastreo único por número de serie') }}</p>
                                             @break
                                     @endswitch

@@ -65,7 +65,6 @@ class InstrumentController extends Controller
             'category_id'   => 'required|exists:instrument_categories,id',
             'product_id'    => 'nullable|exists:products,id',
             'depends_on_id' => 'nullable|exists:instruments,id',
-            'condition'     => 'required|in:good,fair,damaged',
             'notes'         => 'nullable|string|max:1000',
         ]);
 
@@ -102,7 +101,6 @@ class InstrumentController extends Controller
             'category_id'   => 'required|exists:instrument_categories,id',
             'product_id'    => 'nullable|exists:products,id',
             'depends_on_id' => 'nullable|exists:instruments,id',
-            'condition'     => 'required|in:good,fair,damaged',
             'notes'         => 'nullable|string|max:1000',
         ]);
 

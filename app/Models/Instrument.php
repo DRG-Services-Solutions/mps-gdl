@@ -19,7 +19,6 @@ class Instrument extends Model
         'kit_id',
         'depends_on_id',
         'status',
-        'condition',
         'notes',
     ];
 

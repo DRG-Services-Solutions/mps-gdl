@@ -295,6 +295,76 @@
                         </div>
                     </div>
 
+                <!-- SECCIÓN: INSTRUMENTALES -->
+                <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Instrumentales</p>
+                </div>
+
+                <div class="relative" x-data="{ 
+                    instrumentsMenuOpen: {{ request()->routeIs('instruments.*') || request()->routeIs('instrument-kits.*') ? 'true' : 'false' }}
+                }">
+                    <button @click="instrumentsMenuOpen = !instrumentsMenuOpen"
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('instruments.*') || request()->routeIs('instrument-kits.*') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-tools fa-fw text-lg"></i>
+                            </div>
+                            <span class="truncate transition-opacity duration-300" 
+                                :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
+                                Instrumentales
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0 transition-all duration-300" 
+                            :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200" 
+                            :class="{ 'rotate-180': instrumentsMenuOpen }"></i>
+                        </div>
+                    </button>
+
+                    <!-- Submenú expandido -->
+                    <div x-show="instrumentsMenuOpen && desktopSidebarOpen" 
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0 -translate-y-2"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100 translate-y-0"
+                        x-transition:leave-end="opacity-0 -translate-y-2"
+                        class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
+                        
+                        <a href="{{ route('instruments.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('instruments.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-tools fa-fw text-sm"></i>
+                            <span class="truncate">Piezas / Equipos</span>
+                        </a>
+
+                        <a href="{{ route('instrument-kits.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('instrument-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-box-open fa-fw text-sm"></i>
+                            <span class="truncate">Kits / Cajas</span>
+                        </a>
+                    </div>
+
+                    <!-- Tooltip colapsado -->
+                    <div x-show="!desktopSidebarOpen && instrumentsMenuOpen" 
+                        x-transition
+                        @click.outside="instrumentsMenuOpen = false"
+                        class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                            Instrumentales
+                        </div>
+                        <a href="{{ route('instruments.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('instruments.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-tools fa-fw text-sm"></i>
+                            <span>Piezas / Equipos</span>
+                        </a>
+                        <a href="{{ route('instrument-kits.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('instrument-kits.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-box-open fa-fw text-sm"></i>
+                            <span>Kits / Cajas</span>
+                        </a>
+                    </div>
+                </div>
+
 
                 <!-- SECCIÓN: INVENTARIO -->
                 <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">

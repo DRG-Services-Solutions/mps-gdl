@@ -1,17 +1,16 @@
-{{-- resources/views/instruments/index.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <div>
                 <h2 class="font-semibold text-2xl text-gray-800 leading-tight">
                     <i class="fas fa-tools mr-2 text-indigo-600"></i>
-                    {{ __('Instrumentales') }}
+                    Instrumentales
                 </h2>
-                <p class="text-sm text-gray-600 mt-1">Gestión de instrumentos quirúrgicos, equipos y sus seriales</p>
+                <p class="text-sm text-gray-600 mt-1">Gestión de instrumentales, equipos</p>
             </div>
             <a href="{{ route('instruments.create') }}"
                class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-                <i class="fas fa-plus mr-2"></i> Nuevo Instrumento
+                <i class="fas fa-plus mr-2"></i> Nuevo Intrumental
             </a>
         </div>
     </x-slot>

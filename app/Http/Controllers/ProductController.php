@@ -472,4 +472,27 @@ class ProductController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function select2(Request $request)
+    {
+        $query = Product::where('status', 'active');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', "%{$search}%")
+                ->orWhere('name', 'like', "%{$search}%");
+            });
+        }
+
+        return response()->json([
+            'results' => $query->orderBy('name')->limit(20)->get()
+                ->map(fn($p) => [
+                    'id' => $p->id,
+                    'text' => "{$p->code} — {$p->name}",
+                    'price' => $p->list_price ?? 0,
+                ])
+        ]);
+    }
+
 }

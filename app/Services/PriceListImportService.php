@@ -153,7 +153,8 @@ class PriceListImportService
                 $product = Product::create([
                     'code' => $item['code'],
                     'name' => $item['name'],
-                    'is_active' => true,
+                    'status' => 'active',
+                    'tracking_type' => 'code',
                 ]);
 
                 // Agregar a la lista de precios
