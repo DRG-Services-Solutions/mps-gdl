@@ -199,6 +199,11 @@ class ScheduledSurgery extends Model
         return $query->where('status', $status);
     }
 
+    public function additionalItems()
+    {
+        return $this->hasMany(ScheduledSurgeryAdditionalItem::class);
+    }
+
     // ==================== MÉTODOS PRINCIPALES ====================
     
     /**

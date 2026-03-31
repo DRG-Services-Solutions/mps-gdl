@@ -153,6 +153,97 @@
                             <dd class="text-sm text-gray-900">{{ $surgery->surgery_notes }}</dd>
                         </div>
                         @endif
+
+                        @if($surgery->additionalItems->isNotEmpty())
+    
+                            <div class="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                                <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">
+                                    <i class="fas fa-plus-square text-purple-600 mr-1"></i> Adicionales a Check List
+                                </h4>
+                                
+                                <div class="space-y-3">
+                                    @foreach($surgery->additionalItems as $extra)
+                                        @php
+                                            $type = 'Desconocido';
+                                            $icon = 'fa-box';
+                                            $code = '';
+                                            $name = '';
+                                            $contents = collect();
+
+                                            if ($extra->product_id) {
+                                                $type = 'Insumo';
+                                                $icon = 'fa-box';
+                                                $code = $extra->product->code ?? 'S/C';
+                                                $name = $extra->product->name ?? 'Producto sin nombre';
+                                            } elseif ($extra->instrument_id) {
+                                                $type = 'Instrumento';
+                                                $icon = 'fa-tools';
+                                                $code = $extra->instrument->serial_number ?? 'S/N';
+                                                $name = $extra->instrument->name ?? 'Instrumento sin nombre';
+                                            } elseif ($extra->instrument_kit_id) {
+                                                $type = 'Kit Quirúrgico';
+                                                $icon = 'fa-briefcase-medical';
+                                                $code = $extra->instrumentKit->code ?? 'S/C';
+                                                $name = $extra->instrumentKit->name ?? 'Kit sin nombre';
+                                                $contents = $extra->instrumentKit->instruments ?? collect();
+                                            }
+                                        @endphp
+
+                                        <div x-data="{ expanded: false }" class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                            
+                                            <div class="flex items-center justify-between p-4 hover:bg-purple-50 transition-colors">
+                                                
+                                                <div class="flex items-start flex-1">
+                                                    <div class="flex-shrink-0 mt-1 h-10 w-10 bg-purple-50 text-purple-600 border border-purple-100 rounded-lg flex items-center justify-center">
+                                                        <i class="fas {{ $icon }} text-sm"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{{ $type }}</div>
+                                                        <div class="text-sm font-bold text-gray-900">{{ $code }}</div>
+                                                        <div class="text-sm font-medium text-gray-700">{{ $name }}</div>
+                                                        
+                                                        @if($extra->reason)
+                                                            <div class="text-xs text-gray-500 italic mt-1"><i class="fas fa-comment-dots text-gray-400 mr-1"></i> {{ $extra->reason }}</div>
+                                                        @endif
+                                                        
+                                                        @if($type === 'Kit Quirúrgico' && $contents->isNotEmpty())
+                                                            <button type="button" @click="expanded = !expanded" 
+                                                                    class="mt-2 text-[11px] font-semibold text-purple-600 hover:text-purple-800 focus:outline-none flex items-center transition-colors">
+                                                                <i class="fas mr-1" :class="expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                                <span x-text="expanded ? 'Ocultar piezas del kit' : 'Ver piezas del kit'"></span>
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div class="ml-4 flex flex-col items-end justify-center">
+                                                    <div class="text-[10px] text-gray-500 font-medium mb-1 uppercase">Cantidad</div>
+                                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold shadow-sm">
+                                                        {{ $extra->quantity }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            @if($type === 'Kit Quirúrgico' && $contents->isNotEmpty())
+                                                <div x-show="expanded" x-transition.opacity style="display: none;" class="border-t border-purple-100 bg-purple-50/30">
+                                                    <div class="p-4 pl-16"> <h5 class="text-xs font-bold text-purple-800 mb-3 uppercase tracking-wider">
+                                                            <i class="fas fa-list-ul mr-1"></i> Contenido del Kit
+                                                        </h5>
+                                                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-4 text-sm text-gray-700">
+                                                            @foreach($contents as $inst)
+                                                                <li class="flex items-start">
+                                                                    <i class="fas fa-check text-purple-400 mt-1 mr-2 text-[10px]"></i>
+                                                                    <span><span class="font-mono text-xs text-gray-500">{{ $inst->serial_number }}</span> — {{ $inst->name }}</span>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div> @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </dl>
                 </div>
             </div>
@@ -653,6 +744,8 @@
                 </div>
             </div>
             @endif
+
+            
 
             <!-- Timeline de Eventos -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">

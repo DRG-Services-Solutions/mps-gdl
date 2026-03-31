@@ -29,6 +29,7 @@ class ScheduledSurgeryController extends Controller
             'hospitalModalityConfig.hospital',
             'hospitalModalityConfig.modality',
             'hospitalModalityConfig.legalEntity',
+
         ]);
 
         // Filtro: Búsqueda general (código, paciente, tipo de cirugía)
@@ -117,7 +118,7 @@ class ScheduledSurgeryController extends Controller
     /**
  * Store a newly created resource in storage.
  */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         \Log::info('[SURGERY] ===== INICIO CREAR CIRUGÍA =====', [
             'request_all' => $request->all(),
@@ -126,8 +127,6 @@ class ScheduledSurgeryController extends Controller
 
         try {
             // PASO 1: Validación
-            \Log::info('[SURGERY] Iniciando validación...');
-            
             $validated = $request->validate([
                 'checklist_id' => 'required|exists:surgical_checklists,id',
                 'patient_name' => 'required|string|max:255',
@@ -136,80 +135,88 @@ class ScheduledSurgeryController extends Controller
                 'surgery_date' => 'required|date|after_or_equal:today',
                 'surgery_time' => 'required',
                 'surgery_notes' => 'nullable|string',
+                'additional_items' => 'nullable|array',
+                'additional_items.*.id' => 'required_with:additional_items', 
+                'additional_items.*.type' => 'required_with:additional_items|in:product,instrument,kit',
+                'additional_items.*.quantity' => 'required_with:additional_items|integer|min:1',
+                'additional_items.*.reason' => 'nullable|string|max:500',
             ]);
 
-            \Log::info('[SURGERY] ✅ Validación exitosa', [
-                'validated_data' => $validated,
-            ]);
-
-            // PASO 2: Combinar fecha y hora
-            $surgeryDatetime = $validated['surgery_date'] . ' ' . $validated['surgery_time'];
-            
-            \Log::info('[SURGERY] Fecha y hora combinadas', [
-                'surgery_datetime' => $surgeryDatetime,
-            ]);
-
-            // PASO 3: Generar código
-            $code = ScheduledSurgery::generateCode();
-            
-            \Log::info('[SURGERY] Código generado', [
-                'code' => $code,
-            ]);
-
-            // PASO 4: Preparar datos
-            $surgeryData = [
-                'code' => $code,
-                'checklist_id' => $validated['checklist_id'], 
-                'patient_name' => $validated['patient_name'],
-                'hospital_modality_config_id' => $validated['hospital_modality_config_id'],
-                'doctor_id' => $validated['doctor_id'],
-                'surgery_datetime' => $surgeryDatetime,
-                'surgery_notes' => $validated['surgery_notes'] ?? null,
-                'status' => 'scheduled',
-                'scheduled_by' => auth()->id(),
+            // Usamos una transacción para asegurar integridad total
+            return \DB::transaction(function () use ($validated, $request) {
                 
-            ];
+                // PASO 2: Preparar fecha y configuración
+                $surgeryDatetime = $validated['surgery_date'] . ' ' . $validated['surgery_time'];
+                $config = \App\Models\HospitalModalityConfig::findOrFail($validated['hospital_modality_config_id']);
 
-            \Log::info('[SURGERY] Datos preparados para crear', [
-                'surgery_data' => $surgeryData,
-            ]);
-            $config = \App\Models\HospitalModalityConfig::find($validated['hospital_modality_config_id']);
-            if ($config) {
-                $surgeryData['hospital_id'] = $config->hospital_id;
-            }
+                // PASO 3: Crear el registro principal de la Cirugía
+                $surgery = ScheduledSurgery::create([
+                    'code' => ScheduledSurgery::generateCode(),
+                    'checklist_id' => $validated['checklist_id'],
+                    'patient_name' => $validated['patient_name'],
+                    'hospital_modality_config_id' => $config->id,
+                    'hospital_id' => $config->hospital_id,
+                    'doctor_id' => $validated['doctor_id'],
+                    'surgery_datetime' => $surgeryDatetime,
+                    'surgery_notes' => $validated['surgery_notes'] ?? null,
+                    'status' => 'scheduled',
+                    'scheduled_by' => auth()->id(),
+                ]);
 
+                // PASO 4: Guardar ítems adicionales y actualizar estatus
+                if (!empty($validated['additional_items'])) {
+                    foreach ($validated['additional_items'] as $item) {
+                        
+                        // Extraemos el ID numérico real
+                        $parts = explode('_', $item['id']);
+                        $realId = end($parts);
+                        $type = $item['type'];
 
-            $surgery = ScheduledSurgery::create($surgeryData);
+                        // Creamos el adicional en la tabla polivalente
+                        $surgery->additionalItems()->create([
+                            'product_id'        => $type === 'product' ? $realId : null,
+                            'instrument_id'     => $type === 'instrument' ? $realId : null,
+                            'instrument_kit_id' => $type === 'kit' ? $realId : null,
+                            'quantity'          => $item['quantity'],
+                            'reason'            => $item['reason'] ?? null,
+                        ]);
 
-            \Log::info('[SURGERY] ✅ Cirugía creada exitosamente', [
-                'surgery_id' => $surgery->id,
-                'surgery_code' => $surgery->code,
-                'config_id' => $surgery->hospital_modality_config_id,
-            ]);
+                        // 🔥 NUEVA LÓGICA: Reservar el Kit o Instrumento en la base de datos
+                        if ($type === 'kit') {
+                            \App\Models\InstrumentKit::where('id', $realId)->update(['status' => 'in_surgery']);
+                        } elseif ($type === 'instrument') {
+                            \App\Models\Instrument::where('id', $realId)->update(['status' => 'in_surgery']);
+                        }
+                        // Nota: Los Insumos ('product') normalmente descuentan stock en vez de cambiar estatus, 
+                        // eso puedes manejarlo aquí mismo o después cuando la cirugía realmente inicie.
+                        
+                        \Log::info("[SURGERY] Item adicional guardado y reservado", [
+                            'surgery_id' => $surgery->id,
+                            'type' => $type,
+                            'real_id' => $realId
+                        ]);
+                    }
+                }
 
-            \Log::info('[SURGERY] ===== FIN CREAR CIRUGÍA - ÉXITO =====');
+                \Log::info('[SURGERY] ✅ Proceso completado con éxito', ['surgery_id' => $surgery->id]);
 
-            return redirect()
-                ->route('surgeries.show', $surgery)
-                ->with('success', 'Cirugía agendada exitosamente.');
+                return redirect()
+                    ->route('surgeries.show', $surgery)
+                    ->with('success', 'Cirugía agendada exitosamente.');
+            });
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::error('[SURGERY] ❌ Error de validación', [
-                'errors' => $e->errors(),
-                'message' => $e->getMessage(),
-            ]);
-
-            throw $e;
-
+            \Log::error('[SURGERY] ❌ Error de validación', ['errors' => $e->errors()]);
+            throw $e; 
         } catch (\Exception $e) {
-            \Log::error('[SURGERY] ❌ Error inesperado al crear cirugía', [
+            \Log::error('[SURGERY] ❌ Error crítico al crear cirugía', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return back()
                 ->withInput()
-                ->with('error', 'Error al crear la cirugía: ' . $e->getMessage());
+                ->with('error', 'Hubo un problema al agendar la cirugía: ' . $e->getMessage());
         }
     }
 
@@ -228,6 +235,10 @@ class ScheduledSurgeryController extends Controller
             'invoice',
             'hospital',
             'hospitalModalityConfig.modality',
+            'additionalItems',
+            'additionalItems.product',
+            'additionalItems.instrument',
+            'additionalItems.instrumentKit.instruments',
         ]);
 
         // Items evaluados (qty > 0) — deduplicados por product_id

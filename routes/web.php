@@ -44,6 +44,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\InstrumentKitController;
+use App\Http\Controllers\InstrumentKitItemController;
+
  
 
 // ========================================
@@ -657,10 +659,8 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
         ->name('api.checklists.select2');
 
     //API para Select2 de productos
-    Route::get('/api/products/select2', [ProductController::class, 'select2'])
-    ->name('api.products.select2');
-
-
+    Route::get('/api/items/select2', [ProductController::class, 'select2'])
+    ->name('api.items.select2');
     // ========================================
     // COTIZACIONES ⭐ PRINCIPAL
     // ========================================

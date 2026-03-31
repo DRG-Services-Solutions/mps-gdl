@@ -166,8 +166,11 @@
                                 <td class="px-6 py-4 text-center">
                                     @if($instrument->dependsOn)
                                         <span class="text-xs text-blue-600">
-                                            <i class="fas fa-arrow-up mr-1"></i> {{ $instrument->dependsOn->serial_number }}
+                                            <i class="fas fa-arrow-up mr-1"></i> {{ $instrument->dependsOn->serial_number }} -- 
                                         </span>
+                                        <div class="text-xs text-gray-500 italic">
+                                            {{ $instrument->dependsOn->name }}
+                                        </div>
                                     @endif
                                     @if($instrument->dependents->count() > 0)
                                         <span class="text-xs text-purple-600">

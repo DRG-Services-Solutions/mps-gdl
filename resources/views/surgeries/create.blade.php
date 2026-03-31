@@ -274,6 +274,147 @@
                             </div>
                         </div>
 
+                        <div x-data="additionalItems()">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">
+                                <i class="fas fa-plus-square mr-2 text-purple-600"></i>
+                                Productos Adicionales
+                                <span class="text-sm font-normal text-gray-500 ml-2">(Opcional)</span>
+                            </h3>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Agrega productos extra que el médico necesita además de los del checklist.
+                            </p>
+ 
+                            <!-- Formulario para agregar -->
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                    <!-- Producto -->
+                                    <div class="md:col-span-5">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Producto</label>
+                                        <select id="additional_product_search" placeholder="Buscar producto por código o nombre..."></select>
+                                    </div>
+                                    <!-- Cantidad -->
+                                    <div class="md:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad</label>
+                                        <input type="number" id="additional_qty" min="1" value="1"
+                                               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                    </div>
+                                    <!-- Razón -->
+                                    <div class="md:col-span-3">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Razón</label>
+                                        <input type="text" id="additional_reason" placeholder="Opcional..."
+                                               class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                                    </div>
+                                    <!-- Botón -->
+                                    <div class="md:col-span-2">
+                                        <button type="button" @click="addItem()"
+                                                class="w-full px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-plus mr-1"></i> Agregar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+ 
+                            <!-- Lista de productos adicionales -->
+                            <template x-if="items.length > 0">
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cant.</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Razón</th>
+                                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
+                                            </tr>
+                                        </thead>
+                                        
+                                        <template x-for="(item, index) in items" :key="index">
+                                            <tbody class="divide-y divide-gray-100">
+                                                
+                                                <tr class="hover:bg-purple-50 transition-colors">
+                                                    <td class="px-4 py-3">
+                                                        <div class="flex items-center">
+                                                            <div class="flex-shrink-0 h-8 w-8 bg-purple-50 text-purple-600 border border-purple-100 rounded-lg flex items-center justify-center">
+                                                                <i class="fas" :class="{
+                                                                    'fa-box': item.type === 'product',
+                                                                    'fa-tools': item.type === 'instrument',
+                                                                    'fa-briefcase-medical': item.type === 'kit'
+                                                                }"></i>
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <span class="text-sm font-semibold text-gray-900" x-text="item.text"></span>
+                                                                
+                                                                <div class="flex items-center mt-1 gap-3">
+                                                                    <span class="block text-[10px] uppercase font-bold text-gray-400" x-text="item.type"></span>
+                                                                    
+                                                                    <button type="button" x-show="item.contents && item.contents.length > 0" 
+                                                                            @click="item.expanded = !item.expanded" 
+                                                                            class="text-[11px] font-semibold text-purple-600 hover:text-purple-800 focus:outline-none flex items-center transition-colors">
+                                                                        <i class="fas mr-1" :class="item.expanded ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                                                        <span x-text="item.expanded ? 'Ocultar piezas' : 'Ver piezas'"></span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <input type="hidden" :name="'additional_items[' + index + '][id]'" :value="item.id_with_prefix">
+                                                        <input type="hidden" :name="'additional_items[' + index + '][type]'" :value="item.type">
+                                                        <input type="hidden" :name="'additional_items[' + index + '][quantity]'" :value="item.quantity">
+                                                        <input type="hidden" :name="'additional_items[' + index + '][reason]'" :value="item.reason">
+                                                    </td>
+                                                    
+                                                    <td class="px-4 py-3 text-center">
+                                                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold" x-text="item.quantity"></span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="text-xs text-gray-500 italic" x-text="item.reason || '—'"></span>
+                                                    </td>
+                                                    <td class="px-4 py-3 text-right">
+                                                        <button type="button" @click="removeItem(index)" class="text-gray-400 hover:text-red-600 transition-colors" title="Quitar">
+                                                            <i class="fas fa-times-circle"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+
+                                                <tr x-show="item.expanded" style="display: none;">
+                                                    <td colspan="4" class="p-0 border-b border-gray-200">
+                                                        <div class="px-14 py-4 bg-purple-50/50 shadow-inner">
+                                                            <h5 class="text-xs font-bold text-purple-800 mb-2 uppercase tracking-wider">
+                                                                <i class="fas fa-list-ul mr-1"></i> Contenido del Kit:
+                                                            </h5>
+                                                            <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                                                                <template x-for="(content, idx) in item.contents" :key="idx">
+                                                                    <li class="flex items-start">
+                                                                        <i class="fas fa-check text-purple-400 mt-1 mr-2 text-[10px]"></i>
+                                                                        <span x-text="content"></span>
+                                                                    </li>
+                                                                </template>
+                                                            </ul>
+                                                            <div x-show="!item.contents || item.contents.length === 0" class="text-xs text-gray-500 italic">
+                                                                No hay instrumentos registrados en este kit.
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </template>
+                                    </table>
+                                    <div class="px-4 py-2 bg-purple-50 border-t border-purple-100 text-right">
+                                        <span class="text-xs font-semibold text-purple-700">
+                                            <span x-text="items.length"></span> producto(s) adicional(es)
+                                        </span>
+                                    </div>
+                                </div>
+                            </template>
+ 
+                            <!-- Vacío -->
+                            <template x-if="items.length === 0">
+                                <div class="text-center py-6 text-gray-400">
+                                    <i class="fas fa-inbox text-2xl mb-2"></i>
+                                    <p class="text-sm">No hay productos adicionales. Usa el buscador de arriba si necesitas agregar.</p>
+                                </div>
+                            </template>
+                        </div>
+ 
                         <!-- Información Adicional -->
                         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                             <div class="flex items-start">
@@ -283,7 +424,8 @@
                                 <div class="ml-3">
                                     <h4 class="text-sm font-semibold text-blue-900 mb-2">Siguiente Paso</h4>
                                     <p class="text-sm text-blue-800">
-                                        Una vez agendada la cirugía, podrás iniciar el proceso de preparación seleccionando un paquete pre-armado y completando los productos faltantes.
+                                        Una vez agendada la cirugía, podrás iniciar el proceso de preparación seleccionando un paquete pre-armado y
+                                        completando los productos faltantes.
                                     </p>
                                 </div>
                             </div>
@@ -466,6 +608,103 @@
                 },
             },
         });
+
+        // ==========================================
+        // TOM SELECT - Producto/Instrumento/Kit adicional
+        // ==========================================
+        const additionalProductSelect = new TomSelect('#additional_product_search', {
+            valueField: 'id', 
+            labelField: 'text', 
+            searchField: 'text',
+            placeholder: 'Buscar insumo, instrumento o kit...', 
+            openOnFocus: false,
+            shouldLoad: function(query) { return query.length > 0; },
+            load: function(query, callback) {
+                // Asegúrate de que esta ruta coincida con tu controlador de búsqueda triple
+                fetch(`/api/items/select2?search=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        // Si usaste grupos (children) en el controlador, TomSelect los aplana o maneja
+                        // pero lo más seguro es pasarle la lista plana si no configuraste 'optgroups'
+                        let flatResults = [];
+                        data.results.forEach(group => {
+                            if(group.children) flatResults = flatResults.concat(group.children);
+                            else flatResults.push(group);
+                        });
+                        callback(flatResults);
+                    })
+                    .catch(() => callback());
+            },
+            render: {
+                option: (data, escape) => {
+                    // Agregamos un badge visual según el tipo
+                    const badges = {
+                        'product': '<span class="text-xs bg-gray-200 px-1 rounded">INSUMO</span>',
+                        'instrument': '<span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">INSTRUMENTO</span>',
+                        'kit': '<span class="text-xs bg-purple-100 text-purple-700 px-1 rounded">KIT</span>'
+                    };
+                    return `<div class="py-2 px-3 d-flex justify-content-between">
+                                <span>${escape(data.text)}</span>
+                                ${badges[data.type] || ''}
+                            </div>`;
+                },
+                item: (data, escape) => `<div>${escape(data.text)}</div>`,
+                no_results: () => '<div style="padding:10px;text-align:center;color:#6b7280;">No se encontraron resultados</div>',
+            },
+        });
+ 
+        // ==========================================
+        // Alpine.js - Productos adicionales
+        // ==========================================
+        function additionalItems() {
+            return {
+                items: [],
+
+                addItem() {
+                    const fullId = additionalProductSelect.getValue(); 
+                    
+                    // Obtenemos el objeto completo de los datos cargados en TomSelect
+                    const selectedData = additionalProductSelect.options[fullId];
+                    
+                    const productText = selectedData ? selectedData.text : '';
+                    const itemType = selectedData ? selectedData.type : ''; 
+                    const itemContents = selectedData ? (selectedData.contents || []) : [];
+                    
+                    const qty = parseInt(document.getElementById('additional_qty').value) || 1;
+                    const reason = document.getElementById('additional_reason').value.trim();
+
+                    if (!fullId) {
+                        alert('Selecciona un elemento de la lista.');
+                        return;
+                    }
+
+                    const exists = this.items.find(i => i.id_with_prefix === fullId);
+                    if (exists) {
+                        alert('Este elemento ya fue agregado.');
+                        return;
+                    }
+
+                    this.items.push({
+                        id_with_prefix: fullId, 
+                        text: productText,
+                        type: itemType,        
+                        quantity: qty,
+                        reason: reason,
+                        contents: itemContents,
+                        expanded: false
+                    });
+
+                    // Limpiar
+                    additionalProductSelect.clear();
+                    document.getElementById('additional_qty').value = 1;
+                    document.getElementById('additional_reason').value = '';
+                },
+
+                removeItem(index) {
+                    this.items.splice(index, 1);
+                },
+            };
+        }
 
         // ==========================================
         // Combinar fecha y hora en datetime

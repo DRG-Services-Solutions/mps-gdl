@@ -22,6 +22,7 @@ class PreparationService
      */
     public function createPreparation($surgeryId, $packageId, $userId)
     {
+        
         return DB::transaction(function () use ($surgeryId, $packageId, $userId) {
             // 1. Validar y obtener la cirugía
             $surgery = ScheduledSurgery::findOrFail($surgeryId);

@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
+use App\Models\Instrument;
+use App\Models\InstrumentKit;
 
 
 class ProductController extends Controller
@@ -22,6 +24,7 @@ class ProductController extends Controller
         $query = Product::with([
             'supplier', 
             'category',
+            'productType',
         ]);
         
         // ========================================
@@ -46,8 +49,8 @@ class ProductController extends Controller
         // ========================================
         // FILTRO: Categoría
         // ========================================
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+        if ($request->filled('product_type_id')) {
+            $query->where('product_type_id', $request->product_type_id);
         }
         
         // ========================================
@@ -69,7 +72,7 @@ class ProductController extends Controller
         
         // Obtener datos para los filtros (select options)
         $suppliers = Supplier::orderBy('name')->get();
-        $categories = Category::orderBy('name')->get();
+        $product_types = ProductType::orderBy('name')->get();
 
         //Conteos totales para mostrar en tarjetas
         $trackingCounts = [
@@ -80,7 +83,7 @@ class ProductController extends Controller
     ];
 
         
-        return view('products.index', compact('products', 'suppliers', 'categories', 'trackingCounts'));
+        return view('products.index', compact('products', 'suppliers', 'product_types', 'trackingCounts'));
     }
 
     // ==========================================================
@@ -475,23 +478,54 @@ class ProductController extends Controller
 
     public function select2(Request $request)
     {
-        $query = Product::where('status', 'active');
+        $search = $request->search;
+        $results = collect();
+        $limit = 10; // 10 resultados por categoría para no saturar
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('code', 'like', "%{$search}%")
-                ->orWhere('name', 'like', "%{$search}%");
-            });
-        }
+        // 1. PRODUCTOS
+        $products = Product::where('status', 'active')
+            ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
+            ->limit($limit)->get()
+            ->map(fn($p) => [
+                'id'    => "prod_{$p->id}",
+                'text'  => "📦 [Insumo] {$p->code} — {$p->name}",
+                'price' => $p->list_price ?? 0,
+                'type'  => 'product'
+            ]);
 
+        // 2. INSTRUMENTOS
+      
+        $instruments = Instrument::available()
+            ->when($search, fn($q) => $q->search($search))
+            ->limit($limit)->get()
+            ->map(fn($i) => [
+                'id'    => "inst_{$i->id}",
+                'text'  => "✂️ [Instrumento] {$i->serial_number} — {$i->name}",
+                'price' => 0, // Ajusta si el instrumento tiene costo
+                'type'  => 'instrument'
+            ]);
+
+        // 3. KITS DE INSTRUMENTAL
+        $kits = InstrumentKit::available()
+            ->with('instruments') // ⭐ IMPORTANTE: Cargar los instrumentos del kit
+            ->when($search, fn($q) => $q->search($search))
+            ->limit($limit)->get()
+            ->map(fn($k) => [
+                'id'    => "kit_{$k->id}",
+                'text'  => "🧳 [KIT] {$k->code} — {$k->name} ({$k->expected_count} pzs)",
+                'price' => 0,
+                'type'  => 'kit',
+                // ⭐ Agregamos el contenido como un arreglo de textos
+                'contents' => $k->instruments->map(fn($inst) => "{$inst->serial_number} — {$inst->name}")->toArray()
+            ]);
+
+        // Unificamos en grupos para que en el Select2 se vea ordenado
         return response()->json([
-            'results' => $query->orderBy('name')->limit(20)->get()
-                ->map(fn($p) => [
-                    'id' => $p->id,
-                    'text' => "{$p->code} — {$p->name}",
-                    'price' => $p->list_price ?? 0,
-                ])
+            'results' => [
+                ['text' => 'Insumos / Productos', 'children' => $products],
+                ['text' => 'Instrumental Individual', 'children' => $instruments],
+                ['text' => 'Kits de Cirugía', 'children' => $kits],
+            ]
         ]);
     }
 
