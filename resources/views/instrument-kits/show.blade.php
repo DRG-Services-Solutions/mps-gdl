@@ -39,7 +39,6 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <!-- Banner de estado -->
             @php
                 $bannerColor = match($instrumentKit->status) {
                     'available'  => 'from-green-500 to-emerald-600',
@@ -70,13 +69,11 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-5xl font-black">{{ $stats['total'] }}/{{ $stats['expected'] }}</p>
                         <p class="text-sm opacity-80">piezas</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Piezas Actuales</p>
@@ -84,7 +81,6 @@
                 </div>
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Esperadas</p>
-                    <p class="text-3xl font-black text-gray-900">{{ $stats['expected'] }}</p>
                 </div>
                 <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 {{ $stats['missing'] > 0 ? 'border-red-500' : 'border-green-500' }}">
                     <p class="text-xs font-bold text-gray-500 uppercase mb-1">Faltantes</p>
@@ -96,8 +92,6 @@
                 </div>
             </div>
 
-            <!-- Asignar instrumento -->
-            @if($instrumentKit->status !== 'in_surgery')
             <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     <i class="fas fa-plus-circle mr-2 text-indigo-600"></i> Asignar Instrumento
@@ -107,7 +101,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                         <div class="md:col-span-9">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Instrumento Disponible</label>
-                            <select name="instrument_id" id="instrument_search" placeholder="Buscar por serial o nombre..." required></select>
+                            
+                            <select id="instrument_search" placeholder="Buscar por serial o nombre..." required></select>
+                            
+                            <input type="hidden" name="product_id" id="clean_product_id">
+                            
+                            @error('product_id')
+                                <p class="text-xs text-red-500 mt-2 font-semibold"><i class="fas fa-exclamation-triangle mr-1"></i>{{ $message }}</p>
+                            @enderror
                         </div>
                         <div class="md:col-span-3">
                             <button type="submit" class="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors">
@@ -117,9 +118,7 @@
                     </div>
                 </form>
             </div>
-            @endif
 
-            <!-- Tabla de instrumentos en el kit -->
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <h3 class="text-lg font-semibold text-gray-900">
@@ -166,7 +165,7 @@
                                 <td class="px-6 py-4 text-center">
                                     @if($instrument->dependsOn)
                                         <span class="text-xs text-blue-600">
-                                            <i class="fas fa-arrow-up mr-1"></i> {{ $instrument->dependsOn->serial_number }} -- 
+                                            <i class="fas fa-arrow-up mr-1"></i> {{ $instrument->dependsOn->serial_number }}
                                         </span>
                                         <div class="text-xs text-gray-500 italic">
                                             {{ $instrument->dependsOn->name }}
@@ -219,14 +218,14 @@
 
     @if(session('success'))
     <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
-         x-transition class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+         x-transition class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
         <i class="fas fa-check-circle mr-2"></i> {{ session('success') }}
     </div>
     @endif
 
     @if(session('error'))
     <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
-         x-transition class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+         x-transition class="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
         <i class="fas fa-exclamation-circle mr-2"></i> {{ session('error') }}
     </div>
     @endif
@@ -235,12 +234,29 @@
     <script>
         new TomSelect('#instrument_search', {
             valueField: 'id', labelField: 'text', searchField: 'text',
-            placeholder: 'Buscar instrumento por serial o nombre...', openOnFocus: false,
+            placeholder: 'Buscar producto por serial o nombre...', openOnFocus: false,
             shouldLoad: function(query) { return query.length > 0; },
             load: function(query, callback) {
-                fetch(`/api/instruments/search-available?search=${encodeURIComponent(query)}`)
-                    .then(r => r.json()).then(data => callback(data.results)).catch(() => callback());
+                fetch(`/api/items/select2?search=${encodeURIComponent(query)}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const items = data.results.flatMap(group => group.children || []);
+                        callback(items);
+                    })
+                    .catch(() => callback());
             },
+            
+            // CORRECCIÓN 5: Interceptamos el cambio para limpiar el ID ('prod_5' -> '5')
+            onChange: function(value) {
+                if (value) {
+                    // Si value es "prod_1251", split('_') crea ["prod", "1251"], pop() obtiene "1251"
+                    const cleanId = value.split('_').pop();
+                    document.getElementById('clean_product_id').value = cleanId;
+                } else {
+                    document.getElementById('clean_product_id').value = '';
+                }
+            },
+            
             render: {
                 option: (data, escape) => `<div class="py-2 px-3">${escape(data.text)}</div>`,
                 item: (data, escape) => `<div>${escape(data.text)}</div>`,

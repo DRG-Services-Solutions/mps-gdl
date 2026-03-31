@@ -11,7 +11,7 @@ class InstrumentCategorySeeder extends Seeder
     {
         $categories = [
             ['name' => 'Instrumentales', 'slug' => 'instrumentales', 'description' => 'Instrumentos quirúrgicos individuales (pinzas, separadores, mangos, etc.)'],
-            ['name' => 'Kit de Instrumentales', 'slug' => 'kit-instrumentales', 'description' => 'Cajas y sets que contienen múltiples instrumentos'],
+            ['name' => 'Set de Instrumentales', 'slug' => 'kit-instrumentales', 'description' => 'Cajas y sets que contienen múltiples instrumentos'],
             ['name' => 'Equipos', 'slug' => 'equipos', 'description' => 'Equipos y aparatos médicos (motores, torres, cámaras, etc.)'],
         ];
 

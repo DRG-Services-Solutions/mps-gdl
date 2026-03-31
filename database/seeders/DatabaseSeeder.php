@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
                     ProductTypeSeeder::class,
                     DoctorSeeder::class,
                     HospitalSystemSeeder::class,
+                    InstrumentCategorySeeder::class,
 
                 ]);
         $this->call(UserSeeder::class);

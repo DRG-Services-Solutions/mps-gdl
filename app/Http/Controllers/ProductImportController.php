@@ -44,6 +44,7 @@ class ProductImportController extends Controller
             'specialty_name',
             'brand_name',
             'list_price',
+            'cost_price',
             'requires_sterilization',
             'requires_refrigeration',
             'requires_temperature',
@@ -73,6 +74,7 @@ class ProductImportController extends Controller
                 'TRAUMATOLOGIA',
                 'BIOGRAFT',
                 1500.50,
+                1700.00,
                 1,
                 0,
                 0,
@@ -88,6 +90,7 @@ class ProductImportController extends Controller
                 'CIRUGIA GENERAL',
                 'Aesculap',
                 450.00,
+                600.00,
                 1,
                 0,
                 0,
@@ -414,10 +417,10 @@ class ProductImportController extends Controller
 
             $columnMap = $this->getColumnMapping($header);
 
-            // ★ Pre-cargar catálogos
+            //Pre-cargar catálogos
             $catalogs = $this->preloadCatalogs();
 
-            // ★ Verificar códigos existentes en batch
+            // Verificar códigos existentes en batch
             $existingCodes = $this->getExistingCodes($rows, $columnMap);
 
             // Cache para suppliers y brands nuevos
@@ -559,6 +562,7 @@ class ProductImportController extends Controller
             'specialty_name'          => ['specialty_name', 'specialty name', 'especialidad', 'specialty'],
             'brand_name'              => ['brand_name', 'brand name', 'marca', 'brand'],
             'list_price'              => ['list_price', 'list price', 'precio', 'price', 'costo'],
+            'cost_price'              => ['cost_price', 'cost price', 'costo', 'cost'],
             'requires_sterilization'  => ['requires_sterilization', 'requires sterilization', 'esterilizacion'],
             'requires_refrigeration'  => ['requires_refrigeration', 'requires refrigeration', 'refrigeracion'],
             'requires_temperature'    => ['requires_temperature', 'requires temperature', 'temperatura'],
@@ -783,6 +787,7 @@ class ProductImportController extends Controller
         // ──────────────────────────────────────────
 
         $processed['list_price'] = !empty($data['list_price']) ? (float) $data['list_price'] : 0;
+        $processed['cost_price'] = !empty($data['cost_price']) ? (float) $data['cost_price'] : 0;
         $processed['minimum_stock'] = 0;
 
         $processed['requires_sterilization'] = $this->parseBoolean($data['requires_sterilization'] ?? 0);

@@ -103,13 +103,13 @@ class InstrumentKit extends Model
     /**
      * Asignar un instrumento a este kit
      */
-    public function assignInstrument(Instrument $instrument): void
+    public function assignProduct(Product $product): void
     {
-        if ($instrument->kit_id && $instrument->kit_id !== $this->id) {
-            throw new \RuntimeException("El instrumento {$instrument->serial_number} ya pertenece a otro kit.");
+        if ($product->kit_id && $product->kit_id !== $this->id) {
+            throw new \RuntimeException("El producto {$product->serial_number} ya pertenece a otro kit.");
         }
 
-        $instrument->update([
+        $product->update([
             'kit_id' => $this->id,
             'status' => 'in_kit',
         ]);

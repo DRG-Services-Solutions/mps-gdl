@@ -149,7 +149,7 @@ class Product extends Model
         return $this->tracking_type === 'code';
     }
 
-    // ==================== MÉTODOS DE STOCK (MEJORADOS) ====================
+    // ==================== MÉTODOS DE STOCK ====================
     
     /**
      * Obtiene el stock en una ubicación específica según el tipo de tracking
@@ -514,18 +514,15 @@ class Product extends Model
     {
         $scannedCode = trim($scannedCode);
         
-        // CASO 1: Código con separador '|' 
         if (strpos($scannedCode, '|') !== false) {
             return explode('|', $scannedCode)[0];
         }
         
-        // CASO 2: Código con múltiples '-' (más de 1 guion)
         $parts = explode('-', $scannedCode);
         if (count($parts) > 2) {
             return $parts[0] . '-' . $parts[1]; // Mantiene "AR-3128"
         }
         
-        // CASO 3: Código simple
         return $scannedCode;
     }
     
@@ -533,5 +530,12 @@ class Product extends Model
     {
         return ProductUnit::nextAvailable($this->id, $locationId, $legalEntityId);
     }
+
+    public function canBeAssignedToKit(): bool
+    {
+        return $this->status === 'active' && !$this->kit_id;
+    }
+
+    
 
 }

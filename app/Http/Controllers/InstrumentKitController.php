@@ -6,7 +6,7 @@ use App\Models\InstrumentKit;
 use App\Models\Instrument;
 use App\Models\SurgicalKitTemplate;
 use Illuminate\Http\Request;
-
+use App\Models\Product;
 class InstrumentKitController extends Controller
 {
     public function index(Request $request)
@@ -76,8 +76,9 @@ class InstrumentKitController extends Controller
             'completeness' => $instrumentKit->completeness,
             'by_condition' => $instrumentKit->instruments->groupBy('condition')->map->count(),
         ];
+        $products = $instrumentKit->instruments()->with('product')->get();
 
-        return view('instrument-kits.show', compact('instrumentKit', 'stats'));
+        return view('instrument-kits.show', compact('instrumentKit', 'stats', 'products'));
     }
 
     public function edit(InstrumentKit $instrumentKit)
@@ -131,22 +132,29 @@ class InstrumentKitController extends Controller
      */
     public function assignInstrument(Request $request, InstrumentKit $instrumentKit)
     {
+        //dd('Datos recibidos:', $request->all(), 'Kit ID:', $instrumentKit->id);
         $validated = $request->validate([
-            'instrument_id' => 'required|exists:instruments,id',
+            'product_id' => 'required|exists:products,id',
         ]);
 
-        $instrument = Instrument::findOrFail($validated['instrument_id']);
+        // Buscamos el instrumento que queremos meter al kit
+        $product = Product::findOrFail($validated['product_id']);
 
-        if (!$instrument->canBeAssignedToKit()) {
+        if (!$product->canBeAssignedToKit()) {
+            $estado = $product->status_color['label'] ?? $product->status ?? 'No disponible';
+
             return redirect()->back()
-                ->with('error', "El instrumento {$instrument->serial_number} no está disponible para asignación (Estado: {$instrument->status_color['label']}).");
+                ->with('error', "El producto {$product->serial_number} no está disponible para asignación (Estado actual: {$estado}).");
         }
 
-        $instrumentKit->assignInstrument($instrument);
-        $instrumentKit->refreshStatus();
+        // Le decimos al KIT que se asigne este INSTRUMENTO
+        $instrumentKit->assignInstrument($product);
+        
+        // Actualizamos el estatus del instrumento (ahora está "in_kit")
+        $product->refreshStatus();
 
         return redirect()->back()
-            ->with('success', "{$instrument->full_label} asignado al kit.");
+            ->with('success', "{$product->full_label} asignado al kit exitosamente.");
     }
 
     /**

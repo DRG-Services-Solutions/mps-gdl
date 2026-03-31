@@ -442,11 +442,14 @@ class ProductController extends Controller
     {
         $search = $request->search;
         $results = collect();
-        $limit = 10; // 10 resultados por categoría para no saturar
+        $limit = 10; 
 
         // 1. PRODUCTOS
-        $products = Product::where('status', 'active')
-            ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%")->orWhere('code', 'like', "%{$search}%"))
+        $products = Product::where('product_type_id', 1)
+            ->when($search, fn($q) => $q->where(fn($sub) => 
+                $sub->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+            ))
             ->limit($limit)->get()
             ->map(fn($p) => [
                 'id'    => "prod_{$p->id}",
@@ -455,16 +458,29 @@ class ProductController extends Controller
                 'type'  => 'product'
             ]);
 
-        // 2. INSTRUMENTOS
+        $instrumental = Product::where('product_type_id', 2)
+            ->when($search, fn($q) => $q->where(fn($sub) => 
+                $sub->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+            ))
+            ->limit($limit)->get()
+            ->map(fn($p) => [
+                'id'    => "prod_{$p->id}",
+                'text'  => "✂️ [Instrumental] {$p->code} — {$p->name}",
+                'price' => $p->list_price ?? 0,
+                'type'  => 'instrumental'
+            ]);
+
+        // 2. INSTRUMENTALES
       
         $instruments = Instrument::available()
             ->when($search, fn($q) => $q->search($search))
             ->limit($limit)->get()
             ->map(fn($i) => [
                 'id'    => "inst_{$i->id}",
-                'text'  => "✂️ [Instrumento] {$i->serial_number} — {$i->name}",
+                'text'  => "✂️ [Instrumental] {$i->serial_number} — {$i->name}",
                 'price' => 0, // Ajusta si el instrumento tiene costo
-                'type'  => 'instrument'
+                'type'  => 'instrumental'
             ]);
 
         // 3. KITS DE INSTRUMENTAL
@@ -477,7 +493,6 @@ class ProductController extends Controller
                 'text'  => "🧳 [KIT] {$k->code} — {$k->name} ({$k->expected_count} pzs)",
                 'price' => 0,
                 'type'  => 'kit',
-                // ⭐ Agregamos el contenido como un arreglo de textos
                 'contents' => $k->instruments->map(fn($inst) => "{$inst->serial_number} — {$inst->name}")->toArray()
             ]);
 
@@ -487,6 +502,7 @@ class ProductController extends Controller
                 ['text' => 'Insumos / Productos', 'children' => $products],
                 ['text' => 'Instrumental Individual', 'children' => $instruments],
                 ['text' => 'Kits de Cirugía', 'children' => $kits],
+                ['text' => 'Otros', 'children' => $instrumental],
             ]
         ]);
     }
