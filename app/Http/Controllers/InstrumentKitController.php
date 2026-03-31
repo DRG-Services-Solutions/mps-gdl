@@ -48,7 +48,6 @@ class InstrumentKitController extends Controller
             'name'          => 'required|string|max:255',
             'serial_number' => 'required|string|max:100|unique:instrument_kits,serial_number',
             'template_id'   => 'nullable|exists:surgical_kit_templates,id',
-            'expected_count' => 'required|integer|min:1',
             'notes'         => 'nullable|string|max:1000',
         ]);
 
@@ -73,7 +72,6 @@ class InstrumentKitController extends Controller
 
         $stats = [
             'total'       => $instrumentKit->instruments->count(),
-            'expected'    => $instrumentKit->expected_count,
             'missing'     => $instrumentKit->missing_count,
             'completeness' => $instrumentKit->completeness,
             'by_condition' => $instrumentKit->instruments->groupBy('condition')->map->count(),
@@ -97,7 +95,6 @@ class InstrumentKitController extends Controller
             'name'          => 'required|string|max:255',
             'serial_number' => "required|string|max:100|unique:instrument_kits,serial_number,{$instrumentKit->id}",
             'template_id'   => 'nullable|exists:surgical_kit_templates,id',
-            'expected_count' => 'required|integer|min:1',
             'notes'         => 'nullable|string|max:1000',
         ]);
 

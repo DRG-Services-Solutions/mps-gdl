@@ -198,12 +198,7 @@
                                 <span class="truncate">Ventas</span>
                             </a>
 
-                            <!-- Kits Quirúrgicos (existente) -->
-                            <a href="{{ route('surgical_kit_templates.index') }}" 
-                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                                <i class="fas fa-kit-medical fa-fw text-sm"></i>
-                                <span class="truncate">Instrumentales</span>
-                            </a>
+                            
 
                             <!-- Hospitales -->
                             <a href="{{ route('hospitals.index') }}" 
@@ -330,6 +325,13 @@
                         x-transition:leave-start="opacity-100 translate-y-0"
                         x-transition:leave-end="opacity-0 -translate-y-2"
                         class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
+
+                        <!-- Kits Quirúrgicos (existente) -->
+                            <a href="{{ route('surgical_kit_templates.index') }}" 
+                            class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                                <i class="fas fa-kit-medical fa-fw text-sm"></i>
+                                <span class="truncate">Plantillas de Kits</span>
+                            </a>
                         
                         <a href="{{ route('instruments.index') }}" 
                         class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('instruments.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
@@ -342,7 +344,10 @@
                             <i class="fas fa-box-open fa-fw text-sm"></i>
                             <span class="truncate">Kits / Cajas</span>
                         </a>
+                        
                     </div>
+
+                    
 
                     <!-- Tooltip colapsado -->
                     <div x-show="!desktopSidebarOpen && instrumentsMenuOpen" 
@@ -362,6 +367,8 @@
                             <i class="fas fa-box-open fa-fw text-sm"></i>
                             <span>Kits / Cajas</span>
                         </a>
+
+                        <
                     </div>
                 </div>
 

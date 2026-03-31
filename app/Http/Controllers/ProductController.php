@@ -128,6 +128,7 @@ class ProductController extends Controller
             // Información de inventario
             'minimum_stock' => 'nullable|integer|min:0',
             'list_price' => 'nullable|numeric|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
             
             // Estado del producto en catálogo
             'status' => 'nullable|in:active,inactive,discontinued',
@@ -137,6 +138,7 @@ class ProductController extends Controller
         // Valores por defecto para campos opcionales
         $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
         $validated['list_price'] = $validated['list_price'] ?? 0;
+        $validated['cost_price'] = $validated['cost_price'] ?? 0;
         $validated['status'] = $validated['status'] ?? 'active';
         
         // Asegurar que los booleanos tengan valores correctos
@@ -159,7 +161,6 @@ class ProductController extends Controller
         $product->load([
             'supplier', 
             'category', 
-             
             'specialty', 
         ]);
         
@@ -205,6 +206,7 @@ class ProductController extends Controller
             // Información de inventario
             'minimum_stock' => 'nullable|integer|min:0',
             'list_price' => 'nullable|numeric|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
             
             // Estado
             'status' => 'required|in:active,inactive,discontinued',
@@ -342,47 +344,7 @@ class ProductController extends Controller
     }
 
 
-    /**
-     * Productos que requieren esterilización
-     */
-    public function requiresSterilization(): View
-    {
-        $products = Product::with(['supplier', 'category'])
-            ->where('requires_sterilization', true)
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->paginate(10);
-        
-        return view('products.requires-sterilization', compact('products'));
-    }
-
-    /**
-     * Productos que requieren refrigeración
-     */
-    public function requiresRefrigeration(): View
-    {
-        $products = Product::with(['supplier', 'category'])
-            ->where('requires_refrigeration', true)
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->paginate(10);
-        
-        return view('products.requires-refrigeration', compact('products'));
-    }
-
-    /**
-     * Productos que requieren control de temperatura
-     */
-    public function requiresTemperature(): View
-    {
-        $products = Product::with(['supplier', 'category'])
-            ->where('requires_temperature', true)
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->paginate(10);
-        
-        return view('products.requires-temperature', compact('products'));
-    }
+    
 
     /**
      * Estadísticas generales del catálogo

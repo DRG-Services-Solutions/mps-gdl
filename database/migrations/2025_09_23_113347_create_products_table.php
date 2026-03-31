@@ -53,6 +53,7 @@ return new class extends Migration
             
             $table->integer('minimum_stock')->default(0); // Stock mínimo deseado
             $table->decimal('list_price', 10, 2)->default(0);
+            $table->decimal('cost_price', 10, 2)->default(0);
 
             // ==========================================================
             // ESTADO DEL PRODUCTO EN EL CATÁLOGO

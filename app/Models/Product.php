@@ -36,6 +36,7 @@ class Product extends Model
         'minimum_stock',
         'status',
         'list_price',
+        'cost_price',
         'requires_temperature',
     ];
     const TRACKING_RFID = 'rfid';

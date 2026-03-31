@@ -16,7 +16,6 @@ class InstrumentKit extends Model
         'serial_number',
         'template_id',
         'status',
-        'expected_count',
         'notes',
     ];
 
