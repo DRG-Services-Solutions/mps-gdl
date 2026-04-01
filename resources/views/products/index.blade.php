@@ -27,7 +27,12 @@
                             </div>
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900">Catálogo Maestro</h3>
+                              
                                 <p class="text-sm text-gray-600">{{ $products->total() }} productos registrados</p>
+                                <p class="text-sm text-gray-600 font-bold">**{{ $consumibles }} Consumibles**</p>
+                                <p class="text-sm text-gray-600 font-bold">**{{ $instrumentales }} Instrumentales**</p>
+
+
                             </div>
                         </div>
                         

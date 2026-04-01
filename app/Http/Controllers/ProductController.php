@@ -21,6 +21,8 @@ class ProductController extends Controller
     
    public function index(Request $request): View
     {
+        $consumibles = Product::where('product_type_id', 1)->count();
+        $instrumentales = Product::where('product_type_id', 2)->count();
         $query = Product::with([
             'supplier', 
             'category',
@@ -83,7 +85,7 @@ class ProductController extends Controller
     ];
 
         
-        return view('products.index', compact('products', 'suppliers', 'product_types', 'trackingCounts'));
+        return view('products.index', compact('products', 'suppliers', 'product_types', 'trackingCounts', 'consumibles', 'instrumentales'));
     }
 
     // ==========================================================
@@ -485,7 +487,7 @@ class ProductController extends Controller
 
         // 3. KITS DE INSTRUMENTAL
         $kits = InstrumentKit::available()
-            ->with('instruments') // ⭐ IMPORTANTE: Cargar los instrumentos del kit
+            ->with('instruments')
             ->when($search, fn($q) => $q->search($search))
             ->limit($limit)->get()
             ->map(fn($k) => [

@@ -23,8 +23,8 @@ class Product extends Model
     protected $table = 'products';
 
     protected $fillable = [
-        'category_id',
         'product_type_id',
+        'category_id',
         'supplier_id',
         'name',
         'brand_id',
@@ -61,6 +61,7 @@ class Product extends Model
         'requires_sterilization' => 'boolean',
         'requires_temperature' => 'boolean',
         'list_price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
     ];
 
     // ==================== RELACIONES ====================
@@ -80,10 +81,6 @@ class Product extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function specialty() 
-    {
-        return $this->belongsTo(MedicalSpecialty::class, 'specialty_id');
-    }
 
     public function supplier() 
     {
@@ -134,9 +131,9 @@ class Product extends Model
         return $this->tracking_type === 'rfid';
     }
 
-    public function usesSerial(): bool
+    public function usesLot(): bool
     {
-        return $this->tracking_type === 'serial';
+        return $this->tracking_type === 'lote';
     }
 
     public function hasIndividualTracking(): bool

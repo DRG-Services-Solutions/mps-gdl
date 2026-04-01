@@ -56,7 +56,7 @@ return new class extends Migration
             // ==========================================================
             // ESTADO DEL PRODUCTO EN EL CATÁLOGO
             // ==========================================================
-            $table->enum('status', ['active', 'reservado', 'inactivo'])->default('active');
+            $table->enum('status', ['activo', 'reservado', 'inactivo'])->default('activo');
 
             $table->timestamps();
             $table->softDeletes();

@@ -113,7 +113,7 @@ class ProductImportController extends Controller
             ['CAMPOS OBLIGATORIOS:'],
             ['- code: Código único (ej: 16310199, KELLY-14)'],
             ['- name: Nombre del producto'],
-            ['- tracking_type: code, rfid o serial'],
+            ['- tracking_type: code, rfid o lote'],
             ['- product_type_name: Consumible o Instrumental'],
             [''],
             ['PRODUCT_TYPE_NAME (Tipo de Producto):'],
@@ -130,9 +130,9 @@ class ProductImportController extends Controller
             ['  - serial: Número de serie de fábrica'],
             [''],
             ['STATUS:'],
-            ['  - active (por defecto)'],
-            ['  - inactive'],
-            ['  - discontinued'],
+            ['  - activo (por defecto)'],
+            ['  - inactivo'],
+            ['  - reservado'],
             [''],
             ['CAMPOS BOOLEANOS (0 o 1):'],
             ['  requires_sterilization: ¿Requiere esterilización?'],
@@ -510,6 +510,7 @@ class ProductImportController extends Controller
                             $existingCodes->put($processedData['code'], true);
                         }
                     } catch (\Exception $e) {
+                        dd('Error fatal en Fila ' . $rowNumber, $e->getMessage(), 'Datos que intentó guardar:', $processedData);
                         $errors[] = "Fila {$rowNumber}: " . $e->getMessage();
                         $skipped++;
                     }
@@ -651,13 +652,13 @@ class ProductImportController extends Controller
         }
 
         // Tracking type (obligatorio)
-        $validTrackingTypes = ['code', 'rfid', 'serial'];
+        $validTrackingTypes = ['code', 'rfid', 'lote'];
         $trackingType = strtolower(trim($data['tracking_type'] ?? ''));
 
         if (empty($trackingType)) {
             $errors[] = 'El tipo de rastreo es obligatorio';
         } elseif (!in_array($trackingType, $validTrackingTypes)) {
-            $errors[] = "Tipo de rastreo '{$trackingType}' inválido. Use: code, rfid o serial";
+            $errors[] = "Tipo de rastreo '{$trackingType}' inválido. Use: code, rfid o lote";
         } else {
             $processed['tracking_type'] = $trackingType;
         }
@@ -767,12 +768,10 @@ class ProductImportController extends Controller
         $processed['requires_temperature'] = $this->parseBoolean($data['requires_temperature'] ?? 0);
 
         // Status
-        $validStatuses = ['active', 'inactive', 'discontinued'];
-        $status = strtolower($data['status'] ?? 'active');
-        $processed['status'] = in_array($status, $validStatuses) ? $status : 'active';
+        $validStatuses = ['activo', 'inactivo', 'reservado'];
+        $status = strtolower($data['status'] ?? 'activo');
+        $processed['status'] = in_array($status, $validStatuses) ? $status : 'activo';
 
-        // Description
-        $processed['description'] = null;
 
         return [
             'valid'     => empty($errors),
@@ -790,7 +789,6 @@ class ProductImportController extends Controller
         if (is_bool($value)) {
             return $value;
         }
-
         $value = strtolower(trim($value ?? ''));
         return in_array($value, ['1', 'true', 'yes', 'si', 'sí']);
     }
