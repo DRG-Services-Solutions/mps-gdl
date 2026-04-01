@@ -7,7 +7,6 @@ use App\Models\Supplier;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\ProductType;
-use App\Models\MedicalSpecialty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -41,7 +40,6 @@ class ProductImportController extends Controller
             'supplier_name',
             'product_type_name',
             'category_name',
-            'specialty_name',
             'brand_name',
             'list_price',
             'cost_price',
@@ -126,9 +124,6 @@ class ProductImportController extends Controller
             ['  Ejemplos: OSTEOSINTESIS, CADERA, RODILLA, ARTROSCOPIA, etc.'],
             ['  (Usa los nombres exactos de tu sistema)'],
             [''],
-            ['SPECIALTY_NAME (Especialidad Médica):'],
-            ['  Ejemplos: TRAUMATOLOGIA, CIRUGIA GENERAL, ORTOPEDIA, etc.'],
-            [''],
             ['TRACKING_TYPE:'],
             ['  - code: Control numérico'],
             ['  - rfid: Etiquetas RFID'],
@@ -177,7 +172,6 @@ class ProductImportController extends Controller
             'brands'        => Brand::all()->keyBy(fn($b) => strtolower(trim($b->name))),
             'product_types' => ProductType::all(),
             'categories'    => Category::all(),
-            'specialties'   => MedicalSpecialty::all(),
         ];
     }
 
@@ -559,7 +553,6 @@ class ProductImportController extends Controller
             'supplier_name'           => ['supplier_name', 'supplier name', 'proveedor', 'supplier'],
             'product_type_name'       => ['product_type_name', 'product type name', 'product type', 'tipo producto'],
             'category_name'           => ['category_name', 'category name', 'categoria', 'category'],
-            'specialty_name'          => ['specialty_name', 'specialty name', 'especialidad', 'specialty'],
             'brand_name'              => ['brand_name', 'brand name', 'marca', 'brand'],
             'list_price'              => ['list_price', 'list price', 'precio', 'price', 'costo'],
             'cost_price'              => ['cost_price', 'cost price', 'costo', 'cost'],
@@ -633,7 +626,6 @@ class ProductImportController extends Controller
             'brand_name'        => null,
             'product_type_name' => null,
             'category_name'     => null,
-            'specialty_name'    => null,
         ];
 
         // ──────────────────────────────────────────
@@ -760,27 +752,7 @@ class ProductImportController extends Controller
             }
         }
 
-        // Specialty (búsqueda en colección en memoria, no crítico)
-        $processed['specialty_id'] = null;
-        if (!empty($data['specialty_name'])) {
-            $name = strtolower(trim($data['specialty_name']));
-
-            $specialty = $catalogs['specialties']->first(function ($s) use ($name) {
-                return strtolower($s->name) === $name;
-            });
-
-            if (!$specialty) {
-                $specialty = $catalogs['specialties']->first(function ($s) use ($name) {
-                    return str_contains(strtolower($s->name), $name);
-                });
-            }
-
-            if ($specialty) {
-                $processed['specialty_id'] = $specialty->id;
-                $relations['specialty_name'] = $specialty->name;
-            }
-            // No agregar error si no se encuentra (no es crítico)
-        }
+        
 
         // ──────────────────────────────────────────
         // CAMPOS NUMÉRICOS Y BOOLEANOS

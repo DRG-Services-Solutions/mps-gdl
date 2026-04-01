@@ -30,13 +30,11 @@ return new class extends Migration
           // Migración de products (¡Correcta!)
             $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
-            $table->foreignId('specialty_id')->nullable()->constrained('medical_specialties')->nullOnDelete(); 
             // ==========================================================
             // IDENTIDAD Y CÓDIGOS DEL PRODUCTO (CATÁLOGO)
             // ==========================================================
             $table->string('name');
             $table->string('code')->unique(); 
-            $table->text('description')->nullable();
             $table->boolean('requires_sterilization')->default(0);
             $table->boolean('requires_refrigeration')->default(0);
             $table->boolean('requires_temperature')->default(0);
@@ -44,21 +42,21 @@ return new class extends Migration
             // ==========================================================
             // TIPO DE TRAZABILIDAD
             // ==========================================================
-            $table->enum('tracking_type', ['code', 'rfid', 'serial'])->default('code');
+            $table->enum('tracking_type', ['code', 'rfid', 'lote'])->default('code');
 
             
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================
             
-            $table->integer('minimum_stock')->default(0); // Stock mínimo deseado
+            $table->integer('minimum_stock')->default(0);
             $table->decimal('list_price', 10, 2)->default(0);
             $table->decimal('cost_price', 10, 2)->default(0);
 
             // ==========================================================
             // ESTADO DEL PRODUCTO EN EL CATÁLOGO
             // ==========================================================
-            $table->enum('status', ['active', 'inactive', 'discontinued'])->default('active');
+            $table->enum('status', ['active', 'reservado', 'inactivo'])->default('active');
 
             $table->timestamps();
             $table->softDeletes();

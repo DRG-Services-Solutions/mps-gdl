@@ -13,9 +13,6 @@ return new class extends Migration
     {
         Schema::create('surgical_sets', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('medical_specialty_id')->constrained();
-            $table->foreignId('specialty_subcategory_id')->nullable()->constrained();
-
             $table->string('name'); 
             $table->string('code')->unique();
             $table->text('description')->nullable();
