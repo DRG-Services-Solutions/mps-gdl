@@ -9,6 +9,7 @@ use App\Http\Requests\StoreSurgicalKitTemplateItemsRequest;
 use App\Http\Requests\UpdateSurgicalKitTemplateItemsRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 
 class SurgicalKitTemplateItemsController extends Controller
@@ -19,11 +20,33 @@ class SurgicalKitTemplateItemsController extends Controller
 
     public function store(StoreSurgicalKitTemplateItemsRequest $request)
     {
+        $rawId = $request->input('product_id');
+        $cleanId = $rawId;
+        
+        if (str_contains($rawId, '_')) {
+            $parts = explode('_', $rawId);
+            $cleanId = end($parts); // Se queda solo con el "4780"
+        }
+
+        // Sobrescribimos el request con el ID limpio
+        $request->merge(['product_id' => $cleanId]);
+
+        // 2. AHORA SÍ, VALIDAMOS CON EL DATO LIMPIO
+        /*
+        $validated = $request->validate([
+            'surgical_kit_template_id' => 'required|exists:surgical_kit_templates,id',
+            'product_id'               => 'required|exists:products,id',
+            'quantity'                 => 'required|integer|min:1',
+        ], [
+            'product_id.required' => 'Debes seleccionar un artículo.',
+            'product_id.exists'   => 'El artículo seleccionado no es válido en el catálogo.',
+        ]);
+        */
         $validated = $request->validated();
 
+        //GUARDAMOS EN LA BASE DE DATOS
         $template = SurgicalKitTemplate::findOrFail($validated['surgical_kit_template_id']);
 
-        // Si el producto ya existe en el kit, suma la cantidad en lugar de duplicar
         $existing = SurgicalKitTemplateItems::where('surgical_kit_template_id', $template->id)
             ->where('product_id', $validated['product_id'])
             ->first();
@@ -34,21 +57,23 @@ class SurgicalKitTemplateItemsController extends Controller
             SurgicalKitTemplateItems::create([
                 'surgical_kit_template_id' => $template->id,
                 'product_id'               => $validated['product_id'],
-                'quantity_required'        => $validated['quantity_required'],
+                'quantity_required'        => $validated['quantity'],
             ]);
         }
 
+        // 4. REGRESAMOS CON ÉXITO
         return redirect()
             ->route('surgical_kit_templates.show', ['surgical_kit_template' => $template->id])
-            ->with('success', 'Artículo agregado al kit.');
+            ->with('success', 'Artículo agregado al kit exitosamente.');
     }
 
     // ═══════════════════════════════════════════════════════════
     // ACTUALIZAR CANTIDAD (inline autosubmit desde la tabla)
     // ═══════════════════════════════════════════════════════════
-
     public function update(UpdateSurgicalKitTemplateItemsRequest $request, SurgicalKitTemplateItems $surgicalKitTemplateItems)
     {
+
+    
         $validated = $request->validated();
 
         $surgicalKitTemplateItems->update([

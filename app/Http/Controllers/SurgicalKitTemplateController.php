@@ -47,11 +47,10 @@ class SurgicalKitTemplateController extends Controller
      */
     public function show(SurgicalKitTemplate $surgicalKitTemplate)
     {
-        // 1. Filtramos las relaciones del Kit Quirúrgico
         $surgicalKitTemplate->load([
             'items' => function ($query) {
                 $query->whereHas('product', function ($q) {
-                    $q->where('product_type_id', 1); 
+                    $q->where('status', 'activo'); 
                 })->with(['product', 'conditionals']); 
             }
         ]);

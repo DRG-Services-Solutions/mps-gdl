@@ -129,6 +129,7 @@
                                                     value="{{ $product->id }}"
                                                     data-name="{{ $product->name }}"
                                                     data-code="{{ $product->code }}"
+                                                    {{ old('product_id') == $product->id ? 'selected' : '' }}
                                                 >
                                                     {{ $product->code }} - {{ $product->name }}
                                                 </option>
@@ -146,7 +147,7 @@
                                         Cantidad <span class="text-red-500">*</span>
                                     </label>
                                     <input type="number"
-                                           name="quantity_required"
+                                           name="quantity"
                                            id="quantity"
                                            min="1"
                                            value="1"
@@ -402,14 +403,14 @@
                         </div>
                     </div>
 
-                    {{-- PASO 2: PROCESANDO --}}
+                    {{--  PROCESANDO --}}
                     <div x-show="step === 'processing'" class="text-center py-10">
                         <i class="fas fa-spinner fa-spin text-4xl text-green-600 mb-4"></i>
                         <p class="text-gray-700 font-medium">Procesando archivo...</p>
                         <p class="text-sm text-gray-500 mt-1">Validando SKUs contra el catálogo de productos</p>
                     </div>
 
-                    {{-- PASO 3: RESULTADOS --}}
+                    {{-- RESULTADOS --}}
                     <div x-show="step === 'results'">
 
                         <div class="grid grid-cols-3 gap-3 mb-5">
@@ -596,32 +597,53 @@
 // ==========================================
 document.addEventListener('DOMContentLoaded', function () {
     new TomSelect('#product_id', {
-        placeholder: 'Selecciona un artículo...',
-        allowEmptyOption: true,
-        items: [],
+        placeholder: 'Busca un código o nombre...',
+        valueField: 'id',        
+        labelField: 'text',       
+        searchField: ['text'],    
+        optgroupField: 'optgroup',
+        optgroupLabelField: 'label',
+        optgroupValueField: 'value',
+        lockOptgroupOrder: true,  
+        
+        optgroups: [
+            {value: 'Insumos / Productos', label: 'Insumos / Productos'},
+            {value: 'Instrumental Individual', label: 'Instrumental Individual'},
+            {value: 'Kits de Cirugía', label: 'Kits de Cirugía'},
+            {value: 'Otros', label: 'Otros'}
+        ],
 
-        shouldLoad: function(query) {
-            return query.length > 0;
+    
+        load: function(query, callback) {
+            if (query.length < 2) return callback();
+
+            fetch(`/api/items/select2?search=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(json => {
+                    callback(json);
+                }).catch(()=>{
+                    callback();
+                });
         },
 
         render: {
-            option: function (data, escape) {
-                if (!data.code || !data.name) return '';
+            option: function(item, escape) {
+                let extraHtml = '';
+                if (item.type === 'kit' && item.contents) {
+                    extraHtml = `<div class="text-xs text-gray-400 mt-1">${escape(item.contents.join(', '))}</div>`;
+                }
+
                 return `
-                    <div>
-                        <div style="font-weight:600">${escape(data.code)}</div>
-                        <div style="font-size:0.875rem;color:#6b7280">${escape(data.name)}</div>
+                    <div class="py-1">
+                        <div class="font-semibold text-gray-800">${escape(item.text)}</div>
+                        ${extraHtml}
                     </div>
                 `;
             },
-            item: function (data, escape) {
-                if (!data.code || !data.name) return '';
-                return `<div>${escape(data.code)} - ${escape(data.name)}</div>`;
+            item: function(item, escape) {
+                return `<div>${escape(item.text)}</div>`;
             }
-        },
-
-        
-        
+        }
     });
 });
 

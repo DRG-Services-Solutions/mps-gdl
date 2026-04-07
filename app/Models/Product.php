@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Category;
-use App\Models\MedicalSpecialty;      
+use App\Models\MedicalSpecialty;    
+use App\Models\ProductType;
+use App\Models\Brand;
+use App\Models\InventoryItem;  
 use App\Models\Supplier;              
 use App\Models\InventoryMovement;     
 use App\Models\ProductUnit;           
@@ -26,34 +29,20 @@ class Product extends Model
         'product_type_id',
         'category_id',
         'supplier_id',
-        'name',
         'brand_id',
+        'name',
         'code',
-        'description',
+        'is_composite',
         'requires_sterilization',
         'requires_refrigeration',
-        'tracking_type',
+        'requires_temperature',
+        'has_expiration_date',
         'minimum_stock',
         'status',
         'list_price',
         'cost_price',
-        'requires_temperature',
+        
     ];
-    const TRACKING_RFID = 'rfid';
-    const TRACKING_QUANTITY  = 'quantity';
-    const TRACKING_CODE = 'code';
-    const TRACKING_NONE = 'none';
-
-    public function isRfid(): bool
-    {
-        return $this->tracking_type === self::TRACKING_RFID;
-    }
-
-    public function isQuantity(): bool
-    {
-        return $this->tracking_type === self::TRACKING_CODE;
-    }
-    
 
     protected $casts = [
 
@@ -65,7 +54,28 @@ class Product extends Model
     ];
 
     // ==================== RELACIONES ====================
-    
+
+    // 1. Las piezas que conforman este Set
+    public function components()
+    {
+        return $this->belongsToMany(Product::class, 'product_components', 'parent_product_id', 'child_product_id')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
+    }
+
+    // 2. A qué Sets pertenece esta pieza (Si este producto es un tornillo o pinza)
+    public function partOfSets()
+    {
+        return $this->belongsToMany(Product::class, 'product_components', 'child_product_id', 'parent_product_id')
+                    ->withPivot('quantity')
+                    ->withTimestamps();
+    }
+
+    public function inventoryItems()
+    {
+        return $this->hasMany(InventoryItem::class);
+    }
+
 
     public function productType() 
     {

@@ -499,14 +499,14 @@ class ProductController extends Controller
             ]);
 
         // Unificamos en grupos para que en el Select2 se vea ordenado
-        return response()->json([
-            'results' => [
-                ['text' => 'Insumos / Productos', 'children' => $products],
-                ['text' => 'Instrumental Individual', 'children' => $instruments],
-                ['text' => 'Kits de Cirugía', 'children' => $kits],
-                ['text' => 'Otros', 'children' => $instrumental],
-            ]
-        ]);
+        $allResults = collect()
+            ->merge($products->map(fn($item) => array_merge($item, ['optgroup' => 'Insumos / Productos'])))
+            ->merge($instrumental->map(fn($item) => array_merge($item, ['optgroup' => 'Otros'])))
+            ->merge($instruments->map(fn($item) => array_merge($item, ['optgroup' => 'Instrumental Individual'])))
+            ->merge($kits->map(fn($item) => array_merge($item, ['optgroup' => 'Kits de Cirugía'])));
+
+        // TomSelect solo necesita un arreglo plano en la raíz
+        return response()->json($allResults);
     }
 
 }

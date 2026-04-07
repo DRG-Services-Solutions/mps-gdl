@@ -11,45 +11,35 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
 
-            //Product Types
-            $table->foreignId('product_type_id')
-                  ->constrained('product_types')
-                  ->cascadeOnDelete();
-            
-            //===================
-            //  BRANDS
+            // Clasificación
+            $table->foreignId('product_type_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();            
 
-            $table->foreignId('brand_id')
-                  ->nullable()
-                  ->constrained('brands')
-                  ->nullOnDelete();
-            
             // ==========================================================
             // CLAVES FORÁNEAS (CLASIFICACIÓN)
             // ==========================================================
-          // Migración de products (¡Correcta!)
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
-            // ==========================================================
-            // IDENTIDAD Y CÓDIGOS DEL PRODUCTO (CATÁLOGO)
-            // ==========================================================
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
+            $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();
+
+            // Identidad
             $table->string('name');
             $table->string('code')->unique(); 
+
+            //composición SET/EQUIPO
+            $table->boolean('is_composite')->default(false);
+
+            //Reglas fisicas y medicas
             $table->boolean('requires_sterilization')->default(0);
             $table->boolean('requires_refrigeration')->default(0);
             $table->boolean('requires_temperature')->default(0);
+            $table->boolean('has_expiration_date')->default(false);
 
-            // ==========================================================
-            // TIPO DE TRAZABILIDAD
-            // ==========================================================
-            $table->enum('tracking_type', ['code', 'rfid', 'lote'])->default('code');
+         
 
-            
             // ==========================================================
             // INFORMACIÓN DE INVENTARIO GENERAL
             // ==========================================================
             
-            $table->integer('minimum_stock')->default(0);
             $table->decimal('list_price', 10, 2)->default(0);
             $table->decimal('cost_price', 10, 2)->default(0);
 
@@ -66,9 +56,7 @@ return new class extends Migration
             // ==========================================================
             $table->index('code');
             $table->index('status');
-            $table->index('tracking_type');
             $table->index(['category_id', 'status']);
-            $table->index(['tracking_type', 'status']);
         });
     }
 
