@@ -25,7 +25,6 @@ class PurchaseOrderService
      * Procesa la recepción de una orden de compra
      * 
      * MEJORAS:
-     * - Crea unidades individuales (ProductUnit) según tipo de tracking
      * - Genera print jobs automáticamente para productos RFID
      * - Mantiene compatibilidad con código existente
      */

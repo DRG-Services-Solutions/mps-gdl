@@ -159,55 +159,55 @@
                                         
 
                                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4" style="overflow: visible;">
-                                            <!-- Producto con Búsqueda AJAX -->
+    
                                             <div class="md:col-span-2" 
                                                 x-data="{
                                                     searchQuery: '',
                                                     showDropdown: false,
                                                     searchResults: [],
                                                     isSearching: false,
-                                                    selectedProduct: null
+                                                    selectedProduct: null,
+                                                    
+                                                    async searchProducts() {
+                                                        if (this.searchQuery.length < 2) {
+                                                            this.searchResults = [];
+                                                            this.showDropdown = false;
+                                                            return;
+                                                        }
+                                                        
+                                                        this.isSearching = true;
+                                                        this.showDropdown = true;
+                                                        
+                                                        try {
+                                                            const response = await fetch(`{{ route('products.search') }}?q=${encodeURIComponent(this.searchQuery)}`);
+                                                            if (!response.ok) throw new Error('Error en red');
+                                                            this.searchResults = await response.json();
+                                                        } catch (error) {
+                                                            console.error('Error buscando productos:', error);
+                                                            this.searchResults = [];
+                                                        } finally {
+                                                            this.isSearching = false;
+                                                        }
+                                                    }
                                                 }"
                                                 x-init="if(item._product) { selectedProduct = item._product; }"
                                                 style="position: relative; overflow: visible; z-index: 100;">
 
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                    Producto * 
-                                                    <span x-show="isSearching" class="text-xs text-gray-500">(Buscando...)</span>
+                                                    Producto * <span x-show="isSearching" class="text-xs text-gray-500">(Buscando...)</span>
                                                 </label>
                                                 
                                                 <div class="relative" style="overflow: visible;">
-                                                    <!-- Input de Búsqueda -->
                                                     <div class="relative" x-show="!selectedProduct">
                                                         <input type="text" 
                                                             x-model="searchQuery"
-                                                            @input.debounce.300ms="async () => {
-                                                                if (searchQuery.length < 2) {
-                                                                    searchResults = [];
-                                                                    showDropdown = false;
-                                                                    return;
-                                                                }
-                                                                
-                                                                isSearching = true;
-                                                                showDropdown = true;
-                                                                
-                                                                try {
-                                                                    const response = await fetch(`{{ route('products.search') }}?q=${encodeURIComponent(searchQuery)}`);
-                                                                    searchResults = await response.json();
-                                                                } catch (error) {
-                                                                    console.error('Error buscando productos:', error);
-                                                                    searchResults = [];
-                                                                } finally {
-                                                                    isSearching = false;
-                                                                }
-                                                            }"
+                                                            @input.debounce.300ms="searchProducts"
                                                             @focus="if(searchQuery.length >= 2) showDropdown = true"
                                                             @click.away="showDropdown = false"
                                                             placeholder="Escribe al menos 2 caracteres..."
                                                             class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 pr-10"
                                                             autocomplete="off">
                                                         
-                                                        <!-- Icono de búsqueda/loading -->
                                                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                                             <svg x-show="!isSearching" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -219,18 +219,17 @@
                                                         </div>
                                                     </div>
 
-                                                    <!-- Dropdown de Resultados -->
                                                     <div x-show="showDropdown && !selectedProduct" 
                                                         x-cloak
                                                         x-transition
                                                         class="absolute z-[999] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-xl max-h-80 overflow-y-auto"
-                                                        style="min-width: 500px;">
+                                                        style="min-width: 100%;">
                                                         
-                                                        <!-- Resultados -->
                                                         <template x-for="product in searchResults" :key="product.id">
-                                                            <div @click="
+                                                            <div @click=
+                                                                "
                                                                     item.product_id = product.id;
-                                                                    item.unit_price = product.price || 0;
+                                                                    item.unit_price = product.price || product.list_price || 0;
                                                                     calculateSubtotal(index);
                                                                     selectedProduct = product;
                                                                     searchQuery = '';
@@ -241,13 +240,11 @@
                                                                     <div class="flex-1">
                                                                         <div class="font-medium text-gray-900 text-sm" x-text="product.code"></div>
                                                                         <div class="text-xs text-gray-600" x-text="product.name"></div>
-                                                                        <div x-show="product.description" x-cloak class="text-xs text-gray-500 mt-0.5" x-text="product.description"></div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </template>
 
-                                                        <!-- Mensaje cuando no hay resultados -->
                                                         <div x-show="searchResults.length === 0 && !isSearching && searchQuery.length >= 2"
                                                             x-cloak
                                                             class="px-4 py-6 text-center text-gray-500 text-sm">
@@ -255,18 +252,9 @@
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                             </svg>
                                                             <p>No se encontraron productos</p>
-                                                            <p class="text-xs text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
-                                                        </div>
-
-                                                        <!-- Mensaje de búsqueda mínima -->
-                                                        <div x-show="searchQuery.length > 0 && searchQuery.length < 2"
-                                                            x-cloak
-                                                            class="px-4 py-6 text-center text-gray-500 text-sm">
-                                                            <p>Escribe al menos 2 caracteres para buscar</p>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Producto seleccionado -->
                                                     <div x-show="selectedProduct" 
                                                         x-cloak
                                                         class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
@@ -290,27 +278,25 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Cantidad -->
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
                                                 <input type="number" 
-                                                       x-model.number="item.quantity_ordered"
-                                                       @input="calculateSubtotal(index)"
-                                                       min="1"
-                                                       class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                                       required>
+                                                    x-model.number="item.quantity_ordered"
+                                                    @input="calculateSubtotal(index)"
+                                                    min="1"
+                                                    class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                                    required>
                                             </div>
 
-                                            <!-- Precio Unitario -->
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">Precio Unitario *</label>
                                                 <input type="number" 
-                                                       x-model.number="item.unit_price"
-                                                       @input="calculateSubtotal(index)"
-                                                       step="0.01"
-                                                       min="0"
-                                                       class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
-                                                       required>
+                                                    x-model.number="item.unit_price"
+                                                    @input="calculateSubtotal(index)"
+                                                    step="0.01"
+                                                    min="0"
+                                                    class="block w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500"
+                                                    required>
                                             </div>
                                         </div>
 
@@ -401,7 +387,6 @@
                 items: [],
                 
                 init() {
-                    // Escuchar el evento de importación masiva
                     window.addEventListener('bulk-import-complete', (event) => {
                         this.addBulkItems(event.detail.items);
                     });
@@ -448,13 +433,12 @@
                                 quantity_ordered: importedItem.quantity_ordered,
                                 unit_price: importedItem.unit_price,
                                 subtotal: importedItem.subtotal,
-                                // Datos adicionales para mostrar el producto como "seleccionado"
                                 _imported: true,
                                 _product: {
                                     id: importedItem.product_id,
                                     code: importedItem.code,
                                     name: importedItem.name,
-                                    description: importedItem.description
+                                    
                                 }
                             });
                         }
@@ -484,7 +468,6 @@
                         return;
                     }
                     
-                    // Validar que todos los items tengan producto seleccionado
                     const hasEmptyProduct = this.items.some(item => !item.product_id);
                     if (hasEmptyProduct) {
                         e.preventDefault();

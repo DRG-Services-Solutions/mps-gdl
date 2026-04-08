@@ -36,8 +36,7 @@ class ProductController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                ->orWhere('code', 'like', "%{$search}%")
-                ->orWhere('description', 'like', "%{$search}%");
+                ->orWhere('code', 'like', "%{$search}%");
             });
         }
         
@@ -157,7 +156,7 @@ class ProductController extends Controller
         $product->load([
             'supplier', 
             'category', 
-            'specialty', 
+           
         ]);
         
         return view('products.show', compact('product'));
@@ -170,9 +169,9 @@ class ProductController extends Controller
     {
         $suppliers = Supplier::orderBy('name')->get();
         $categories = Category::orderBy('name')->get(); 
-        $specialties = MedicalSpecialty::orderBy('name')->get();
+        $product_types = ProductType::orderBy('name')->get();
 
-        return view('products.edit', compact('product', 'suppliers', 'categories', 'specialties'));
+        return view('products.edit', compact('product', 'suppliers', 'categories', 'product_types'));
     }
 
     // ==========================================================

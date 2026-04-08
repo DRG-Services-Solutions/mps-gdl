@@ -37,7 +37,6 @@ class ProductImportController extends Controller
             'code', 'name', 'tracking_type', 'supplier_name', 
             'product_type_name', 'category_name', 'brand_name', 
             'list_price', 'cost_price', 
-            // NUEVOS BOOLEANOS DE LA ARQUITECTURA
             'is_composite', 'has_expiration_date',
             'requires_sterilization', 'requires_refrigeration', 'requires_temperature', 
             'status',
@@ -156,11 +155,36 @@ class ProductImportController extends Controller
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray();
 
-            // Quitar encabezado
+            // Quitar encabezado bruto
             $header = array_shift($rows);
 
-            // Normalizar encabezados
-            $header = array_map(fn($h) => strtolower(trim($h)), $header);
+            // =========================================================
+            // 🚨 FIX: ANTI-BOM Y ANTI-CSV DE UNA SOLA COLUMNA
+            // =========================================================
+            
+            // 1. Limpiar caracteres invisibles (BOM) del primer elemento
+            if (isset($header[0])) {
+                $header[0] = preg_replace('/^[\xEF\xBB\xBF\xE2\x80\x8B\s]+/', '', $header[0]);
+            }
+
+            // 2. Si el array solo detectó 1 columna, significa que el Excel/CSV pegó todo 
+            // en la celda A1. Vamos a forzar la separación manualmente.
+            if (count($header) === 1 && is_string($header[0])) {
+                if (str_contains($header[0], ',')) {
+                    $header = explode(',', $header[0]);
+                } elseif (str_contains($header[0], ';')) {
+                    $header = explode(';', $header[0]);
+                }
+            }
+
+            // 3. Limpieza agresiva de caracteres invisibles en cada columna
+            $header = array_map(function($h) {
+                $clean = (string) $h;
+                // Elimina espacios de no separación y caracteres basura
+                $clean = preg_replace('/[\x00-\x1F\x7F\xA0\xE2\x80\x8B]/u', '', $clean); 
+                return strtolower(trim($clean));
+            }, $header);
+            // =========================================================
 
             // Mapeo de columnas
             $columnMap = $this->getColumnMapping($header);
@@ -168,6 +192,19 @@ class ProductImportController extends Controller
             // Guardar info de debug
             session(['import_debug_headers' => $header]);
             session(['import_debug_mapping' => $columnMap]);
+
+            // =========================================================
+            // VALIDACIÓN TEMPRANA CON TRAMPA DE DEBUG
+            // =========================================================
+            if (!isset($columnMap['code']) || !isset($columnMap['name'])) {
+                // Si el formato es irreconocible, detenemos la ejecución y mostramos la radiografía:
+                dd('🛑 TRAMPA DE DEBUG ACTIVADA', [
+                    'Motivo' => 'El sistema no pudo emparejar "code" o "name".',
+                    'Total_Columnas_Detectadas' => count($header),
+                    'Array_Leido_Por_PHP_Puro' => $header,
+                    'Mapa_Generado_Internamente' => $columnMap
+                ]);
+            }
 
             // ★ Pre-cargar catálogos (6 queries totales, sin importar cuántas filas)
             $catalogs = $this->preloadCatalogs();
@@ -185,6 +222,16 @@ class ProductImportController extends Controller
             foreach ($rows as $row) {
                 if ($this->isEmptyRow($row)) {
                     continue;
+                }
+
+                // Si en el paso 2 tuvimos que separar por comas/punto y coma, 
+                // debemos hacer lo mismo con cada fila de datos.
+                if (count($row) === 1 && is_string($row[0])) {
+                    if (str_contains($row[0], ',')) {
+                        $row = explode(',', $row[0]);
+                    } elseif (str_contains($row[0], ';')) {
+                        $row = explode(';', $row[0]);
+                    }
                 }
 
                 $data = $this->mapRowData($row, $columnMap);
@@ -314,6 +361,13 @@ class ProductImportController extends Controller
 
             DB::commit();
 
+            if ($imported === 0 && count($errors) > 0) {
+                dd('🛑 LA BASE DE DATOS RECHAZÓ LA INSERCIÓN', [
+                    'Errores detectados:' => $errors,
+                    'Datos de la última fila que intentó guardar:' => $data ?? 'Ninguna'
+                ]);
+            }
+            
             // Limpiar sesión
             session()->forget([
                 'import_preview_valid',
@@ -353,7 +407,12 @@ class ProductImportController extends Controller
             $rows = $sheet->toArray();
 
             $header = array_shift($rows);
-            $header = array_map(fn($h) => strtolower(trim($h)), $header);
+            $header = array_map(function($h) {
+                $clean = (string) $h;
+                $clean = preg_replace('/[\xEF\xBB\xBF]/', '', $clean);
+                return strtolower(trim($clean));
+            }, $header);
+            
 
             $columnMap = $this->getColumnMapping($header);
 
@@ -486,8 +545,9 @@ class ProductImportController extends Controller
         }
     }
 
+   
     /**
-     * Mapeo de columnas (soporta español e inglés)
+     * Mapeo de columnas con limpieza "Nuclear" (A prueba de Excel y CSV)
      */
     private function getColumnMapping($header)
     {
@@ -495,26 +555,41 @@ class ProductImportController extends Controller
 
         $expectedColumns = [
             'code'                    => ['code', 'codigo', 'sku', 'clave'],
-            'name'                    => ['name', 'nombre', 'product name', 'producto'],
-            'tracking_type'           => ['tracking_type', 'tracking type', 'tipo rastreo', 'rastreo'],
-            'supplier_name'           => ['supplier_name', 'supplier name', 'proveedor', 'supplier'],
-            'product_type_name'       => ['product_type_name', 'product type name', 'product type', 'tipo producto'],
-            'category_name'           => ['category_name', 'category name', 'categoria', 'category'],
-            'brand_name'              => ['brand_name', 'brand name', 'marca', 'brand'],
-            'list_price'              => ['list_price', 'list price', 'precio', 'price', 'costo'],
-            'cost_price'              => ['cost_price', 'cost price', 'costo', 'cost'],
-            // NUEVOS BOOLEANOS
-            'is_composite'            => ['is_composite', 'es compuesto', 'es set', 'es kit', 'compuesto'],
-            'has_expiration_date'     => ['has_expiration_date', 'tiene caducidad', 'caduca', 'caducidad'],
-            // BOOLEANOS EXISTENTES
-            'requires_sterilization'  => ['requires_sterilization', 'requires sterilization', 'esterilizacion'],
-            'requires_refrigeration'  => ['requires_refrigeration', 'requires refrigeration', 'refrigeracion'],
-            'requires_temperature'    => ['requires_temperature', 'requires temperature', 'temperatura'],
+            'name'                    => ['name', 'nombre', 'productname', 'producto'],
+            'tracking_type'           => ['trackingtype', 'tiporastreo', 'rastreo'],
+            'supplier_name'           => ['suppliername', 'proveedor', 'supplier'],
+            'product_type_name'       => ['producttypename', 'producttype', 'tipoproducto'],
+            'category_name'           => ['categoryname', 'categoria', 'category'],
+            'brand_name'              => ['brandname', 'marca', 'brand'],
+            'list_price'              => ['listprice', 'precio', 'price', 'costo'],
+            'cost_price'              => ['costprice', 'costo', 'cost'],
+            'is_composite'            => ['iscomposite', 'escompuesto', 'esset', 'eskit', 'compuesto'],
+            'has_expiration_date'     => ['hasexpirationdate', 'tienecaducidad', 'caduca', 'caducidad'],
+            'requires_sterilization'  => ['requiressterilization', 'esterilizacion'],
+            'requires_refrigeration'  => ['requiresrefrigeration', 'refrigeracion'],
+            'requires_temperature'    => ['requirestemperature', 'temperatura'],
             'status'                  => ['status', 'estado'],
         ];
 
-        // ... resto de la lógica del método queda exactamente igual
-        foreach ($header as $index => $columnName) { /* ... */ }
+        foreach ($header as $index => $columnName) {
+            $normalized = strtolower(trim((string) $columnName));
+            $normalized = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $normalized);
+            
+            $normalized = preg_replace('/[^a-z0-9]/', '', $normalized);
+
+            if (empty($normalized)) continue;
+
+            foreach ($expectedColumns as $field => $aliases) {
+                foreach ($aliases as $alias) {
+                    $normalizedAlias = strtolower(preg_replace('/[^a-z0-9]/', '', $alias));
+
+                    if ($normalized === $normalizedAlias) {
+                        $map[$field] = $index;
+                        break 2; 
+                    }
+                }
+            }
+        }
 
         return $map;
     }
@@ -720,7 +795,7 @@ class ProductImportController extends Controller
             'descontinuado' => 'discontinued', 'obsoleto' => 'discontinued', 'discontinued' => 'discontinued'
         ];
         $inputStatus = strtolower(trim($data['status'] ?? 'activo'));
-        $processed['status'] = $statusMap[$inputStatus] ?? 'active';
+        $processed['status'] = $statusMap[$inputStatus] ?? 'activo';
 
         return [
             'valid'     => empty($errors),

@@ -157,7 +157,7 @@ class PurchaseOrderController extends Controller
             
             // Generar el SNAPSHOT de los productos
             $productsSnapshot = Product::whereIn('id', $productIds)
-                ->get(['id', 'code', 'name', 'description'])
+                ->get(['id', 'code', 'name'])
                 ->keyBy('id');
 
             \Log::info('🔍 Snapshot de productos:', ['snapshot' => $productsSnapshot->toArray()]);
@@ -178,7 +178,6 @@ class PurchaseOrderController extends Controller
             
             \Log::info('✅ Orden creada:', ['order_id' => $purchaseOrder->id, 'order_number' => $purchaseOrder->order_number]);
 
-            // 4. Preparar la Inserción Masiva
             $itemsToInsert = [];
             foreach ($items as $item) {
                 $productId = $item['product_id'];
@@ -198,7 +197,6 @@ class PurchaseOrderController extends Controller
                     'subtotal' => $subtotalCalculated, 
                     'product_code' => $snapshot->code,
                     'product_name' => $snapshot->name,
-                    'description' => $snapshot->description ?? null,
                     'status' => 'pending',
                     'supplier_id' => $validated['supplier_id'],
                     'created_at' => now(), 
@@ -666,7 +664,6 @@ class PurchaseOrderController extends Controller
                 'id' => $product->id,
                 'code' => $product->code,
                 'name' => $product->name,
-                'description' => $product->description,
                 'unit_price' => $product->price ?? 0,
             ]
         ]);
@@ -684,11 +681,13 @@ class PurchaseOrderController extends Controller
                 return response()->json([]);
             }
             
-            $products = Product::where(function($q) use ($query) {
+            $products = Product::where('status', 'active') // Solo traemos productos activos
+                ->where(function($q) use ($query) {
                     $q->where('code', 'like', "%{$query}%")
                       ->orWhere('name', 'like', "%{$query}%");
                 })
-                ->select('id', 'code', 'name', 'description', 'list_price')
+                // 🚨 AQUÍ ESTÁ LA CLAVE: Pedimos exactamente las columnas de la nueva migración
+                ->select('id', 'code', 'name', 'list_price', 'cost_price')
                 ->orderBy('code')
                 ->limit(50)
                 ->get()
@@ -697,8 +696,9 @@ class PurchaseOrderController extends Controller
                         'id' => $product->id,
                         'code' => $product->code,
                         'name' => $product->name,
-                        'description' => $product->description,
-                        'price' => $product->list_price ?? 0
+                        'list_price' => $product->list_price,
+                        'cost_price' => $product->cost_price,
+                        'price' => $product->cost_price > 0 ? $product->cost_price : $product->list_price
                     ];
                 });
             
@@ -706,6 +706,7 @@ class PurchaseOrderController extends Controller
             
         } catch (\Exception $e) {
             \Log::error('Error en búsqueda de productos: ' . $e->getMessage());
+            // El error 500 que ves en consola se genera aquí. 
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
