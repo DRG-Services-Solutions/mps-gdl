@@ -45,7 +45,7 @@ use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\InstrumentKitController;
 use App\Http\Controllers\InstrumentKitItemController;
-
+use App\Http\Controllers\SetBuilderController;
  
 
 // ========================================
@@ -711,35 +711,9 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
         Route::get('/reports/statistics', [SaleController::class, 'statistics'])->name('statistics');
     });
 
-    // ========================================
-    // PREARMADOS QUIRÚRGICOS ⭐ NUEVO
-    // ========================================
-    Route::prefix('surgical-kits')->name('surgical-kits.')->group(function () {
-        // CRUD básico
-        Route::get('/', [SurgicalKitController::class, 'index'])->name('index');
-        Route::get('/create', [SurgicalKitController::class, 'create'])->name('create');
-        Route::post('/', [SurgicalKitController::class, 'store'])->name('store');
-        Route::get('/{surgicalKit}', [SurgicalKitController::class, 'show'])->name('show');
-        Route::get('/{surgicalKit}/edit', [SurgicalKitController::class, 'edit'])->name('edit');
-        Route::put('/{surgicalKit}', [SurgicalKitController::class, 'update'])->name('update');
-        Route::delete('/{surgicalKit}', [SurgicalKitController::class, 'destroy'])->name('destroy');
-        
-        // Verificación de stock
-        Route::get('/{surgicalKit}/check-stock', [SurgicalKitController::class, 'checkStock'])
-            ->name('check-stock');
-        
-        // Aplicación a cotizaciones
-        Route::get('/{surgicalKit}/select-quotation', [SurgicalKitController::class, 'selectQuotation'])
-            ->name('select-quotation');
-        Route::post('/{surgicalKit}/apply-to-quotation', [SurgicalKitController::class, 'applyToQuotation'])
-            ->name('apply-to-quotation');
-        
-        // Acciones adicionales
-        Route::post('/{surgicalKit}/toggle-active', [SurgicalKitController::class, 'toggleActive'])
-            ->name('toggle-active');
-        Route::post('/{surgicalKit}/duplicate', [SurgicalKitController::class, 'duplicate'])
-            ->name('duplicate');
-    });
+    Route::get('/sets', [SetBuilderController::class, 'index'])->name('sets.index');
+    Route::get('/sets/{product}/build', [SetBuilderController::class, 'build'])->name('sets.build');
+    Route::post('/sets/{product}/save', [SetBuilderController::class, 'save'])->name('sets.save');
 
     // ========================================
     // LEGAL ENTITIES (RAZONES SOCIALES)

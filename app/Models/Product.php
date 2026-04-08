@@ -57,15 +57,21 @@ class Product extends Model
 
     // ==================== RELACIONES ====================
 
-    // 1. Las piezas que conforman este Set
     public function components()
     {
         return $this->belongsToMany(Product::class, 'product_components', 'parent_product_id', 'child_product_id')
-                    ->withPivot('quantity')
+                    ->withPivot('quantity', 'is_mandatory', 'notes')
                     ->withTimestamps();
     }
 
-    // 2. A qué Sets pertenece esta pieza (Si este producto es un tornillo o pinza)
+    public function parentSets()
+    {
+        return $this->belongsToMany(Product::class, 'product_components', 'child_product_id', 'parent_product_id')
+                    ->withPivot('quantity', 'is_mandatory', 'notes')
+                    ->withTimestamps();
+    }
+
+
     public function partOfSets()
     {
         return $this->belongsToMany(Product::class, 'product_components', 'child_product_id', 'parent_product_id')

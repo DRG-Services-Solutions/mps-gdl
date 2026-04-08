@@ -19,14 +19,7 @@ return new class extends Migration
                 ->onDelete('cascade')
                 ->comment('Remisión a la que pertenece');
 
-            // ═══════════════════════════════════════════════════════════
-            // KIT QUIRÚRGICO (instrumental)
-            // ═══════════════════════════════════════════════════════════
-            $table->foreignId('surgical_kit_id')
-                ->constrained('surgical_kits')
-                ->onDelete('restrict')
-                ->comment('Kit de instrumental asignado');
-
+            
             // ═══════════════════════════════════════════════════════════
             // PRECIO DE RENTA
             // ═══════════════════════════════════════════════════════════
@@ -56,7 +49,6 @@ return new class extends Migration
             // ÍNDICES
             // ═══════════════════════════════════════════════════════════
             $table->index('shipping_note_id');
-            $table->index('surgical_kit_id');
             $table->index('status');
             $table->index(['shipping_note_id', 'status']);
         });

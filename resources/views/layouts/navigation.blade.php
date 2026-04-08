@@ -264,7 +264,7 @@
                                 <span>{{ __('Ventas') }}</span>
                             </a>
                             
-                            <a href="{{ route('surgical-kits.index') }}" 
+                            <a href="{{ route('sets.index') }}" 
                             class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('surgical-kits.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                                 <i class="fas fa-kit-medical fa-fw text-sm"></i>
                                 <span>{{ __('Kits') }}</span>

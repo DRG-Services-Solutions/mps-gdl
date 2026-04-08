@@ -106,16 +106,7 @@
                                 </select>
                             </div>
 
-                            {{-- Descripción --}}
-                            <div class="md:col-span-2">
-                                <label for="description" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-align-left text-gray-400 mr-2"></i>
-                                    Descripción
-                                </label>
-                                <textarea name="description" id="description" rows="3"
-                                          class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                          placeholder="Descripción detallada...">{{ old('description') }}</textarea>
-                            </div>
+                            
                         </div>
                     </div>
 
@@ -244,10 +235,10 @@
                                 </label>
                                 <select name="tracking_type" id="tracking_type" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                    <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>📦 Solo Code (Sin rastreo especial)</option>
-                                    <option value="lote" {{ old('tracking_type') == 'lote' ? 'selected' : '' }}>📅 Control por Lote (Consumibles)</option>
-                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>📡 Etiqueta RFID (Implantes / Sets)</option>
-                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>🔢 Número de Serie (Equipos Caros)</option>
+                                    <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>📦 Codigo</option>
+                                    <option value="lote" {{ old('tracking_type') == 'lote' ? 'selected' : '' }}>📅 Control por Lote</option>
+                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>📡 Etiqueta RFID</option>
+                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>🔢 Número de Serie</option>
                                 </select>
                                 @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>

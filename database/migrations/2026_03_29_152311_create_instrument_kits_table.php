@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('code', 20)->unique();
             $table->string('serial_number')->unique();
-            $table->foreignId('template_id')->nullable()->constrained('surgical_kit_templates')->nullOnDelete();
             $table->enum('status', ['available', 'in_surgery', 'maintenance', 'incomplete', 'retired'])->default('available');
             $table->text('notes')->nullable();
             $table->timestamps();
