@@ -11,7 +11,7 @@
                         Agregar Producto al Catálogo
                     </h2>
                     <p class="mt-1 text-sm text-gray-600">
-                        Cree la ficha maestra del producto.
+                        Cree la ficha maestra del producto, instrumental o Set.
                     </p>
                 </div>
             </div>
@@ -29,8 +29,8 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-sm text-blue-700">
-                            <strong>Nota importante:</strong> Este formulario crea la información maestra del producto en el catálogo. 
-                            Los identificadores únicos (EPCs o números de serie) se asignarán al registrar las entradas de inventario.
+                            <strong>Nota importante:</strong> Este formulario crea la información teórica en el catálogo (El "Deber Ser"). 
+                            Las cantidades físicas (stock) y ubicaciones se gestionan en el módulo de Inventario.
                         </p>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-id-card text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">Información Básica del Producto</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Información Básica</h3>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -70,12 +70,12 @@
                             <div>
                                 <label for="name" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-tag text-gray-400 mr-2"></i>
-                                    Nombre del Producto
+                                    Nombre del Producto / Set
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('name') border-red-500 @enderror"
-                                       placeholder="Ej: Bisturí Quirúrgico N°15">
+                                       placeholder="Ej: Set de Artroscopia o Bisturí">
                                 @error('name')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
@@ -83,7 +83,7 @@
                             <div>
                                 <label for="code" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-barcode text-gray-400 mr-2"></i>
-                                    Código del Producto
+                                    Código Maestro
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <input type="text" name="code" id="code" value="{{ old('code') }}" required
@@ -100,15 +100,9 @@
                                 </label>
                                 <select name="status" id="status"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>
-                                        ✅ {{ __('Activo') }}
-                                    </option>
-                                    <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>
-                                        ⏸️ {{ __('Inactivo') }}
-                                    </option>
-                                    <option value="discontinued" {{ old('status') == 'discontinued' ? 'selected' : '' }}>
-                                        🚫 {{ __('Descontinuado') }}
-                                    </option>
+                                    <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>✅ Activo</option>
+                                    <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>⏸️ Inactivo</option>
+                                    <option value="discontinued" {{ old('status') == 'discontinued' ? 'selected' : '' }}>🚫 Descontinuado</option>
                                 </select>
                             </div>
 
@@ -116,32 +110,63 @@
                             <div class="md:col-span-2">
                                 <label for="description" class="flex items-center text-sm font-medium text-gray-700 mb-2">
                                     <i class="fas fa-align-left text-gray-400 mr-2"></i>
-                                    {{ __('Descripción') }}
+                                    Descripción
                                 </label>
                                 <textarea name="description" id="description" rows="3"
                                           class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200"
-                                          placeholder="{{ __('Descripción detallada del producto...') }}">{{ old('description') }}</textarea>
+                                          placeholder="Descripción detallada...">{{ old('description') }}</textarea>
                             </div>
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 2: CLASIFICACIÓN --}}
+                    {{-- SECCIÓN 2: ARQUITECTURA DE COMPOSICIÓN (NUEVO) --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-sitemap text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Clasificación') }}</h3>
+                            <i class="fas fa-layer-group text-purple-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">Arquitectura de Composición</h3>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Proveedor --}}
+                            {{-- ¿ES UN SET O KIT? (IS COMPOSITE) --}}
+                            <div class="md:col-span-2">
+                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-purple-50 hover:border-purple-400 cursor-pointer transition-all duration-200">
+                                    <input type="checkbox"
+                                           name="is_composite"
+                                           id="is_composite"
+                                           value="1"
+                                           {{ old('is_composite') ? 'checked' : '' }}
+                                           class="h-5 w-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-0.5">
+
+                                    <span class="ml-3 text-sm flex-1">
+                                        <span class="block font-bold text-purple-900 flex items-center">
+                                            <i class="fas fa-suitcase-medical text-purple-600 mr-2"></i>
+                                            Es un Producto Compuesto (Set / Kit / Torre)
+                                        </span>
+                                        <span class="block text-purple-700 mt-1">
+                                            Marque esta opción si este producto NO es una pieza individual, sino un <strong>contenedor</strong> que lleva otros productos adentro (Ej. Set de Artroscopia). Esto habilitará la creación de su Receta (Checklist).
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- SECCIÓN 3: CLASIFICACIÓN --}}
+                    <div class="mb-8">
+                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
+                            <i class="fas fa-sitemap text-indigo-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">Clasificación</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- Proveedor --}}
                             <div>
                                 <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-industry text-gray-400 mr-2"></i>
-                                    {{ __('Proveedor') }}
+                                    <i class="fas fa-industry text-gray-400 mr-2"></i> Proveedor
                                 </label>
                                 <select name="supplier_id" id="supplier_id"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('supplier_id') border-red-500 @enderror">
-                                    <option value="">{{ __('-- Seleccione un proveedor --') }}</option>
+                                    <option value="">-- Seleccione un proveedor --</option>
                                     @foreach($suppliers as $supplier)
                                         <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
                                             {{ str($supplier->name)->title() }}
@@ -150,18 +175,15 @@
                                 </select>
                                 @error('supplier_id')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
-                            
 
                             {{-- Categoría --}}
                             <div>
                                 <label for="category_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-tags text-gray-400 mr-2"></i>
-                                    {{ __('Categoría') }}
+                                    <i class="fas fa-tags text-gray-400 mr-2"></i> Categoría Anatómica
                                 </label>
-                                <select name="category_id" id="category_id" x-model="selectedCategory" 
-                                        @change="onCategoryChange()"
+                                <select name="category_id" id="category_id"
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="">{{ __('-- Seleccione --') }}</option>
+                                    <option value="">-- Seleccione --</option>
                                     @foreach($categories as $category)
                                         <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
                                             {{ str($category->name)->title() }}
@@ -170,19 +192,15 @@
                                 </select>
                             </div>
 
-                            
-
-                            
-
                             {{-- Tipo de Producto --}}
                             <div>
                                 <label for="product_type_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-brands fa-dropbox text-gray-400 mr-2"></i>
-                                    {{ __('Tipo de Producto') }}
+                                    <i class="fas fa-cubes text-gray-400 mr-2"></i> Tipo de Producto
+                                    <span class="text-red-500 ml-1">*</span>
                                 </label>
-                                <select name="product_type_id" id="product_type_id"
+                                <select name="product_type_id" id="product_type_id" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="">{{ __('-- Seleccione --') }}</option>
+                                    <option value="">-- Seleccione --</option>
                                     @foreach($product_types as $type)
                                         <option value="{{ $type->id }}" {{ old('product_type_id') == $type->id ? 'selected' : '' }}>
                                             {{ $type->name }}
@@ -193,187 +211,99 @@
                         </div>
                     </div>
 
-                    {{-- SECCIÓN 3: TIPO DE TRACKING Y CARACTERÍSTICAS --}}
+                    {{-- SECCIÓN 4: TIPO DE TRACKING Y REQUISITOS --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-route text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Tipo de Trazabilidad y Requisitos') }}</h3>
+                            <i class="fas fa-clipboard-check text-indigo-600 text-xl mr-3"></i>
+                            <h3 class="text-lg font-semibold text-gray-900">Control Físico y Trazabilidad</h3>
                         </div>
 
-                        {{-- Información explicativa --}}
                         <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
                             <div class="flex">
                                 <div class="flex-shrink-0">
                                     <i class="fas fa-info-circle text-blue-400"></i>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm text-blue-700">
-                                        <strong>Tipos de trazabilidad:</strong>
-                                    </p>
+                                    <p class="text-sm text-blue-700"><strong>Tipos de trazabilidad física en almacén:</strong></p>
                                     <ul class="mt-2 text-sm text-blue-700 space-y-1 list-disc list-inside">
-                                        <li><strong>Code:</strong> Control numérico sin identificadores individuales</li>
-                                        <li><strong>RFID:</strong> Cada unidad física tendrá etiqueta RFID (se genera al recibir inventario)</li>
-                                        <li><strong>Serial:</strong> Instrumental con número de serie grabado de fábrica</li>
+                                        <li><strong>Code:</strong> Control genérico (Ej. Gasas sin lote).</li>
+                                        <li><strong>Lote:</strong> Exige número de lote al ingresar inventario.</li>
+                                        <li><strong>RFID:</strong> Se rastrea mediante arcos/antenas.</li>
+                                        <li><strong>Serial:</strong> Cada pieza tiene un número único (Ej. Consolas, Motores).</li>
                                     </ul>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="space-y-4">
-                            
                             {{-- Tipo de Rastreo --}}
                             <div>
                                 <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-radar text-gray-400 mr-2"></i>
-                                    {{ __('Tipo de Rastreo') }}
+                                    <i class="fas fa-radar text-gray-400 mr-2"></i> Tipo de Rastreo
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <select name="tracking_type" id="tracking_type" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                    <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>
-                                        📦 Solo Code (control numérico)
-                                    </option>
-                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>
-                                        📡 RFID (etiquetas al recibir)
-                                    </option>
-                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>
-                                        🔢 Número de Serie (grabado de fábrica)
-                                    </option>
+                                    <option value="code" {{ old('tracking_type', 'code') == 'code' ? 'selected' : '' }}>📦 Solo Code (Sin rastreo especial)</option>
+                                    <option value="lote" {{ old('tracking_type') == 'lote' ? 'selected' : '' }}>📅 Control por Lote (Consumibles)</option>
+                                    <option value="rfid" {{ old('tracking_type') == 'rfid' ? 'selected' : '' }}>📡 Etiqueta RFID (Implantes / Sets)</option>
+                                    <option value="serial" {{ old('tracking_type') == 'serial' ? 'selected' : '' }}>🔢 Número de Serie (Equipos Caros)</option>
                                 </select>
-                                @error('tracking_type')
-                                    <p class="mt-1 text-sm text-red-600 flex items-center">
-                                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
-                                    </p>
-                                @enderror
+                                @error('tracking_type')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
                             </div>
 
-                            {{-- REQUIERE ESTERILIZACIÓN (SIEMPRE HABILITADO) --}}
-                            <div>
-                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-green-400 cursor-pointer transition-all duration-200">
-                                    <input type="checkbox"
-                                        name="requires_sterilization"
-                                        id="requires_sterilization"
-                                        value="1"
-                                        {{ old('requires_sterilization') ? 'checked' : '' }}
-                                        class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5">
-
-                                    <span class="ml-3 text-sm flex-1">
-                                        <span class="block font-medium text-gray-900 flex items-center">
-                                            <i class="fas fa-shield-virus text-green-600 mr-2"></i>
-                                            {{ __('Requiere Esterilización') }}
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                {{-- TIENE CADUCIDAD (NUEVO) --}}
+                                <div>
+                                    <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-red-400 cursor-pointer transition-all duration-200">
+                                        <input type="checkbox" name="has_expiration_date" id="has_expiration_date" value="1" {{ old('has_expiration_date') ? 'checked' : '' }} class="h-5 w-5 text-red-600 border-gray-300 rounded focus:ring-red-500 mt-0.5">
+                                        <span class="ml-3 text-sm flex-1">
+                                            <span class="block font-medium text-gray-900 flex items-center"><i class="fas fa-calendar-times text-red-600 mr-2"></i>Tiene Caducidad</span>
+                                            <span class="block text-gray-500 mt-1">Obliga al almacenista a capturar fecha de expiración.</span>
                                         </span>
-                                        <span class="block text-gray-500 mt-1">
-                                            {{ __('Marque SOLO para productos clasificados como instrumental quirúrgico o médico reutilizable que deba pasar por ciclos de esterilización.') }}
-                                        </span>
-                                    </span>
-                                </label>
-                            </div>
-
-                            {{-- REQUIERE REFRIGERACIÓN (SIEMPRE HABILITADO) --}}
-                            <div>
-                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-blue-400 cursor-pointer transition-all duration-200">
-                                    <input type="checkbox"
-                                            name="requires_refrigeration"
-                                            id="requires_refrigeration"
-                                            value="1"
-                                            {{ old('requires_refrigeration') ? 'checked' : '' }}
-                                            class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5">
-
-                                    <span class="ml-3 text-sm flex-1">
-                                        <span class="block font-medium text-gray-900 flex items-center">
-                                            <i class="fas fa-snowflake text-blue-600 mr-2"></i>
-                                            {{ __('Requiere Refrigeración') }}
-                                        </span>
-                                        <span class="block text-gray-500 mt-1">
-                                            {{ __('Marque si el producto debe mantenerse en refrigeración constante (temperatura entre 2°C y 8°C típicamente).') }}
-                                        </span>
-                                    </span>
-                                </label>
-                            </div>
-
-                            {{-- REQUIERE CONTROL DE TEMPERATURA < 45°C (SIEMPRE HABILITADO) --}}
-                            <div>
-                                <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-orange-400 cursor-pointer transition-all duration-200">
-                                    <input type="checkbox"
-                                            name="requires_temperature"
-                                            id="requires_temperature"
-                                            value="1"
-                                            {{ old('requires_temperature') ? 'checked' : '' }}
-                                            class="h-5 w-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5">
-
-                                    <span class="ml-3 text-sm flex-1">
-                                        <span class="block font-medium text-gray-900 flex items-center">
-                                            <i class="fas fa-thermometer-half text-orange-600 mr-2"></i>
-                                            {{ __('Requiere Control de Temperatura') }}
-                                        </span>
-                                        <span class="block text-gray-500 mt-1">
-                                            {{ __('Marque si el producto requiere almacenamiento con temperatura controlada menor a 45°C (pero no necesariamente refrigeración). Ejemplos: medicamentos termosensibles, reactivos, algunos dispositivos electrónicos médicos.') }}
-                                        </span>
-                                        <span class="block text-xs text-orange-600 mt-2 font-medium">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            {{ __('Temperatura de almacenamiento: < 45°C') }}
-                                        </span>
-                                    </span>
-                                </label>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    {{-- SECCIÓN 4: INFORMACIÓN DE INVENTARIO --}}
-                    <div class="mb-8">
-                        <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
-                            <i class="fas fa-warehouse text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ __('Información de Inventario') }}</h3>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Stock Mínimo --}}
-                            <div>
-                                <label for="minimum_stock" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-box text-gray-400 mr-2"></i>
-                                    Stock Mínimo Deseado
-                                </label>
-                                <input type="number" name="minimum_stock" id="minimum_stock" min="0"
-                                       value="{{ old('minimum_stock', 0) }}"
-                                       class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('minimum_stock') border-red-500 @enderror"
-                                       placeholder="0">
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Cantidad mínima para generar alertas de reorden
-                                </p>
-                                @error('minimum_stock')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
-                            </div>
-
-                            {{-- Precio de Lista --}}
-                            <div>
-                                <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-dollar-sign text-gray-400 mr-2"></i>
-                                    Precio Unitario
-                                </label>
-                                <div class="relative">
-                                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-500 font-medium">
-                                        $
-                                    </span>
-                                    <input type="number" name="list_price" id="list_price" min="0" step="0.01"
-                                           value="{{ old('list_price', 0) }}"
-                                           class="w-full pl-8 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('list_price') border-red-500 @enderror"
-                                           placeholder="0.00">
+                                    </label>
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    <i class="fas fa-info-circle mr-1"></i>
-                                    Precio de referencia del producto
-                                </p>
-                                @error('list_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+
+                                {{-- REQUIERE ESTERILIZACIÓN --}}
+                                <div>
+                                    <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-green-400 cursor-pointer transition-all duration-200">
+                                        <input type="checkbox" name="requires_sterilization" id="requires_sterilization" value="1" {{ old('requires_sterilization') ? 'checked' : '' }} class="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5">
+                                        <span class="ml-3 text-sm flex-1">
+                                            <span class="block font-medium text-gray-900 flex items-center"><i class="fas fa-shield-virus text-green-600 mr-2"></i>Requiere Esterilización</span>
+                                            <span class="block text-gray-500 mt-1">Debe pasar por CEYE tras su uso.</span>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {{-- REQUIERE REFRIGERACIÓN --}}
+                                <div>
+                                    <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-blue-400 cursor-pointer transition-all duration-200">
+                                        <input type="checkbox" name="requires_refrigeration" id="requires_refrigeration" value="1" {{ old('requires_refrigeration') ? 'checked' : '' }} class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5">
+                                        <span class="ml-3 text-sm flex-1">
+                                            <span class="block font-medium text-gray-900 flex items-center"><i class="fas fa-snowflake text-blue-600 mr-2"></i>Refrigeración</span>
+                                            <span class="block text-gray-500 mt-1">Almacenamiento entre 2°C y 8°C.</span>
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {{-- CONTROL TEMPERATURA --}}
+                                <div>
+                                    <label class="relative flex items-start p-4 border-2 border-gray-300 rounded-lg shadow-sm bg-white hover:border-orange-400 cursor-pointer transition-all duration-200">
+                                        <input type="checkbox" name="requires_temperature" id="requires_temperature" value="1" {{ old('requires_temperature') ? 'checked' : '' }} class="h-5 w-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 mt-0.5">
+                                        <span class="ml-3 text-sm flex-1">
+                                            <span class="block font-medium text-gray-900 flex items-center"><i class="fas fa-thermometer-half text-orange-600 mr-2"></i>Temperatura < 45°C</span>
+                                            <span class="block text-gray-500 mt-1">Control ambiental necesario.</span>
+                                        </span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     {{-- Botones de Acción --}}
-                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
                         <a href="{{ route('products.index') }}" 
-                        class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
-                            <i class="fas fa-times mr-2"></i>
+                           class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                             Cancelar
                         </a>
                         <button type="submit"
@@ -386,23 +316,4 @@
             </div>
         </div>
     </div>
-
-@push('scripts')
-<script>
-    function productForm(allSubcategories) {
-        return {
-            // Estado inicial
-            selectedCategory: '{{ old("category_id") ?? "" }}',
-            
-            
-
-            // Método que se ejecuta al cambiar la categoría
-            onCategoryChange() {
-                // Solo limpiar la subcategoría al cambiar la categoría
-                this.selectedSubcategory = '';
-            }
-        }
-    }
-</script>
-@endpush
 </x-app-layout>

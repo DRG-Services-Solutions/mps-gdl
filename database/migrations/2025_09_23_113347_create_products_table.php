@@ -33,6 +33,7 @@ return new class extends Migration
             $table->boolean('requires_refrigeration')->default(0);
             $table->boolean('requires_temperature')->default(0);
             $table->boolean('has_expiration_date')->default(false);
+            $table->enum('tracking_type', ['code', 'rfid', 'serial', 'lote'])->default('code');
 
          
 

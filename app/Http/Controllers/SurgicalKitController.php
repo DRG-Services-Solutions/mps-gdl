@@ -54,7 +54,6 @@ class SurgicalKitController extends Controller
 
     public function create()
     {
-        // ✅ SOLO productos que tienen ProductUnits (inventario real)
         $products = Product::where('status', 'active')
             ->whereHas('productUnits')
             ->orderBy('name')
