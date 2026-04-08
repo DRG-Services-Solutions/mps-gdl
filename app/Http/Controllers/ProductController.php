@@ -101,58 +101,52 @@ class ProductController extends Controller
         return view('products.create', compact('suppliers', 'categories', 'product_types'));
     }
 
-    // ==========================================================
-    // STORE 
-    // ==========================================================
+    // STORE (VALIDACIÓN Y CREACIÓN DE PRODUCTO)
     public function store(Request $request): RedirectResponse
     {
-        
         $validated = $request->validate([
-            
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
-            'product_type_id' => 'nullable|exists:product_types,id',
+            'product_type_id' => 'required|exists:product_types,id', 
             
             // Información básica del catálogo
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:products,code',
             'description' => 'nullable|string',
             
-            // Características booleanas
+            // Arquitectura de Composición y Reglas Médicas
+            'is_composite' => 'nullable|boolean',
+            'has_expiration_date' => 'nullable|boolean',
             'requires_sterilization' => 'nullable|boolean',
             'requires_refrigeration' => 'nullable|boolean',
             'requires_temperature' => 'nullable|boolean',
            
             // Tipo de trazabilidad
-            'tracking_type' => 'required|in:code,rfid,serial',
+            'tracking_type' => 'required|in:code,rfid,serial,lote', 
             
-            // Información de inventario
-            'minimum_stock' => 'nullable|integer|min:0',
+            // Precios del catálogo
             'list_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             
-            // Estado del producto en catálogo
-            'status' => 'nullable|in:active,inactive,discontinued',
         ]);
        
-        
-        // Valores por defecto para campos opcionales
-        $validated['minimum_stock'] = $validated['minimum_stock'] ?? 0;
+        // Valores por defecto numéricos
         $validated['list_price'] = $validated['list_price'] ?? 0;
         $validated['cost_price'] = $validated['cost_price'] ?? 0;
-        $validated['status'] = $validated['status'] ?? 'active';
         
-        // Asegurar que los booleanos tengan valores correctos
+        // Casting estricto de booleanos
+        $validated['is_composite'] = $request->boolean('is_composite');
+        $validated['has_expiration_date'] = $request->boolean('has_expiration_date');
         $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
         $validated['requires_refrigeration'] = $request->boolean('requires_refrigeration');
         $validated['requires_temperature'] = $request->boolean('requires_temperature');
         
-        // Crear producto en catálogo
+        // Crear producto en el Catálogo Maestro
         $product = Product::create($validated);
         
         return redirect()->route('products.index')
-            ->with('success', 'Producto agregado al catálogo correctamente.');
+            ->with('success', 'Producto agregado al catálogo maestro correctamente.');
     }
 
     // ==========================================================
@@ -188,37 +182,43 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             // Relaciones (FKs)
-            'supplier_id' => 'nullable|exists:suppliers,id',
-            'category_id' => 'nullable|exists:product_categories,id', 
-            'specialty_id' => 'nullable|exists:medical_specialties,id',
+            'supplier_id' => 'nullable|exists:suppliers,id', 
+            'category_id' => 'nullable|exists:product_categories,id',
+            'product_type_id' => 'required|exists:product_types,id', 
             
-            // Información básica
+            // Información básica del catálogo
             'name' => 'required|string|max:255',
             'code' => ['required', 'string', 'max:255', Rule::unique('products', 'code')->ignore($product->id)],
             'description' => 'nullable|string',
             
-            // Características booleanas
+            // Arquitectura de Composición y Reglas Médicas
+            'is_composite' => 'nullable|boolean',
+            'has_expiration_date' => 'nullable|boolean',
             'requires_sterilization' => 'nullable|boolean',
             'requires_refrigeration' => 'nullable|boolean',
             'requires_temperature' => 'nullable|boolean',
-            
+           
             // Tipo de trazabilidad
-            'tracking_type' => 'required|in:code,rfid,serial',
+            'tracking_type' => 'required|in:code,rfid,serial,lote', 
             
-            // Información de inventario
-            'minimum_stock' => 'nullable|integer|min:0',
+            // Precios del catálogo
             'list_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             
-            // Estado
-            'status' => 'required|in:active,inactive,discontinued',
         ]);
-
-        // Asegurar que los booleanos tengan valores correctos
+       
+        // Valores por defecto numéricos
+        $validated['list_price'] = $validated['list_price'] ?? 0;
+        $validated['cost_price'] = $validated['cost_price'] ?? 0;
+        
+        // Casting estricto de booleanos
+        $validated['is_composite'] = $request->boolean('is_composite');
+        $validated['has_expiration_date'] = $request->boolean('has_expiration_date');
         $validated['requires_sterilization'] = $request->boolean('requires_sterilization');
         $validated['requires_refrigeration'] = $request->boolean('requires_refrigeration');
         $validated['requires_temperature'] = $request->boolean('requires_temperature');
         
+        //Actualizar producto en el Catálogo Maestro
         $product->update($validated);
         
         return redirect()->route('products.index')
@@ -443,70 +443,28 @@ class ProductController extends Controller
     public function select2(Request $request)
     {
         $search = $request->search;
-        $results = collect();
-        $limit = 10; 
+        
+        // ¡Todo está en la misma tabla ahora!
+        $results = Product::with('productType')
+            ->when($search, function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get()
+            ->map(function($p) {
+                // Si is_composite es true, le ponemos el icono de Kit/Set
+                $icono = $p->is_composite ? '🧳 [SET/KIT]' : ($p->product_type_id == 2 ? '✂️ [Instrumental]' : '📦 [Insumo]');
+                
+                return [
+                    'id' => $p->id,
+                    'text' => "{$icono} {$p->code} — {$p->name}",
+                    'price' => $p->list_price,
+                    'is_composite' => $p->is_composite
+                ];
+            });
 
-        // 1. PRODUCTOS
-        $products = Product::where('product_type_id', 1)
-            ->when($search, fn($q) => $q->where(fn($sub) => 
-                $sub->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")
-            ))
-            ->limit($limit)->get()
-            ->map(fn($p) => [
-                'id'    => "prod_{$p->id}",
-                'text'  => "📦 [Insumo] {$p->code} — {$p->name}",
-                'price' => $p->list_price ?? 0,
-                'type'  => 'product'
-            ]);
-
-        $instrumental = Product::where('product_type_id', 2)
-            ->when($search, fn($q) => $q->where(fn($sub) => 
-                $sub->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%")
-            ))
-            ->limit($limit)->get()
-            ->map(fn($p) => [
-                'id'    => "prod_{$p->id}",
-                'text'  => "✂️ [Instrumental] {$p->code} — {$p->name}",
-                'price' => $p->list_price ?? 0,
-                'type'  => 'instrumental'
-            ]);
-
-        // 2. INSTRUMENTALES
-      
-        $instruments = Instrument::available()
-            ->when($search, fn($q) => $q->search($search))
-            ->limit($limit)->get()
-            ->map(fn($i) => [
-                'id'    => "inst_{$i->id}",
-                'text'  => "✂️ [Instrumental] {$i->serial_number} — {$i->name}",
-                'price' => 0, // Ajusta si el instrumento tiene costo
-                'type'  => 'instrumental'
-            ]);
-
-        // 3. KITS DE INSTRUMENTAL
-        $kits = InstrumentKit::available()
-            ->with('instruments')
-            ->when($search, fn($q) => $q->search($search))
-            ->limit($limit)->get()
-            ->map(fn($k) => [
-                'id'    => "kit_{$k->id}",
-                'text'  => "🧳 [KIT] {$k->code} — {$k->name} ({$k->expected_count} pzs)",
-                'price' => 0,
-                'type'  => 'kit',
-                'contents' => $k->instruments->map(fn($inst) => "{$inst->serial_number} — {$inst->name}")->toArray()
-            ]);
-
-        // Unificamos en grupos para que en el Select2 se vea ordenado
-        $allResults = collect()
-            ->merge($products->map(fn($item) => array_merge($item, ['optgroup' => 'Insumos / Productos'])))
-            ->merge($instrumental->map(fn($item) => array_merge($item, ['optgroup' => 'Otros'])))
-            ->merge($instruments->map(fn($item) => array_merge($item, ['optgroup' => 'Instrumental Individual'])))
-            ->merge($kits->map(fn($item) => array_merge($item, ['optgroup' => 'Kits de Cirugía'])));
-
-        // TomSelect solo necesita un arreglo plano en la raíz
-        return response()->json($allResults);
+        return response()->json($results);
     }
 
 }
