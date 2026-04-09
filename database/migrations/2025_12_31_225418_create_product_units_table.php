@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('product_units', function (Blueprint $table) {
@@ -20,9 +17,15 @@ return new class extends Migration
                   ->onDelete('set null');
             $table->integer('reserved_quantity')->default(0)->comment('Cantidad reservada para cotizaciones');
             
-
             // Relación con el producto del catálogo
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            
+            // ✅ NUEVO: Relación recursiva para cajas/sets físicos
+            $table->foreignId('parent_unit_id')
+                  ->nullable()
+                  ->constrained('product_units')
+                  ->onDelete('set null')
+                  ->comment('ID de la Caja/Set físico que contiene esta pieza');
             
             // Identificadores únicos (solo uno será usado según el tipo de producto)
             $table->string('epc')->nullable()->comment('Código EPC para RFID');
@@ -53,12 +56,6 @@ return new class extends Migration
                   ->constrained('storage_locations')
                   ->onDelete('set null')
                   ->comment('Ubicación física actual');
-
-                
-
-                  //informacion de la cirugia actual si está en uso
-         
-            //$table->foreignId('suergery_id')->constrained('surgeries')->onDelete('set null')->comment('Cirugía actual si está en uso');
             
             // Información de costos
             $table->decimal('acquisition_cost', 10, 2)->nullable()->comment('Costo de adquisición');
@@ -74,6 +71,19 @@ return new class extends Migration
             $table->timestamp('reserved_at')->nullable();
             $table->foreignId('reserved_by')->nullable()->constrained('users')->nullOnDelete();
             
+            // Ciclos de esterilización (Agregados de tu modelo)
+            $table->integer('sterilization_cycles')->default(0);
+            $table->date('last_sterilization_date')->nullable();
+            $table->date('next_maintenance_date')->nullable();
+            $table->integer('max_sterilization_cycles')->nullable();
+            
+            // Relaciones extra de tu modelo (Paquetes, Cirugías, Compras)
+            $table->foreignId('current_package_id')->nullable()->constrained('pre_assembled_packages')->onDelete('set null');
+            $table->foreignId('current_surgery_id')->nullable()->constrained('scheduled_surgeries')->onDelete('set null');
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('set null');
+            $table->string('supplier_invoice')->nullable();
+            $table->foreignId('purchase_order_id')->nullable()->constrained('purchase_orders')->onDelete('set null');
+
             $table->timestamps();
             $table->softDeletes();
             
@@ -89,9 +99,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('product_units');

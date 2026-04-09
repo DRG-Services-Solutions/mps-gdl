@@ -44,6 +44,7 @@ class ProductUnit extends Model
         'legal_entity_id',
         'sub_warehouse_id',
         'reserved_quantity',
+        'parent_unit_id',
     ];
 
     protected $casts = [
@@ -73,6 +74,17 @@ class ProductUnit extends Model
     const STATUS_RETIRED = 'retired';
 
     // ==================== RELACIONES ====================
+
+    public function containedUnits(): HasMany
+    {
+        return $this->hasMany(ProductUnit::class, 'parent_unit_id');
+    }
+    
+    public function parentUnit(): BelongsTo
+    {
+        return $this->belongsTo(ProductUnit::class, 'parent_unit_id');
+    }
+
 
     public function product(): BelongsTo
     {

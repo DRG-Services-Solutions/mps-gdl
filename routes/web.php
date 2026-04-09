@@ -60,6 +60,12 @@ Route::get('/', function () {
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
 
+// Ensamblaje Físico (Operador 2)
+Route::get('/physical-assembly/{product}', [App\Http\Controllers\PhysicalAssemblyController::class, 'create'])->name('physical-assembly.create');
+Route::post('/physical-assembly/{product}', [App\Http\Controllers\PhysicalAssemblyController::class, 'store'])->name('physical-assembly.store');
+Route::get('/api/product-units/search', [App\Http\Controllers\PhysicalAssemblyController::class, 'searchUnit'])->name('api.product-units.search');
+
+
 Route::resource('instruments', InstrumentController::class);
 Route::post('instruments/{instrument}/status', [InstrumentController::class, 'updateStatus'])
     ->name('instruments.update-status');
@@ -350,8 +356,6 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     // ====================================================================
     Route::prefix('checklist-items')->name('checklist-items.')->group(function () {
         
-        
-
         // Agregar item a un check list
         Route::post('/checklists/{checklist}', [ChecklistItemController::class, 'store'])->name('store');
 
@@ -661,6 +665,7 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
     //API para Select2 de productos
     Route::get('/api/items/select2', [ProductController::class, 'select2'])
     ->name('api.items.select2');
+
     // ========================================
     // COTIZACIONES ⭐ PRINCIPAL
     // ========================================
