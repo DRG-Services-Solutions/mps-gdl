@@ -17,7 +17,7 @@ class StorageLocation extends Model
 
 
     /* ============================
-       📦 Relaciones
+     Relaciones
     ============================ */
 
     // Relación con unidades de producto (ubicaciones actuales)

@@ -42,15 +42,27 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        @if($set->components_count > 0)
-                                            <a href="{{ route('sets.build', $set) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold flex items-center justify-end">
-                                            <i class="fas fa-tools mr-2"></i> Actualizar Charola/Set
-                                        </a>
-                                        @else
-                                        <a href="{{ route('sets.build', $set) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold flex items-center justify-end">
-                                            <i class="fas fa-tools mr-2"></i> Armar Charola
-                                        </a>
-                                        @endif
+                                        <div class="flex items-center justify-end space-x-4">
+                                            @if($set->components_count > 0)
+                                                {{-- 1. Modificar Receta Existente --}}
+                                                <a href="{{ route('sets.build', $set) }}" 
+                                                class="text-indigo-600 hover:text-indigo-900 font-semibold flex items-center transition-colors" title="Editar receta">
+                                                    <i class="fas fa-tools mr-1.5"></i> Actualizar Charola
+                                                </a>
+                                                
+                                                {{-- 2. Ir al Escáner (Solo aparece si ya hay una receta armada) --}}
+                                                <a href="{{ route('physical-assembly.create', $set) }}" 
+                                                class="inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-md font-bold transition-colors shadow-sm">
+                                                    <i class="fas fa-boxes-packing mr-1.5"></i> Ensamblar Caja Física
+                                                </a>
+                                            @else
+                                                {{-- 1. Crear Receta desde cero --}}
+                                                <a href="{{ route('sets.build', $set) }}" 
+                                                class="text-purple-600 hover:text-purple-900 font-semibold flex items-center transition-colors" title="Armar receta inicial">
+                                                    <i class="fas fa-plus-circle mr-1.5"></i> Crear Receta Inicial
+                                                </a>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

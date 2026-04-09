@@ -6,7 +6,7 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Services\PhysicalAssemblyService;
 use Illuminate\Http\Request;
-
+use App\Models\StorageLocation;
 class PhysicalAssemblyController extends Controller
 {
     protected $assemblyService;
@@ -40,7 +40,6 @@ class PhysicalAssemblyController extends Controller
     public function store(Request $request, Product $product)
     {
         $request->validate([
-            'location_id' => 'required|exists:storage_locations,id',
             'validated_unit_ids' => 'required|array',
             'validated_unit_ids.*' => 'exists:product_units,id'
         ]);
@@ -48,7 +47,6 @@ class PhysicalAssemblyController extends Controller
         try {
             $newBox = $this->assemblyService->assembleSetManual(
                 $product, 
-                $request->location_id, 
                 auth()->id(),
                 $request->validated_unit_ids
             );
@@ -75,7 +73,7 @@ class PhysicalAssemblyController extends Controller
 
         // Cargamos la receta y las ubicaciones (ajusta el modelo StorageLocation según el tuyo)
         $product->load('components');
-        $locations = \App\Models\StorageLocation::where('is_active', true)->get();
+        $locations = StorageLocation::orderBy('name')->get();
 
         // Preparamos la receta para AlpineJS
         $recipe = $product->components->map(function($comp) {
@@ -85,7 +83,7 @@ class PhysicalAssemblyController extends Controller
                 'name' => $comp->name,
                 'required_qty' => $comp->pivot->quantity,
                 'is_mandatory' => (bool) $comp->pivot->is_mandatory,
-                'scanned_qty' => 0 // Inicia en 0
+                'scanned_qty' => 0 
             ];
         });
 

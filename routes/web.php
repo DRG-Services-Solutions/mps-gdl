@@ -46,7 +46,7 @@ use App\Http\Controllers\InstrumentController;
 use App\Http\Controllers\InstrumentKitController;
 use App\Http\Controllers\InstrumentKitItemController;
 use App\Http\Controllers\SetBuilderController;
- 
+use App\Http\Controllers\PhysicalAssemblyController;
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -61,10 +61,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
 
 // Ensamblaje Físico (Operador 2)
-Route::get('/physical-assembly/{product}', [App\Http\Controllers\PhysicalAssemblyController::class, 'create'])->name('physical-assembly.create');
-Route::post('/physical-assembly/{product}', [App\Http\Controllers\PhysicalAssemblyController::class, 'store'])->name('physical-assembly.store');
-Route::get('/api/product-units/search', [App\Http\Controllers\PhysicalAssemblyController::class, 'searchUnit'])->name('api.product-units.search');
-
+Route::get('/physical-assembly/{product}', [PhysicalAssemblyController::class, 'create'])->name('physical-assembly.create');
+Route::post('/physical-assembly/{product}', [PhysicalAssemblyController::class, 'store'])->name('physical-assembly.store');
+Route::get('/api/product-units/search', [PhysicalAssemblyController::class, 'searchUnit'])->name('api.product-units.search');
 
 Route::resource('instruments', InstrumentController::class);
 Route::post('instruments/{instrument}/status', [InstrumentController::class, 'updateStatus'])
