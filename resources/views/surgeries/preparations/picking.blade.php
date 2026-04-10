@@ -41,7 +41,7 @@
     </x-slot>
 
     {{-- 🆕 IMPORTANTE: data-surgery-id para JavaScript --}}
-    <div class="py-6" data-surgery-id="{{ $surgery->id }}">
+    <div class="py-6" data-surgery-id="{{ $surgery->id }}" x-data="{ activeZone: 'zone1' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             {{-- Barra de Progreso Global --}}
@@ -355,6 +355,30 @@
             </div>
             @endif
 
+            {{-- Tabs de Zonas --}}
+            <div class="flex items-center gap-2">
+                <button @click="activeZone = 'zone1'"
+                        :class="activeZone === 'zone1' ? 'bg-red-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'"
+                        class="flex items-center px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm">
+                    <i class="fas fa-syringe mr-2"></i>
+                    Zona 1: Consumibles
+                    <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                          :class="activeZone === 'zone1' ? 'bg-white text-red-600' : 'bg-red-100 text-red-700'">
+                        {{ $zone1Consumables->count() }}
+                    </span>
+                </button>
+                <button @click="activeZone = 'zone2'"
+                        :class="activeZone === 'zone2' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'"
+                        class="flex items-center px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm">
+                    <i class="fas fa-tools mr-2"></i>
+                    Zona 2: Hardware / Instrumental
+                    <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
+                          :class="activeZone === 'zone2' ? 'bg-white text-purple-600' : 'bg-purple-100 text-purple-700'">
+                        {{ $zone2Hardware->count() }}
+                    </span>
+                </button>
+            </div>
+
             {{-- Tabla de Productos Pendientes --}}
             <div class="bg-white rounded-lg shadow-sm border border-red-100 overflow-hidden">
                 <div class="px-6 py-4 bg-red-50 border-b border-red-100 flex justify-between items-center">
@@ -391,7 +415,7 @@
                         </thead>
 
                         <tbody class="divide-y divide-gray-200" x-show="activeZone === 'zone1'">
-                            @forelse($pendingItems as $item)
+                            @forelse($zone1Consumables as $item)
                                 @include('surgeries.preparations.partials._item-row', ['item' => $item])
                             @empty
                                 <tr id="empty-state-1">
@@ -406,7 +430,7 @@
                             @endforelse
                         </tbody>
                         <tbody class="divide-y divide-gray-200" x-show="activeZone === 'zone2'" x-cloak>
-                            @forelse(isset($zone2Hardware) ? $zone2Hardware : [] as $item)
+                            @forelse($zone2Hardware as $item)
                                 @include('surgeries.preparations.partials._item-row', ['item' => $item])
                             @empty
                                 <tr id="empty-state-2">

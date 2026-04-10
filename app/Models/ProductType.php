@@ -14,6 +14,7 @@ class ProductType extends Model
         'name',
         'description',
     ];
+    protected $table = 'product_types';
 
     public function products(): HasMany
     {

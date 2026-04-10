@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             // Clasificación
-            $table->foreignId('product_type_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_type_id')->constrained('product_types')->cascadeOnDelete();
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();            
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();

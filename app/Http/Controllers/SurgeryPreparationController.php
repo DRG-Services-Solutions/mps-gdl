@@ -245,7 +245,7 @@ class SurgeryPreparationController extends Controller
         Log::info("Accediendo a picking para Cirugía ID: {$surgery->id}");
 
         $surgery->load([
-                'preparation.items.product',
+                'preparation.items.product.productType',
                 'preparation.items.storageLocation',
                 'preparation.items.checklistItem.conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'targetProduct']),
                 'preparation.preAssembledPackage.surgeryChecklist.items.conditionals',
@@ -274,14 +274,17 @@ class SurgeryPreparationController extends Controller
         $excludedByConditionals = $this->getExcludedByConditionals($surgery);
 
 
-        $zone1Consumables = $pendingItems->filter(function($item) {
+        $zone2Types = ['equipo', 'instrumental', 'set', 'caja', 'charola'];
+
+        $zone2Hardware = $pendingItems->filter(function($item) use ($zone2Types) {
             $type = strtolower(trim($item->product->productType->name ?? ''));
-            return in_array($type, ['consumible', 'material de curación', 'implante']);
+            return in_array($type, $zone2Types);
         })->values();
 
-        $zone2Hardware = $pendingItems->filter(function($item) {
+        // Zona 1: todo lo que NO es zona 2 (consumibles + cualquier tipo no clasificado)
+        $zone1Consumables = $pendingItems->filter(function($item) use ($zone2Types) {
             $type = strtolower(trim($item->product->productType->name ?? ''));
-            return in_array($type, ['equipo', 'instrumental', 'set', 'caja', 'charola']);
+            return !in_array($type, $zone2Types);
         })->values();
 
         return view('surgeries.preparations.picking', compact(

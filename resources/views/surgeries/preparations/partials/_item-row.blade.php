@@ -3,8 +3,7 @@
 @endphp
 
 {{-- ═══════════ DESKTOP: fila de tabla normal ═══════════ --}}
-<tr class="hover:bg-red-50 transition-colors hidden md:table-row" id="item-row-{{ $item->id }}">
-    
+<tr class="hover:bg-red-50 transition-colors hidden md:table-row" id="item-row-{{ $item->id }}">    
     {{-- Producto --}}
     <td class="px-6 py-4">
         <div class="flex items-center">
@@ -82,7 +81,7 @@
 
 {{-- ═══════════ MÓVIL: card layout ═══════════ --}}
 <tr class="md:hidden" id="item-row-mobile-{{ $item->id }}">
-    <td colspan="7" class="px-4 py-3">
+        <td colspan="7" class="px-4 py-3">
         <div class="bg-white border border-red-100 rounded-xl p-4 shadow-sm space-y-3">
             {{-- Header: Producto + Obligatorio --}}
             <div class="flex items-start justify-between">
