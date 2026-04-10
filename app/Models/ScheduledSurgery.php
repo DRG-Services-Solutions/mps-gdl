@@ -292,6 +292,30 @@ class ScheduledSurgery extends Model
         return $results;
     }
 
+    public function getConsumablesForPicking()
+    {
+        $allItems = $this->getChecklistItemsWithConditionals();
+
+        return $allItems->filter(function ($data) {
+            $type = strtolower(trim($data['item']->product->productType->name ?? ''));
+            return $type === 'consumible'; 
+        })->values();
+    }
+
+    /**
+     * ZONA 2 (Equipos e Instrumentos - Track A): Filtra los items de la receta para el Operador 2
+     * @return \Illuminate\Support\Collection
+     */
+    public function getHardwareForPicking()
+    {
+        $allItems = $this->getChecklistItemsWithConditionals();
+
+        return $allItems->filter(function ($data) {
+            $type = strtolower(trim($data['item']->product->productType->name ?? ''));
+            return in_array($type, ['equipo', 'instrumental', 'set']); 
+        })->values();
+    }
+
 
     /**
      * Obtener productos adicionales que no están en el checklist base

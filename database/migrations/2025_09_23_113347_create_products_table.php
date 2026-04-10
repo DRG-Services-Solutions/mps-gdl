@@ -14,10 +14,6 @@ return new class extends Migration
             // Clasificación
             $table->foreignId('product_type_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();            
-
-            // ==========================================================
-            // CLAVES FORÁNEAS (CLASIFICACIÓN)
-            // ==========================================================
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();
 

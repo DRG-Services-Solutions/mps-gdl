@@ -22,6 +22,14 @@ class ProductTypeSeeder extends Seeder
                 'name' => 'Instrumental',
                 'description' => 'Productos de tipo instrumental quirurgico',
             ],
+            [
+                'name' => 'Set',
+                'description' => 'Cajas o kits que contienen varios productos',
+            ],
+            [
+                'name' => 'Equipo',
+                'description' => 'Productos de tipo equipo médico',
+            ],
         ];
 
         foreach ($productType as $type)

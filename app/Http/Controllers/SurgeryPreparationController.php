@@ -273,13 +273,27 @@ class SurgeryPreparationController extends Controller
         // Obtener productos excluidos/reemplazados por condicionales
         $excludedByConditionals = $this->getExcludedByConditionals($surgery);
 
+
+        $zone1Consumables = $pendingItems->filter(function($item) {
+            $type = strtolower(trim($item->product->productType->name ?? ''));
+            return in_array($type, ['consumible', 'material de curación', 'implante']);
+        })->values();
+
+        $zone2Hardware = $pendingItems->filter(function($item) {
+            $type = strtolower(trim($item->product->productType->name ?? ''));
+            return in_array($type, ['equipo', 'instrumental', 'set', 'caja', 'charola']);
+        })->values();
+
         return view('surgeries.preparations.picking', compact(
             'surgery',
             'preparation',
             'pendingItems',
+            'zone1Consumables', 
+            'zone2Hardware',    
             'summary',
             'excludedByConditionals'
         ));
+
     }
 
     /**
