@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Gestión de Inventario - Unidades de Productos') }}
+                {{ __('Existencias') }}
             </h2>
         </div>
     </x-slot>
@@ -10,7 +10,6 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            <!-- Alertas -->
             @if(session('success'))
                 <div x-data="{ show: true }"
                      x-show="show"
@@ -53,21 +52,22 @@
                 </div>
             @endif
 
-            <!-- Tarjeta Principal -->
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
 
-                <!-- Header de la Tabla -->
                 <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900">Inventario de Unidades</h3>
-                            <p class="mt-1 text-sm text-gray-600">Gestiona todas las unidades físicas de productos</p>
+                            <h3 class="text-2xl font-bold text-gray-900">Existencias Agrupadas</h3>
+                            <p class="mt-1 text-sm text-gray-600">
+                                Explora los productos. Haz clic en ellos para ver el detalle de sus unidades físicas, lotes y números de serie.
+                            </p>
                         </div>
-                        <div class="flex items-center space-x-2 text-sm text-gray-600">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex items-center space-x-2 text-sm text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-100">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                             </svg>
-                            <span class="font-medium">Total: {{ $units->total() }} unidades</span>
+                            <span class="font-bold text-gray-900">{{ $groupedProducts->total() }}</span> 
+                            <span>productos listados</span>
                         </div>
                     </div>
                 </div>
@@ -144,21 +144,19 @@
                         }
                     }"
                     x-init="
-                        $watch('filters.status', () => $data.doFetch());
-                        $watch('filters.search', () => $data.doFetch());
+                        $watch('filters.status', () => doFetch());
+                        $watch('filters.search', () => doFetch());
                     "
                     {{-- Escucha el evento del hijo cuando se selecciona/limpia un producto --}}
                     x-on:product-selected.window="
                         filters.product_id = $event.detail.id;
                         productLabel       = $event.detail.name;
-                        $data.doFetch();
+                        doFetch();
                     "
                 >
-                    <!-- ── Fila de filtros ── -->
                     <div class="p-6 bg-gray-50 border-b border-gray-200">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                            <!-- Búsqueda general -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
                                 <div class="relative">
@@ -173,11 +171,9 @@
                                         placeholder="EPC, Serial, Lote..."
                                         class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     >
-                                    {{-- El $watch en x-init dispara doFetch() automáticamente --}}
                                 </div>
                             </div>
 
-                            <!-- Producto con búsqueda AJAX -->
                             <div
                                 x-data="{
                                     open:          false,
@@ -187,11 +183,6 @@
                                     debounce:      null,
 
                                     init() {
-                                        // Inicializa el texto del input con el label del padre (si hay filtro activo en la URL)
-                                        const parentLabel = this.$el.closest('[x-data]').__x
-                                            ? null
-                                            : null;
-                                        // Escucha evento de limpieza desde el padre (chips)
                                         window.addEventListener('clear-product', () => {
                                             this.search  = '';
                                             this.open    = false;
@@ -238,7 +229,6 @@
                                     }
                                 }"
                                 x-init="
-                                    // Si la página cargó con product_id en la URL, mostrar el label
                                     @if(request('product_id') && $products->firstWhere('id', request('product_id')))
                                         search = '{{ addslashes($products->firstWhere('id', request('product_id'))->name) }}';
                                     @endif
@@ -265,7 +255,7 @@
                                             </svg>
                                         </template>
                                         <template x-if="!loadingSearch && search">
-                                            <button type="button" x-on:click="clear()" class="text-gray-400 hover:text-gray-600">
+                                            <button type="button" x-on:click="clear()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
                                                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                                 </svg>
@@ -274,7 +264,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Dropdown de resultados -->
                                 <div
                                     x-show="open"
                                     x-transition:enter="transition ease-out duration-100"
@@ -290,7 +279,7 @@
                                         <button
                                             type="button"
                                             x-on:click="selectProduct(product)"
-                                            class="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
+                                            class="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0 focus:bg-blue-50 focus:outline-none"
                                         >
                                             <span class="block text-sm font-medium text-gray-900" x-text="product.name"></span>
                                             <span class="block text-xs text-gray-500" x-text="product.code"></span>
@@ -299,9 +288,8 @@
                                 </div>
                             </div>
 
-                            <!-- Estado -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Estado de la unidad</label>
                                 <select
                                     x-model="filters.status"
                                     class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -319,7 +307,6 @@
 
                         </div>{{-- /grid --}}
 
-                        <!-- Chips de filtros activos -->
                         <div class="mt-3 flex flex-wrap gap-2" x-show="activeFilters.length > 0" x-cloak>
                             <span class="text-xs text-gray-500 self-center">Filtros activos:</span>
                             <template x-for="filter in activeFilters" :key="filter.key">
@@ -340,7 +327,6 @@
 
                     </div>{{-- /filtros --}}
 
-                    <!-- Contenedor tabla — se reemplaza en cada fetch AJAX -->
                     <div
                         id="table-container"
                         x-bind:class="loading ? 'opacity-50 pointer-events-none transition-opacity duration-200' : ''"
@@ -348,9 +334,9 @@
                         @include('product-units._table')
                     </div>
 
-                </div>{{-- /x-data filtros --}}
+                </div>
 
-            </div>{{-- /tarjeta --}}
+            </div>
         </div>
     </div>
 </x-app-layout>

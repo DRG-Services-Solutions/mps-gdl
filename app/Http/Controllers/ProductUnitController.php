@@ -15,31 +15,47 @@ class ProductUnitController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProductUnit::with(['product', 'currentLocation']);
-
-        if ($request->filled('product_id')) {
-            $query->where('product_id', $request->product_id);
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('search')) {
+        $unitFilters = function($query) use ($request){
+            if ($request->filled('status')){
+                $query->where('status', $request->status);
+            }
+            if ($request->filled('search')){
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('epc', 'like', "%{$search}%")
-                ->orWhere('serial_number', 'like', "%{$search}%")
-                ->orWhere('batch_number', 'like', "%{$search}%");
+                  ->orWhere('serial_number', 'like', "%{$search}%")
+                  ->orWhere('batch_number', 'like', "%{$search}%");
             });
         }
+    
+        };
+        $query = Product::query();
+        if ($request->filled('product_id')) {
+            $query->where('id', $request->product_id);
+    }
 
-        $units = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
-        $products = Product::orderBy('name')->get();
+        $query->whereHas('units', $unitFilters)
+          ->withCount(['units as total_stock' => $unitFilters]) 
+          ->with(['units' => function($q) use ($unitFilters) {
+              $unitFilters($q);
+              $q->with('currentLocation')
+                ->orderBy('created_at', 'desc');
+          }]);
+
+        $groupedProducts = $query->orderBy('name')->paginate(15)->withQueryString();
+
+        $allProducts = Product::orderBy('name')->get();
 
         if ($request->ajax()) {
-            return view('product-units._table', compact('units'));
+            return view('product-units._table', compact('groupedProducts'));
         }
 
-        return view('product-units.index', compact('units', 'products'));
+        return view('product-units.index', [
+            'groupedProducts' => $groupedProducts,
+            'products' => $allProducts // Para tu filtro select
+        ]);
+
+
     }
 
     public function noEpc(Request $request)
