@@ -53,6 +53,122 @@
             </x-nav-link>
 
             @role('admin')
+
+            <!-- SECCIÓN: INVENTARIO -->
+                <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Inventario</p>
+                </div>
+
+                <!-- Inventario Dropdown -->
+                <div class="relative">
+                    <button @click="inventoryMenuOpen = !inventoryMenuOpen"
+                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
+
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <div class="flex-shrink-0">
+                                <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
+                            </div>
+                            <span class="truncate transition-opacity duration-300" 
+                                  :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
+                                Inventario
+                            </span>
+                        </div>
+                        <div class="flex-shrink-0 transition-all duration-300" 
+                             :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
+                            <i class="fas fa-chevron-down text-xs transition-transform duration-200" 
+                               :class="{ 'rotate-180': inventoryMenuOpen }"></i>
+                        </div>
+                    </button>
+
+                    <!-- Submenú Inventario (expandido) -->
+                    <div x-show="inventoryMenuOpen && desktopSidebarOpen" 
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 -translate-y-2"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 -translate-y-2"
+                         class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
+                        
+                        <a href="{{ route('products.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('products.index') || request()->routeIs('products.create') || request()->routeIs('products.edit') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-box fa-fw text-sm"></i>
+                            <span class="truncate">Catalogo</span>
+                        </a>
+                        
+                        <a href="{{ route('sets.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sets.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-layer-group fa-fw text-sm"></i>
+                            <span class="truncate">Sets/Kits</span>
+                        </a>
+
+                        <a href="{{ route('product-units.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-cubes fa-fw text-sm"></i>
+                            <span class="truncate">Existencias</span>
+                        </a>
+                        
+                       
+
+                        <a href="{{ route('product_layouts.index') }}" 
+                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-sitemap fa-fw text-sm"></i>
+                            <span class="truncate">Lay Out</span>
+                        </a>
+
+                        <!-- Toma de Inventarios -->
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span class="truncate">Toma de Inventarios</span>
+                        </a>
+
+                        <a href="{{ route('inventory.movements') }}" 
+                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                            <i class="fas fa-history fa-fw text-sm"></i>
+                            <span class="truncate">Movimientos (Kardex)</span>
+                        </a>
+                    </div>
+
+                    <!-- Tooltip Inventario (colapsado) -->
+                    <div x-show="!desktopSidebarOpen && inventoryMenuOpen" 
+                         x-transition
+                         @click.outside="inventoryMenuOpen = false"
+                         class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                        <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
+                            Inventario
+                        </div>
+                        <a href="{{ route('products.index') }}" 
+                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('products.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-box fa-fw text-sm"></i>
+                            <span>Productos</span>
+                        </a>
+                        <a href="{{ route('sets.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('sets.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-layer-group fa-fw text-sm"></i>
+                            <span>Recetas (Sets)</span>
+                        </a>
+                        <a href="{{ route('product-units.index') }}" 
+                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-cubes fa-fw text-sm"></i>
+                            <span>Existencias</span>
+                        </a>
+                        <a href="{{ route('product_layouts.index') }}" 
+                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-sitemap fa-fw text-sm"></i>
+                            <span>Lay Out</span>
+                        </a>
+
+                        <a href="{{ route('inventory-counts.index') }}" 
+                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
+                            <span>Toma de Inventarios</span>
+                        </a>
+                    </div>
+                </div>
+
+
+        
                 <!-- SECCIÓN: COMPRAS -->
                 <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Compras</p>
@@ -290,118 +406,7 @@
                         </div>
                     </div>
 
-                <!-- SECCIÓN: INVENTARIO -->
-                <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Inventario</p>
-                </div>
-
-                <!-- Inventario Dropdown -->
-                <div class="relative">
-                    <button @click="inventoryMenuOpen = !inventoryMenuOpen"
-                            class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group {{ request()->routeIs('products.*') || request()->routeIs('product-units.*') || request()->routeIs('product_layouts.*') || request()->routeIs('inventory-counts.*') || request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900' }}">
-
-                        <div class="flex items-center space-x-3 flex-1 min-w-0">
-                            <div class="flex-shrink-0">
-                                <i class="fa-solid fa-boxes-stacked fa-fw text-lg"></i>
-                            </div>
-                            <span class="truncate transition-opacity duration-300" 
-                                  :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0': !desktopSidebarOpen }">
-                                Inventario
-                            </span>
-                        </div>
-                        <div class="flex-shrink-0 transition-all duration-300" 
-                             :class="{ 'lg:opacity-100': desktopSidebarOpen, 'lg:opacity-0 lg:w-0': !desktopSidebarOpen }">
-                            <i class="fas fa-chevron-down text-xs transition-transform duration-200" 
-                               :class="{ 'rotate-180': inventoryMenuOpen }"></i>
-                        </div>
-                    </button>
-
-                    <!-- Submenú Inventario (expandido) -->
-                    <div x-show="inventoryMenuOpen && desktopSidebarOpen" 
-                         x-transition:enter="transition ease-out duration-200"
-                         x-transition:enter-start="opacity-0 -translate-y-2"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         x-transition:leave="transition ease-in duration-150"
-                         x-transition:leave-start="opacity-100 translate-y-0"
-                         x-transition:leave-end="opacity-0 -translate-y-2"
-                         class="mt-1 ml-3 space-y-1 border-l-2 border-indigo-200">
-                        
-                        <a href="{{ route('products.index') }}" 
-                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('products.index') || request()->routeIs('products.create') || request()->routeIs('products.edit') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-box fa-fw text-sm"></i>
-                            <span class="truncate">Catalogo</span>
-                        </a>
-                        
-                        <a href="{{ route('sets.index') }}" 
-                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('sets.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-layer-group fa-fw text-sm"></i>
-                            <span class="truncate">Sets/Kits</span>
-                        </a>
-
-                        <a href="{{ route('product-units.index') }}" 
-                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span class="truncate">Existencias</span>
-                        </a>
-                        
-                       
-
-                        <a href="{{ route('product_layouts.index') }}" 
-                           class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-sitemap fa-fw text-sm"></i>
-                            <span class="truncate">Lay Out</span>
-                        </a>
-
-                        <!-- Toma de Inventarios -->
-                        <a href="{{ route('inventory-counts.index') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
-                            <span class="truncate">Toma de Inventarios</span>
-                        </a>
-
-                        <a href="{{ route('inventory.movements') }}" 
-                        class="flex items-center space-x-3 pl-6 pr-3 py-2 text-sm font-medium rounded-r-lg transition-all duration-200 {{ request()->routeIs('inventory.movements') ? 'bg-indigo-50 text-indigo-600 border-l-2 border-indigo-600 -ml-0.5' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                            <i class="fas fa-history fa-fw text-sm"></i>
-                            <span class="truncate">Movimientos (Kardex)</span>
-                        </a>
-                    </div>
-
-                    <!-- Tooltip Inventario (colapsado) -->
-                    <div x-show="!desktopSidebarOpen && inventoryMenuOpen" 
-                         x-transition
-                         @click.outside="inventoryMenuOpen = false"
-                         class="hidden lg:block absolute left-full top-0 ml-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                            Inventario
-                        </div>
-                        <a href="{{ route('products.index') }}" 
-                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('products.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-box fa-fw text-sm"></i>
-                            <span>Productos</span>
-                        </a>
-                        <a href="{{ route('sets.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('sets.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-layer-group fa-fw text-sm"></i>
-                            <span>Recetas (Sets)</span>
-                        </a>
-                        <a href="{{ route('product-units.index') }}" 
-                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product-units.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-cubes fa-fw text-sm"></i>
-                            <span>Existencias</span>
-                        </a>
-                        <a href="{{ route('product_layouts.index') }}" 
-                           class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('product_layouts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-sitemap fa-fw text-sm"></i>
-                            <span>Lay Out</span>
-                        </a>
-
-                        <a href="{{ route('inventory-counts.index') }}" 
-                        class="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors duration-150 {{ request()->routeIs('inventory-counts.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
-                            <i class="fas fa-clipboard-check fa-fw text-sm"></i>
-                            <span>Toma de Inventarios</span>
-                        </a>
-                    </div>
-                </div>
+                
 
                 <!-- SECCIÓN: CONFIGURACIÓN -->
                 <div class="px-3 pt-4 pb-1" :class="{ 'opacity-100': desktopSidebarOpen, 'opacity-0 h-0 overflow-hidden': !desktopSidebarOpen }">

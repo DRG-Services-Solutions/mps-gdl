@@ -193,20 +193,26 @@ class ProductImportController extends Controller
             session(['import_debug_headers' => $header]);
             session(['import_debug_mapping' => $columnMap]);
 
-            // =========================================================
-            // VALIDACIÓN TEMPRANA CON TRAMPA DE DEBUG
-            // =========================================================
+       
+            /*
+            Inicio de debu preguntando si estan presnetes las columnas clave "code" y "name" en el mapeo.
+             
+            Si no, mostrar toda la info recolectada para entender por qué falló el mapeo.
+            */
+            /*
             if (!isset($columnMap['code']) || !isset($columnMap['name'])) {
-                // Si el formato es irreconocible, detenemos la ejecución y mostramos la radiografía:
-                dd('🛑 TRAMPA DE DEBUG ACTIVADA', [
+                
+            dd('Debug!!', [
                     'Motivo' => 'El sistema no pudo emparejar "code" o "name".',
                     'Total_Columnas_Detectadas' => count($header),
                     'Array_Leido_Por_PHP_Puro' => $header,
                     'Mapa_Generado_Internamente' => $columnMap
                 ]);
+                
             }
+                */
 
-            // ★ Pre-cargar catálogos (6 queries totales, sin importar cuántas filas)
+            //Pre-cargar catálogos (6 queries totales, sin importar cuántas filas)
             $catalogs = $this->preloadCatalogs();
 
             // ★ Verificar códigos existentes en una sola query
