@@ -55,7 +55,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6" x-data="{ showCancelModal: false, showAddItem: false, showAddKit: false, showAddConcept: false, showAddUrgency: false }">
+    <div class="py-6" x-data="{ showCancelModal: false, showAddItem: false, showAddConcept: false, showAddUrgency: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Alertas --}}
@@ -404,71 +404,49 @@
             </div>
 
             {{-- ═══════════════════════════════════════════════════════
-                 KITS QUIRÚRGICOS
+                 INSTRUMENTAL
                  ═══════════════════════════════════════════════════════ --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">
                         <i class="fas fa-briefcase-medical mr-2 text-teal-500"></i>
-                        Kits Quirúrgicos (Instrumental)
-                        <span class="text-sm text-gray-500 font-normal">({{ $kits->count() }})</span>
+                        Instrumental
+                        <span class="text-sm text-gray-500 font-normal">({{ $instrumental->count() }})</span>
                     </h3>
-                    @if ($shipping_note->canBeEdited() && $availableKits->isNotEmpty())
-                        <button @click="showAddKit = true"
-                            class="px-3 py-2 bg-teal-600 text-white rounded-lg text-xs font-semibold hover:bg-teal-700 transition">
-                            <i class="fas fa-plus mr-1"></i>Asignar Kit
-                        </button>
-                    @endif
                 </div>
 
-                @if ($kits->count() > 0)
+                @if ($instrumental->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Kit</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Items</th>
-                                    <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Precio Renta</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nombre</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Tipo</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cant.</th>
                                     <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Estado</th>
-                                    <th class="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Facturar</th>
-                                    @if ($shipping_note->canBeEdited())
-                                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase"></th>
-                                    @endif
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                @foreach ($kits as $kit)
+                                @foreach ($instrumental as $inst)
                                     <tr>
                                         <td class="px-6 py-3 text-sm font-medium text-gray-900">
                                             <i class="fas fa-briefcase-medical mr-1 text-teal-500"></i>
-                                            {{ $kit['kit']->code ?? 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-3 text-sm text-gray-600 text-center">{{ $kit['items_count'] }}</td>
-                                        <td class="px-6 py-3 text-sm text-gray-900 text-right font-medium">${{ number_format($kit['rental_price'], 2) }}</td>
-                                        <td class="px-6 py-3 text-center">
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                                                {{ \App\Models\ShippingNoteKit::getStatusLabels()[$kit['status']] ?? $kit['status'] }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-3 text-center">
-                                            @if ($kit['exclude_from_invoice'])
-                                                <span class="text-xs text-amber-600"><i class="fas fa-gift mr-1"></i>Cortesía</span>
-                                            @else
-                                                <i class="fas fa-check text-green-500"></i>
+                                            {{ $inst['product_name'] }}
+                                            @if($inst['product_code'])
+                                                <span class="text-xs text-gray-400 font-mono ml-1">({{ $inst['product_code'] }})</span>
                                             @endif
                                         </td>
-                                        @if ($shipping_note->canBeEdited())
-                                            <td class="px-6 py-3 text-right">
-                                                <form method="POST"
-                                                    action="{{ route('shipping-notes.remove-kit', [$shipping_note, $kit['id']]) }}"
-                                                    onsubmit="return confirm('¿Remover este kit?')">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="text-red-500 hover:text-red-700 text-xs">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        @endif
+                                        <td class="px-6 py-3 text-center">
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 font-medium">
+                                                {{ $inst['product_type'] }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-3 text-sm text-gray-600 text-center">{{ $inst['quantity'] }}</td>
+                                        <td class="px-6 py-3 text-center">
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                                {{ \App\Models\ShippingNoteItem::getStatusLabels()[$inst['status']] ?? $inst['status'] }}
+                                            </span>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -477,19 +455,19 @@
                 @else
                     <div class="px-6 py-8 text-center text-gray-500">
                         <i class="fas fa-briefcase-medical text-3xl text-gray-300 mb-2 block"></i>
-                        <p class="text-sm">No hay kits asignados</p>
+                        <p class="text-sm">No hay instrumental en esta remisión</p>
                     </div>
                 @endif
             </div>
 
             {{-- ═══════════════════════════════════════════════════════
-                 TODOS LOS ITEMS
+                 CONSUMIBLES Y MATERIALES
                  ═══════════════════════════════════════════════════════ --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-list-ul mr-2 text-gray-600"></i>
-                        Productos
+                        <i class="fas fa-syringe mr-2 text-emerald-600"></i>
+                        Consumibles y Materiales
                         <span class="text-sm text-gray-500 font-normal">({{ $stats['total_items'] }})</span>
                     </h3>
                     @if ($shipping_note->canBeEdited())
@@ -500,44 +478,13 @@
                     @endif
                 </div>
 
-                {{-- Tabs por origen --}}
-                <div x-data="{ tab: 'all' }">
-                    <div class="px-6 pt-3 flex gap-2 border-b border-gray-200">
-                        <button @click="tab = 'all'"
-                            :class="tab === 'all' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                            class="px-3 py-2 text-xs font-medium border-b-2 transition">
-                            Todos ({{ $stats['total_items'] }})
-                        </button>
-                        <button @click="tab = 'package'"
-                            :class="tab === 'package' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                            class="px-3 py-2 text-xs font-medium border-b-2 transition">
-                            <i class="fas fa-box mr-1"></i>Paquetes ({{ $stats['items_by_origin']['package'] ?? 0 }})
-                        </button>
-                        <button @click="tab = 'kit'"
-                            :class="tab === 'kit' ? 'border-teal-500 text-teal-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                            class="px-3 py-2 text-xs font-medium border-b-2 transition">
-                            <i class="fas fa-briefcase-medical mr-1"></i>Kits ({{ $stats['items_by_origin']['kit'] ?? 0 }})
-                        </button>
-                        <button @click="tab = 'standalone'"
-                            :class="tab === 'standalone' ? 'border-gray-500 text-gray-700' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                            class="px-3 py-2 text-xs font-medium border-b-2 transition">
-                            <i class="fas fa-cube mr-1"></i>Individuales ({{ $stats['items_by_origin']['standalone'] ?? 0 }})
-                        </button>
-                        <button @click="tab = 'conditional'"
-                            :class="tab === 'conditional' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                            class="px-3 py-2 text-xs font-medium border-b-2 transition">
-                            <i class="fas fa-sliders-h mr-1"></i>Condicionales ({{ $stats['items_by_origin']['conditional'] ?? 0 }})
-                        </button>
-                    </div>
-
+                <div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Producto</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Origen</th>
                                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cant.</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Modo</th>
                                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">P. Unit.</th>
                                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Importe</th>
                                     <th class="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Cortesía</th>
@@ -548,14 +495,9 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                @forelse ($shipping_note->items as $item)
+                                @forelse ($consumable_items as $item)
                                     @php
-                                        $originLabels = \App\Models\ShippingNoteItem::getOriginLabels();
-                                        $billingLabels = \App\Models\ShippingNoteItem::getBillingModeLabels();
                                         $statusItemLabels = \App\Models\ShippingNoteItem::getStatusLabels();
-                                        $originColors = ['package' => 'blue', 'kit' => 'teal', 'standalone' => 'gray', 'conditional' => 'amber'];
-                                        $originColor = $originColors[$item->item_origin] ?? 'gray';
-                                        $modeColors = ['sale' => 'green', 'rental' => 'blue', 'no_charge' => 'gray'];
                                     @endphp
 
                                     {{-- ═══ FILA CON EDICIÓN INLINE (Alpine.js) ═══ --}}
@@ -563,11 +505,9 @@
                                             editing: false,
                                             qty: {{ $item->quantity_required }},
                                             price: {{ (float) $item->unit_price }},
-                                            mode: '{{ $item->billing_mode }}',
                                             exclude: {{ $item->exclude_from_invoice ? 'true' : 'false' }},
                                             get importe() { return (this.qty * this.price).toFixed(2); }
                                         }"
-                                        x-show="tab === 'all' || tab === '{{ $item->item_origin }}'"
                                         class="{{ $item->is_urgency ? 'bg-orange-50 border-l-4 border-orange-400' : ($item->exclude_from_invoice ? 'bg-yellow-50' : '') }}"
                                         :class="editing && 'ring-2 ring-cyan-300 bg-cyan-50/30'">
 
@@ -597,13 +537,6 @@
                                             @endif
                                         </td>
 
-                                        {{-- Origen --}}
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-{{ $originColor }}-100 text-{{ $originColor }}-700">
-                                                {{ $originLabels[$item->item_origin] ?? $item->item_origin }}
-                                            </span>
-                                        </td>
-
                                         {{-- Cantidad --}}
                                         <td class="px-4 py-3 text-center">
                                             <template x-if="!editing">
@@ -612,28 +545,6 @@
                                             <template x-if="editing">
                                                 <input type="number" x-model.number="qty" min="1"
                                                     class="w-16 text-center text-sm rounded border-gray-300 py-1 focus:ring-cyan-500 focus:border-cyan-500">
-                                            </template>
-                                        </td>
-
-                                        {{-- Modo de cobro --}}
-                                        <td class="px-4 py-3 text-center">
-                                            <template x-if="!editing">
-                                                <span class="text-xs px-2 py-0.5 rounded-full"
-                                                    :class="{
-                                                        'bg-green-100 text-green-700': mode === 'sale',
-                                                        'bg-blue-100 text-blue-700': mode === 'rental',
-                                                        'bg-gray-100 text-gray-500': mode === 'no_charge'
-                                                    }"
-                                                    x-text="mode === 'sale' ? 'Venta' : mode === 'rental' ? 'Renta' : 'Sin Cargo'">
-                                                </span>
-                                            </template>
-                                            <template x-if="editing">
-                                                <select x-model="mode"
-                                                    class="text-xs rounded border-gray-300 py-1 pr-7 focus:ring-cyan-500 focus:border-cyan-500">
-                                                    <option value="sale">Venta</option>
-                                                    <option value="rental">Renta</option>
-                                                    <option value="no_charge">Sin Cargo</option>
-                                                </select>
                                             </template>
                                         </td>
 
@@ -684,7 +595,7 @@
                                                 <template x-if="!editing">
                                                     <button @click="editing = true"
                                                         class="inline-flex items-center gap-1 px-2 py-1 text-xs text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg transition"
-                                                        title="Editar precio, cantidad o modo de cobro">
+                                                        title="Editar precio y cantidad">
                                                         <i class="fas fa-pencil-alt"></i>
                                                     </button>
                                                 </template>
@@ -696,7 +607,7 @@
                                                             @csrf @method('PUT')
                                                             <input type="hidden" name="quantity_required" :value="qty">
                                                             <input type="hidden" name="unit_price" :value="price">
-                                                            <input type="hidden" name="billing_mode" :value="mode">
+                                                            <input type="hidden" name="billing_mode" value="sale">
                                                             <input type="hidden" name="exclude_from_invoice" :value="exclude ? 1 : 0">
                                                             <button type="submit"
                                                                 class="p-1.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition"
@@ -704,7 +615,7 @@
                                                                 <i class="fas fa-check"></i>
                                                             </button>
                                                         </form>
-                                                        <button @click="editing = false; qty = {{ $item->quantity_required }}; price = {{ (float) $item->unit_price }}; mode = '{{ $item->billing_mode }}'; exclude = {{ $item->exclude_from_invoice ? 'true' : 'false' }}"
+                                                        <button @click="editing = false; qty = {{ $item->quantity_required }}; price = {{ (float) $item->unit_price }}; exclude = {{ $item->exclude_from_invoice ? 'true' : 'false' }}"
                                                             class="p-1.5 text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition"
                                                             title="Cancelar">
                                                             <i class="fas fa-times"></i>
@@ -726,7 +637,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="px-6 py-8 text-center text-gray-500">
+                                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
                                             <p class="text-sm">No hay productos en esta remisión</p>
                                         </td>
                                     </tr>
@@ -835,25 +746,17 @@
                 </div>
 
                 {{-- Desglose por tipo --}}
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                     <div class="bg-green-50 rounded-lg p-4 text-center">
-                        <span class="block text-xs text-green-600 font-medium uppercase">Ventas</span>
+                        <span class="block text-xs text-green-600 font-medium uppercase">Consumibles</span>
                         <span class="text-xl font-bold text-green-800">${{ number_format($totals['sales'], 2) }}</span>
-                    </div>
-                    <div class="bg-blue-50 rounded-lg p-4 text-center">
-                        <span class="block text-xs text-blue-600 font-medium uppercase">Rentas Items</span>
-                        <span class="text-xl font-bold text-blue-800">${{ number_format($totals['item_rentals'], 2) }}</span>
-                    </div>
-                    <div class="bg-teal-50 rounded-lg p-4 text-center">
-                        <span class="block text-xs text-teal-600 font-medium uppercase">Rentas Kits</span>
-                        <span class="text-xl font-bold text-teal-800">${{ number_format($totals['kit_rentals'], 2) }}</span>
                     </div>
                     <div class="bg-yellow-50 rounded-lg p-4 text-center">
                         <span class="block text-xs text-yellow-600 font-medium uppercase">Conceptos Renta</span>
                         <span class="text-xl font-bold text-yellow-800">${{ number_format($totals['rental_concepts'], 2) }}</span>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 text-center">
-                        <span class="block text-xs text-gray-600 font-medium uppercase">Items Urgencia</span>
+                    <div class="bg-orange-50 rounded-lg p-4 text-center">
+                        <span class="block text-xs text-orange-600 font-medium uppercase">Urgencias</span>
                         <span class="text-xl font-bold text-orange-700">{{ $shipping_note->items()->urgency()->count() }}</span>
                     </div>
                 </div>
@@ -950,48 +853,6 @@
             </div>
         </div>
 
-        {{-- Modal: Agregar Kit --}}
-        <div x-show="showAddKit" x-cloak
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @keydown.escape="showAddKit = false">
-            <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6" @click.outside="showAddKit = false">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="fas fa-briefcase-medical text-teal-500 mr-2"></i>Asignar Kit Quirúrgico
-                </h3>
-                <form method="POST" action="{{ route('shipping-notes.assign-kit', $shipping_note) }}">
-                    @csrf
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kit</label>
-                            <select name="surgical_kit_id" required class="w-full rounded-lg border-gray-300 text-sm">
-                                <option value="">— Seleccionar —</option>
-                                @foreach ($availableKits as $kit)
-                                    <option value="{{ $kit->id }}">{{ $kit->code }} — {{ $kit->surgery_type ?? '' }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Precio de Renta</label>
-                            <input type="number" name="rental_price" step="0.01" min="0" value="0" required
-                                class="w-full rounded-lg border-gray-300 text-sm">
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" name="exclude_from_invoice" value="1" id="kit_exclude"
-                                class="rounded border-gray-300 text-indigo-600">
-                            <label for="kit_exclude" class="text-sm text-gray-700">Cortesía (no facturar)</label>
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-3 mt-6">
-                        <button type="button" @click="showAddKit = false"
-                            class="px-4 py-2 bg-gray-200 rounded-lg text-sm text-gray-700">Cancelar</button>
-                        <button type="submit"
-                            class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition">
-                            Asignar Kit
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         {{-- Modal: Agregar Producto Individual --}}
         <div x-show="showAddItem" x-cloak
             class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @keydown.escape="showAddItem = false"
@@ -1033,12 +894,7 @@
                                     class="w-full rounded-lg border-gray-300 text-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Modo Facturación</label>
-                                <select name="billing_mode" required class="w-full rounded-lg border-gray-300 text-sm">
-                                    <option value="sale">Venta</option>
-                                    <option value="rental">Renta</option>
-                                    <option value="no_charge">Sin Cargo</option>
-                                </select>
+                                <input type="hidden" name="billing_mode" value="sale">
                             </div>
                         </div>
                         <div>
@@ -1170,14 +1026,7 @@
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Modo de cobro</label>
-                            <select name="billing_mode" class="w-full rounded-lg border-gray-300 text-sm">
-                                <option value="sale">Venta</option>
-                                <option value="rental">Renta</option>
-                                <option value="no_charge">Sin Cargo</option>
-                            </select>
-                        </div>
+                        <input type="hidden" name="billing_mode" value="sale">
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Motivo de urgencia</label>

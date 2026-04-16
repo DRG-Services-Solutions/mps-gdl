@@ -111,7 +111,6 @@
                                     <th class="px-3 py-3 text-left text-xs font-bold uppercase w-24">Cód.</th>
                                     <th class="px-3 py-3 text-left text-xs font-bold uppercase">Concepto</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold uppercase w-20">Cant.</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold uppercase w-28">Modo</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold uppercase w-28">Precio</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold uppercase w-32">Importe</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold uppercase w-16"><i class="fas fa-gift" title="Cortesía"></i></th>
@@ -119,8 +118,18 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
+                                {{-- Sección: Consumibles --}}
+                                <tr x-show="consumableItems.length > 0">
+                                    <td colspan="7" class="px-3 py-2 bg-emerald-50 border-b-2 border-emerald-200">
+                                        <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+                                            <i class="fas fa-syringe mr-1"></i>Consumibles y Materiales
+                                            (<span x-text="consumableItems.length"></span>)
+                                        </span>
+                                    </td>
+                                </tr>
                                 <template x-for="(item, idx) in items" :key="idx">
-                                    <tr :class="{
+                                    <tr x-show="!instrumentalTypes.includes(item.product_type_name)"
+                                        :class="{
                                         'bg-amber-50': item.has_conditional && item.quantity > 0,
                                         'bg-red-50 opacity-40': item.quantity <= 0,
                                         'bg-blue-50': item.source === 'additional',
@@ -138,14 +147,6 @@
                                             <input type="number" x-model.number="item.quantity" min="0"
                                                 class="w-16 text-center text-sm rounded border-gray-300 py-1 focus:ring-cyan-500 focus:border-cyan-500"
                                                 @input="recalculate()">
-                                        </td>
-                                        <td class="px-3 py-2 text-center">
-                                            <select x-model="item.billing_mode"
-                                                class="text-xs rounded border-gray-300 py-1 focus:ring-cyan-500" @change="recalculate()">
-                                                <option value="sale">Venta</option>
-                                                <option value="rental">Renta</option>
-                                                <option value="no_charge">Sin Cargo</option>
-                                            </select>
                                         </td>
                                         <td class="px-3 py-2 text-right">
                                             <input type="number" x-model.number="item.unit_price" min="0" step="0.01"
@@ -166,6 +167,40 @@
                                             <button type="button" @click="removeItem(idx)" class="text-red-400 hover:text-red-600 transition" title="Quitar">
                                                 <i class="fas fa-times-circle"></i>
                                             </button>
+                                        </td>
+                                    </tr>
+                                </template>
+
+                                {{-- Sección: Instrumental (solo nombre, se agregan como kit después) --}}
+                                <tr x-show="instrumentalItems.length > 0">
+                                    <td colspan="7" class="px-3 py-2 bg-teal-50 border-y-2 border-teal-200">
+                                        <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">
+                                            <i class="fas fa-briefcase-medical mr-1"></i>Instrumental / Kits
+                                            (<span x-text="instrumentalItems.length"></span>)
+                                        </span>
+                                        <span class="text-[10px] text-teal-600 ml-2">— Se asignarán como kit después de crear la remisión</span>
+                                    </td>
+                                </tr>
+                                <template x-for="(item, idx) in items" :key="'inst-'+idx">
+                                    <tr x-show="instrumentalTypes.includes(item.product_type_name)"
+                                        class="bg-teal-50/30">
+                                        <td class="px-3 py-2">
+                                            <span class="text-xs font-mono text-gray-500" x-text="item.product_code || '-'"></span>
+                                        </td>
+                                        <td class="px-3 py-2" colspan="4">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-briefcase-medical text-teal-500"></i>
+                                                <div class="text-sm text-gray-900 font-medium" x-text="item.product_name"></div>
+                                                <span class="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 font-bold uppercase" x-text="item.product_type_name"></span>
+                                            </div>
+                                            <div x-show="item.conditional_description" class="text-[10px] text-amber-600 mt-0.5 ml-6">
+                                                <i class="fas fa-sliders-h mr-0.5"></i><span x-text="item.conditional_description"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-3 py-2 text-center" colspan="2">
+                                            <span class="text-xs text-teal-600 font-medium">
+                                                <i class="fas fa-info-circle mr-1"></i>Se agrega como kit
+                                            </span>
                                         </td>
                                     </tr>
                                 </template>
@@ -202,7 +237,8 @@
                                     <span class="text-2xl font-bold text-cyan-800" x-text="'$' + grandTotal.toFixed(2)"></span>
                                 </div>
                                 <p class="text-[10px] text-gray-500 italic">
-                                    <span x-text="items.filter(i => i.quantity > 0).length"></span> productos
+                                    <span x-text="consumableItems.filter(i => i.quantity > 0).length"></span> consumibles
+                                    · <span x-text="instrumentalItems.length"></span> instrumental (se agregan como kit)
                                     · <span x-text="items.filter(i => i.exclude_from_invoice).length"></span> cortesías
                                 </p>
                             </div>
@@ -229,7 +265,7 @@
                         class="px-6 py-2.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition">
                         Cancelar
                     </a>
-                    <button type="submit" :disabled="items.filter(i => i.quantity > 0).length === 0"
+                    <button type="submit" :disabled="consumableItems.filter(i => i.quantity > 0).length === 0"
                         class="px-6 py-3 bg-cyan-600 text-white rounded-lg text-sm font-bold hover:bg-cyan-700 transition disabled:opacity-50 shadow-lg">
                         <i class="fas fa-file-invoice mr-2"></i>Crear Remisión
                     </button>
@@ -251,6 +287,14 @@
                 subtotal: 0,
                 taxAmount: 0,
                 grandTotal: 0,
+                instrumentalTypes: ['equipo', 'instrumental', 'set', 'caja', 'charola'],
+
+                get consumableItems() {
+                    return this.items.filter(i => !this.instrumentalTypes.includes(i.product_type_name));
+                },
+                get instrumentalItems() {
+                    return this.items.filter(i => this.instrumentalTypes.includes(i.product_type_name));
+                },
 
                 async loadItems() {
                     if (!this.selectedSurgeryId) {
@@ -288,20 +332,25 @@
 
                             this.items = (data.items || [])
                                 .filter(i => i.adjusted_quantity > 0)
-                                .map(i => ({
-                                    product_id: i.product_id,
-                                    product_name: i.product_name,
-                                    product_code: i.product_code || '',
-                                    quantity: i.adjusted_quantity,
-                                    unit_price: i.list_price || 0,
-                                    billing_mode: 'sale',
-                                    exclude_from_invoice: i.exclude_from_invoice || false,
-                                    has_conditional: i.has_conditional,
-                                    conditional_description: i.conditional_description,
-                                    checklist_item_id: i.checklist_item_id || null,
-                                    conditional_id: i.conditional_id || null,
-                                    source: i.source || 'base',
-                                }));
+                                .map(i => {
+                                    const typeName = i.product_type_name || '';
+                                    const isInstrumental = this.instrumentalTypes.includes(typeName);
+                                    return {
+                                        product_id: i.product_id,
+                                        product_name: i.product_name,
+                                        product_code: i.product_code || '',
+                                        product_type_name: typeName,
+                                        quantity: i.adjusted_quantity,
+                                        unit_price: i.list_price || 0,
+                                        billing_mode: isInstrumental ? 'rental' : 'sale',
+                                        exclude_from_invoice: i.exclude_from_invoice || false,
+                                        has_conditional: i.has_conditional,
+                                        conditional_description: i.conditional_description,
+                                        checklist_item_id: i.checklist_item_id || null,
+                                        conditional_id: i.conditional_id || null,
+                                        source: i.source || 'base',
+                                    };
+                                });
 
                             this.excludedItems = (data.items || [])
                                 .filter(i => i.adjusted_quantity === 0 && i.has_conditional)
@@ -326,7 +375,7 @@
 
                 recalculate() {
                     this.subtotal = this.items
-                        .filter(i => i.quantity > 0 && !i.exclude_from_invoice && i.billing_mode !== 'no_charge')
+                        .filter(i => i.quantity > 0 && !i.exclude_from_invoice && i.billing_mode !== 'no_charge' && !this.instrumentalTypes.includes(i.product_type_name))
                         .reduce((sum, i) => sum + (i.quantity * i.unit_price), 0);
                     const rate = (this.taxRatePct || 0) / 100;
                     this.taxAmount = Math.round(this.subtotal * rate * 100) / 100;
@@ -336,7 +385,10 @@
                 prepareSubmit() {
                     const container = document.getElementById('hidden-items');
                     container.innerHTML = '';
-                    this.items.filter(i => i.quantity > 0).forEach((item, idx) => {
+                    // Solo enviar consumibles (instrumental se agrega como kit después)
+                    this.items
+                        .filter(i => i.quantity > 0 && !this.instrumentalTypes.includes(i.product_type_name))
+                        .forEach((item, idx) => {
                         const fields = {
                             product_id: item.product_id,
                             quantity: item.quantity,

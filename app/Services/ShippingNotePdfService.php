@@ -42,7 +42,7 @@ class ShippingNotePdfService
             'items.product',
             'items.productUnit',
             'items.checklistConditional',
-            'kits.surgicalKit',
+            'items.product.productType',
             'rentalConcepts',
             'createdBy',
         ]);
@@ -91,7 +91,7 @@ class ShippingNotePdfService
             'items.product',
             'items.productUnit',
             'items.checklistConditional',
-            'kits.surgicalKit',
+            'items.product.productType',
             'rentalConcepts',
             'createdBy',
         ]);
@@ -280,10 +280,33 @@ class ShippingNotePdfService
         $this->pdf->SetFont('Helvetica', '', 7);
         $this->setColor($this->black);
 
-        $items = $this->note->items->sortBy(function ($item) {
-            $order = ['package' => 0, 'kit' => 1, 'conditional' => 2, 'standalone' => 3];
-            return ($order[$item->item_origin] ?? 4) . '_' . ($item->product->code ?? '');
-        });
+        $instrumentalTypes = ['equipo', 'instrumental', 'set', 'caja', 'charola'];
+
+        $items = $this->note->items
+            ->filter(function ($item) use ($instrumentalTypes) {
+                $type = strtolower(trim($item->product->productType->name ?? ''));
+                return !in_array($type, $instrumentalTypes);
+            })
+            ->sortBy(function ($item) {
+                $order = ['package' => 0, 'conditional' => 1, 'standalone' => 2];
+                return ($order[$item->item_origin] ?? 3) . '_' . ($item->product->code ?? '');
+            });
+
+        // Instrumental agrupado (para sección aparte)
+        $instrumentalItems = $this->note->items
+            ->filter(function ($item) use ($instrumentalTypes) {
+                $type = strtolower(trim($item->product->productType->name ?? ''));
+                return in_array($type, $instrumentalTypes);
+            })
+            ->groupBy('product_id')
+            ->map(function ($group) {
+                $first = $group->first();
+                return [
+                    'name' => $first->product->name ?? 'Instrumental',
+                    'type' => $first->product->productType->name ?? '',
+                    'quantity' => $group->sum('quantity_required'),
+                ];
+            });
 
         if ($items->isEmpty()) {
             $this->pdf->SetFont('Helvetica', 'I', 8);
@@ -396,26 +419,26 @@ class ShippingNotePdfService
             $this->pdf->Cell($colWidths[5], $cellHeight, '$' . $importe, 'RTB', 1, 'R', $fill);
         }
 
-        // ── Kits quirúrgicos como conceptos de renta ──
-        $kits = $this->note->kits->where('exclude_from_invoice', false);
-        if ($kits->isNotEmpty()) {
+        // ── Instrumental (solo nombre + tipo) ──
+        if ($instrumentalItems->isNotEmpty()) {
             $this->pdf->SetFillColor(235, 235, 235);
             $this->pdf->SetFont('Helvetica', 'B', 6.5);
             $this->setColor($this->grayText);
-            $this->pdf->Cell(array_sum($colWidths), 5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', '── Kits Quirúrgicos (Renta) ──'), 'TB', 1, 'L', true);
+            $this->pdf->Cell(array_sum($colWidths), 5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', '── Instrumental ──'), 'TB', 1, 'L', true);
             $this->pdf->SetFont('Helvetica', '', 7);
             $this->setColor($this->black);
 
-            foreach ($kits as $kit) {
-                $kitName = $kit->surgicalKit->name ?? $kit->surgicalKit->code ?? 'Kit';
-                $rentalPrice = number_format((float) $kit->rental_price, 2);
+            foreach ($instrumentalItems as $inst) {
+                $instName = $inst['name'];
+                $instType = $inst['type'];
+                $instQty = number_format($inst['quantity'], 2);
 
                 $this->pdf->Cell($colWidths[0], 6, '-', 'LTB', 0, 'C');
-                $this->pdf->Cell($colWidths[1], 6, '1.00', 'TB', 0, 'C');
-                $this->pdf->Cell($colWidths[2], 6, 'SRV', 'TB', 0, 'C');
-                $this->pdf->Cell($colWidths[3], 6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', 'Renta: ' . $kitName), 'TB', 0, 'L');
-                $this->pdf->Cell($colWidths[4], 6, $rentalPrice, 'TB', 0, 'R');
-                $this->pdf->Cell($colWidths[5], 6, '$' . $rentalPrice, 'RTB', 1, 'R');
+                $this->pdf->Cell($colWidths[1], 6, $instQty, 'TB', 0, 'C');
+                $this->pdf->Cell($colWidths[2], 6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $instType), 'TB', 0, 'C');
+                $this->pdf->Cell($colWidths[3], 6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $instName), 'TB', 0, 'L');
+                $this->pdf->Cell($colWidths[4], 6, '', 'TB', 0, 'R');
+                $this->pdf->Cell($colWidths[5], 6, '', 'RTB', 1, 'R');
             }
         }
 

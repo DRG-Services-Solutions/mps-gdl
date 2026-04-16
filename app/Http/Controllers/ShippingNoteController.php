@@ -175,14 +175,6 @@ class ShippingNoteController extends Controller
                 ->get();
         }
 
-        // Kits disponibles para asignar (¡Corregido!)
-        $availableKits = collect();
-        if ($shippingNote->isDraft()) {
-            $assignedKitIds = $shippingNote->kits()->pluck('surgical_kit_id');
-            $availableKits = SurgicalKit::whereNotIn('id', $assignedKitIds)
-                ->get();
-        }
-
         // Productos disponibles para agregar individualmente
         $availableProducts = collect();
         if ($shippingNote->isDraft()) {
@@ -194,7 +186,6 @@ class ShippingNoteController extends Controller
 
         return view('shipping-notes.show', array_merge($preview, [
             'availablePackages' => $availablePackages,
-            'availableKits'     => $availableKits,
             'availableProducts' => $availableProducts,
         ]));
     }
@@ -832,7 +823,7 @@ class ShippingNoteController extends Controller
         ]);
 
         $surgery = ScheduledSurgery::with([
-            'checklist.items.product',
+            'checklist.items.product.productType',
             'checklist.items.conditionals.targetProduct',
             'doctor',
             'hospital',
@@ -885,6 +876,7 @@ class ShippingNoteController extends Controller
                 'product_id' => $productId,
                 'product_name' => $item['product_name'],
                 'product_code' => $checklistItem?->product?->code ?? '',
+                'product_type_name' => strtolower(trim($checklistItem?->product?->productType?->name ?? '')),
                 'list_price' => (float) ($checklistItem?->product?->list_price ?? 0),
                 'base_quantity' => $item['base_quantity'],
                 'adjusted_quantity' => $required,

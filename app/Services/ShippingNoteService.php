@@ -678,13 +678,41 @@ class ShippingNoteService
             'billingLegalEntity',
             'packages.preAssembledPackage',
             'packages.items.product',
-            'kits.surgicalKit',
-            'kits.items.product',
-            'items.product',
+            'items.product.productType',
             'items.productUnit',
             'items.sourceLegalEntity',
             'rentalConcepts',
         ]);
+
+        // Separar items por tipo de producto: consumibles vs instrumental
+        $instrumentalTypes = ['equipo', 'instrumental', 'set', 'caja', 'charola'];
+
+        $consumableItems = $shippingNote->items->filter(function ($item) use ($instrumentalTypes) {
+            $type = strtolower(trim($item->product->productType->name ?? ''));
+            return !in_array($type, $instrumentalTypes);
+        });
+
+        $instrumentalItems = $shippingNote->items->filter(function ($item) use ($instrumentalTypes) {
+            $type = strtolower(trim($item->product->productType->name ?? ''));
+            return in_array($type, $instrumentalTypes);
+        });
+
+        // Agrupar instrumental por producto (nombre + tipo)
+        $instrumentalGrouped = $instrumentalItems->groupBy('product_id')->map(function ($items) {
+            $first = $items->first();
+            return [
+                'product_id' => $first->product_id,
+                'product_name' => $first->product->name ?? 'N/A',
+                'product_code' => $first->product->code ?? '',
+                'product_type' => $first->product->productType->name ?? 'Instrumental',
+                'is_composite' => $first->product->is_composite ?? false,
+                'quantity' => $items->sum('quantity_required'),
+                'total_price' => $items->sum('total_price'),
+                'items_count' => $items->count(),
+                'status' => $first->status,
+                'exclude_from_invoice' => $first->exclude_from_invoice,
+            ];
+        })->values();
 
         return [
             'shipping_note' => $shippingNote,
@@ -697,24 +725,19 @@ class ShippingNoteService
                 'items_count' => $pkg->getTotalItems(),
                 'status' => $pkg->status,
             ]),
-            'kits' => $shippingNote->kits->map(fn($kit) => [
-                'id' => $kit->id,
-                'kit' => $kit->surgicalKit,
-                'rental_price' => $kit->rental_price,
-                'exclude_from_invoice' => $kit->exclude_from_invoice,
-                'items_count' => $kit->getTotalItems(),
-                'status' => $kit->status,
-            ]),
+            'instrumental' => $instrumentalGrouped,
+            'consumable_items' => $consumableItems,
+            'instrumental_items' => $instrumentalItems,
             'items_by_origin' => [
-                'package' => $shippingNote->items->where('item_origin', 'package'),
-                'kit' => $shippingNote->items->where('item_origin', 'kit'),
-                'standalone' => $shippingNote->items->where('item_origin', 'standalone'),
-                'conditional' => $shippingNote->items->where('item_origin', 'conditional'),
+                'package' => $consumableItems->where('item_origin', 'package'),
+                'standalone' => $consumableItems->where('item_origin', 'standalone'),
+                'conditional' => $consumableItems->where('item_origin', 'conditional'),
             ],
             'rental_concepts' => $shippingNote->rentalConcepts,
             'totals' => $shippingNote->getTotals(),
             'stats' => [
-                'total_items' => $shippingNote->getTotalItems(),
+                'total_items' => $consumableItems->count(),
+                'total_instrumental' => $instrumentalGrouped->count(),
                 'items_by_origin' => $shippingNote->getItemsByOrigin(),
                 'sent_items' => $shippingNote->getSentItems(),
                 'returned_items' => $shippingNote->getReturnedItems(),

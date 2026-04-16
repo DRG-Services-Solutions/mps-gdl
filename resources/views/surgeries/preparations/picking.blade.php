@@ -371,7 +371,7 @@
                         :class="activeZone === 'zone2' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'"
                         class="flex items-center px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm">
                     <i class="fas fa-tools mr-2"></i>
-                    Zona 2: Hardware / Instrumental
+                    Zona 2: Instrumental / Kit, etc
                     <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
                           :class="activeZone === 'zone2' ? 'bg-white text-purple-600' : 'bg-purple-100 text-purple-700'">
                         {{ $zone2Hardware->count() }}
