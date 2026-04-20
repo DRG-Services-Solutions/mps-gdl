@@ -313,7 +313,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                        {{ $items->sum('quantity') }}
+                                        {{ $items->sum('quantity') }} 
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">

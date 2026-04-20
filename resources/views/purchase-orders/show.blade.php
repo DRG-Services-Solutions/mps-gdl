@@ -296,7 +296,7 @@
             </div>
         </div>
 
-        {{-- ⬇️ MODALES: Ahora están DENTRO del scope de x-data --}}
+        {{-- ⬇️ MODALES --}}
         
         <!-- Modal Cancelar Orden -->
         <div x-show="showCancelModal" 
@@ -380,7 +380,7 @@
                     </div>
 
                     {{-- ========================================
-                        NUEVA SECCIÓN: Validación por XML CFDI
+                        Validación por XML CFDI
                         ======================================== --}}
                     <div class="mb-6 border border-blue-200 rounded-lg overflow-hidden">
                         {{-- Header colapsable --}}
@@ -542,10 +542,10 @@
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Solicitada</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Recibido</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">A Recibir</th>
-                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">P. Unit.</th>
-                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Subtotal</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Lote</th>
                                         <th class="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Caducidad</th>
+                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">P. Unit.</th>
+                                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Subtotal</th>
                                     </tr>
                                 </thead>
 
@@ -635,6 +635,12 @@
                                                     @change="checkExpiryDate($event, '{{ $item->product_name }}')"
                                                     class="w-36 text-center border border-gray-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     {{ $fullyReceived ? 'disabled' : '' }}>
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-sm text-gray-700">
+                                                ${{ number_format($item->list_price, 2) }}
+                                            </td>
+                                            <td class="px-4 py-3 text-right text-sm text-gray-700">
+                                                ${{ number_format($item->quantity_ordered * $item->list_price, 2) }}
                                             </td>
                                         </tr>
                                     @endforeach

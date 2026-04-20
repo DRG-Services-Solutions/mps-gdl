@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();            
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained('brands')->nullOnDelete();
+            $table->foreignId('sub_category_id')->nullable()->constrained('product_sub_categories')->nullOnDelete();
+            $table->foreignId('product_sub_product_id')->nullable()->constrained('product_sub_product')->nullOnDelete();
 
             // Identidad
             $table->string('name');

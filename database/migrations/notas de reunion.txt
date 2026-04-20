@@ -1,0 +1,13 @@
+pendiente de indicador de temperatura
+0 = No requerido
+1 = No mayor a 45°C
+2 = Refrigerado
+3 = Congelacion
+
+Incluir columnas adicionales en la base de datos para almacenar:
+    categoria anatomica y subcategoria anatomica
+Incluir (Pieza Instrumental) en tipos de producto 
+Agregar columna de tipo de etiqueta al momento de dar alta de producto
+0 = sin etiqueta
+1 = con etiqueta normal
+2 = etqueta metalica

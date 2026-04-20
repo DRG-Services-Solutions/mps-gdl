@@ -312,6 +312,8 @@ class Product extends Model
         // Suma de todos los almacenes
         return $this->hasMany(InventorySummary::class)->sum('quantity_on_hand');
     }
+    
+
 
     // ==================== MÉTODOS AUXILIARES ====================
     

@@ -111,7 +111,11 @@ class PreAssembledPackageController extends Controller
             'storageLocation',
             'contents.product',
             'contents.productUnit',
+            
         ]);
+        
+
+        
 
         $availableProducts = Product::select('id', 'code', 'name')
             ->where('status', 'active')
