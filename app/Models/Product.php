@@ -43,6 +43,8 @@ class Product extends Model
         'status',
         'list_price',
         'cost_price',
+        'sub_category_id',
+        'product_sub_product_id',
         
     ];
 

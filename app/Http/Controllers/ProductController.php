@@ -107,7 +107,9 @@ class ProductController extends Controller
             // Relaciones (FKs)
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
-            'product_type_id' => 'required|exists:product_types,id', 
+            'product_type_id' => 'required|exists:product_types,id',
+            'sub_category_id' => 'nullable|exists:product_sub_categories,id',
+            'product_sub_product_id' => 'nullable|exists:products,id',
             
             // Información básica del catálogo
             'name' => 'required|string|max:255',
@@ -184,6 +186,8 @@ class ProductController extends Controller
             'supplier_id' => 'nullable|exists:suppliers,id', 
             'category_id' => 'nullable|exists:product_categories,id',
             'product_type_id' => 'required|exists:product_types,id', 
+            'sub_category_id' => 'nullable|exists:product_sub_categories,id',
+            'product_sub_product_id' => 'nullable|exists:products,id',
             
             // Información básica del catálogo
             'name' => 'required|string|max:255',

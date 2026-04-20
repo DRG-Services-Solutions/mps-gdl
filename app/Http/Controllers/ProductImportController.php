@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\Log;
+use App\Models\ProductSubCategory;
+use App\Models\ProductSubProduct;
 
 class ProductImportController extends Controller
 {
@@ -32,11 +35,12 @@ class ProductImportController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Configurar nuevos encabezados
+        // Encabezados
         $headers = [
             'code', 'name', 'tracking_type', 'supplier_name', 
-            'product_type_name', 'category_name', 'brand_name', 
-            'list_price', 'cost_price', 
+            'product_type_name', 'category_name', 'brand_name',  
+            'list_price', 'cost_price',
+            'sub_category_name', 'product_sub_product_name', 
             'is_composite', 'has_expiration_date',
             'requires_sterilization', 'requires_refrigeration', 'requires_temperature', 
             'status',
@@ -113,10 +117,20 @@ class ProductImportController extends Controller
     private function preloadCatalogs(): array
     {
         return [
-            'suppliers'     => Supplier::all()->keyBy(fn($s) => strtolower(trim($s->name))),
-            'brands'        => Brand::all()->keyBy(fn($b) => strtolower(trim($b->name))),
-            'product_types' => ProductType::all(),
-            'categories'    => Category::all(),
+            'suppliers' => Supplier::all()->keyBy(fn($s) => strtolower(trim($s->name))),
+            'brands'    => Brand::all()->keyBy(fn($b) => strtolower(trim($b->name))),
+            
+            // Product Types: Asegúrate que el modelo apunte a 'product_types'
+            'product_types' => DB::table('product_types')->get()->keyBy(fn($pt) => strtolower(trim($pt->name))),
+            
+            // Categories: Según tu migración es 'product_categories'
+            'categories' => DB::table('product_categories')->get()->keyBy(fn($c) => strtolower(trim($c->name))),
+            
+            // Sub Categorías: CORRECCIÓN AQUÍ
+            'sub_categories' => DB::table('product_sub_categories')->get()->keyBy(fn($sc) => strtolower(trim($sc->name))),
+            
+            // Sub Productos: Según tu migración es 'product_sub_products'
+            'product_sub_products' => DB::table('product_sub_products')->get()->keyBy(fn($psp) => strtolower(trim($psp->name))),
         ];
     }
 
@@ -149,102 +163,72 @@ class ProductImportController extends Controller
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ]);
 
+        // Identificador único para rastrear esta sesión de importación en el log
+        $importId = uniqid('imp_');
+
         try {
             $file = $request->file('file');
+            Log::channel('import')->info("[$importId] Inicio de previsualización", [
+                'filename' => $file->getClientOriginalName(),
+                'size' => $file->getSize()
+            ]);
+
             $spreadsheet = IOFactory::load($file->getPathname());
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray();
 
-            // Quitar encabezado bruto
             $header = array_shift($rows);
 
-            // =========================================================
-            // 🚨 FIX: ANTI-BOM Y ANTI-CSV DE UNA SOLA COLUMNA
-            // =========================================================
-            
-            // 1. Limpiar caracteres invisibles (BOM) del primer elemento
+            // --- Limpieza de Headers (Tu lógica actual mejorada con Log) ---
             if (isset($header[0])) {
                 $header[0] = preg_replace('/^[\xEF\xBB\xBF\xE2\x80\x8B\s]+/', '', $header[0]);
             }
 
-            // 2. Si el array solo detectó 1 columna, significa que el Excel/CSV pegó todo 
-            // en la celda A1. Vamos a forzar la separación manualmente.
             if (count($header) === 1 && is_string($header[0])) {
-                if (str_contains($header[0], ',')) {
-                    $header = explode(',', $header[0]);
-                } elseif (str_contains($header[0], ';')) {
-                    $header = explode(';', $header[0]);
+                $delimiter = str_contains($header[0], ',') ? ',' : (str_contains($header[0], ';') ? ';' : null);
+                if ($delimiter) {
+                    $header = explode($delimiter, $header[0]);
+                    Log::channel('import')->debug("[$importId] Delimitador detectado: $delimiter");
                 }
             }
 
-            // 3. Limpieza agresiva de caracteres invisibles en cada columna
             $header = array_map(function($h) {
-                $clean = (string) $h;
-                // Elimina espacios de no separación y caracteres basura
-                $clean = preg_replace('/[\x00-\x1F\x7F\xA0\xE2\x80\x8B]/u', '', $clean); 
+                $clean = preg_replace('/[\x00-\x1F\x7F\xA0\xE2\x80\x8B]/u', '', (string)$h); 
                 return strtolower(trim($clean));
             }, $header);
-            // =========================================================
 
-            // Mapeo de columnas
             $columnMap = $this->getColumnMapping($header);
 
-            // Guardar info de debug
-            session(['import_debug_headers' => $header]);
-            session(['import_debug_mapping' => $columnMap]);
-
-       
-            /*
-            Inicio de debu preguntando si estan presnetes las columnas clave "code" y "name" en el mapeo.
-             
-            Si no, mostrar toda la info recolectada para entender por qué falló el mapeo.
-            */
-            /*
+            // LOG CRÍTICO: Fallo de mapeo
             if (!isset($columnMap['code']) || !isset($columnMap['name'])) {
-                
-            dd('Debug!!', [
-                    'Motivo' => 'El sistema no pudo emparejar "code" o "name".',
-                    'Total_Columnas_Detectadas' => count($header),
-                    'Array_Leido_Por_PHP_Puro' => $header,
-                    'Mapa_Generado_Internamente' => $columnMap
+                Log::channel('import')->warning("[$importId] Fallo de mapeo de columnas clave", [
+                    'headers_recibidos' => $header,
+                    'mapa_generado' => $columnMap
                 ]);
-                
+                // Opcionalmente lanzar excepción para caer en el catch y avisar al usuario
+                throw new \Exception('No se encontraron las columnas "code" o "name". Verifique los encabezados.');
             }
-                */
 
-            //Pre-cargar catálogos (6 queries totales, sin importar cuántas filas)
             $catalogs = $this->preloadCatalogs();
-
-            // ★ Verificar códigos existentes en una sola query
             $existingCodes = $this->getExistingCodes($rows, $columnMap);
-
-            // Track de códigos duplicados dentro del mismo archivo
             $seenCodes = [];
-
             $validRows = [];
             $invalidRows = [];
             $rowNumber = 2;
 
             foreach ($rows as $row) {
-                if ($this->isEmptyRow($row)) {
-                    continue;
-                }
+                if ($this->isEmptyRow($row)) continue;
 
-                // Si en el paso 2 tuvimos que separar por comas/punto y coma, 
-                // debemos hacer lo mismo con cada fila de datos.
+                // Re-aplicar lógica de delimitador si es necesario
                 if (count($row) === 1 && is_string($row[0])) {
-                    if (str_contains($row[0], ',')) {
-                        $row = explode(',', $row[0]);
-                    } elseif (str_contains($row[0], ';')) {
-                        $row = explode(';', $row[0]);
-                    }
+                    if (str_contains($row[0], ',')) $row = explode(',', $row[0]);
+                    elseif (str_contains($row[0], ';')) $row = explode(';', $row[0]);
                 }
 
                 $data = $this->mapRowData($row, $columnMap);
-
-                // Verificar duplicados dentro del mismo archivo
                 $code = $data['code'] ?? null;
                 $duplicateInFile = false;
+
                 if (!empty($code)) {
                     if (isset($seenCodes[$code])) {
                         $duplicateInFile = true;
@@ -252,42 +236,52 @@ class ProductImportController extends Controller
                     $seenCodes[$code] = $rowNumber;
                 }
 
-                // ★ Validar sin queries adicionales
-                $validation = $this->validateRowOptimized(
-                    $data,
-                    $rowNumber,
-                    $catalogs,
-                    $existingCodes,
-                    $duplicateInFile
-                );
+                $validation = $this->validateRowOptimized($data, $rowNumber, $catalogs, $existingCodes, $duplicateInFile);
 
                 if ($validation['valid']) {
                     $validRows[] = [
-                        'row'       => $rowNumber,
-                        'data'      => $data,
+                        'row' => $rowNumber,
+                        'data' => $data,
                         'processed' => $validation['processed'],
                         'relations' => $validation['relations'],
                     ];
                 } else {
                     $invalidRows[] = [
-                        'row'    => $rowNumber,
-                        'data'   => $data,
+                        'row' => $rowNumber,
+                        'data' => $data,
                         'errors' => $validation['errors'],
                     ];
-                }
 
+                    // LOG DE FILA INVÁLIDA: Solo si quieres detalle exhaustivo en log
+                    Log::channel('import')->debug("[$importId] Fila $rowNumber inválida", [
+                        'errores' => $validation['errors'],
+                        'data_parcial' => $data
+                    ]);
+                }
                 $rowNumber++;
             }
 
-            // Guardar en sesión
             session([
                 'import_preview_valid'   => $validRows,
                 'import_preview_invalid' => $invalidRows,
             ]);
 
+            Log::channel('import')->info("[$importId] Previsualización completada", [
+                'validas' => count($validRows),
+                'invalidas' => count($invalidRows)
+            ]);
+
             return view('products.import-preview', compact('validRows', 'invalidRows'));
 
         } catch (\Exception $e) {
+            // LOG DE ERROR DE SISTEMA: Crucial para debuggear fallos de PHP o Excel
+            Log::channel('import')->critical("[$importId] ERROR CRÍTICO EN IMPORTACIÓN", [
+                'mensaje' => $e->getMessage(),
+                'archivo' => $e->getFile(),
+                'linea' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return back()->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
         }
     }
@@ -565,6 +559,8 @@ class ProductImportController extends Controller
             'tracking_type'           => ['trackingtype', 'tiporastreo', 'rastreo'],
             'supplier_name'           => ['suppliername', 'proveedor', 'supplier'],
             'product_type_name'       => ['producttypename', 'producttype', 'tipoproducto'],
+            'sub_category_name'      => ['subcategoryname', 'subcategoria', 'sub_category', 'subcategoria'],
+            'product_sub_product_name' => ['productsubproductname', 'product_sub_product', 'producto_compuesto', 'producto_set'],
             'category_name'           => ['categoryname', 'categoria', 'category'],
             'brand_name'              => ['brandname', 'marca', 'brand'],
             'list_price'              => ['listprice', 'precio', 'price', 'costo'],
@@ -580,7 +576,6 @@ class ProductImportController extends Controller
         foreach ($header as $index => $columnName) {
             $normalized = strtolower(trim((string) $columnName));
             $normalized = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ'], ['a', 'e', 'i', 'o', 'u', 'n'], $normalized);
-            
             $normalized = preg_replace('/[^a-z0-9]/', '', $normalized);
 
             if (empty($normalized)) continue;
@@ -634,182 +629,97 @@ class ProductImportController extends Controller
         array &$catalogs,
         \Illuminate\Support\Collection $existingCodes,
         bool $duplicateInFile = false
-    ): array {
-        $errors = [];
-        $processed = [];
-        $relations = [
-            'supplier_name'     => null,
-            'brand_name'        => null,
-            'product_type_name' => null,
-            'category_name'     => null,
-        ];
+        ): array {
+            $errors = [];
+            $processed = [];
+            $relations = [];
 
-        // ──────────────────────────────────────────
-        // CAMPOS OBLIGATORIOS
-        // ──────────────────────────────────────────
-
-        // Code (obligatorio, único en BD y en archivo)
-        if (empty($data['code'])) {
-            $errors[] = 'El código es obligatorio';
-        } elseif ($existingCodes->has($data['code'])) {
-            $errors[] = "El código '{$data['code']}' ya existe en el sistema";
-        } elseif ($duplicateInFile) {
-            $errors[] = "El código '{$data['code']}' está duplicado en el archivo";
-        } else {
-            $processed['code'] = $data['code'];
-        }
-
-        // Name (obligatorio)
-        if (empty($data['name'])) {
-            $errors[] = 'El nombre es obligatorio';
-        } else {
-            $processed['name'] = $data['name'];
-        }
-
-        // Tracking type (obligatorio)
-        $validTrackingTypes = ['code', 'rfid', 'lote'];
-        $trackingType = strtolower(trim($data['tracking_type'] ?? ''));
-
-        if (empty($trackingType)) {
-            $errors[] = 'El tipo de rastreo es obligatorio';
-        } elseif (!in_array($trackingType, $validTrackingTypes)) {
-            $errors[] = "Tipo de rastreo '{$trackingType}' inválido. Use: code, rfid o lote";
-        } else {
-            $processed['tracking_type'] = $trackingType;
-        }
-
-        // Product Type (obligatorio)
-        if (empty($data['product_type_name'])) {
-            $errors[] = 'El tipo de producto es obligatorio (Consumible / Instrumental)';
-        } else {
-            $name = strtolower(trim($data['product_type_name']));
-
-            $productType = $catalogs['product_types']->first(function ($pt) use ($name) {
-                return strtolower($pt->name) === $name;
-            });
-
-            // Búsqueda parcial si no hay match exacto
-            if (!$productType) {
-                $productType = $catalogs['product_types']->first(function ($pt) use ($name) {
-                    return str_contains(strtolower($pt->name), $name);
-                });
+            // --- 1. VALIDACIÓN DE IDENTIDAD (Código y Nombre) ---
+            $code = trim($data['code'] ?? '');
+            if (empty($code)) {
+                $errors[] = 'El código es obligatorio';
+            } elseif ($existingCodes->has($code)) {
+                $errors[] = "El código '{$code}' ya existe en el sistema";
+            } elseif ($duplicateInFile) {
+                $errors[] = "El código '{$code}' está duplicado en el archivo";
             }
+            $processed['code'] = $code;
+            $processed['name'] = trim($data['name'] ?? '');
+            if (empty($processed['name'])) $errors[] = 'El nombre es obligatorio';
 
-            if ($productType) {
-                $processed['product_type_id'] = $productType->id;
-                $relations['product_type_name'] = $productType->name;
+
+            // --- 2. VALIDACIÓN ESTRICTA (Solo campos obligatorios en BD) ---
+            $productTypeName = strtolower(trim($data['product_type_name'] ?? ''));
+            if (empty($productTypeName)) {
+                $errors[] = 'El Tipo de producto es obligatorio';
             } else {
-                $available = $catalogs['product_types']->pluck('name')->implode(', ');
-                $errors[] = "Tipo de producto '{$data['product_type_name']}' no encontrado. Disponibles: {$available}";
-            }
-        }
-
-        // ──────────────────────────────────────────
-        // CAMPOS OPCIONALES - RELACIONES
-        // ──────────────────────────────────────────
-
-        // Supplier (lookup en memoria, marcar como nuevo si no existe)
-        $processed['supplier_id'] = null;
-        if (!empty($data['supplier_name'])) {
-            $key = strtolower(trim($data['supplier_name']));
-            $supplier = $catalogs['suppliers']->get($key);
-
-            if ($supplier) {
-                $processed['supplier_id'] = $supplier->id;
-                $relations['supplier_name'] = $supplier->name;
-            } else {
-                // Se creará al confirmar importación
-                $processed['_new_supplier'] = $data['supplier_name'];
-                $relations['supplier_name'] = $data['supplier_name'] . ' (nuevo)';
-            }
-        }
-
-        // Brand (lookup en memoria, marcar como nuevo si no existe)
-        $processed['brand_id'] = null;
-        if (!empty($data['brand_name'])) {
-            $key = strtolower(trim($data['brand_name']));
-            $brand = $catalogs['brands']->get($key);
-
-            if ($brand) {
-                $processed['brand_id'] = $brand->id;
-                $relations['brand_name'] = $brand->name;
-            } else {
-                // Se creará al confirmar importación
-                $processed['_new_brand'] = $data['brand_name'];
-                $relations['brand_name'] = $data['brand_name'] . ' (nuevo)';
-            }
-        }
-
-        // Category (búsqueda en colección en memoria)
-        $processed['category_id'] = null;
-        if (!empty($data['category_name'])) {
-            $name = strtolower(trim($data['category_name']));
-
-            // Match exacto primero
-            $category = $catalogs['categories']->first(function ($c) use ($name) {
-                return strtolower($c->name) === $name;
-            });
-
-            // Match parcial si no hay exacto
-            if (!$category) {
-                $category = $catalogs['categories']->first(function ($c) use ($name) {
-                    return str_contains(strtolower($c->name), $name);
-                });
+                $pt = $catalogs['product_types'][$productTypeName] ?? null;
+                if ($pt) {
+                    $processed['product_type_id'] = $pt->id;
+                    $relations['product_type_name'] = $pt->name;
+                } else {
+                    $errors[] = "Tipo de producto '{$data['product_type_name']}' no encontrado.";
+                }
             }
 
-            if ($category) {
-                $processed['category_id'] = $category->id;
-                $relations['category_name'] = $category->name;
-            } else {
-                $available = $catalogs['categories']->pluck('name')->sort()->take(10)->implode(', ');
-                $total = $catalogs['categories']->count();
-                $moreText = $total > 10 ? " (y " . ($total - 10) . " más)" : "";
-                $errors[] = "Categoría '{$data['category_name']}' no encontrada. Disponibles: {$available}{$moreText}";
-            }
+
+            // --- 3. RELACIONES FLEXIBLES (Opcionales y Creación Dinámica) ---
+            $handleFlexibleRelation = function($field, $catalogKey) use ($data, &$catalogs, &$processed, &$relations) {
+                $name = trim($data[$field] ?? '');
+                $processed[str_replace('_name', '_id', $field)] = null; // Por defecto es null
+
+                if (!empty($name)) {
+                    $key = strtolower($name);
+                    $item = $catalogs[$catalogKey][$key] ?? null;
+
+                    if ($item) {
+                        // Existe en BD
+                        $processed[str_replace('_name', '_id', $field)] = $item->id;
+                        $relations[$field] = $item->name;
+                    } else {
+                        // NO existe en BD -> Se marcará para crearse
+                        $cleanField = str_replace('_name', '', $field);
+                        $processed['_new_' . $cleanField] = $name;
+                        $relations[$field] = $name . ' (nuevo)';
+                    }
+                }
+            };
+
+            // Aplicamos la flexibilidad a TODAS las relaciones opcionales
+            $handleFlexibleRelation('category_name', 'categories');
+            $handleFlexibleRelation('sub_category_name', 'sub_categories');
+            $handleFlexibleRelation('product_sub_product_name', 'product_sub_products');
+            $handleFlexibleRelation('supplier_name', 'suppliers');
+            $handleFlexibleRelation('brand_name', 'brands');
+
+
+            // --- 4. PRECIOS Y BOOLEANOS (Limpieza de datos) ---
+            $cleanPrice = fn($val) => (float) preg_replace('/[^-0-9.]/', '', str_replace(',', '', $val));
+            $processed['list_price'] = $cleanPrice($data['list_price'] ?? 0);
+            $processed['cost_price'] = $cleanPrice($data['cost_price'] ?? 0);
+
+            // Booleanos seguros
+            $processed['is_composite'] = $this->parseBoolean($data['is_composite'] ?? 0);
+            $processed['has_expiration_date'] = $this->parseBoolean($data['has_expiration_date'] ?? 0);
+            $processed['requires_sterilization'] = $this->parseBoolean($data['requires_sterilization'] ?? 0);
+            $processed['requires_refrigeration'] = $this->parseBoolean($data['requires_refrigeration'] ?? 0);
+            $processed['requires_temperature'] = $this->parseBoolean($data['requires_temperature'] ?? 0);
+
+
+            // --- 5. ENUMS (Tracking y Status) ---
+            $trackingMap = ['code' => 'code', 'rfid' => 'rfid', 'lote' => 'lote', 'serial' => 'serial'];
+            $processed['tracking_type'] = $trackingMap[strtolower(trim($data['tracking_type'] ?? ''))] ?? 'code';
+
+            $statusMap = ['activo' => 'active', 'active' => 'active', 'inactivo' => 'inactive', 'inactive' => 'inactive'];
+            $processed['status'] = $statusMap[strtolower(trim($data['status'] ?? ''))] ?? 'active';
+
+            return [
+                'valid'     => empty($errors),
+                'errors'    => $errors,
+                'processed' => $processed,
+                'relations' => $relations,
+            ];
         }
-
-        
-
-        // ──────────────────────────────────────────
-        // CAMPOS NUMÉRICOS Y BOOLEANOS
-        // ──────────────────────────────────────────
-        $processed['list_price'] = !empty($data['list_price']) ? (float) $data['list_price'] : 0;
-        $processed['cost_price'] = !empty($data['cost_price']) ? (float) $data['cost_price'] : 0;
-        
-        // Trazabilidad (Ajustado para incluir 'serial' y 'lote')
-        $validTrackingTypes = ['code', 'rfid', 'lote', 'serial'];
-        $trackingType = strtolower(trim($data['tracking_type'] ?? ''));
-        if (empty($trackingType)) {
-            $errors[] = 'El tipo de rastreo es obligatorio';
-        } elseif (!in_array($trackingType, $validTrackingTypes)) {
-            $errors[] = "Tipo de rastreo '{$trackingType}' inválido. Use: code, rfid, lote o serial";
-        } else {
-            $processed['tracking_type'] = $trackingType;
-        }
-
-        // Parseo estricto de Booleanos
-        $processed['is_composite'] = $this->parseBoolean($data['is_composite'] ?? 0);
-        $processed['has_expiration_date'] = $this->parseBoolean($data['has_expiration_date'] ?? 0);
-        $processed['requires_sterilization'] = $this->parseBoolean($data['requires_sterilization'] ?? 0);
-        $processed['requires_refrigeration'] = $this->parseBoolean($data['requires_refrigeration'] ?? 0);
-        $processed['requires_temperature'] = $this->parseBoolean($data['requires_temperature'] ?? 0);
-
-        // Status (Mapeo seguro de Español a la DB en Inglés)
-        $statusMap = [
-            'activo' => 'active', 'active' => 'active',
-            'inactivo' => 'inactive', 'inactive' => 'inactive',
-            'descontinuado' => 'discontinued', 'obsoleto' => 'discontinued', 'discontinued' => 'discontinued'
-        ];
-        $inputStatus = strtolower(trim($data['status'] ?? 'activo'));
-        $processed['status'] = $statusMap[$inputStatus] ?? 'activo';
-
-        return [
-            'valid'     => empty($errors),
-            'errors'    => $errors,
-            'processed' => $processed,
-            'relations' => $relations,
-        ];
-    }
 
     /**
      * Convertir valor a booleano
