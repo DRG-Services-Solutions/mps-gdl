@@ -304,56 +304,117 @@ class ProductImportController extends Controller
             $imported = 0;
             $errors = [];
 
-            // Cache para suppliers y brands nuevos ya creados en esta importación
+            // Cache para elementos nuevos ya creados en esta importación
             $createdSuppliers = [];
             $createdBrands = [];
+            $createdCategories = [];
+            $createdSubCategories = [];
+            $createdSubProducts = [];
 
             foreach ($validRows as $row) {
                 try {
                     $data = $row['processed'];
 
-                    // Crear supplier si es nuevo
+                    // 1. Crear Supplier
                     if (!empty($data['_new_supplier'])) {
-                        $supplierName = $data['_new_supplier'];
-                        $supplierKey = strtolower(trim($supplierName));
+                        $name = $data['_new_supplier'];
+                        $key = strtolower(trim($name));
 
-                        if (isset($createdSuppliers[$supplierKey])) {
-                            $data['supplier_id'] = $createdSuppliers[$supplierKey];
+                        if (isset($createdSuppliers[$key])) {
+                            $data['supplier_id'] = $createdSuppliers[$key];
                         } else {
-                            $supplier = Supplier::firstOrCreate(
-                                ['name' => $supplierName],
+                            $supplier = \App\Models\Supplier::firstOrCreate(
+                                ['name' => $name],
                                 [
-                                    'code'      => 'SUP-' . strtoupper(substr($supplierName, 0, 3)) . '-' . rand(1000, 9999),
+                                    'code'      => 'SUP-' . strtoupper(substr($name, 0, 3)) . '-' . rand(1000, 9999),
                                     'is_active' => true,
                                 ]
                             );
                             $data['supplier_id'] = $supplier->id;
-                            $createdSuppliers[$supplierKey] = $supplier->id;
+                            $createdSuppliers[$key] = $supplier->id;
                         }
                     }
 
-                    // Crear brand si es nuevo
+                    // 2. Crear Brand
                     if (!empty($data['_new_brand'])) {
-                        $brandName = $data['_new_brand'];
-                        $brandKey = strtolower(trim($brandName));
+                        $name = $data['_new_brand'];
+                        $key = strtolower(trim($name));
 
-                        if (isset($createdBrands[$brandKey])) {
-                            $data['brand_id'] = $createdBrands[$brandKey];
+                        if (isset($createdBrands[$key])) {
+                            $data['brand_id'] = $createdBrands[$key];
                         } else {
-                            $brand = Brand::firstOrCreate(
-                                ['name' => $brandName],
+                            $brand = \App\Models\Brand::firstOrCreate(
+                                ['name' => $name],
                                 ['is_active' => true]
                             );
                             $data['brand_id'] = $brand->id;
-                            $createdBrands[$brandKey] = $brand->id;
+                            $createdBrands[$key] = $brand->id;
                         }
                     }
 
-                    // Limpiar campos temporales antes de crear
-                    unset($data['_new_supplier'], $data['_new_brand']);
+                    // 3. Crear Categoría (Usando DB Facade por seguridad de nombres de tabla)
+                    if (!empty($data['_new_category'])) {
+                        $name = $data['_new_category'];
+                        $key = strtolower(trim($name));
 
-                    Product::create($data);
+                        if (isset($createdCategories[$key])) {
+                            $data['category_id'] = $createdCategories[$key];
+                        } else {
+                            $id = DB::table('product_categories')->where('name', $name)->value('id');
+                            if (!$id) {
+                                $id = DB::table('product_categories')->insertGetId(['name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+                            }
+                            $data['category_id'] = $id;
+                            $createdCategories[$key] = $id;
+                        }
+                    }
+
+                    // 4. Crear Subcategoría
+                    if (!empty($data['_new_sub_category'])) {
+                        $name = $data['_new_sub_category'];
+                        $key = strtolower(trim($name));
+
+                        if (isset($createdSubCategories[$key])) {
+                            $data['sub_category_id'] = $createdSubCategories[$key];
+                        } else {
+                            $id = DB::table('product_sub_categories')->where('name', $name)->value('id');
+                            if (!$id) {
+                                $id = DB::table('product_sub_categories')->insertGetId(['name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+                            }
+                            $data['sub_category_id'] = $id;
+                            $createdSubCategories[$key] = $id;
+                        }
+                    }
+
+                    // 5. Crear Producto/Subproducto
+                    if (!empty($data['_new_product_sub_product'])) {
+                        $name = $data['_new_product_sub_product'];
+                        $key = strtolower(trim($name));
+
+                        if (isset($createdSubProducts[$key])) {
+                            $data['product_sub_product_id'] = $createdSubProducts[$key];
+                        } else {
+                            $id = DB::table('product_sub_products')->where('name', $name)->value('id');
+                            if (!$id) {
+                                $id = DB::table('product_sub_products')->insertGetId(['name' => $name, 'created_at' => now(), 'updated_at' => now()]);
+                            }
+                            $data['product_sub_product_id'] = $id;
+                            $createdSubProducts[$key] = $id;
+                        }
+                    }
+
+                    // --- LIMPIEZA DINÁMICA DE CAMPOS TEMPORALES ---
+                    // Eliminamos cualquier llave que empiece con '_new_' para no causar errores en SQL
+                    foreach ($data as $key => $value) {
+                        if (str_starts_with($key, '_new_')) {
+                            unset($data[$key]);
+                        }
+                    }
+
+                    // Finalmente, creamos el producto maestro
+                    \App\Models\Product::create($data);
                     $imported++;
+
                 } catch (\Exception $e) {
                     $errors[] = "Fila {$row['row']}: " . $e->getMessage();
                 }
@@ -362,10 +423,15 @@ class ProductImportController extends Controller
             DB::commit();
 
             if ($imported === 0 && count($errors) > 0) {
-                dd('🛑 LA BASE DE DATOS RECHAZÓ LA INSERCIÓN', [
-                    'Errores detectados:' => $errors,
-                    'Datos de la última fila que intentó guardar:' => $data ?? 'Ninguna'
+                // Guardamos el error en Log en lugar de usar dd() para que no trabe la interfaz en producción
+                \Illuminate\Support\Facades\Log::channel('import')->error('LA BASE DE DATOS RECHAZÓ LA INSERCIÓN', [
+                    'Errores' => $errors,
+                    'Ultima_Fila' => $data ?? 'Ninguna'
                 ]);
+                
+                return redirect()->route('products.import.form')
+                                ->with('error', 'Error crítico al guardar. Revise el log de importación para detalles.')
+                                ->with('import_errors', $errors);
             }
             
             // Limpiar sesión
@@ -376,7 +442,7 @@ class ProductImportController extends Controller
                 'import_debug_mapping',
             ]);
 
-            $message = "Importación completada: {$imported} productos importados";
+            $message = "Importación completada: {$imported} productos importados y catálogos actualizados.";
 
             return redirect()
                 ->route('products.index')
@@ -385,6 +451,7 @@ class ProductImportController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Log::channel('import')->critical('Error de transacción en confirmImport', ['error' => $e->getMessage()]);
             return back()->with('error', 'Error en la importación: ' . $e->getMessage());
         }
     }

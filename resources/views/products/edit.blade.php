@@ -8,7 +8,7 @@
                 </a>
                 <div class="border-l border-gray-300 pl-4">
                     <h2 class="text-2xl font-bold text-gray-900 leading-tight">
-                        {{ __('Editar Catálogo: ') }} <span class="text-indigo-600">{{ $product->code }}</span>
+                        {{ __('Editar Producto: ') }} <span class="text-indigo-600">{{ $product->code }}</span>
                     </h2>
                     <p class="mt-1 text-sm text-gray-600">
                         {{ __('Modificando la ficha maestra de: ') }} <span class="font-semibold">{{ $product->name }}</span>
@@ -43,18 +43,18 @@
                     @csrf
                     @method('PUT')
                     
-                    {{-- SECCIÓN 1: INFORMACIÓN BÁSICA --}}
+                    {{-- SECCIÓN 1: INFORMACIÓN BÁSICA Y PRECIOS --}}
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-id-card text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">Información Básica</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Información Básica y Precios</h3>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Nombre --}}
-                            <div>
+                            {{-- Nombre (Ocupa las 2 columnas) --}}
+                            <div class="md:col-span-2">
                                 <label for="name" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-tag text-gray-400 mr-2"></i>
+                                    <i class="fas fa-box text-gray-400 mr-2"></i>
                                     Nombre del Producto / Set
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
@@ -90,7 +90,35 @@
                                 </select>
                             </div>
 
-                            
+                            {{-- Precio de Lista --}}
+                            <div>
+                                <label for="list_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-tag text-gray-400 mr-2"></i> Precio de Lista
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" name="list_price" id="list_price" value="{{ old('list_price', $product->list_price) }}" 
+                                           class="w-full pl-8 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                </div>
+                                @error('list_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
+
+                            {{-- Precio de Costo --}}
+                            <div>
+                                <label for="cost_price" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-truck-loading text-gray-400 mr-2"></i> Precio de Costo
+                                </label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <span class="text-gray-500 sm:text-sm">$</span>
+                                    </div>
+                                    <input type="number" step="0.01" min="0" name="cost_price" id="cost_price" value="{{ old('cost_price', $product->cost_price) }}" 
+                                           class="w-full pl-8 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                </div>
+                                @error('cost_price')<p class="mt-1 text-sm text-red-600 flex items-center"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>@enderror
+                            </div>
                         </div>
                     </div>
 
@@ -130,42 +158,10 @@
                     <div class="mb-8">
                         <div class="flex items-center mb-4 pb-3 border-b border-gray-200">
                             <i class="fas fa-sitemap text-indigo-600 text-xl mr-3"></i>
-                            <h3 class="text-lg font-semibold text-gray-900">Clasificación</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">Clasificación de Catálogos</h3>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Proveedor --}}
-                            <div>
-                                <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-industry text-gray-400 mr-2"></i> Proveedor
-                                </label>
-                                <select name="supplier_id" id="supplier_id"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="">-- Seleccione un proveedor --</option>
-                                    @foreach($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}" {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}>
-                                            {{ str($supplier->name)->title() }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            {{-- Categoría --}}
-                            <div>
-                                <label for="category_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-tags text-gray-400 mr-2"></i> Categoría Anatómica
-                                </label>
-                                <select name="category_id" id="category_id"
-                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-                                    <option value="">-- Seleccione --</option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
-                                            {{ str($category->name)->title() }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
                             {{-- Tipo de Producto --}}
                             <div>
                                 <label for="product_type_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -178,6 +174,86 @@
                                     @foreach($product_types as $type)
                                         <option value="{{ $type->id }}" {{ old('product_type_id', $product->product_type_id) == $type->id ? 'selected' : '' }}>
                                             {{ $type->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Categoría --}}
+                            <div>
+                                <label for="category_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-tags text-gray-400 mr-2"></i> Categoría
+                                </label>
+                                <select name="category_id" id="category_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">-- Sin Categoría --</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
+                                            {{ str($category->name)->title() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Subcategoría --}}
+                            <div>
+                                <label for="sub_category_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-level-up-alt fa-rotate-90 text-gray-400 mr-2"></i> Categoria Anatomica
+                                </label>
+                                <select name="sub_category_id" id="sub_category_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">-- Sin Subcategoría --</option>
+                                    @foreach($sub_categories as $sub_category)
+                                        <option value="{{ $sub_category->id }}" {{ old('sub_category_id', $product->sub_category_id) == $sub_category->id ? 'selected' : '' }}>
+                                            {{ str($sub_category->name)->title() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Producto/Subproducto --}}
+                            <div>
+                                <label for="product_sub_product_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-puzzle-piece text-gray-400 mr-2"></i> Sub Categoria Anatomica
+                                </label>
+                                <select name="product_sub_product_id" id="product_sub_product_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">-- No aplica --</option>
+                                    @foreach($product_sub_products as $sub_product)
+                                        <option value="{{ $sub_product->id }}" {{ old('product_sub_product_id', $product->product_sub_product_id) == $sub_product->id ? 'selected' : '' }}>
+                                            {{ str($sub_product->name)->title() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Proveedor --}}
+                            <div>
+                                <label for="supplier_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-industry text-gray-400 mr-2"></i> Proveedor
+                                </label>
+                                <select name="supplier_id" id="supplier_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">-- Sin Proveedor --</option>
+                                    @foreach($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ old('supplier_id', $product->supplier_id) == $supplier->id ? 'selected' : '' }}>
+                                            {{ str($supplier->name)->title() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Marca --}}
+                            <div>
+                                <label for="brand_id" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-tag text-gray-400 mr-2"></i> Marca
+                                </label>
+                                <select name="brand_id" id="brand_id"
+                                        class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                                    <option value="">-- Sin Marca --</option>
+                                    @foreach($brands as $brand)
+                                        <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id) == $brand->id ? 'selected' : '' }}>
+                                            {{ str($brand->name)->title() }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -210,12 +286,12 @@
                             {{-- Tipo de Rastreo --}}
                             <div>
                                 <label for="tracking_type" class="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <i class="fas fa-radar text-gray-400 mr-2"></i> Tipo de Rastreo
+                                    <i class="fas fa-route text-gray-400 mr-2"></i> Tipo de Rastreo
                                     <span class="text-red-500 ml-1">*</span>
                                 </label>
                                 <select name="tracking_type" id="tracking_type" required
                                         class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 @error('tracking_type') border-red-500 @enderror">
-                                    <option value="code" {{ old('tracking_type', $product->tracking_type) == 'code' ? 'selected' : '' }}>📦 Solo Code (Sin rastreo especial)</option>
+                                    <option value="code" {{ old('tracking_type', $product->tracking_type) == 'code' ? 'selected' : '' }}>📦 Solo Código (Sin rastreo especial)</option>
                                     <option value="lote" {{ old('tracking_type', $product->tracking_type) == 'lote' ? 'selected' : '' }}>📅 Control por Lote (Consumibles)</option>
                                     <option value="rfid" {{ old('tracking_type', $product->tracking_type) == 'rfid' ? 'selected' : '' }}>📡 Etiqueta RFID (Implantes / Sets)</option>
                                     <option value="serial" {{ old('tracking_type', $product->tracking_type) == 'serial' ? 'selected' : '' }}>🔢 Número de Serie (Equipos Caros)</option>

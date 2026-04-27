@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ProductSubCategory;
+use App\Models\ProductSubProduct;
+use App\Models\Brand;
 use App\Models\ProductUnit;
 use App\Models\Product;
 use App\Models\Supplier; 
@@ -12,8 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\Rule;
-use App\Models\Instrument;
-use App\Models\InstrumentKit;
 
 
 class ProductController extends Controller
@@ -170,10 +171,13 @@ class ProductController extends Controller
     public function edit(Product $product): View
     {
         $suppliers = Supplier::orderBy('name')->get();
+        $brands = Brand::orderBy('name')->get();
         $categories = Category::orderBy('name')->get(); 
         $product_types = ProductType::orderBy('name')->get();
+        $sub_categories = ProductSubCategory::orderBy('name')->get();
+        $product_sub_products = ProductSubProduct::orderBy('name')->get();
 
-        return view('products.edit', compact('product', 'suppliers', 'categories', 'product_types'));
+        return view('products.edit', compact('product', 'suppliers', 'categories', 'product_types', 'sub_categories', 'product_sub_products', 'brands'));
     }
 
     // ==========================================================

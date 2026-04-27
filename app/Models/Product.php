@@ -59,6 +59,16 @@ class Product extends Model
 
     // ==================== RELACIONES ====================
 
+    public function productSubProduct()
+    {
+        return $this->belongsTo(Product::class, 'product_sub_product_id');
+    }
+
+    public function subCategory()
+    {
+        return $this->belongsTo(ProductSubCategory::class, 'sub_category_id');
+    }
+    
     public function components()
     {
         return $this->belongsToMany(Product::class, 'product_components', 'parent_product_id', 'child_product_id')

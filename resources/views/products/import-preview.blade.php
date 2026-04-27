@@ -21,7 +21,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8"> {{-- Ampliado a max-w-screen-2xl para acomodar más columnas --}}
 
             {{-- Barra de acciones --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -65,7 +65,7 @@
             </div>
             <br>
 
-            {{-- Resumen --}}
+            {{-- Resumen (Igual que tu versión original) --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {{-- Total --}}
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
@@ -107,7 +107,7 @@
                 </div>
             </div>
 
-            {{-- Filas con errores --}}
+            {{-- Filas con errores (Igual que tu versión original) --}}
             @if (count($invalidRows) > 0)
                 <div class="bg-white rounded-2xl shadow-sm border border-red-200 overflow-hidden mb-6">
                     <div class="bg-red-50 px-6 py-4 border-b border-red-200">
@@ -168,7 +168,7 @@
                                 <h3 class="text-base font-semibold text-green-800">
                                     Productos válidos ({{ count($validRows) }})
                                 </h3>
-                                <p class="text-sm text-green-600">Estos productos se importarán al confirmar</p>
+                                <p class="text-sm text-green-600">Estos productos se importarán al confirmar. Los elementos marcados en ámbar se crearán nuevos.</p>
                             </div>
                         </div>
                     </div>
@@ -176,15 +176,14 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Fila</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Código</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nombre</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Tipo</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rastreo</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Proveedor</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Categoría</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Marca</th>
-                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Precio</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Fila</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Código</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Nombre</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Tipo / Rastreo</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Categoría / Sub</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Subproducto</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Proveedor / Marca</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Precio</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -192,14 +191,19 @@
                                     <tr class="hover:bg-gray-50/50">
                                         <td class="px-4 py-3 text-sm text-gray-500 font-mono">{{ $row['row'] }}</td>
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $row['processed']['code'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{{ $row['processed']['name'] }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">{{ $row['relations']['product_type_name'] ?? '—' }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title="{{ $row['processed']['name'] }}">
+                                            {{ $row['processed']['name'] }}
+                                        </td>
+                                        
+                                        {{-- Agrupamos Tipo y Rastreo para ahorrar espacio --}}
                                         <td class="px-4 py-3">
+                                            <div class="text-sm text-gray-600 mb-1">{{ $row['relations']['product_type_name'] ?? '—' }}</div>
                                             @php
                                                 $trackingColors = [
                                                     'rfid' => 'bg-purple-100 text-purple-700',
                                                     'serial' => 'bg-blue-100 text-blue-700',
                                                     'code' => 'bg-gray-100 text-gray-700',
+                                                    'lote' => 'bg-orange-100 text-orange-700',
                                                 ];
                                                 $color = $trackingColors[$row['processed']['tracking_type']] ?? 'bg-gray-100 text-gray-700';
                                             @endphp
@@ -207,34 +211,76 @@
                                                 {{ strtoupper($row['processed']['tracking_type']) }}
                                             </span>
                                         </td>
+
+                                        {{-- Agrupamos Categoría y Subcategoría --}}
                                         <td class="px-4 py-3 text-sm text-gray-600">
-                                            @if ($row['relations']['supplier_name'])
-                                                @if (str_contains($row['relations']['supplier_name'], '(nuevo)'))
-                                                    <span class="text-amber-600">
-                                                        <i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['supplier_name'] }}
-                                                    </span>
+                                            <div class="mb-1">
+                                                @if (!empty($row['relations']['category_name']))
+                                                    @if (str_contains($row['relations']['category_name'], '(nuevo)'))
+                                                        <span class="text-amber-600 font-medium" title="Se creará esta categoría"><i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['category_name'] }}</span>
+                                                    @else
+                                                        {{ $row['relations']['category_name'] }}
+                                                    @endif
                                                 @else
-                                                    {{ $row['relations']['supplier_name'] }}
+                                                    <span class="text-gray-400">—</span>
+                                                @endif
+                                            </div>
+                                            <div class="text-xs">
+                                                <i class="fas fa-level-up-alt fa-rotate-90 text-gray-300 mr-1"></i>
+                                                @if (!empty($row['relations']['sub_category_name']))
+                                                    @if (str_contains($row['relations']['sub_category_name'], '(nuevo)'))
+                                                        <span class="text-amber-600 font-medium" title="Se creará esta subcategoría"><i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['sub_category_name'] }}</span>
+                                                    @else
+                                                        {{ $row['relations']['sub_category_name'] }}
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">—</span>
+                                                @endif
+                                            </div>
+                                        </td>
+
+                                        {{-- Subproducto Independiente --}}
+                                        <td class="px-4 py-3 text-sm text-gray-600">
+                                            @if (!empty($row['relations']['product_sub_product_name']))
+                                                @if (str_contains($row['relations']['product_sub_product_name'], '(nuevo)'))
+                                                    <span class="text-amber-600 font-medium"><i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['product_sub_product_name'] }}</span>
+                                                @else
+                                                    {{ $row['relations']['product_sub_product_name'] }}
                                                 @endif
                                             @else
                                                 <span class="text-gray-400">—</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">{{ $row['relations']['category_name'] ?? '—' }}</td>
+
+                                        {{-- Agrupamos Proveedor y Marca --}}
                                         <td class="px-4 py-3 text-sm text-gray-600">
-                                            @if ($row['relations']['brand_name'])
-                                                @if (str_contains($row['relations']['brand_name'], '(nuevo)'))
-                                                    <span class="text-amber-600">
-                                                        <i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['brand_name'] }}
-                                                    </span>
+                                            <div class="mb-1" title="Proveedor">
+                                                <i class="fas fa-truck text-gray-400 w-4 text-xs"></i>
+                                                @if (!empty($row['relations']['supplier_name']))
+                                                    @if (str_contains($row['relations']['supplier_name'], '(nuevo)'))
+                                                        <span class="text-amber-600 font-medium"><i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['supplier_name'] }}</span>
+                                                    @else
+                                                        {{ $row['relations']['supplier_name'] }}
+                                                    @endif
                                                 @else
-                                                    {{ $row['relations']['brand_name'] }}
+                                                    <span class="text-gray-400">—</span>
                                                 @endif
-                                            @else
-                                                <span class="text-gray-400">—</span>
-                                            @endif
+                                            </div>
+                                            <div title="Marca">
+                                                <i class="fas fa-tag text-gray-400 w-4 text-xs"></i>
+                                                @if (!empty($row['relations']['brand_name']))
+                                                    @if (str_contains($row['relations']['brand_name'], '(nuevo)'))
+                                                        <span class="text-amber-600 font-medium"><i class="fas fa-plus-circle text-xs mr-1"></i>{{ $row['relations']['brand_name'] }}</span>
+                                                    @else
+                                                        {{ $row['relations']['brand_name'] }}
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">—</span>
+                                                @endif
+                                            </div>
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-700 text-right font-mono">
+
+                                        <td class="px-4 py-3 text-sm text-gray-700 text-right font-mono whitespace-nowrap">
                                             ${{ number_format($row['processed']['list_price'], 2) }}
                                         </td>
                                     </tr>
@@ -244,8 +290,6 @@
                     </div>
                 </div>
             @endif
-
-            
 
         </div>
     </div>

@@ -256,11 +256,11 @@
                                             <div>
                                                 <a href="{{ route('products.show', $product) }}" 
                                                    class="text-sm font-semibold text-gray-900 hover:text-indigo-600 transition-colors duration-150">
-                                                    {{ $product->name }}
+                                                    <i class="fas fa-barcode mr-1"></i>{{ $product->code }}
                                                 </a>
                                                 <div class="text-xs text-gray-500 flex items-center space-x-2 mt-1">
                                                     <span class="flex items-center">
-                                                        <i class="fas fa-barcode mr-1"></i> {{ $product->code }}
+                                                         {{ $product->name }}
                                                     </span>
                                                     @if($product->status == 'inactive')
                                                         <span class="ml-2 text-[10px] bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded border border-gray-200">Inactivo</span>
