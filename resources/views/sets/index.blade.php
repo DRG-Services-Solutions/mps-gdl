@@ -2,10 +2,10 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                <i class="fas fa-layer-group text-purple-600 mr-2"></i> Gestor de Listado de Sets, Charolas y Kits
+                <i class="fas fa-layer-group text-purple-600 mr-2"></i>Listado de Sets, Charolas y Kits
             </h2>
             <a href="{{ route('products.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm text-sm transition-colors">
-                <i class="fas fa-plus mr-2"></i> Nuevo Set en Catálogo
+                <i class="fas fa-plus mr-2"></i> Nueva Charola o Kit
             </a>
         </div>
     </x-slot>

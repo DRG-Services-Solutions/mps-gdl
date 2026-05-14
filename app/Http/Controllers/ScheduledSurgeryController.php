@@ -241,6 +241,16 @@ class ScheduledSurgeryController extends Controller
             'additionalItems.instrumentKit.instruments',
         ]);
 
+        // 1. Traer los paquetes pre-armados compatibles y disponibles
+        $availablePackages = \App\Models\PreAssembledPackage::where('surgery_checklist_id', $surgery->checklist_id)
+            ->where('status', 'available')
+            ->get();
+
+        // 2. Traer las Configuraciones de Torre (Nuestra Fase 5)
+        $availableConfigurations = \App\Models\ChecklistConfiguration::where('surgical_checklist_id', $surgery->checklist_id)
+            ->with('requirements.item') // Para que la vista sepa qué contiene cada torre
+            ->get();
+
         // Items evaluados (qty > 0) — deduplicados por product_id
         $rawItems = $surgery->getChecklistItemsWithConditionals();
         $checklistItems = $rawItems->unique('product_id')->values();
@@ -274,7 +284,7 @@ class ScheduledSurgeryController extends Controller
             ->selectRaw('product_id, COUNT(*) as total')
             ->pluck('total', 'product_id');
 
-        return view('surgeries.show', compact('surgery', 'checklistItems', 'excludedItems', 'stockMap'));
+        return view('surgeries.show', compact('surgery', 'checklistItems', 'excludedItems', 'stockMap', 'availablePackages', 'availableConfigurations'));
     }
 
     /**

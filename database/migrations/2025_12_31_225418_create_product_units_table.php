@@ -16,16 +16,19 @@ return new class extends Migration
                   ->constrained()
                   ->onDelete('set null');
             $table->integer('reserved_quantity')->default(0)->comment('Cantidad reservada para cotizaciones');
+            $table->foreignId('location_id')->nullable()->comment('Ubicación física actual (puede ser un anaquel, zona, etc.)');
             
             // Relación con el producto del catálogo
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->nullable()->constrained('products')->cascadeOnDelete();
             
-            // ✅ NUEVO: Relación recursiva para cajas/sets físicos
+            //Relación recursiva para cajas/sets físicos
             $table->foreignId('parent_unit_id')
                   ->nullable()
                   ->constrained('product_units')
                   ->onDelete('set null')
                   ->comment('ID de la Caja/Set físico que contiene esta pieza');
+                  
+            $table->foreignId('item_id')->nullable()->constrained('items')->cascadeOnDelete();
             
             // Identificadores únicos (solo uno será usado según el tipo de producto)
             $table->string('epc')->nullable()->comment('Código EPC para RFID');

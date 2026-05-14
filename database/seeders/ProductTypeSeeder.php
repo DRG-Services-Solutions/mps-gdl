@@ -34,6 +34,10 @@ class ProductTypeSeeder extends Seeder
                 'name' => 'Pieza Instrumental',
                 'description' => 'Productos de tipo pieza instrumental',
             ],
+            [
+                'name' => 'Consola',
+                'description' => 'Productos de tipo consola',
+            ],
         ];
 
         foreach ($productType as $type)

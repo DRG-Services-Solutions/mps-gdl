@@ -11,6 +11,7 @@ class SurgeryPreparationItem extends Model
     protected $fillable = [
         'preparation_id',
         'product_id',
+        'item_id',
         'quantity_required',
         'is_mandatory',
         'quantity_in_package',
@@ -33,6 +34,11 @@ class SurgeryPreparationItem extends Model
     /**
      * RELACIONES
      */
+
+    public function item()
+    {
+        return $this->belongsTo(Item::class);
+    }
     
     // Preparación a la que pertenece
     public function preparation()

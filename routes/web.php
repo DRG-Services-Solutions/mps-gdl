@@ -47,6 +47,15 @@ use App\Http\Controllers\InstrumentKitController;
 use App\Http\Controllers\InstrumentKitItemController;
 use App\Http\Controllers\SetBuilderController;
 use App\Http\Controllers\PhysicalAssemblyController;
+use App\Http\Controllers\ItemController;
+use App\Http\Controllers\ItemUnitController;
+use App\Http\Controllers\ItemComponentController;
+use App\Http\Controllers\ItemRelationController;
+use App\Http\Controllers\KitAssemblyController;
+use App\Http\Controllers\ItemStockUnitController;
+use App\Http\Controllers\StockUnitController;
+use App\Http\Controllers\StockUnitRecipeController;
+
 
 // ========================================
 // RUTAS PÚBLICAS
@@ -59,6 +68,39 @@ Route::get('/', function () {
 // RUTAS AUTENTICADAS
 // ========================================
 Route::middleware(['auth', 'verified'])->group(function () {
+
+Route::get('/api/search-items', [ItemController::class, 'searchApi'])->name('api.items.search');
+Route::get('/stock-units/{stockUnit}', [StockUnitController::class, 'show'])->name('stock-units.show');
+
+Route::post('/stock-units/{stockUnit}/recipe', [StockUnitRecipeController::class, 'store'])->name('stock-units.recipe.store');
+Route::delete('/stock-units/{stockUnit}/recipe/{item}', [StockUnitRecipeController::class, 'destroy'])->name('stock-units.recipe.destroy');
+
+Route::get('/kits/assemble', [KitAssemblyController::class, 'index'])->name('kits.index');
+Route::post('/kits/start-assembly', [KitAssemblyController::class, 'startAssembly'])->name('kits.startAssembly');
+Route::get('/kits/assemble/{code}', [KitAssemblyController::class, 'start'])->name('kits.start');
+Route::post('/kits/finalize/{assembly}', [KitAssemblyController::class, 'finalize'])->name('kits.finalize');
+
+Route::post('items/{item}/units', [ItemUnitController::class, 'store'])->name('items.units.store');
+
+//Constructor de Charolas (BOM / Componentes) <-- AQUÍ ESTÁ TU SOLUCIÓN
+Route::post('items/{item}/components', [ItemComponentController::class, 'store'])->name('items.components.store');
+Route::delete('items/{item}/components/{componentId}', [ItemComponentController::class, 'destroy'])->name('items.components.destroy');
+Route::delete('items/{item}/components/{component}', [ItemComponentController::class, 'destroy'])->name('items.components.destroy');
+
+//Alta y Baja de Inventario Físico (Las piezas reales)
+Route::post('items/{item}/stock-units', [ItemStockUnitController::class, 'store'])->name('items.stock-units.store');
+Route::delete('items/{item}/stock-units/{stockUnit}', [ItemStockUnitController::class, 'destroy'])->name('items.stock-units.destroy');
+
+// 3. Matriz de Compatibilidad (Reglas de Quirófano)
+Route::post('items/{item}/relations', [ItemRelationController::class, 'store'])->name('items.relations.store');
+Route::delete('items/{item}/relations/{relation}', [ItemRelationController::class, 'destroy'])->name('items.relations.destroy');
+
+Route::resource('items', ItemController::class);
+
+// Ruta para guardar la unidad física, atada al Item padre
+Route::post('items/{item}/units', [ItemUnitController::class, 'store'])->name('items.units.store');
+Route::patch('items/{item}/toggle-status', [App\Http\Controllers\ItemController::class, 'toggleStatus'])
+    ->name('items.toggle-status');
 
 // Ensamblaje Físico (Operador 2)
 Route::get('/physical-assembly/{product}', [PhysicalAssemblyController::class, 'create'])->name('physical-assembly.create');

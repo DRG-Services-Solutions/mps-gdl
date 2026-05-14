@@ -44,6 +44,11 @@ class SurgicalChecklist extends Model
         return $this->hasMany(ScheduledSurgery::class, 'checklist_id');
     }
 
+    public function configurations()
+    {
+        return $this->hasMany(ChecklistConfiguration::class, 'surgical_checklist_id');
+    }
+
     /**
      * SCOPES
      */

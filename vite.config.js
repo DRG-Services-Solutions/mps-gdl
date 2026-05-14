@@ -14,27 +14,27 @@ export default defineConfig({
             refresh: true,
         }),
     ],
-    
+
     server: {
-        host: '0.0.0.0',           
-        port: 5173,                
-        strictPort: true,          
-        
+        host: '0.0.0.0',
+        port: 5173,
+        strictPort: true,
+
         cors: {
-            origin: '*',           
+            origin: '*',
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
             credentials: true
         },
-        
+
         hmr: {
-            host: '10.20.3.21',   // ip 
+            host: '10.20.3.21',
             port: 5173,
-            protocol: 'ws'         // WebSocket para HMR
+            protocol: 'ws'
         },
-        
+
         watch: {
-            usePolling: true,      
+            usePolling: true,
         }
 
     },

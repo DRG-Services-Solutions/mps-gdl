@@ -18,12 +18,12 @@ class PreparationService
     /**
      * Crear preparación de cirugía
      * 
-     * FIX #1: Ahora acepta $packageId = null para "preparar desde cero"
+     * 
      */
-    public function createPreparation($surgeryId, $packageId, $userId)
+    public function createPreparation($surgeryId, $packageId, $userId, $configurationId = null)
     {
         
-        return DB::transaction(function () use ($surgeryId, $packageId, $userId) {
+        return DB::transaction(function () use ($surgeryId, $packageId, $userId, $configurationId) {
             // 1. Validar y obtener la cirugía
             $surgery = ScheduledSurgery::findOrFail($surgeryId);
             
@@ -46,6 +46,7 @@ class PreparationService
             
             // 4. Obtener contenido del paquete (si existe)
             $packageContents = collect();
+            
 
             if ($packageId) {
                 $package = PreAssembledPackage::with('contents')->findOrFail($packageId);
@@ -93,11 +94,83 @@ class PreparationService
             }
 
             // 7. Procesar condicionales que generan productos adicionales
-            //    (dependencias y reemplazos) para que aparezcan desde el inicio
             $this->processConditionalProducts($preparation, $surgery, $packageContents);
+
+            if ($configurationId) {
+                $this->applyConfigurationRequirements($preparation, $surgery, $configurationId, $packageContents);
+            }
 
             return $preparation;
         });
+    }
+
+    protected function applyConfigurationRequirements(
+        SurgeryPreparation $preparation, 
+        ScheduledSurgery $surgery, 
+        $configurationId, 
+        $packageContents
+    ): void {
+        
+        $configuration = \App\Models\ChecklistConfiguration::with('requirements.item')->findOrFail($configurationId);
+        
+        Log::info("=== APLICANDO CONFIGURACIÓN: {$configuration->name} ===");
+
+        // 🚨 CORRECCIÓN 1: Pluck a 'item_id' excluyendo los nulos (Solo Instrumental)
+        $existingItemIds = $preparation->items()
+                                       ->whereNotNull('item_id')
+                                       ->pluck('item_id')
+                                       ->toArray();
+
+        foreach ($configuration->requirements as $req) {
+            
+            // 1. EVALUAR LA REGLA DEL EXCEL (Ej: "OBLIGATORIO DR MENDOZA")
+            if ($req->requirement_type === 'conditional') {
+                $applies = true;
+                if ($req->doctor_id && $req->doctor_id != $surgery->doctor_id) $applies = false;
+                if ($req->hospital_id && $req->hospital_id != $surgery->hospital_id) $applies = false;
+                
+                if (!$applies) {
+                    Log::info("Saltando {$req->item->name} - Condición de Doctor/Hospital no cumplida.");
+                    continue; // Saltamos a la siguiente charola
+                }
+            }
+
+            // 🚨 CORRECCIÓN 2: Evaluamos contra el arreglo correcto de Items
+            if (in_array($req->item_id, $existingItemIds)) {
+                Log::info("El instrumental {$req->item->name} ya estaba incluido. Omitiendo duplicidad.");
+                continue; 
+            }
+
+            // 3. CALCULAR FALTANTES 
+            $requiredQty = $req->quantity ?? 1; // Usamos la propiedad si la agregaste, si no, es 1
+            
+            // 🚨 CORRECCIÓN 3: Los equipos (Items) rara vez van en paquetes pre-armados (que son consumibles).
+            // Por lo tanto, quantity_in_package para una Consola o Torre suele ser 0.
+            // Si tuvieras "Paquetes de Instrumental", tendrías que cruzarlo con otro origen.
+            $inPkg = 0; 
+                
+            $missing = max(0, $requiredQty - $inPkg);
+            $status = $missing <= 0 ? 'in_package' : 'pending';
+
+            // 4. INSERTAR EN LA PREPARACIÓN (Dualidad perfecta)
+            $preparation->items()->create([
+                'item_id'             => $req->item_id,    // ✅ Mundo Equipo
+                'product_id'          => null,             // ✅ Anulamos Mundo Consumible
+                'checklist_item_id'   => null, 
+                'quantity_required'   => $requiredQty,
+                'quantity_in_package' => $inPkg,
+                'quantity_picked'     => 0,
+                'quantity_missing'    => $missing,
+                'is_mandatory'        => true,
+                'status'              => $status,
+                'notes'               => "De Configuración: {$configuration->name} - {$req->notes}",
+            ]);
+
+            // 🚨 CORRECCIÓN 4: Agregamos al arreglo correcto
+            $existingItemIds[] = $req->item_id;
+            
+            Log::info("Ítem de Torre Agregado: {$req->item->name} (Faltan: {$missing})");
+        }
     }
 
     /**

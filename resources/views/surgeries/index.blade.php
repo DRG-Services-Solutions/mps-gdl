@@ -1,4 +1,3 @@
-{{-- resources/views/surgeries/index.blade.php --}}
 <x-app-layout>
     @push('styles')
     <style>

@@ -13,11 +13,13 @@ return new class extends Migration
             
             $table->foreignId('preparation_id')->constrained('surgery_preparations')->onDelete('cascade')->comment('Preparación a la que pertenece');
 
-            $table->foreignId('product_id')->constrained('products')->comment('Producto requerido');
+            //product_id es nullable (Porque puede ser un Equipo y no un Consumible)
+            $table->foreignId('product_id')->nullable()->constrained('products')->comment('Producto consumible requerido');
+
+            //  item_id para el mundo de las Torres y Activos Fijos
+            $table->foreignId('item_id')->nullable()->constrained('items')->comment('Equipo/Instrumental reusable requerido (Ej. Consola Shaver)');
 
             $table->foreignId('checklist_item_id')->nullable()->constrained('checklist_items')->nullOnDelete();
-
-
             
             // Cantidades del Check List
             $table->integer('quantity_required')->comment('Cantidad requerida según check list (con condicionales)');
@@ -34,7 +36,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'in_package', 'complete', 'missing'])->default('pending')->comment('pending=no revisado, in_package=completo en paquete, complete=surtido, missing=falta');
             
             // Ubicación del producto si hay que buscarlo
-            $table->foreignId('storage_location_id')->nullable()->constrained('storage_locations')->comment('Dónde encontrar el producto');
+            $table->foreignId('storage_location_id')->nullable()->constrained('storage_locations')->comment('Dónde encontrar el producto/equipo');
             
             $table->text('notes')->nullable();
             $table->timestamps();
@@ -42,6 +44,7 @@ return new class extends Migration
             // Índices
             $table->index('preparation_id');
             $table->index('product_id');
+            $table->index('item_id'); // 🚨 AJUSTE 3: Indexamos la nueva columna para consultas rápidas
             $table->index('status');
         });
     }

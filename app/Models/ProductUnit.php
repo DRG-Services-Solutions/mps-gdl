@@ -21,7 +21,8 @@ class ProductUnit extends Model
         'batch_number',
         'expiration_date',
         'manufacture_date',
-        'status',                   
+        'status',        
+        'location_id',           
         'current_location_id',
         'current_package_id',
         'current_surgery_id',
@@ -74,6 +75,11 @@ class ProductUnit extends Model
     const STATUS_RETIRED = 'retired';
 
     // ==================== RELACIONES ====================
+
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(Item::class, 'item_id');
+    }
 
     public function containedUnits(): HasMany
     {
