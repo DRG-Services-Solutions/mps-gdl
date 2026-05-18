@@ -65,7 +65,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Total Items</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ $preAssembled->contents->count() }}</p>
+                            <p id="stat-total-items" class="text-2xl font-bold text-gray-900 mt-2">{{ $preAssembled->contents->count() }}</p>
                         </div>
                         <div class="bg-blue-100 rounded-full p-3">
                             <i class="fas fa-cubes text-2xl text-blue-600"></i>
@@ -78,7 +78,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium text-gray-600">Completitud</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($preAssembled->getCompletenessPercentage(), 1) }}%</p>
+                            <p id="stat-completeness" class="text-2xl font-bold text-gray-900 mt-2">{{ number_format($preAssembled->getCompletenessPercentage(), 1) }}%</p>
                         </div>
                         <div class="bg-purple-100 rounded-full p-3">
                             <i class="fas fa-chart-pie text-2xl text-purple-600"></i>
@@ -250,125 +250,9 @@
             
 
 
-            <!-- Contenido del Paquete (sin cambios mayores) -->
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-box mr-2 text-green-600"></i>
-                        Contenido del Paquete ({{ $preAssembled->contents->count() }} items)
-                    </h3>
-                </div>
-                
-                @if($preAssembled->contents->count() > 0)
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">EPC / Código</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Cantidad</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Caducidad</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Agregado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($preAssembled->contents->groupBy('product_id') as $productId => $items)
-                            @php
-                                $firstItem = $items->first();
-                                $product = $firstItem->product;
-                            @endphp
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-box text-indigo-600"></i>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-semibold text-gray-900">{{ $product->name }}</div>
-                                            <div class="text-xs text-gray-500">
-                                                <i class="fas fa-tag mr-1"></i>
-                                                {{ $product->code }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="space-y-1">
-                                        @foreach($items as $item)
-                                            @if($item->productUnit->epc)
-                                                <div class="flex items-center space-x-2">
-                                                    <i class="fas fa-qrcode text-xs text-gray-400"></i>
-                                                    <span class="text-xs font-mono text-gray-600">
-                                                        {{ Str::limit($item->productUnit->epc, 20, '...')  }}
-                                                    </span>
-                                                </div>
-                                            @endif
-                                            @endforeach
-                                                <div class="text-xs text-gray-400">
-                                                    <i class="fas fa-qrcode text-xs text-gray-400"></i>
-                                                    {{ $item->product->code }}
-                                                </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                                        {{ $items->sum('quantity') }} 
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @php
-                                        $hasExpired = $items->contains(fn($item) => $item->productUnit && $item->isExpired());
-                                        $nearExpiry = $items->contains(fn($item) => $item->productUnit && $item->isExpiringSoon(30));
-                                    @endphp
-                                    @if($hasExpired)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            Vencido
-                                        </span>
-                                    @elseif($nearExpiry)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            Próximo
-                                        </span>
-                                    @else
-                                        <span class="text-xs text-gray-500">
-                                            <i class="fas fa-check-circle text-green-500 mr-1"></i>
-                                            OK
-                                        </span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center text-xs text-gray-500">
-                                    {{ $firstItem->added_at->format('d/m/Y H:i') }}
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-medium">
-                                    <form action="{{ route('pre-assembled.remove-product', $preAssembled) }}" 
-                                        method="POST" 
-                                        class="inline"
-                                        onsubmit="return confirm('¿Remover {{ $items->sum('quantity') }} unidad(es) de {{ $product->name }} del paquete?')">
-                                        @csrf
-                                        <input type="hidden" name="product_id" value="{{ $productId }}">
-                                        <button type="submit" 
-                                                class="text-red-600 hover:text-red-900 hover:bg-red-50 p-2 rounded transition-colors"
-                                                title="Remover">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                @else
-                <div class="px-6 py-12 text-center">
-                    <div class="flex flex-col items-center justify-center text-gray-400">
-                        <i class="fas fa-box-open text-6xl mb-4 text-gray-300"></i>
-                        <p class="text-base font-medium text-gray-900 mb-2">El paquete está vacío</p>
-                        <p class="text-sm text-gray-600">Comienza escaneando productos arriba</p>
-                    </div>
-                </div>
-                @endif
+            <!-- Contenido del Paquete -->
+            <div id="contents-table-container" class="bg-white rounded-lg shadow-sm overflow-hidden">
+                @include('pre-assembled.partials.contents-table')
             </div>
 
             <!-- Acciones finales (sin cambios) -->
@@ -444,25 +328,167 @@
             `;
         });
 
-        // Auto-submit después de escaneo (opcional)
-        let scanTimeout;
-        document.getElementById('search_input').addEventListener('keypress', function(e) {
-            clearTimeout(scanTimeout);
+        let isSubmitting = false;
+
+        document.getElementById('single-scan-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Si presiona Enter, enviar inmediatamente
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('single-scan-form').submit();
-                return;
-            }
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            const inputField = document.getElementById('search_input');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
             
-            // Auto-submit después de 100ms de inactividad (para escáneres rápidos)
-            scanTimeout = setTimeout(() => {
-                if (this.value.trim().length > 0) {
-                    // document.getElementById('single-scan-form').submit();
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Agregando...';
+
+            try {
+                const formData = new FormData(this);
+                
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Update table
+                    document.getElementById('contents-table-container').innerHTML = data.html;
+                    
+                    // Update top stats if they exist in the response
+                    if (data.stats) {
+                        if (document.getElementById('stat-total-items')) {
+                            document.getElementById('stat-total-items').textContent = data.stats.total_items;
+                        }
+                        if (document.getElementById('stat-completeness')) {
+                            document.getElementById('stat-completeness').textContent = data.stats.completeness + '%';
+                        }
+                    } else {
+                        // Fallback: extract count from the updated table header
+                        const countEl = document.getElementById('total-items-count');
+                        if (countEl && document.getElementById('stat-total-items')) {
+                            document.getElementById('stat-total-items').textContent = countEl.textContent;
+                        }
+                        // We can't easily recalculate completeness without backend data, so we'll let it be for now or force a reload if they care deeply about that specific stat updating live, but this fallback is better than nothing.
+                    }
+                    
+                    // Show success toast or alert
+                    showToast(data.message, 'success');
+                    
+                    // Clear input
+                    inputField.value = '';
+                    document.getElementById('scan-type-indicator').innerHTML = '';
+                    
+                    // Re-bind remove forms
+                    bindRemoveForms();
+                } else {
+                    // Show error
+                    showToast(data.message || 'Error al agregar producto', 'error');
                 }
-            }, 100);
+            } catch (error) {
+                console.error(error);
+                showToast('Error de conexión', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                inputField.focus();
+                isSubmitting = false;
+            }
         });
+
+        // Binding for dynamic remove forms
+        function bindRemoveForms() {
+            document.querySelectorAll('.remove-product-form').forEach(form => {
+                // Prevent duplicate bindings
+                if (form.dataset.bound) return;
+                form.dataset.bound = 'true';
+                
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    if (!confirm('¿Remover este producto del paquete?')) {
+                        return;
+                    }
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalContent = submitBtn.innerHTML;
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                    try {
+                        const formData = new FormData(this);
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.success) {
+                            document.getElementById('contents-table-container').innerHTML = data.html;
+                            
+                            // Update top stats if they exist in the response
+                            if (data.stats) {
+                                if (document.getElementById('stat-total-items')) {
+                                    document.getElementById('stat-total-items').textContent = data.stats.total_items;
+                                }
+                                if (document.getElementById('stat-completeness')) {
+                                    document.getElementById('stat-completeness').textContent = data.stats.completeness + '%';
+                                }
+                            } else {
+                                // Fallback: extract count from the updated table header
+                                const countEl = document.getElementById('total-items-count');
+                                if (countEl && document.getElementById('stat-total-items')) {
+                                    document.getElementById('stat-total-items').textContent = countEl.textContent;
+                                }
+                            }
+
+                            showToast(data.message, 'success');
+                            bindRemoveForms();
+                        } else {
+                            showToast(data.message || 'Error al remover producto', 'error');
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalContent;
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        showToast('Error de conexión', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalContent;
+                    }
+                });
+            });
+        }
+
+        // Initialize bindings on load
+        bindRemoveForms();
+
+        // Simple toast notification system
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center z-50 transition-opacity duration-300`;
+            toast.innerHTML = `<i class="fas ${icon} mr-3"></i> <span>${message}</span>`;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         // ============================================
         // ESCANEO MASIVO - Modal

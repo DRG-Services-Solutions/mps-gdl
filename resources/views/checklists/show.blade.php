@@ -28,6 +28,11 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <a href="{{ route('checklists.configurations.index', $checklist) }}" 
+                   class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200">
+                    <i class="fas fa-server mr-2"></i>
+                    Gestionar Torres/Equipos
+                </a>
                 <a href="{{ route('checklists.items', $checklist) }}" 
                    class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-200">
                     <i class="fas fa-tasks mr-2"></i>

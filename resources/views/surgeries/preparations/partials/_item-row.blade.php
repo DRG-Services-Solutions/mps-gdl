@@ -1,5 +1,7 @@
 @php
     $condCount = $item->conditionals ? $item->conditionals->count() : 0;
+    $entityName = $item->item_id ? ($item->item->name ?? 'Desconocido') : ($item->product->name ?? 'Desconocido');
+    $entityCode = $item->item_id ? ($item->item->code ?? 'N/A') : ($item->product->code ?? 'N/A');
 @endphp
 
 {{-- ═══════════ DESKTOP: fila de tabla normal ═══════════ --}}
@@ -11,8 +13,8 @@
                 <i class="fas fa-star text-yellow-500 mr-2" title="Obligatorio"></i>
             @endif
             <div>
-                <div class="font-medium text-gray-900">{{ $item->product->code }}</div>
-                <div class="text-xs text-gray-500 font-mono">{{ $item->product->name }}</div>
+                <div class="font-medium text-gray-900">{{ $entityCode }}</div>
+                <div class="text-xs text-gray-500 font-mono">{{ $entityName }}</div>
                 @if ($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
                     <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
                         <i class="fas fa-link"></i> {{ $item->notes }}
@@ -68,7 +70,7 @@
     <td class="px-6 py-4 text-center">
         @if ($condCount > 0)
             <button type="button"
-                onclick="openConditionalsModal('{{ addslashes($item->product->name) }}', 'conditionals-data-{{ $item->id }}')"
+                onclick="openConditionalsModal('{{ addslashes($entityName) }}', 'conditionals-data-{{ $item->id }}')"
                 class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded-full font-bold text-xs transition-colors cursor-pointer">
                 <i class="fas fa-list-ul mr-1"></i>
                 Ver {{ $condCount }}
@@ -90,8 +92,8 @@
                         <i class="fas fa-star text-yellow-500 mr-2 flex-shrink-0" title="Obligatorio"></i>
                     @endif
                     <div class="min-w-0">
-                        <p class="font-bold text-gray-900 text-sm truncate">{{ $item->product->name }}</p>
-                        <p class="text-xs text-gray-500 font-mono">{{ $item->product->code }}</p>
+                        <p class="font-bold text-gray-900 text-sm truncate">{{ $entityName }}</p>
+                        <p class="text-xs text-gray-500 font-mono">{{ $entityCode }}</p>
                         @if ($item->notes && str_starts_with($item->notes, 'Dependencia de:'))
                             <span class="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-700">
                                 <i class="fas fa-link"></i> {{ $item->notes }}
@@ -106,7 +108,7 @@
 
                 @if ($condCount > 0)
                     <button type="button"
-                        onclick="openConditionalsModal('{{ addslashes($item->product->name) }}', 'conditionals-data-{{ $item->id }}')"
+                        onclick="openConditionalsModal('{{ addslashes($entityName) }}', 'conditionals-data-{{ $item->id }}')"
                         class="ml-2 flex-shrink-0 inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full font-bold text-[10px]">
                         <i class="fas fa-filter mr-1"></i> {{ $condCount }}
                     </button>

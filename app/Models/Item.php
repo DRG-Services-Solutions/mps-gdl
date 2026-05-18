@@ -66,27 +66,16 @@ class Item extends Model
         ->withTimestamps();
     }
 
-    public function compatibilities()
+    // Inverso de relations: modelos que dependen de mi o me relacionan
+    public function relatedToMe()
     {
         return $this->belongsToMany(
             Item::class, 
-            'item_compatibilities', 
-            'item_id', 
-            'compatible_item_id'
-        )
-        ->withPivot('notes')
-        ->withTimestamps();
-    }
-
-    public function compatibleWith()
-    {
-        return $this->belongsToMany(
-            Item::class, 
-            'item_compatibilities', 
-            'compatible_item_id', 
+            'item_relations', 
+            'related_item_id', 
             'item_id'
         )
-        ->withPivot('notes')
+        ->withPivot('type', 'notes')
         ->withTimestamps();
     }
 

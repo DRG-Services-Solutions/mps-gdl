@@ -11,6 +11,7 @@ class SurgeryPreparationUnit extends Model
     protected $fillable = [
         'preparation_item_id',
         'product_unit_id',
+        'stock_unit_id',
         'source_type',
         'source_package_id',
         'assigned_at',
@@ -35,6 +36,11 @@ class SurgeryPreparationUnit extends Model
     public function productUnit()
     {
         return $this->belongsTo(ProductUnit::class, 'product_unit_id');
+    }
+
+    public function stockUnit()
+    {
+        return $this->belongsTo(StockUnit::class, 'stock_unit_id');
     }
 
     public function sourcePackage()

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
-use App\Models\ItemRelation;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,24 +19,28 @@ class ItemRelationController extends Controller
                 'exists:items,id',
                 Rule::notIn([$item->id]) // BLINDAJE: Un equipo no puede relacionarse consigo mismo
             ],
-            'relation_type' => 'required|in:requires,compatible_with,conflicts_with,alternative_to',
+            'type' => 'required|in:required,suggested,compatible',
             'notes' => 'nullable|string|max:255'
         ]);
 
-        // Guardamos o actualizamos la regla
-        ItemRelation::updateOrCreate(
-            [
-                'item_id' => $item->id,
-                'related_item_id' => $validated['related_item_id'],
-            ],
-            [
-                'relation_type' => $validated['relation_type'],
+        // Guardamos o actualizamos la regla usando la relación de Eloquent
+        $item->relations()->syncWithoutDetaching([
+            $validated['related_item_id'] => [
+                'type' => $validated['type'],
                 'notes' => $validated['notes'] ?? null,
             ]
-        );
+        ]);
 
         // Opcional (Arquitectura Espejo): Si A es compatible con B, ¿B es compatible con A?
-        // En relaciones como 'compatible_with' o 'conflicts_with', podríamos replicar la regla a la inversa automáticamente.
+        if ($validated['type'] === 'compatible') {
+            $relatedItem = Item::find($validated['related_item_id']);
+            $relatedItem->relations()->syncWithoutDetaching([
+                $item->id => [
+                    'type' => 'compatible',
+                    'notes' => $validated['notes'] ?? null,
+                ]
+            ]);
+        }
 
         return redirect()->route('items.show', $item)
                          ->with('success', 'Regla de compatibilidad definida con éxito.');
@@ -46,13 +49,20 @@ class ItemRelationController extends Controller
     /**
      * Elimina una regla de la matriz
      */
-    public function destroy(Item $item, ItemRelation $relation)
+    public function destroy(Item $item, $relatedItemId)
     {
-        if ($relation->item_id !== $item->id) {
-            abort(403);
-        }
+        $relation = $item->relations()->where('related_item_id', $relatedItemId)->first();
 
-        $relation->delete();
+        if ($relation) {
+            $item->relations()->detach($relatedItemId);
+
+            if ($relation->pivot->type === 'compatible') {
+                $relatedItem = Item::find($relatedItemId);
+                if ($relatedItem) {
+                    $relatedItem->relations()->detach($item->id);
+                }
+            }
+        }
 
         return redirect()->route('items.show', $item)
                          ->with('success', 'Regla de compatibilidad eliminada.');

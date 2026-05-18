@@ -220,13 +220,19 @@ class ItemController extends Controller
                 return response()->json([]); // No puede contener nada
             }
             $query->whereIn('type', $allowedTypes);
-        } else {
+        } elseif (!$request->boolean('all')) {
             // Comportamiento anterior por defecto
             $query->whereNotIn('type', ['tower', 'equipment', 'console']);
         }
 
         $items = $query->limit(50)->get(['id', 'code', 'name', 'type']);
 
-        return response()->json($items);
+        return response()->json($items->map(fn($item) => [
+            'id' => $item->id,
+            'code' => $item->code,
+            'name' => $item->name,
+            'type' => $item->type,
+            'type_label' => $item->typeLabel,
+        ]));
     }
 }

@@ -246,6 +246,7 @@ class SurgeryPreparationController extends Controller
 
         $surgery->load([
                 'preparation.items.product.productType',
+                'preparation.items.item',
                 'preparation.items.storageLocation',
                 'preparation.items.checklistItem.conditionals' => fn($q) => $q->with(['doctor', 'hospital', 'modality', 'targetProduct']),
                 'preparation.preAssembledPackage.surgeryChecklist.items.conditionals',
@@ -273,18 +274,37 @@ class SurgeryPreparationController extends Controller
         // Obtener productos excluidos/reemplazados por condicionales
         $excludedByConditionals = $this->getExcludedByConditionals($surgery);
 
+        // Obtener las configuraciones (Torres) disponibles para este checklist
+        $availableConfigurations = [];
+        if ($surgery->checklist_id) {
+            $availableConfigurations = \App\Models\ChecklistConfiguration::where('surgical_checklist_id', $surgery->checklist_id)
+                ->with('requirements.item')
+                ->get();
+        }
 
         $zone2Types = ['equipo', 'instrumental', 'set', 'caja', 'charola'];
 
         $zone2Hardware = $pendingItems->filter(function($item) use ($zone2Types) {
-            $type = strtolower(trim($item->product->productType->name ?? ''));
-            return in_array($type, $zone2Types);
+            if ($item->item_id) {
+                return true;
+            }
+            if ($item->product_id) {
+                $type = strtolower(trim($item->product->productType->name ?? ''));
+                return in_array($type, $zone2Types);
+            }
+            return false;
         })->values();
 
         // Zona 1: todo lo que NO es zona 2 (consumibles + cualquier tipo no clasificado)
         $zone1Consumables = $pendingItems->filter(function($item) use ($zone2Types) {
-            $type = strtolower(trim($item->product->productType->name ?? ''));
-            return !in_array($type, $zone2Types);
+            if ($item->item_id) {
+                return false;
+            }
+            if ($item->product_id) {
+                $type = strtolower(trim($item->product->productType->name ?? ''));
+                return !in_array($type, $zone2Types);
+            }
+            return true;
         })->values();
 
         return view('surgeries.preparations.picking', compact(
@@ -294,7 +314,8 @@ class SurgeryPreparationController extends Controller
             'zone1Consumables', 
             'zone2Hardware',    
             'summary',
-            'excludedByConditionals'
+            'excludedByConditionals',
+            'availableConfigurations'
         ));
 
     }
@@ -481,6 +502,132 @@ class SurgeryPreparationController extends Controller
                 'message' => 'Error al cancelar: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Aplicar Configuración (Torre) a la preparación
+     */
+    public function applyConfig(Request $request, ScheduledSurgery $surgery)
+    {
+        $validated = $request->validate([
+            'configuration_id' => 'required|exists:checklist_configurations,id',
+        ]);
+
+        $preparation = $surgery->preparation;
+
+        if (!$preparation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay preparación activa para esta cirugía.'
+            ], 404);
+        }
+
+        try {
+            // Eliminar items de hardware anteriores para permitir cambio de torre
+            // Nota: Solo eliminamos si no han sido surtidos
+            $preparation->items()
+                ->whereNotNull('item_id')
+                ->where('quantity_picked', 0)
+                ->delete();
+
+            // Usamos Reflection o creamos un método público temporalmente si es protected
+            // Pero como PreparationService es nuestro, vamos a hacerlo público en el servicio.
+            $this->preparationService->applyConfigurationRequirements(
+                $preparation, 
+                $surgery, 
+                $validated['configuration_id'], 
+                collect() // $packageContents es un collect vacio
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Configuración aplicada correctamente.'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error al aplicar configuración: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aplicar configuración: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function assignHardwareUnit(Request $request, ScheduledSurgery $surgery)
+    {
+        $validated = $request->validate([
+            'preparation_item_id' => 'required|exists:surgery_preparation_items,id',
+            'stock_unit_id' => 'required|exists:stock_units,id'
+        ]);
+
+        $preparation = $surgery->preparation;
+
+        if (!$preparation) {
+            return response()->json(['success' => false, 'message' => 'No hay preparación activa.'], 404);
+        }
+
+        $item = $preparation->items()->find($validated['preparation_item_id']);
+        if (!$item) {
+            return response()->json(['success' => false, 'message' => 'Ítem de preparación no encontrado.'], 404);
+        }
+
+        if ($item->quantity_missing <= 0) {
+            return response()->json(['success' => false, 'message' => 'Este ítem ya está completo.'], 400);
+        }
+
+        $stockUnit = \App\Models\StockUnit::find($validated['stock_unit_id']);
+        if ($stockUnit->status !== 'available' && $stockUnit->status !== 'sterile') {
+            return response()->json(['success' => false, 'message' => "La unidad física no está disponible (Estado: {$stockUnit->status})."], 400);
+        }
+
+        try {
+            // Registrar asignación física
+            \App\Models\SurgeryPreparationUnit::create([
+                'preparation_item_id' => $item->id,
+                'stock_unit_id'       => $stockUnit->id,
+                'source_type'         => 'warehouse',
+                'assigned_at'         => now(),
+                'assigned_by'         => auth()->id(),
+            ]);
+
+            // Actualizar StockUnit
+            $stockUnit->update([
+                'current_surgery_id' => $surgery->id,
+                'status' => 'in_surgery'
+            ]);
+
+            // Actualizar cantidades en la preparación
+            $item->increment('quantity_picked');
+            $item->decrement('quantity_missing');
+
+            if ($item->quantity_missing <= 0) {
+                $item->update(['status' => 'complete']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unidad física asignada correctamente.',
+                'item_status' => $item->status,
+                'quantity_picked' => $item->quantity_picked,
+                'quantity_missing' => $item->quantity_missing
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error asignando hardware: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getAvailableStockUnits(Item $item)
+    {
+        $units = $item->stockUnits()
+            ->whereIn('status', ['available', 'sterile'])
+            ->get(['id', 'serial_number', 'status']);
+            
+        return response()->json([
+            'success' => true,
+            'units' => $units
+        ]);
     }
 
     // ============================================

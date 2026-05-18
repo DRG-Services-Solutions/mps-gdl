@@ -230,30 +230,40 @@ class PreAssembledPackage extends Model
      */
     public function getCompletenessPercentage($checklistId = null)
     {
-        // Determinar qué product_ids requiere el checklist
-        if ($checklistId) {
-            $checklistItems = ChecklistItem::where('checklist_id', $checklistId)->get();
-        } elseif ($this->relationLoaded('surgeryChecklist') && $this->surgeryChecklist) {
+        $checklistId = $checklistId ?? $this->surgery_checklist_id;
+
+        if (!$checklistId) {
+            return 0;
+        }
+
+        // Obtener los items del checklist
+        if ($this->relationLoaded('surgeryChecklist') && $this->surgeryChecklist && $this->surgeryChecklist->relationLoaded('items')) {
             $checklistItems = $this->surgeryChecklist->items;
         } else {
+            $checklistItems = ChecklistItem::where('checklist_id', $checklistId)->get();
+        }
+
+        $totalRequired = $checklistItems->sum('quantity');
+
+        if ($totalRequired == 0) {
             return 0;
         }
 
-        $totalItems = $checklistItems->count();
+        // Obtener inventario actual en el paquete
+        $contents = $this->relationLoaded('contents') ? $this->contents : $this->contents()->get();
 
-        if ($totalItems === 0) {
-            return 0;
+        $totalAvailable = 0;
+
+        foreach ($checklistItems as $item) {
+            $required = $item->quantity;
+            
+            // Cuántas unidades de este producto hay en el paquete
+            $inPackage = $contents->where('product_id', $item->product_id)->sum('quantity');
+            
+            // Sumamos a lo disponible (no superando lo requerido)
+            $totalAvailable += min($required, $inPackage);
         }
 
-        $checklistProductIds = $checklistItems->pluck('product_id')->unique();
-
-        // Usar colección eager loaded si está disponible
-        $availableProductIds = $this->relationLoaded('contents')
-            ? $this->contents->pluck('product_id')->unique()
-            : $this->contents()->pluck('product_id')->unique();
-
-        $completeItems = $checklistProductIds->intersect($availableProductIds)->count();
-
-        return round(($completeItems / $totalItems) * 100, 2);
+        return round(($totalAvailable / $totalRequired) * 100, 2);
     }
 }

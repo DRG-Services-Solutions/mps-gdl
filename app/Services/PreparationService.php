@@ -104,7 +104,7 @@ class PreparationService
         });
     }
 
-    protected function applyConfigurationRequirements(
+    public function applyConfigurationRequirements(
         SurgeryPreparation $preparation, 
         ScheduledSurgery $surgery, 
         $configurationId, 
@@ -328,11 +328,19 @@ class PreparationService
             $preparation->pre_assembled_package_id
         );
 
+        // Check if preparation is complete (no mandatory items missing)
+        $preparationComplete = !$preparation->items()
+            ->where('is_mandatory', true)
+            ->where('quantity_missing', '>', 0)
+            ->exists();
+
         return [
             'success' => true,
             'product_name' => $productUnit->product->name,
             'item_id' => $prepItem->id,
             'quantity_missing' => $prepItem->quantity_missing,
+            'item_status' => $prepItem->fresh()->status,
+            'preparation_complete' => $preparationComplete,
         ];
     }
 
@@ -372,11 +380,19 @@ class PreparationService
             'updated_at' => now(),
         ]);
 
+        // Check if preparation is complete (no mandatory items missing)
+        $preparationComplete = !$preparation->items()
+            ->where('is_mandatory', true)
+            ->where('quantity_missing', '>', 0)
+            ->exists();
+
         return [
             'success' => true,
             'product_name' => $product->name,
             'item_id' => $prepItem->id,
             'quantity_missing' => $prepItem->quantity_missing,
+            'item_status' => $prepItem->fresh()->status,
+            'preparation_complete' => $preparationComplete,
         ];
     }
 

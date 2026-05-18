@@ -21,7 +21,7 @@
         </div>
     </x-slot>
 
-    <div class="py-6" x-data="{ showBomModal: false, showUnitModal: false }">
+    <div class="py-6" x-data="{ showBomModal: false, showUnitModal: false, showRelationModal: false }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             
             <!-- ALERTAS -->
@@ -85,10 +85,120 @@
                             </dl>
                         </div>
                     </div>
+                    <!-- COMPATIBILIDADES Y DEPENDENCIAS -->
+                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                                    <i class="fas fa-link mr-2 text-indigo-600"></i> Compatibilidades y Requisitos
+                                </h3>
+                                <button @click="showRelationModal = true" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 font-semibold rounded-md hover:bg-indigo-100 transition text-sm">
+                                    <i class="fas fa-plus mr-1"></i> Añadir Regla
+                                </button>
+                            </div>
 
+                            @if($item->relations->count() > 0 || $item->relatedToMe->count() > 0)
+                                <div class="space-y-6">
+                                    
+                                    <!-- Items que este elemento REQUIERE o SUGIERE -->
+                                    @if($item->relations->count() > 0)
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-gray-700 uppercase mb-3 bg-gray-50 p-2 rounded">Este elemento configura hacia:</h4>
+                                            <ul class="space-y-3">
+                                                @foreach($item->relations as $rel)
+                                                    <li class="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition bg-white">
+                                                        <div class="flex items-center gap-4">
+                                                            <div class="p-2 rounded-full 
+                                                                {{ $rel->pivot->type === 'required' ? 'bg-red-100 text-red-600' : '' }}
+                                                                {{ $rel->pivot->type === 'suggested' ? 'bg-blue-100 text-blue-600' : '' }}
+                                                                {{ $rel->pivot->type === 'compatible' ? 'bg-green-100 text-green-600' : '' }}
+                                                            ">
+                                                                <i class="fas 
+                                                                    {{ $rel->pivot->type === 'required' ? 'fa-exclamation-circle' : '' }}
+                                                                    {{ $rel->pivot->type === 'suggested' ? 'fa-lightbulb' : '' }}
+                                                                    {{ $rel->pivot->type === 'compatible' ? 'fa-check-circle' : '' }}
+                                                                "></i>
+                                                            </div>
+                                                            <div>
+                                                                <p class="font-bold text-gray-900">
+                                                                    <a href="{{ route('items.show', $rel) }}" class="hover:underline text-indigo-600">{{ $rel->code }}</a> - {{ $rel->name }}
+                                                                </p>
+                                                                <div class="flex gap-2 items-center text-xs mt-1">
+                                                                    <span class="font-semibold uppercase tracking-wider
+                                                                        {{ $rel->pivot->type === 'required' ? 'text-red-600' : '' }}
+                                                                        {{ $rel->pivot->type === 'suggested' ? 'text-blue-600' : '' }}
+                                                                        {{ $rel->pivot->type === 'compatible' ? 'text-green-600' : '' }}
+                                                                    ">
+                                                                        {{ $rel->pivot->type === 'required' ? 'Requiere' : '' }}
+                                                                        {{ $rel->pivot->type === 'suggested' ? 'Sugiere' : '' }}
+                                                                        {{ $rel->pivot->type === 'compatible' ? 'Compatible con' : '' }}
+                                                                    </span>
+                                                                    @if($rel->pivot->notes)
+                                                                        <span class="text-gray-500 italic">| "{{ $rel->pivot->notes }}"</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <form action="{{ route('items.relations.destroy', [$item, $rel->id]) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Seguro que deseas eliminar esta regla?');">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="text-gray-400 hover:text-red-600 transition p-2">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
 
+                                    <!-- Items que REQUIEREN o SUGIEREN a este elemento -->
+                                    @if($item->relatedToMe->count() > 0)
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-gray-700 uppercase mb-3 bg-gray-50 p-2 rounded">Es configurado desde:</h4>
+                                            <ul class="space-y-3">
+                                                @foreach($item->relatedToMe as $invRel)
+                                                    <li class="flex items-center justify-between p-3 border border-gray-100 rounded-lg hover:shadow-sm transition bg-gray-50">
+                                                        <div class="flex items-center gap-4 opacity-80">
+                                                            <div class="p-2 rounded-full bg-gray-200 text-gray-600">
+                                                                <i class="fas fa-link"></i>
+                                                            </div>
+                                                            <div>
+                                                                <p class="font-bold text-gray-800">
+                                                                    <a href="{{ route('items.show', $invRel) }}" class="hover:underline text-indigo-600">{{ $invRel->code }}</a> - {{ $invRel->name }}
+                                                                </p>
+                                                                <div class="flex gap-2 items-center text-xs mt-1">
+                                                                    <span class="text-gray-600">Este elemento es 
+                                                                        <strong class="uppercase text-gray-800">
+                                                                            {{ $invRel->pivot->type === 'required' ? 'requerido por' : '' }}
+                                                                            {{ $invRel->pivot->type === 'suggested' ? 'sugerido por' : '' }}
+                                                                            {{ $invRel->pivot->type === 'compatible' ? 'compatible con' : '' }}
+                                                                        </strong> 
+                                                                        él.
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    @endif
 
-                    
+                                </div>
+                            @else
+                                <div class="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                    <i class="fas fa-project-diagram text-4xl text-gray-300 mb-3"></i>
+                                    <h4 class="text-gray-600 font-semibold">Sin relaciones definidas</h4>
+                                    <p class="text-sm text-gray-500 mt-1">Este producto es independiente o universal.</p>
+                                    <button @click="showRelationModal = true" class="mt-4 px-4 py-2 bg-indigo-600 text-white font-bold rounded shadow-sm hover:bg-indigo-700 transition">
+                                        <i class="fas fa-plus mr-2"></i> Añadir Dependencia
+                                    </button>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
 
                 </div>
 
@@ -268,7 +378,98 @@
             </div>
         </div>
 
-        
+        <!-- ========================================== -->
+        <!-- MODAL 2: AÑADIR REGLA DE COMPATIBILIDAD -->
+        <!-- ========================================== -->
+        <div x-show="showRelationModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div x-show="showRelationModal" x-transition.opacity class="fixed inset-0 bg-gray-900 bg-opacity-75 backdrop-blur-sm"></div>
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div x-show="showRelationModal" x-transition.scale @click.away="showRelationModal = false" class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg">
+                    <form action="{{ route('items.relations.store', $item) }}" method="POST">
+                        @csrf
+                        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-gray-900"><i class="fas fa-link text-indigo-600 mr-2"></i> Añadir Dependencia</h3>
+                            <button type="button" @click="showRelationModal = false" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="p-6 space-y-5">
+                            <!-- Tipo de relación -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Este elemento ({{ $item->code }})...</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="type" value="required" class="peer sr-only" required>
+                                        <div class="p-3 text-center border rounded-lg peer-checked:bg-red-50 peer-checked:border-red-500 peer-checked:text-red-700 hover:bg-gray-50 transition">
+                                            <i class="fas fa-exclamation-circle block text-lg mb-1"></i>
+                                            <span class="text-xs font-bold uppercase tracking-wide">Requiere</span>
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="type" value="suggested" class="peer sr-only">
+                                        <div class="p-3 text-center border rounded-lg peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700 hover:bg-gray-50 transition">
+                                            <i class="fas fa-lightbulb block text-lg mb-1"></i>
+                                            <span class="text-xs font-bold uppercase tracking-wide">Sugiere</span>
+                                        </div>
+                                    </label>
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="type" value="compatible" class="peer sr-only" checked>
+                                        <div class="p-3 text-center border rounded-lg peer-checked:bg-green-50 peer-checked:border-green-500 peer-checked:text-green-700 hover:bg-gray-50 transition">
+                                            <i class="fas fa-check-circle block text-lg mb-1"></i>
+                                            <span class="text-xs font-bold uppercase tracking-wide">Es Compatible</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Buscar Componente -->
+                            <div>
+                                <label for="related_item_id" class="block text-sm font-bold text-gray-700 mb-1">...a este componente del catálogo <span class="text-red-500">*</span></label>
+                                <select id="related_item_id" name="related_item_id" required class="w-full"></select>
+                            </div>
+
+                            <!-- Notas -->
+                            <div>
+                                <label for="notes" class="block text-sm font-bold text-gray-700 mb-1">Notas / Condiciones Especiales <span class="text-xs text-gray-400 font-normal">(Opcional)</span></label>
+                                <input type="text" name="notes" id="notes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Ej: Solo usar con modelo X revision 2...">
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end space-x-3 border-t border-gray-100">
+                            <button type="button" @click="showRelationModal = false" class="px-4 py-2 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancelar</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm transition">Guardar Regla</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Inicializar TomSelect para búsqueda de Item Relacionado
+                if (document.getElementById('related_item_id')) {
+                    new TomSelect('#related_item_id', {
+                        valueField: 'id',
+                        labelField: 'name',
+                        searchField: ['name', 'code'],
+                        load: function(query, callback) {
+                            if(query.length < 2) return callback();
+                            fetch('/api/search-items?q=' + encodeURIComponent(query))
+                                .then(response => response.json())
+                                .then(json => callback(json))
+                                .catch(() => callback());
+                        },
+                        render: {
+                            option: function(item, escape) {
+                                return `<div><span class="font-bold text-gray-800">${escape(item.code)}</span> - <span class="text-gray-600">${escape(item.name)}</span></div>`;
+                            },
+                            item: function(item, escape) {
+                                return `<div><span class="font-bold">${escape(item.code)}</span> - ${escape(item.name)}</div>`;
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+    @endpush
 </x-app-layout>

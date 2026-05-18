@@ -212,6 +212,9 @@ class PreAssembledPackageController extends Controller
             'type' => $type,
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No se encontró ningún producto disponible con: ' . $input], 404);
+        }
         return back()->with('error', 'No se encontró ningún producto disponible con: ' . $input);
     }
 
@@ -222,6 +225,9 @@ class PreAssembledPackageController extends Controller
             'status' => $productUnit->status,
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'Este producto no está disponible (Estado: ' . $productUnit->status_label . ')'], 422);
+        }
         return back()->with('error', 'Este producto no está disponible (Estado: ' . $productUnit->status_label . ')');
     }
 
@@ -235,6 +241,9 @@ class PreAssembledPackageController extends Controller
             'product_unit_id' => $productUnit->id,
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'Este producto ya está en el paquete.'], 422);
+        }
         return back()->with('error', 'Este producto ya está en el paquete.');
     }
 
@@ -265,6 +274,19 @@ class PreAssembledPackageController extends Controller
 
         \Log::info('[PACKAGE] ===== FIN addProduct - ÉXITO =====');
 
+        if ($request->wantsJson()) {
+            $preAssembled->load(['contents.product', 'contents.productUnit']);
+            $html = view('pre-assembled.partials.contents-table', compact('preAssembled'))->render();
+            return response()->json([
+                'success' => true, 
+                'message' => 'Producto agregado al paquete correctamente.',
+                'html' => $html,
+                'stats' => [
+                    'total_items' => $preAssembled->contents->count(),
+                    'completeness' => number_format($preAssembled->getCompletenessPercentage(), 1),
+                ]
+            ]);
+        }
         return back()->with('success', 'Producto agregado al paquete correctamente.');
 
     } catch (\Exception $e) {
@@ -273,6 +295,9 @@ class PreAssembledPackageController extends Controller
             'trace' => $e->getTraceAsString(),
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'Error al agregar producto: ' . $e->getMessage()], 500);
+        }
         return back()->with('error', 'Error al agregar producto: ' . $e->getMessage());
     }
 }
@@ -306,9 +331,25 @@ class PreAssembledPackageController extends Controller
             ->delete();
 
         if ($deleted > 0) {
+            if ($request->wantsJson()) {
+                $preAssembled->load(['contents.product', 'contents.productUnit']);
+                $html = view('pre-assembled.partials.contents-table', compact('preAssembled'))->render();
+                return response()->json([
+                    'success' => true,
+                    'message' => "Se eliminaron {$deleted} unidad(es) del producto del paquete.",
+                    'html' => $html,
+                    'stats' => [
+                        'total_items' => $preAssembled->contents->count(),
+                        'completeness' => number_format($preAssembled->getCompletenessPercentage(), 1),
+                    ]
+                ]);
+            }
             return back()->with('success', "Se eliminaron {$deleted} unidad(es) del producto del paquete.");
         }
 
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => 'No se encontró ese producto en el paquete.'], 404);
+        }
         return back()->with('error', 'No se encontró ese producto en el paquete.');
     }
 

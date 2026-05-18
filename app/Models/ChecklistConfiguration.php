@@ -16,4 +16,9 @@ class ChecklistConfiguration extends Model
     {
         return $this->belongsTo(SurgicalChecklist::class, 'surgical_checklist_id');
     }
+
+    public function requirements()
+    {
+        return $this->hasMany(ConfigurationRequirement::class, 'configuration_id');
+    }
 }

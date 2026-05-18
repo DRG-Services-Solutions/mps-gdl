@@ -371,7 +371,7 @@
                         :class="activeZone === 'zone2' ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'"
                         class="flex items-center px-4 py-2.5 rounded-lg font-semibold transition-all duration-200 text-sm">
                     <i class="fas fa-tools mr-2"></i>
-                    Zona 2: Instrumental / Kit, etc
+                    Zona 2: Asignación de Equipos
                     <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-bold"
                           :class="activeZone === 'zone2' ? 'bg-white text-purple-600' : 'bg-purple-100 text-purple-700'">
                         {{ $zone2Hardware->count() }}
@@ -379,15 +379,15 @@
                 </button>
             </div>
 
-            {{-- Tabla de Productos Pendientes --}}
-            <div class="bg-white rounded-lg shadow-sm border border-red-100 overflow-hidden">
+            {{-- ZONA 1: Consumibles --}}
+            <div x-show="activeZone === 'zone1'" class="bg-white rounded-lg shadow-sm border border-red-100 overflow-hidden">
                 <div class="px-6 py-4 bg-red-50 border-b border-red-100 flex justify-between items-center">
                     <h3 class="text-red-800 font-bold flex items-center">
                         <i class="fas fa-exclamation-circle mr-2"></i>
-                        PRODUCTOS POR SURTIR (<span id="pending-count">{{ $pendingItems->count() }} Productos con {{ $summary['total_quantity_missing']}} piezas</span>)
+                        CONSUMIBLES POR SURTIR
                     </h3>
                     
-                    @if($pendingItems->count() > 0)
+                    @if($zone1Consumables->count() > 0)
                         <button onclick="refreshPage()" 
                                 class="text-sm text-red-600 hover:text-red-800 font-medium">
                             <i class="fas fa-sync-alt mr-1"></i>
@@ -396,7 +396,7 @@
                     @endif
                 </div>
                 
-                <div id="pendingItemsTable" class="overflow-x-auto">
+                <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 hidden md:table-header-group">
                             <tr>
@@ -414,11 +414,11 @@
                             </tr>
                         </thead>
 
-                        <tbody class="divide-y divide-gray-200" x-show="activeZone === 'zone1'">
+                        <tbody class="divide-y divide-gray-200">
                             @forelse($zone1Consumables as $item)
                                 @include('surgeries.preparations.partials._item-row', ['item' => $item])
                             @empty
-                                <tr id="empty-state-1">
+                                <tr>
                                     <td colspan="7" class="px-6 py-10 text-center">
                                         <div class="flex flex-col items-center justify-center">
                                             <i class="fas fa-check-circle text-green-500 text-5xl mb-3"></i>
@@ -429,23 +429,118 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                        <tbody class="divide-y divide-gray-200" x-show="activeZone === 'zone2'" x-cloak>
-                            @forelse($zone2Hardware as $item)
-                                @include('surgeries.preparations.partials._item-row', ['item' => $item])
-                            @empty
-                                <tr id="empty-state-2">
-                                    <td colspan="7" class="px-6 py-10 text-center">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <i class="fas fa-check-circle text-purple-500 text-5xl mb-3"></i>
-                                            <p class="text-gray-700 font-semibold text-lg">¡Hardware Completo!</p>
-                                            <p class="text-gray-500 text-sm mt-1">No hay equipos pendientes en la Zona 2</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
                     </table>
                 </div>
+            </div>
+
+            {{-- ZONA 2: Asignación de Equipos --}}
+            <div x-show="activeZone === 'zone2'" x-cloak class="space-y-6">
+                
+                {{-- Paso 1: Selección de Configuración (Torre) --}}
+                <div class="bg-white rounded-lg shadow-sm border border-purple-200 overflow-hidden">
+                    <div class="px-6 py-4 bg-purple-50 border-b border-purple-200 flex justify-between items-center">
+                        <h3 class="text-purple-800 font-bold flex items-center">
+                            <i class="fas fa-server mr-2"></i>
+                            PASO 1: SELECCIONAR TORRE / CONFIGURACIÓN
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        @if(count($availableConfigurations) > 0)
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                @foreach($availableConfigurations as $config)
+                                    <div class="border border-gray-200 rounded-lg p-4 hover:border-purple-500 hover:shadow-md transition-all cursor-pointer"
+                                         onclick="applyConfiguration({{ $config->id }}, '{{ $config->name }}')">
+                                        <div class="flex items-start justify-between">
+                                            <div>
+                                                <h4 class="font-bold text-gray-900 text-lg">{{ $config->name }}</h4>
+                                                <p class="text-sm text-gray-500 mt-1">{{ $config->requirements->count() }} componentes requeridos</p>
+                                            </div>
+                                            <div class="h-10 w-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-plus"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-6">
+                                <i class="fas fa-info-circle text-gray-400 text-3xl mb-3"></i>
+                                <p class="text-gray-600">No hay configuraciones de torre disponibles para este checklist.</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Paso 2: Componentes de la Torre (Hardware Pendiente) --}}
+                @if($zone2Hardware->count() > 0)
+                <div class="bg-white rounded-lg shadow-sm border border-indigo-200 overflow-hidden">
+                    <div class="px-6 py-4 bg-indigo-50 border-b border-indigo-200 flex justify-between items-center">
+                        <h3 class="text-indigo-800 font-bold flex items-center">
+                            <i class="fas fa-microchip mr-2"></i>
+                            PASO 2: ASIGNAR UNIDADES FÍSICAS AL HARDWARE REQUERIDO
+                        </h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 hidden md:table-header-group">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Componente</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-red-500 uppercase tracking-wider">Faltan</th>
+                                    <th class="px-6 py-3 text-center text-xs font-bold text-green-500 uppercase tracking-wider">Asignados</th>
+                                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach($zone2Hardware as $item)
+                                    @php
+                                        $entityName = $item->item_id ? ($item->item->name ?? 'Desconocido') : ($item->product->name ?? 'Desconocido');
+                                        $entityCode = $item->item_id ? ($item->item->code ?? 'N/A') : ($item->product->code ?? 'N/A');
+                                    @endphp
+                                    <tr class="hover:bg-indigo-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center">
+                                                @if ($item->is_mandatory)
+                                                    <i class="fas fa-star text-yellow-500 mr-2" title="Obligatorio"></i>
+                                                @endif
+                                                <div>
+                                                    <div class="font-bold text-gray-900">{{ $entityName }}</div>
+                                                    <div class="text-xs text-gray-500 font-mono">{{ $entityCode }}</div>
+                                                    @if($item->notes)
+                                                        <div class="text-[10px] text-gray-400 mt-1 italic">{{ $item->notes }}</div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-full font-bold text-sm">
+                                                {{ $item->quantity_missing }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full font-bold text-sm">
+                                                {{ $item->quantity_picked }} / {{ $item->quantity_required }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            @if($item->quantity_missing > 0)
+                                            <button onclick="openAssignModal({{ $item->id }}, '{{ $item->item_id }}')" 
+                                                    class="inline-flex items-center px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
+                                                <i class="fas fa-barcode mr-2"></i> Asignar Físico
+                                            </button>
+                                            @else
+                                            <span class="text-green-600 font-bold text-sm flex justify-end items-center">
+                                                <i class="fas fa-check-circle mr-1"></i> Completo
+                                            </span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @endif
             </div>
 
             {{-- Productos Completados (Colapsable) --}}
@@ -465,7 +560,7 @@
                             <div class="bg-white p-3 rounded-lg border border-green-200 flex items-center shadow-sm hover:shadow-md transition-shadow">
                                 <i class="fas fa-check-circle text-green-500 text-xl mr-3"></i>
                                 <div class="flex-1">
-                                    <p class="text-sm font-bold text-gray-800">{{ $item->product->name }}</p>
+                                    <p class="text-sm font-bold text-gray-800">{{ $item->item_id ? ($item->item->name ?? 'Desconocido') : ($item->product->name ?? 'Desconocido') }}</p>
                                     <p class="text-xs text-gray-500 mt-0.5">
                                         {{ $item->quantity_required }} unidad(es)
                                         @if($item->status == 'in_package')
@@ -530,33 +625,71 @@
         </div>
     </div>
     <div id="conditionalsModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center transition-opacity">
-    <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
-        
-        <div class="flex justify-between items-center pb-3 border-b border-gray-200">
-            <h3 class="text-lg font-bold text-gray-900 flex items-center">
-                <i class="fas fa-clipboard-list text-purple-600 mr-2"></i>
-                Condicionales
-            </h3>
-            <button onclick="closeConditionalsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <div class="py-3">
-            <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Producto:</p>
-            <p id="modalProductName" class="text-md font-medium text-gray-800"></p>
-        </div>
-
-        <div id="modalConditionalsContent" class="mt-2 max-h-60 overflow-y-auto pr-1">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                    <i class="fas fa-clipboard-list text-purple-600 mr-2"></i>
+                    Condicionales
+                </h3>
+                <button onclick="closeConditionalsModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
 
-        <div class="mt-5 pt-3 border-t border-gray-200 flex justify-end">
-            <button onclick="closeConditionalsModal()" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">
-                Cerrar
-            </button>
+            <div class="py-3">
+                <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Producto:</p>
+                <p id="modalProductName" class="text-md font-medium text-gray-800"></p>
+            </div>
+
+            <div id="modalConditionalsContent" class="mt-2 max-h-60 overflow-y-auto pr-1">
+            </div>
+
+            <div class="mt-5 pt-3 border-t border-gray-200 flex justify-end">
+                <button onclick="closeConditionalsModal()" class="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors">
+                    Cerrar
+                </button>
+            </div>
         </div>
     </div>
-</div>
+
+    {{-- Modal para Asignar Stock Físico a Hardware --}}
+    <div id="assignModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center transition-opacity">
+        <div class="relative mx-auto p-6 border w-full max-w-md shadow-lg rounded-xl bg-white">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                <h3 class="text-lg font-bold text-indigo-900 flex items-center">
+                    <i class="fas fa-microchip text-indigo-600 mr-2"></i>
+                    Asignar Unidad Física
+                </h3>
+                <button onclick="closeAssignModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="mt-4">
+                <p class="text-sm text-gray-600 mb-2">Selecciona la unidad física (Stock) que vas a asignar a esta cirugía.</p>
+                <form id="assignHardwareForm">
+                    <input type="hidden" id="assign_prep_item_id" value="">
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Unidad Disponible:</label>
+                        <select id="assign_stock_unit_id" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Cargando unidades...</option>
+                        </select>
+                    </div>
+
+                    <div class="mt-5 flex justify-end gap-3">
+                        <button type="button" onclick="closeAssignModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm transition-colors flex items-center">
+                            <i class="fas fa-save mr-2"></i> Asignar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     @push('styles')
     <style>
@@ -650,6 +783,112 @@
             function refreshPage() {
                 window.location.reload();
             }
+
+            // Aplicar Configuración (Torre)
+            async function applyConfiguration(configId, configName) {
+                if (!confirm(`¿Estás seguro de que deseas asignar la configuración: ${configName}? Esto borrará los equipos pendientes anteriores.`)) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('{{ route("surgeries.preparations.applyConfig", $surgery) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ configuration_id: configId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al aplicar la configuración');
+                }
+            }
+
+            // Modal de asignación de hardware
+            async function openAssignModal(prepItemId, itemId) {
+                document.getElementById('assign_prep_item_id').value = prepItemId;
+                const select = document.getElementById('assign_stock_unit_id');
+                select.innerHTML = '<option value="">Cargando unidades...</option>';
+                document.getElementById('assignModal').classList.remove('hidden');
+
+                try {
+                    const response = await fetch(`/surgeries/{{ $surgery->id }}/preparations/available-stock-units/${itemId}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        if (data.units.length === 0) {
+                            select.innerHTML = '<option value="">No hay unidades disponibles en inventario</option>';
+                        } else {
+                            select.innerHTML = '<option value="">-- Selecciona una unidad --</option>';
+                            data.units.forEach(unit => {
+                                const option = document.createElement('option');
+                                option.value = unit.id;
+                                option.textContent = `SN: ${unit.serial_number} (${unit.status === 'sterile' ? 'Estéril' : 'Disponible'})`;
+                                select.appendChild(option);
+                            });
+                        }
+                    } else {
+                        select.innerHTML = '<option value="">Error al cargar unidades</option>';
+                    }
+                } catch (error) {
+                    console.error(error);
+                    select.innerHTML = '<option value="">Error de conexión</option>';
+                }
+            }
+
+            function closeAssignModal() {
+                document.getElementById('assignModal').classList.add('hidden');
+                document.getElementById('assign_prep_item_id').value = '';
+                document.getElementById('assign_stock_unit_id').innerHTML = '';
+            }
+
+            document.getElementById('assignHardwareForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const prepItemId = document.getElementById('assign_prep_item_id').value;
+                const stockUnitId = document.getElementById('assign_stock_unit_id').value;
+
+                if (!stockUnitId) {
+                    alert('Por favor selecciona una unidad física.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('{{ route("surgeries.preparations.assignHardwareUnit", $surgery) }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ 
+                            preparation_item_id: prepItemId,
+                            stock_unit_id: stockUnitId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al asignar la unidad física');
+                }
+            });
         </script>
     @endpush
 

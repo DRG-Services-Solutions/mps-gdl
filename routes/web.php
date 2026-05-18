@@ -55,6 +55,8 @@ use App\Http\Controllers\KitAssemblyController;
 use App\Http\Controllers\ItemStockUnitController;
 use App\Http\Controllers\StockUnitController;
 use App\Http\Controllers\StockUnitRecipeController;
+use App\Http\Controllers\ChecklistConfigurationController;
+use App\Http\Controllers\ConfigurationRequirementController;
 
 
 // ========================================
@@ -390,6 +392,16 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
         
         // Duplicar check list
         Route::post('/{checklist}/duplicate', [SurgicalChecklistController::class, 'duplicate'])->name('duplicate');
+
+        // ---- CONFIGURACIONES DE TORRE ----
+        Route::get('/{checklist}/configurations', [ChecklistConfigurationController::class, 'index'])->name('configurations.index');
+        Route::post('/{checklist}/configurations', [ChecklistConfigurationController::class, 'store'])->name('configurations.store');
+        Route::put('/configurations/{configuration}', [ChecklistConfigurationController::class, 'update'])->name('configurations.update');
+        Route::delete('/configurations/{configuration}', [ChecklistConfigurationController::class, 'destroy'])->name('configurations.destroy');
+
+        // Requerimientos de una configuración
+        Route::post('/configurations/{configuration}/requirements', [ConfigurationRequirementController::class, 'store'])->name('configurations.requirements.store');
+        Route::delete('/requirements/{requirement}', [ConfigurationRequirementController::class, 'destroy'])->name('configurations.requirements.destroy');
     });
 
     // ====================================================================
@@ -473,6 +485,9 @@ Route::get('/conditional-form-data', [ChecklistConditionalController::class, 'ge
             // 2. Seleccionar paquete pre-armado
             Route::get('/select-package', [SurgeryPreparationController::class, 'selectPackage'])->name('selectPackage');
             Route::post('/assign-package', [SurgeryPreparationController::class, 'assignPackage'])->name('assignPackage');
+            Route::post('/apply-config', [SurgeryPreparationController::class, 'applyConfig'])->name('applyConfig');
+            Route::post('/assign-hardware-unit', [SurgeryPreparationController::class, 'assignHardwareUnit'])->name('assignHardwareUnit');
+            Route::get('/available-stock-units/{item}', [SurgeryPreparationController::class, 'getAvailableStockUnits'])->name('availableStockUnits');
             
             // 3. Ver comparación (Check List vs Pre-Armado)
             Route::get('/compare', [SurgeryPreparationController::class, 'compare'])->name('compare');
